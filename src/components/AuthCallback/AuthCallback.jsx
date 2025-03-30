@@ -24,11 +24,14 @@ const AuthCallback = () => {
           console.log(token);
 
           // Fetch user details with the token
-          const response = await fetch("http://localhost:9000/auth/user", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
+          const response = await fetch(
+            "https://fashionstoreshopecommertbe.onrender.com/auth/user",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
 
           console.log(response);
 

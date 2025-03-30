@@ -110,7 +110,8 @@ const LoginForm = () => {
 
   const handleGoogleLogin = () => {
     // Chuyển hướng đến backend để bắt đầu quá trình xác thực Google
-    window.location.href = "http://localhost:9000/auth/google";
+    window.location.href =
+      "https://fashionstoreshopecommertbe.onrender.com/auth/google";
   };
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);

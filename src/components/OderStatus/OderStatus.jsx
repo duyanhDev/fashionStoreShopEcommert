@@ -14,11 +14,9 @@ import { FaTruck } from "react-icons/fa";
 
 import io from "socket.io-client";
 import FeedBack from "../FeedBack/FeeBack";
-
-const socket = io("http://localhost:9000", {
+const socket = io("https://fashionstoreshopecommertbe.onrender.com", {
+  transports: ["websocket", "polling"], // Đảm bảo cả 2 phương thức đều có
   withCredentials: true,
-  reconnection: true,
-  reconnectionAttempts: 5,
 });
 
 // const socket = io("https://fashionstoreshop.onrender.com/", {
