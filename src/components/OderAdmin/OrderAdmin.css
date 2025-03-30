@@ -1,0 +1,34 @@
+/* Tạo kích thước vuông cho các icon */
+.icon-square {
+  width: 40px; /* Chiều rộng cố định */
+  height: 40px; /* Chiều cao cố định */
+  font-size: 24px; /* Kích thước của icon */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer; /* Hiển thị con trỏ chuột khi hover vào icon */
+  transition: color 0.3s ease; /* Thêm hiệu ứng chuyển màu */
+}
+
+/* Màu sắc cho các icon */
+.check {
+  color: #1890ff; /* Màu xanh của Ant Design */
+}
+
+.delete {
+  color: #ff4d4f; /* Màu đỏ của Ant Design */
+}
+
+/* Hiệu ứng hover cho các icon */
+.icon-square:hover {
+  background-color: rgba(0, 0, 0, 0.1); /* Thêm màu nền khi hover vào icon */
+}
+
+/* Thêm màu sắc khi hover */
+.icon-square.check:hover {
+  color: #40a9ff; /* Màu khi hover vào icon Check */
+}
+
+.icon-square.delete:hover {
+  color: #f5222d; /* Màu khi hover vào icon Delete */
+}

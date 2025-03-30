@@ -1,0 +1,13 @@
+.main_ranking {
+  position: relative;
+  margin-top: 100px;
+  min-height: 500px;
+  height: auto; /* Cho phép mở rộng */
+}
+
+.dollar svg {
+  font-size: 30px;
+}
+.top_ranking svg {
+  font-size: 30px;
+}

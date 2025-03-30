@@ -1,0 +1,151 @@
+.main_profile {
+  /* min-height: 100vh; */
+  min-height: 100vh;
+  padding   : 40px;
+  margin-top: 64px;
+}
+
+.info-name {
+  position        : absolute;
+  width           : 1300px;
+  margin          : auto;
+  height          : 250px;
+  background-color: #fff;
+  border-radius   : 10px;
+  margin-top      : 10px;
+  padding         : 40px;
+  left            : 50%;
+  transform       : translateX(-50%);
+}
+
+.icon_users {
+  width     : 100px;
+  height    : auto;
+  object-fit: cover;
+}
+
+.text_rank {
+  font-size: 26px;
+}
+
+.account-line__text {
+  margin-top: 4px;
+}
+
+.account-line_value {
+  background-color: #d9d9d9;
+  /* Mặc định màu xám */
+  border-radius   : 100vmax;
+  display         : block;
+  height          : 4px;
+  position        : relative;
+  width           : 100%;
+  transition      : background-color 0.3s ease, width 0.3s ease;
+}
+
+/* Màu xanh khi đạt mốc "Mới" */
+.account-line_value.active.new {
+  background: linear-gradient(to right,
+      #f5a623 -1% 0%,
+      #f5a623 8% 20%,
+      /* Tô màu xanh đến điểm Mới */
+      #d9d9d9 20%);
+}
+
+/* Màu xanh đến mốc "Bạc" */
+.account-line_value.active.silver {
+  background: linear-gradient(to right,
+      #f5a623 45% 0%,
+      #f5a623 45% 28%,
+      /* Tô màu xanh từ "Mới" đến "Bạc" */
+      #d9d9d9 28%);
+}
+
+/* Màu vàng khi đạt mốc "Vàng" */
+.account-line_value.active.gold {
+  background: linear-gradient(to right,
+      #f5a623 45% 0%,
+      #f5a623 68% 28%,
+      /* Màu xanh từ "Mới" đến "Bạc" */
+      #f5a623 45%,
+      /* Màu vàng từ "Bạc" đến "Vàng" */
+      #d9d9d9 45%
+      /* Phần còn lại */
+    );
+}
+
+/* Màu bạch kim khi đạt mốc "Bạch Kim" */
+.account-line_value.active.platinum {
+  background: linear-gradient(to right,
+      #f5a623 45% 0%,
+      #f5a623 45% 45%,
+      /* Màu xanh từ "Mới" đến "Bạc" */
+      #f5a623 100%,
+      /* Màu vàng từ "Bạc" đến "Vàng" */
+      #e5e4e2 70%,
+      /* Màu bạch kim từ "Vàng" đến "Bạch Kim" */
+      #d9d9d9 100%);
+}
+
+.account-line__text:before {
+  background-color: #2f5acf;
+  border          : 0.125rem solid #fff;
+  border-radius   : 100vmax;
+  bottom          : 100%;
+  box-sizing      : border-box;
+  content         : "";
+  height          : 0.75rem;
+  left            : 0;
+  position        : absolute;
+  width           : 0.75rem;
+  top             : -12px;
+}
+
+span.account-line__text.account-line_hangbac.absolute {
+  left: 20%;
+}
+
+.account-line__text.account-line_hangvang.absolute {
+  left: 45%;
+}
+
+.account-line__text.account-line_hangbachkim.absolute {
+  left: 65%;
+}
+
+img.object-cover.palatium {
+  margin-left: -95px;
+}
+
+.profile_username.relative.bottom-0 {
+  width     : 1300px;
+  margin-top: 20%;
+  min-height: 500px;
+  left      : 50%;
+  transform : translateX(-50%);
+}
+
+.account_list_btn p {
+  margin-top: 20px;
+}
+
+.account-image img {
+  border-radius: 50%;
+  margin-top   : 25px;
+}
+
+.account-profile_check {
+  padding: 30px;
+}
+
+.ant-modal.css-dev-only-do-not-override-apn68 {
+  width: 800px;
+}
+
+.ant-col.ant-form-item-label.css-dev-only-do-not-override-apn68 {
+  width: 118px;
+}
+
+.main_profile button.ant-btn.css-dev-only-do-not-override-apn68.ant-btn-primary.ant-btn-color-primary.ant-btn-variant-solid {
+  display: none;
+}

@@ -1,0 +1,8 @@
+:where(.css-dev-only-do-not-override-apn68).ant-modal .ant-modal-footer {
+  text-align: end;
+  background: transparent;
+  margin-top: 26px;
+  padding: 0;
+  border-top: none;
+  border-radius: 0;
+}

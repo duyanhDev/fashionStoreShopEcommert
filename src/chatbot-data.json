@@ -1,0 +1,111 @@
+{
+  "initial_message": {
+    "id": "welcome",
+    "text": "Xin chào! Tôi là trợ lý ảo. Tôi có thể giúp bạn với các thông tin sau:\n- Thông tin về sản phẩm\n- Thông tin về website\n- Chính sách bảo hành\n- Hướng dẫn mua hàng",
+    "sender": "bot"
+  },
+  "quick_suggestions": [
+    "Xem danh sách sản phẩm",
+    "Ai là người tạo website này?",
+    "Chính sách bảo hành",
+    "Cách thức mua hàng"
+  ],
+  "qa_pairs": [
+    {
+      "keywords": ["sản phẩm", "danh sách", "list", "hàng hóa"],
+      "response": {
+        "type": "product_list",
+        "text": "Dưới đây là danh sách sản phẩm của chúng tôi:",
+        "action": "show_products"
+      }
+    },
+    {
+      "keywords": ["giá cao", "cao cấp", "đắt tiền", "premium"],
+      "response": {
+        "type": "premium_products",
+        "text": "Đây là các sản phẩm cao cấp của chúng tôi:",
+        "action": "show_premium_products"
+      }
+    },
+    {
+      "keywords": ["người viết", "tác giả", "sáng lập", "creator", "about"],
+      "response": {
+        "type": "author_info",
+        "text": "Thông tin về người sáng lập website:",
+        "data": {
+          "name": "Đặng Trinh Duy Anh",
+          "education": "Đại học Thủ Dầu Một",
+          "skills": [
+            "Phát triển ứng dụng web hiện đại",
+            "Thành thạo React và Node.js",
+            "Quản lý cơ sở dữ liệu với MongoDB",
+            "Xây dựng hệ thống API mạnh mẽ"
+          ],
+          "contact": "duyanh@gmail.com"
+        }
+      }
+    },
+    {
+      "keywords": ["bảo hành", "warranty", "đổi trả", "return"],
+      "response": {
+        "type": "warranty_policy",
+        "text": "Chính sách bảo hành của chúng tôi:",
+        "details": [
+          "Bảo hành 12 tháng cho tất cả sản phẩm chính hãng",
+          "Đổi trả miễn phí trong 30 ngày đầu tiên",
+          "Hỗ trợ sửa chữa trọn đời",
+          "Tư vấn kỹ thuật 24/7"
+        ]
+      }
+    },
+    {
+      "keywords": ["mua hàng", "đặt hàng", "order", "purchase"],
+      "response": {
+        "type": "purchase_guide",
+        "text": "Hướng dẫn mua hàng:",
+        "steps": [
+          "Chọn sản phẩm và thêm vào giỏ hàng",
+          "Điền thông tin giao hàng",
+          "Chọn phương thức thanh toán",
+          "Xác nhận đơn hàng",
+          "Nhận mã theo dõi đơn hàng"
+        ]
+      }
+    },
+    {
+      "keywords": ["giá", "price", "báo giá", "cost"],
+      "response": {
+        "type": "pricing_info",
+        "text": "Thông tin về giá sản phẩm:",
+        "action": "show_price_list"
+      }
+    },
+    {
+      "keywords": ["khuyến mãi", "sale", "giảm giá", "ưu đãi"],
+      "response": {
+        "type": "promotions",
+        "text": "Các chương trình khuyến mãi hiện tại:",
+        "action": "show_promotions"
+      }
+    },
+    {
+      "keywords": ["liên hệ", "contact", "địa chỉ", "hotline"],
+      "response": {
+        "type": "contact_info",
+        "text": "Thông tin liên hệ:",
+        "data": {
+          "phone": "1900 xxxx",
+          "email": "support@example.com",
+          "address": "123 Đường ABC, Quận XYZ, TP.HCM",
+          "working_hours": "8:00 - 22:00 (T2-CN)"
+        }
+      }
+    }
+  ],
+  "fallback_responses": [
+    "Xin lỗi, tôi không hiểu câu hỏi của bạn. Bạn có thể diễn đạt lại được không?",
+    "Tôi chưa rõ ý bạn lắm. Bạn có thể cho tôi biết thêm chi tiết?",
+    "Bạn có thể hỏi theo cách khác được không?",
+    "Tôi xin lỗi, tôi không tìm thấy thông tin phù hợp. Bạn có thể thử lại với từ khóa khác?"
+  ]
+}

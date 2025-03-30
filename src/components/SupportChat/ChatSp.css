@@ -1,0 +1,17 @@
+.chat_container {
+  width: 1200px;
+  margin: 10px;
+  border-radius: 10px;
+  margin-left: 50px;
+  border: 1px solid #ccc;
+}
+.main_chat-users {
+}
+.chat_container .mess_users-cl {
+  max-height: 49rem;
+}
+.text_main-h1 {
+  margin-top: 19;
+  font-size: 20px;
+  font-weight: bold;
+}

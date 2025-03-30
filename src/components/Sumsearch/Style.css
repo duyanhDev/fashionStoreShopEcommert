@@ -1,0 +1,22 @@
+.search_nav {
+  width: 1000px;
+  height: 100%;
+  min-height: 100vh;
+  top: 101px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.product-header-search-1 {
+  width: 255px;
+  height: 100%;
+}
+.text-product {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  height: 39px;
+}
+.text-discount {
+  font-size: 13px;
+  font-weight: 700;
+}

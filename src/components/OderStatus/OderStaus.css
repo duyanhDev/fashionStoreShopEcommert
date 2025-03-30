@@ -1,0 +1,22 @@
+.main_order {
+  position: relative;
+  margin-top: 118px;
+  min-height: 500px;
+  width: 100%;
+  background-color: #eee;
+}
+.main_ranking__status {
+  border-bottom: 1px solid #ccc;
+}
+
+.main_stack {
+  max-width: 1300px;
+  margin: auto;
+}
+.main_stack .item_products:nth-child(1) {
+  flex-basis: 25%;
+}
+.main_ul li {
+  text-align: center;
+  margin: auto;
+}

@@ -1,0 +1,292 @@
+.Details {
+  position: relative;
+  margin-top: 7rem;
+}
+
+.Details_main {
+  min-height: 650px;
+  width: 1300px;
+  margin: auto;
+  background: #fff;
+  border: 1px solid rgba(16, 16, 16, 0.1);
+  box-shadow: 0 0 4px rgba(16, 16, 16, 0.1);
+  border-radius: 8px;
+  margin-top: 30px;
+}
+
+.Details .Details_main .swiper-slide img {
+  width: 100%;
+  height: 100%;
+  -o-object-fit: cover;
+  object-fit: cover;
+  width: 450px;
+  height: 450px;
+  border-radius: 5px;
+}
+
+.Details .swiper-button-prev:after {
+  color: #6756ca;
+}
+
+.Details .swiper-button-next:after {
+  color: #6756ca !important;
+}
+
+.Details
+  .Details_main
+  .swiper.swiper-initialized.swiper-horizontal.swiper-free-mode.swiper-watch-progress.swiper-backface-hidden.mySwiper {
+  width: 300px;
+  display: flex;
+  margin: auto;
+  display: flex;
+  justify-self: center;
+}
+
+.Details
+  .Details_main
+  .swiper.swiper-initialized.swiper-horizontal.swiper-free-mode.swiper-watch-progress.swiper-backface-hidden.mySwiper.swiper-thumbs {
+  display: block;
+  height: 50px;
+  position: relative;
+  top: -90px;
+  left: 10px;
+  margin: auto;
+  border: 1px solid #fff;
+}
+
+.Details
+  .Details_main
+  .swiper.swiper-initialized.swiper-horizontal.swiper-free-mode.swiper-watch-progress.swiper-backface-hidden.mySwiper
+  img {
+  width: 50px;
+  height: 250px !important;
+}
+
+.Details .Details_main .swiper-button-prev {
+  left: 175px !important;
+  /* Corrected from invalid '175x' */
+  right: auto;
+  width: 30px;
+}
+
+/* Adjust positioning of the next button */
+.Details .Details_main .swiper-button-next {
+  right: 175px !important;
+  left: auto;
+}
+
+.Details .doisi_detail__main {
+  border-left: 1px solid #ccc;
+}
+
+/* Styling for the thumbnails swiper */
+
+/* Media query for smaller screens (max-width: 768px) */
+@media screen and (max-width: 768px) {
+  .Details_main {
+    width: 100%;
+    height: auto;
+  }
+
+  .swiper-button-prev,
+  .swiper-button-next {
+    left: 50px;
+    /* Adjust button position for smaller screens */
+    right: auto;
+  }
+}
+
+.text-pink-gradient {
+  background: linear-gradient(135deg, #ed55c7, #6756ca);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 14px;
+  line-height: 150%;
+}
+
+.Details .color_black {
+  width: 30px;
+  height: 30px;
+  border-radius: 100%;
+  background-color: black;
+}
+
+.Details .color_white {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid #e0e0e0;
+  /* Light grey border */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.Details .color_red {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: rgb(255, 0, 0);
+}
+
+.color_yellor {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: yellow;
+}
+
+.colorBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid #ed55c7;
+}
+
+.number-input-group {
+  width: 100px;
+  height: 34px;
+  border: 1px solid #333;
+  border-radius: 10px;
+}
+
+.img_cart {
+  width: 100px;
+  height: 100px;
+}
+
+.Details button:focus {
+  outline: none;
+}
+
+/* Điều chỉnh kích thước khung thông báo */
+
+:where(.css-dev-only-do-not-override-apn68).ant-notification
+  .ant-notification-notice-wrapper
+  .ant-notification-notice {
+  padding: 19px 24px;
+  width: 309px;
+  max-width: calc(100vw - 48px);
+  overflow: hidden;
+  line-height: 1.5714285714285714;
+}
+
+.feedback {
+  width: 1300px;
+  background-color: #f8f8f8;
+  margin: auto;
+  margin-top: 30px;
+  display: flex;
+}
+
+.feedback .star {
+  background-color: #f1f1f1;
+  border-radius: 10px;
+  padding: 20px;
+  height: 200px;
+}
+
+/* Media query for very small screens (max-width: 480px) */
+@media screen and (max-width: 480px) {
+  .Details_main {
+    width: 90%;
+    height: auto;
+  }
+
+  .swiper-button-prev,
+  .swiper-button-next {
+    left: 20px;
+    right: auto;
+  }
+}
+
+.pagination {
+  display: flex;
+  list-style: none;
+  gap: 8px;
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.pagination li {
+  cursor: pointer;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.pagination li.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+/* Media query for medium-sized screens (769px to 1200px) */
+@media screen and (min-width: 769px) and (max-width: 1200px) {
+  .Details_main {
+    width: 100%;
+    height: auto;
+  }
+
+  .swiper-button-prev,
+  .swiper-button-next {
+    left: 100px;
+    right: auto;
+  }
+}
+
+.size-selector {
+  display: flex;
+  gap: 10px; /* Khoảng cách giữa các nút */
+}
+
+.size-button {
+  padding: 10px 20px; /* Kích thước nút */
+  border: none;
+  background-color: #e0e0e0; /* Màu nền */
+  border-radius: 20px; /* Bo tròn góc */
+  cursor: pointer;
+  font-size: 16px; /* Kích thước chữ */
+  color: #000; /* Màu chữ */
+  font-weight: bold;
+  transition: background-color 0.3s ease; /* Hiệu ứng mượt khi hover */
+}
+
+.size-button:hover:not(.disabled) {
+  background-color: #d6d6d6; /* Màu khi hover */
+}
+
+.size-button.selected {
+  background-color: #000; /* Màu khi được chọn */
+  color: #fff; /* Màu chữ khi được chọn */
+}
+
+.size-button.disabled {
+  background-color: #f5f5f5; /* Màu khi bị vô hiệu hóa */
+  color: #aaa; /* Màu chữ khi bị vô hiệu hóa */
+  cursor: not-allowed;
+}
+
+img.feedback_images {
+  width: 120px;
+  height: auto;
+  border-radius: 10px;
+  margin-left: 17px;
+}
+.feedback_div {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  max-width: 250px;
+}
+.comment_users {
+  background: #ffff;
+  margin: 20px;
+  padding: 20px;
+  border-radius: 15px;
+}
+
+/* .comment_users span.anticon.anticon-star {
+  color: #000000;
+} */
+.time_span {
+  color: rgb(163 163 163 / 1);
+}

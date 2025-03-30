@@ -1,0 +1,344 @@
+.colletion {
+  margin: 20px 60px;
+  min-height: 100vh;
+}
+
+.colletion .colletion_left {
+  max-width: 305px;
+  /* width: 100%; */
+}
+
+.colletion_left::-webkit-scrollbar {
+  width: 8px;
+  /* Độ rộng của thanh cuộn */
+}
+
+.colletion_left::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  /* Màu thanh trượt */
+  border-radius: 4px;
+  /* Làm tròn thanh trượt */
+}
+
+.colletion_left::-webkit-scrollbar-track {
+  background: transparent;
+  /* Nền phía sau thanh trượt */
+}
+
+.ant-radio-group.ant-radio-group-outline.mr-5.css-dev-only-do-not-override-apn68 {
+  margin-left: -23px;
+}
+
+.colletion_left h1 {
+  color: #a3a3a3;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+:where(.css-dev-only-do-not-override-apn68).ant-radio-wrapper .ant-radio-inner {
+  box-sizing: border-box;
+  position: relative;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  display: block;
+  width: 20px;
+  height: 20px;
+  background-color: #ffffff;
+  border-color: #d9d9d9;
+  border-style: solid;
+  border-width: 1px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.colletion .size_products {
+  list-style: none;
+  position: relative;
+  margin: 5px;
+  cursor: pointer;
+  width: 57.45px;
+  height: 38.6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+
+/* Ẩn checkbox */
+.colletion input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Định dạng cho span */
+.colletion .size_products span {
+  text-align: center;
+  font-size: 14px;
+}
+
+/* Hiệu ứng hover */
+.colletion .size_products:hover {
+  background-color: #f0f0f0;
+}
+
+.colletion .collection_size label {
+  width: 100%;
+  text-align: center;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Hiệu ứng khi checkbox được chọn */
+.colletion input[type="checkbox"]:checked + label {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  background-color: #007bff;
+  /* Màu xanh */
+  color: white;
+  /* Màu chữ */
+  border-radius: 4px;
+}
+
+.filter-select-color__item-list.flex.justify-center {
+  padding: 5px;
+}
+
+.filter-select-color__item-list input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.filter-select-color_button {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  background-color: rgb(252, 222, 112);
+  border-radius: 50%;
+}
+
+.filter-select-green {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  background-color: rgb(85, 124, 86);
+  border-radius: 50%;
+}
+
+.filter-select-black {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  background-color: rgb(0, 0, 0);
+  border-radius: 50%;
+}
+
+.filter-select-red {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  background-color: rgb(206, 13, 13);
+  border-radius: 50%;
+}
+
+.filter-select-white {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  background-color: rgb(246, 246, 246);
+  border-radius: 50%;
+  border: 1px solid #333;
+}
+
+.filter-select-color__item-list
+  input[type="radio"]:checked
+  + label
+  .filter-select-color_button::before,
+.filter-select-color__item-list
+  input[type="radio"]:checked
+  + label
+  .filter-select-black::before,
+.filter-select-color__item-list
+  input[type="radio"]:checked
+  + label
+  .filter-select-red::before,
+.filter-select-color__item-list
+  input[type="radio"]:checked
+  + label
+  .filter-select-white::before,
+.filter-select-color__item-list
+  input[type="radio"]:checked
+  + label
+  .filter-select-green::before,
+.filter-select-color__item-list
+  input[type="radio"]:checked
+  + label
+  .filter-select-white::before {
+  position: absolute;
+  content: "";
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid #2f5acf;
+  border-radius: 50%;
+  content: "";
+  height: 32px;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+}
+
+/* Đổi màu của track (đường chạy) */
+.ant-slider-track {
+  background-color: black !important;
+}
+
+/* Đổi màu của handle (nút kéo) */
+.ant-slider-handle {
+  border-color: black !important;
+}
+
+/* Đổi màu khi nút kéo được chọn */
+.ant-slider-handle:focus,
+.ant-slider-handle:hover,
+.ant-slider-handle:active {
+  border-color: black !important;
+  box-shadow: 0 0 0 5px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Đổi màu của rail (đường phía sau) */
+.ant-slider-rail {
+  background-color: #ccc !important;
+  /* Hoặc màu tùy ý */
+}
+
+.ant-slider-mark-text:nth-child(2) {
+  right: 0% !important;
+  left: auto !important;
+
+  transform: translateX(-50%);
+}
+
+.increase {
+  margin-left: -80px;
+}
+
+.img_male {
+  width: 120px;
+  height: 156px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+li.male_clothing {
+  padding: 10px 20px;
+  cursor: pointer;
+  text-wrap: nowrap;
+}
+
+li.male_clothing span {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.main_product_male {
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 2px 11px hsla(0, 3%, 7%, 0.1) !important;
+  background: #fff;
+  border-radius: 5px;
+  position: relative;
+  width: 216px;
+  min-height: 320px;
+}
+
+.male_left {
+  margin-left: 42px;
+}
+
+.main_product_male_h1 {
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  color: #000;
+  display: -webkit-box;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: normal;
+  overflow: hidden;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  transition: all 0.2s ease-in-out;
+  word-break: break-all !important;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+.percent {
+  position: absolute;
+  align-items: center;
+  background: #eb5757;
+  border-radius: 0 3px 3px 3px;
+  color: #fff;
+  display: flex;
+  font-family: Roboto;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+  height: 35.76px;
+  justify-content: center;
+  letter-spacing: 0.3px;
+  line-height: 14px;
+  width: 35.76px;
+  z-index: 9;
+  top: -10px;
+  right: 10px;
+}
+
+.percent:after {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 0;
+  height: 0;
+  top: 1.75px;
+  left: -8.5px;
+  border-bottom: 7px solid #eb5757;
+  border-right: 11px solid transparent;
+  transform: rotate(-90deg);
+}
+
+.image_product_gender {
+  object-fit: cover;
+  width: 216px;
+  height: 216px;
+}
+
+.sort_products {
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 2px 2px 11px hsla(0, 3%, 7%, 0.1);
+  padding: 16px;
+  top: 100%;
+  width: 165px;
+}
+
+.sort_products li {
+  padding: 10px;
+  cursor: pointer;
+}
+
+:where(.css-dev-only-do-not-override-apn68).ant-rate
+  .ant-rate-star:not(:last-child) {
+  margin-inline-end: 3px;
+}

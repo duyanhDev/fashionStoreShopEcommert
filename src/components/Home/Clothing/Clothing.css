@@ -1,0 +1,48 @@
+.content_dosin {
+  width: 250.9px;
+  height: 400px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.item_content {
+  margin-top: 5px;
+  margin-left: 10px;
+}
+.pagination {
+  display: flex;
+  justify-content: end;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.pagination li {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  width: 32px;
+  height: 32px;
+  border-color: #1677ff;
+}
+.pagination li a {
+  width: 100%;
+  text-align: center;
+  border-radius: 6px;
+}
+.pagination li svg {
+  margin-left: -5px;
+}
+@media (max-width: 390px) {
+  .content_dosin {
+    width: 170.9px;
+  }
+}
+
+@media (min-width: 390px) and (max-width: 789px) {
+  .col {
+    /* CSS styles cho col */
+  }
+  .content_dosin {
+    width: 189.9px;
+  }
+}
