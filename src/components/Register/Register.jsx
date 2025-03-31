@@ -1,4 +1,4 @@
-import { Button, Modal } from "antd";
+import { Button, Modal, message } from "antd";
 import Input from "antd/es/input/Input";
 import { useState } from "react";
 import { RegisterUser } from "../../service/Auth";
@@ -15,6 +15,10 @@ const Register = ({ modal2Open, setModal2Open }) => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+
+  const validateEmail = (email) => {
+    return /\S+@\S+\.\S+/.test(email);
+  };
 
   const handlePasswordChange = (e) => {
     setPassword(e.target.value);
@@ -62,13 +66,32 @@ const Register = ({ modal2Open, setModal2Open }) => {
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith("image/")) {
       setSelectedImage(file);
-
       const imageUrl = URL.createObjectURL(file);
       setPreviewUrl(imageUrl);
     }
   };
 
   const HandleRegister = async () => {
+    // Kiểm tra xem các trường đã được nhập chưa
+    if (!username || !email || !password || !confirmPassword) {
+      message.warning("Vui lòng nhập đầy đủ thông tin!");
+      return;
+    }
+
+    // Kiểm tra định dạng email
+    if (!validateEmail(email)) {
+      message.warning("Email không hợp lệ!");
+      return;
+    }
+
+    // Kiểm tra mật khẩu có khớp không
+    if (password !== confirmPassword) {
+      message.warning("Mật khẩu không khớp!");
+      return;
+    }
+
+    // Kiểm tra đã tải lên ảnh chưa
+
     try {
       let res = await RegisterUser(
         username,
@@ -77,15 +100,18 @@ const Register = ({ modal2Open, setModal2Open }) => {
         selectedImage,
         false
       );
-      if (res) {
-        console.log(res);
+
+      console.log(res);
+      if (res && res.data && res.data.EC === 0) {
+        message.success("Đăng ký thành công!");
+
+        setModal2Open(false); // Đóng modal sau khi đăng ký thành công
       }
     } catch (error) {
-      console.log(error);
+      message.error("Đăng ký thất bại! Vui lòng thử lại.");
+      console.error(error);
     }
   };
-  console.log(selectedImage);
-
   return (
     <div className="">
       <Modal
@@ -94,6 +120,11 @@ const Register = ({ modal2Open, setModal2Open }) => {
         open={modal2Open}
         onOk={() => setModal2Open(false)}
         onCancel={() => setModal2Open(false)}
+        footer={
+          <Button className="" onClick={() => HandleRegister()}>
+            Đăng Ký
+          </Button>
+        }
       >
         <div>
           <label id="email">Email</label>
@@ -130,7 +161,7 @@ const Register = ({ modal2Open, setModal2Open }) => {
             value={confirmPassword}
             onChange={handleConfirmPasswordChange}
           />
-          {error && <p style={{ color: "red" }}>{error}</p>}
+          {error === "" && <p style={{ color: "red" }}>{error}</p>}
         </div>
 
         <div className="max-w-md mx-auto p-4">
@@ -248,7 +279,6 @@ const Register = ({ modal2Open, setModal2Open }) => {
               </div>
             </div>
           )}
-          <Button onClick={() => HandleRegister()}>Đăng ký</Button>
         </div>
       </Modal>
     </div>

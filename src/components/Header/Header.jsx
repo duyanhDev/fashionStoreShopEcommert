@@ -22,7 +22,7 @@ import { searchProductsByNameAPI } from "../../service/ApiProduct";
 import { HiShoppingBag } from "react-icons/hi";
 import { MdDeleteForever } from "react-icons/md";
 import { debounce } from "lodash";
-import { FaCartArrowDown } from "react-icons/fa";
+import { FaCartArrowDown, FaUser } from "react-icons/fa";
 const Header = ({ user, ListCart, CartListProductsUser }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -381,15 +381,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
                 </a>
               </Dropdown>
             ) : (
-              <Dropdown
-                menu={{
-                  items,
-                }}
-              >
-                <a onClick={(e) => e.preventDefault()}>
-                  <Avatar />
-                </a>
-              </Dropdown>
+              <FaUser size={25} onClick={handleLogOut} />
             )}
           </li>
         </ul>
