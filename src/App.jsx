@@ -97,7 +97,8 @@ function App() {
         />
         <div className="nav_menu flex justify-center items-center gap-3">
           <ul className="flex gap-10">
-            <li className="product_hover">
+            {/* product_hover */}
+            <li className="">
               <Link to="/category/unisex" className="">
                 Sản phẩm
               </Link>
@@ -240,7 +241,7 @@ function App() {
               </div>
             </li>
 
-            <li className="product_hover">
+            <li className="">
               <Link to={"category/male"}>Nam</Link>
               <div className="absolute mt-3 w-full hover_item m-auto flex  ">
                 <div className="flex flex-1 justify-between  border-r-2  border-black short_fitter ">
@@ -379,19 +380,19 @@ function App() {
                 </div>
               </div>
             </li>
-            <li className="product_hover">
+            <li className="">
               <Link to="category/female">Nữ</Link>
             </li>
             <li>
               <Link>Phụ kiện</Link>
             </li>
-            <li>
+            <li className="name_product_app">
               <Link>Thương hiệu</Link>
             </li>
-            <li>
+            <li className="name_product_app">
               <Link to="/ranking">Xếp hạng</Link>
             </li>
-            <li>
+            <li className="name_product_app">
               <Link to="/blog">Blog</Link>
             </li>
           </ul>

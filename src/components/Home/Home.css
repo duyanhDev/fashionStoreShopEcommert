@@ -153,3 +153,16 @@
     margin-right: 0 !important;
   }
 }
+
+@media (min-width: 365px) and (max-width: 667px) {
+  .dosin_home_hc {
+    margin: 0 10px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .doisin_hc_item {
+    width: 170px;
+    margin: auto;
+    gap: 1px;
+  }
+}

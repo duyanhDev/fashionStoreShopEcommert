@@ -1,4 +1,4 @@
-import { Card, Skeleton } from "antd";
+import { Button, Card, Skeleton } from "antd";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "./Home.css";
 // Import Swiper styles
@@ -67,7 +67,7 @@ const Home = () => {
           </h1>
           <div className="title_line relative w-10  "></div>
         </div>
-        <div className="flex flex-wrap  items-center gap-2 mt-4">
+        <div className="dosin_home_hc flex flex-wrap  items-center gap-2 mt-4">
           <div
             className="doisin_hc_item flex flex-col items-center justify-center cursor-pointer"
             data-aos="zoom-in-up"
@@ -230,58 +230,56 @@ const Home = () => {
                 ))
               : ListProducts &&
                 ListProducts.length > 0 &&
-                ListProducts.map((item) => (
-                  <SwiperSlide
-                    key={item._id}
-                    onClick={() => handleDetails(item._id)}
-                    className="w-full"
-                  >
-                    <Card
-                      hoverable
-                      className="w-full"
-                      cover={
-                        <div className="hover_children">
-                          <img
-                            className="w-full h-64 object-cover"
-                            alt="example"
-                            src={item.variants[0]?.images[0]?.url}
-                          />
-                          <div className="p-2 h-20 size g-2 hover">
-                            <p className="font-bold text-[#000]">
-                              Thêm vào giỏ hàng
-                            </p>
+                ListProducts.map((item) => {
+                  console.log(item);
+
+                  return (
+                    <SwiperSlide key={item._id} className="w-full">
+                      <Card
+                        hoverable
+                        className="w-full"
+                        cover={
+                          <div className="hover_children">
+                            <img
+                              className="w-full h-64 object-cover"
+                              alt="example"
+                              src={item.variants[0]?.images[0]?.url}
+                            />
                           </div>
-                        </div>
-                      }
-                    >
-                      <div className="discount">
-                        <p className="text-[#111] font-semibold p-1">
-                          {item.brand}
-                        </p>
+                        }
+                      >
                         <div
-                          className="item_content"
-                          style={{ maxWidth: "200px" }}
+                          className="discount"
+                          onClick={() => handleDetails(item._id)}
                         >
-                          <span className="whitespace-nowrap overflow-hidden text-ellipsis block">
-                            {item.name}
+                          <p className="text-[#111] font-semibold p-1">
+                            {item.brand}
+                          </p>
+                          <div
+                            className="item_content"
+                            style={{ maxWidth: "200px" }}
+                          >
+                            <span className="whitespace-nowrap overflow-hidden text-ellipsis block">
+                              {item.name}
+                            </span>
+                          </div>
+                          <span className="line-through text-[#222] opacity-60 p-1">
+                            {item.discount ? (
+                              <span>{formatPrice(item.costPrice)}</span>
+                            ) : (
+                              ""
+                            )}
+                          </span>
+                          <span className="px-3">
+                            {item.discountedPrice
+                              ? formatPrice(item.discountedPrice)
+                              : formatPrice(item.costPrice)}
                           </span>
                         </div>
-                        <span className="line-through text-[#222] opacity-60 p-1">
-                          {item.discount ? (
-                            <span>{formatPrice(item.costPrice)}</span>
-                          ) : (
-                            ""
-                          )}
-                        </span>
-                        <span className="px-3">
-                          {item.discountedPrice
-                            ? formatPrice(item.discountedPrice)
-                            : formatPrice(item.costPrice)}
-                        </span>
-                      </div>
-                    </Card>
-                  </SwiperSlide>
-                ))}
+                      </Card>
+                    </SwiperSlide>
+                  );
+                })}
           </Swiper>
         </div>
         <div className=" mt-4">

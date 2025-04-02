@@ -1,6 +1,6 @@
 .content_dosin {
   width: 250.9px;
-  height: 400px;
+  height: 410px;
   border: 1px solid #ccc;
   border-radius: 5px;
 }
@@ -32,17 +32,21 @@
 .pagination li svg {
   margin-left: -5px;
 }
-@media (max-width: 390px) {
+
+@media (min-width: 375px) and (max-width: 389px) {
   .content_dosin {
-    width: 170.9px;
+    width: 175.9px;
   }
 }
 
-@media (min-width: 390px) and (max-width: 789px) {
-  .col {
-    /* CSS styles cho col */
-  }
+@media (min-width: 390px) and (max-width: 429px) {
   .content_dosin {
-    width: 189.9px;
+    width: 180px;
+  }
+}
+
+@media (min-width: 430px) and (max-width: 932px) {
+  .content_dosin {
+    width: 200px;
   }
 }

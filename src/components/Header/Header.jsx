@@ -233,7 +233,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
 
   const btnHandleChangeSearch = () => {
     setOpenSearch(false);
-    console.log(keywordSearch);
 
     const keyword = keywordSearch.trim();
     if (!keyword) {
@@ -289,17 +288,17 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
       // message.error('Cập nhật số lượng thất bại');
     }
   };
-  const debouncedUpdate = debounce(handleUpdateQuantity, 500, {
+  const debouncedUpdate = debounce(handleUpdateQuantity, 10, {
     leading: false, // Không gọi ngay lần đầu
     trailing: true, // Chỉ gọi sau khi ngừng click 500ms
   });
 
   return (
-    <div className="w-full flex justify-between items-center h-full m-auto">
+    <div className="header_main_dosin w-full flex justify-between items-center h-full m-auto">
       <div className="flex items-center doin_image">
         <ul className="flex items-center justify-between">
           <li className="px-5">
-            <Link to="/">
+            <Link to="/" className="image_logo">
               <img
                 src="https://dosi-in.com/images/assets/icons/logo.svg"
                 alt="Logo"
@@ -309,10 +308,9 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
           <li>
             <Link className="text_shop text-xl">Shopping</Link>
           </li>
-          <li className="px-5 text-xl">Style</li>
         </ul>
       </div>
-      <div className="input relative flex items-center">
+      <div className="input_search_item input relative flex items-center">
         <input
           type="text"
           placeholder="Tìm kiếm sản phẩm"
@@ -343,7 +341,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
         />
       </div>
       <div className="w-3/12 flex justify-between doin_right px-5">
-        <ul className="flex justify-end w-full">
+        <ul className="dosin_right_items flex justify-end w-full items-center">
           <li className="px-5 relative" onClick={handleShowNocations}>
             <IoNotificationsOutline size={30} />
             {unreadNotifications && unreadNotifications.length > 0 ? (
@@ -371,6 +369,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
                 menu={{
                   items,
                 }}
+                trigger={["click"]}
               >
                 <a onClick={(e) => e.preventDefault()}>
                   <img
@@ -415,8 +414,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
           </div>
           {ListCart && ListCart.items && ListCart.items.length > 0 ? (
             ListCart.items.map((cart, index) => {
-              console.log(cart);
-
               return (
                 <div
                   className="item_list_cart_total flex items-center"

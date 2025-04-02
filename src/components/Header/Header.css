@@ -180,3 +180,37 @@
   transform: scale(1.1);
   transition: transform 0.3s ease-in-out;
 }
+
+@media screen and (min-width: 365px) and (max-width: 667px) {
+  ul.ant-dropdown-menu.ant-dropdown-menu-root.ant-dropdown-menu-vertical.ant-dropdown-menu-light.css-dev-only-do-not-override-apn68 {
+    margin-right: 70px;
+    margin-top: -61px;
+  }
+
+  .header_main_dosin {
+    justify-content: space-between;
+  }
+  .header_main_dosin .doin_image .image_logo {
+    padding: 50px;
+  }
+  .input_search_item {
+    display: none;
+  }
+  .header_main_dosin a.ant-dropdown-trigger {
+    padding: 50px;
+  }
+  .doin_right {
+    width: 50%;
+  }
+
+  .doin_right li {
+    padding: 10px;
+  }
+  .doin_right li .cart_items {
+    margin-top: 10px;
+    margin-right: -6px;
+  }
+  .header_main_dosin .dosin_right_items {
+    margin-left: 40px;
+  }
+}
