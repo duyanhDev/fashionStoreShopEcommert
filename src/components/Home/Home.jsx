@@ -1,4 +1,4 @@
-import { Button, Card, Skeleton } from "antd";
+import { Button, Card, Flex, Rate, Skeleton } from "antd";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "./Home.css";
 // Import Swiper styles
@@ -16,10 +16,20 @@ import logo from "./../../assets/Image/Home/Dosin.png";
 import Unisex from "./../../assets/Image/Home/Unisex.png";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import ProductCart from "../ProductCart/ProductCart";
+
 const Home = () => {
   const { ListProducts } = useOutletContext();
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const desc = ["terrible", "bad", "normal", "good", "wonderful"];
+  const [ratings, setRatings] = useState({});
+  const [modalCartOpen, setModalCartOpen] = useState(false);
+  const [IdProduct, setIdProducts] = useState("");
+  const [listItems, setListItems] = useState();
+  const [price, setPrice] = useState(0);
+  const [costPrice, setCostPrice] = useState(0);
+
   const formatPrice = (price) => {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
   };
@@ -47,15 +57,21 @@ const Home = () => {
     navigate(`product/${id}`);
   };
 
-  const Image = ListProducts.map((item) => {
-    return item.variants.map((product) => product.images[0].url);
-  });
+  const handelModelProductCart = (id, items, price, costPrice) => {
+    setIdProducts(id);
+    setListItems(items);
+    setPrice(price);
+    setCostPrice(costPrice);
+    setModalCartOpen(true);
+  };
+
   useEffect(() => {
     AOS.init({
       duration: 1000, // Thời gian hiệu ứng (ms)
       once: true, // Hiệu ứng chỉ chạy một lần khi scroll
     });
   }, []);
+
   return (
     <>
       <SliderComponent />
@@ -179,15 +195,6 @@ const Home = () => {
         </div>
         <div className="m-3">
           <h1 className=" text-xl font-bold h1_main">SẢN PHẨM NỔI BẬT</h1>
-          {/* <div className="">
-          <ul className="flex items-center gap-4">
-            <li>ÁO</li>
-            <li>QUẦN</li>
-            <li>GIÀY</li>
-            <li>MŨ</li>
-            <li>DÉP</li>
-          </ul>
-        </div> */}
         </div>
         <div className="flex gap-5 mx-4 category_main">
           <Swiper
@@ -231,56 +238,117 @@ const Home = () => {
               : ListProducts &&
                 ListProducts.length > 0 &&
                 ListProducts.map((item) => {
-                  console.log(item);
-
                   return (
                     <SwiperSlide key={item._id} className="w-full">
-                      <Card
-                        hoverable
-                        className="w-full"
-                        cover={
-                          <div className="hover_children">
-                            <img
-                              className="w-full h-64 object-cover"
-                              alt="example"
-                              src={item.variants[0]?.images[0]?.url}
-                            />
+                      <div className="product-card rounded-xl overflow-hidden bg-white shadow-md hover:shadow-xl transition-all duration-300">
+                        <div className="relative">
+                          <img
+                            className="w-full h-48 object-cover transition-transform duration-500 hover:scale-105"
+                            src={
+                              item.variants[0]?.images[0]?.url ||
+                              "/default-image.jpg"
+                            }
+                            alt={item.name}
+                          />
+                          {typeof item.discount !== "undefined" && (
+                            <span className="absolute top-2 right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                              -{item.discount || 0}%
+                            </span>
+                          )}
+                          <div className="absolute bottom-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <button className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 text-gray-600"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                                />
+                              </svg>
+                            </button>
+                            <button
+                              className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
+                              onClick={() =>
+                                handelModelProductCart(
+                                  item._id,
+                                  item.variants,
+                                  item.price,
+                                  item.costPrice
+                                )
+                              }
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 text-gray-600"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                                />
+                              </svg>
+                            </button>
                           </div>
-                        }
-                      >
+                        </div>
                         <div
-                          className="discount"
+                          className="p-3"
                           onClick={() => handleDetails(item._id)}
                         >
-                          <p className="text-[#111] font-semibold p-1">
+                          <p className="text-xs text-gray-600 uppercase tracking-wider font-medium">
                             {item.brand}
                           </p>
-                          <div
-                            className="item_content"
-                            style={{ maxWidth: "200px" }}
-                          >
-                            <span className="whitespace-nowrap overflow-hidden text-ellipsis block">
-                              {item.name}
-                            </span>
+                          <h3 className="text-sm font-semibold text-gray-900 line-clamp-1 mt-1">
+                            {item.name}
+                          </h3>
+                          <div className="mt-2 flex items-center justify-between">
+                            <div>
+                              <span className="text-base font-bold text-red-600">
+                                {formatPrice(
+                                  item.discountedPrice ||
+                                    item.costPrice ||
+                                    item.price
+                                )}
+                              </span>
+
+                              {item.discount > 0 && (
+                                <span className="text-xs  text-gray-500 line-through ml-2">
+                                  {formatPrice(item.costPrice)}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <span className="line-through text-[#222] opacity-60 p-1">
-                            {item.discount ? (
-                              <span>{formatPrice(item.costPrice)}</span>
-                            ) : (
-                              ""
-                            )}
-                          </span>
-                          <span className="px-3">
-                            {item.discountedPrice
-                              ? formatPrice(item.discountedPrice)
-                              : formatPrice(item.costPrice)}
-                          </span>
+                          <Flex className="mt-2">
+                            <Rate
+                              tooltips={desc}
+                              onChange={(value) => handleRate(item._id, value)}
+                              value={ratings[item._id] || 0}
+                              className="text-yellow-400"
+                            />
+                          </Flex>
                         </div>
-                      </Card>
+                      </div>
                     </SwiperSlide>
                   );
                 })}
           </Swiper>
+          <ProductCart
+            modalCartOpen={modalCartOpen}
+            setModalCartOpen={setModalCartOpen}
+            IdProduct={IdProduct}
+            listItems={listItems}
+            price={price}
+            costPrice={costPrice}
+          />
         </div>
         <div className=" mt-4">
           <h1 className="ml-4 mt-3 text-xl font-bold">TẤT CẢ SẢN PHẨM</h1>

@@ -1,0 +1,61 @@
+.modal-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.product-image {
+  width: 45%;
+  position: relative;
+}
+
+.product-info {
+  width: 55%;
+}
+
+.thumbnail-container img {
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.thumbnail-container img.active {
+  border-color: green;
+}
+
+.color-options div {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.size-options button {
+  padding: 5px 15px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.quantity-selector {
+  display: flex;
+  border: 1px solid #ccc;
+  width: 100px;
+}
+
+.quantity-selector button {
+  padding: 5px;
+  border: none;
+  cursor: pointer;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.action-buttons button {
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+}
