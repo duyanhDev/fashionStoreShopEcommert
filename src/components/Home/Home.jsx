@@ -29,6 +29,8 @@ const Home = () => {
   const [listItems, setListItems] = useState();
   const [price, setPrice] = useState(0);
   const [costPrice, setCostPrice] = useState(0);
+  const [productname, setProductname] = useState("");
+  const [discount, setDiscount] = useState(0);
 
   const formatPrice = (price) => {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
@@ -57,12 +59,21 @@ const Home = () => {
     navigate(`product/${id}`);
   };
 
-  const handelModelProductCart = (id, items, price, costPrice) => {
+  const handelModelProductCart = (
+    id,
+    items,
+    price,
+    costPrice,
+    name,
+    discount
+  ) => {
     setIdProducts(id);
     setListItems(items);
     setPrice(price);
     setCostPrice(costPrice);
     setModalCartOpen(true);
+    setProductname(name);
+    setDiscount(discount);
   };
 
   useEffect(() => {
@@ -279,7 +290,9 @@ const Home = () => {
                                   item._id,
                                   item.variants,
                                   item.price,
-                                  item.costPrice
+                                  item.discountedPrice,
+                                  item.name,
+                                  item.discount
                                 )
                               }
                             >
@@ -348,6 +361,8 @@ const Home = () => {
             listItems={listItems}
             price={price}
             costPrice={costPrice}
+            productname={productname}
+            discount={discount}
           />
         </div>
         <div className=" mt-4">

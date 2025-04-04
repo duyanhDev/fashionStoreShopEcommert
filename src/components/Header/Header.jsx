@@ -5,7 +5,6 @@ import {
   IoNotificationsOutline,
   IoCartOutline,
 } from "react-icons/io5";
-import Avatar from "antd/es/avatar/avatar";
 import { Dropdown, Button, Drawer, Modal } from "antd";
 import { LogoutOutlined, SettingOutlined } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
@@ -23,6 +22,7 @@ import { HiShoppingBag } from "react-icons/hi";
 import { MdDeleteForever } from "react-icons/md";
 import { debounce } from "lodash";
 import { FaCartArrowDown, FaUser } from "react-icons/fa";
+
 const Header = ({ user, ListCart, CartListProductsUser }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -47,8 +47,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
   const showLoading = () => {
     setOpen(true);
     setLoading(true);
-
-    // Simple loading mock. You should add cleanup logic in real world.
     setTimeout(() => {
       setLoading(false);
     }, 2000);
@@ -57,7 +55,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
   const items = [
     {
       key: "1",
-      label: user?.name || "My name", // Safely access user.name with optional chaining
+      label: user?.name || "My name",
       disabled: true,
     },
     {
@@ -68,44 +66,50 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
       label: "Profile",
       extra: "⌘P",
       onClick: () => {
-        navigate(`/profile/${user.name}`);
+        navigate(`/profile/${user?.name || ""}`);
       },
     },
-    user && {
-      key: "3",
-      label: `Đơn hàng`,
-      extra: "⌘B",
-      onClick: () => navigate("/order"),
-    },
-
+    ...(user
+      ? [
+          {
+            key: "3",
+            label: "Đơn hàng",
+            extra: "⌘B",
+            onClick: () => navigate("/order"),
+          },
+        ]
+      : []),
     {
       key: "4",
       label: "Settings",
       icon: <SettingOutlined />,
       extra: "⌘S",
     },
-    user &&
-      user.isAdmin === true && {
-        key: "4",
-        label: "Admin",
-        icon: <SettingOutlined />,
-        extra: "⌘S",
-        onClick: () => {
-          navigate("/admin");
-        },
-      },
-
+    ...(user && user.isAdmin
+      ? [
+          {
+            key: "5",
+            label: "Admin",
+            icon: <SettingOutlined />,
+            extra: "⌘S",
+            onClick: () => {
+              navigate("/admin");
+            },
+          },
+        ]
+      : []),
     {
-      key: "5",
+      key: "6",
       label: user?.name ? "Đăng Xuất" : "Đăng Nhập",
       icon: <LogoutOutlined />,
       extra: "⌘S",
-      onClick: handleLogOut, // Move the onClick here
+      onClick: handleLogOut,
     },
-  ];
+  ].filter(Boolean);
+
   const formatPrice = (price) => {
     if (price === undefined || price === null) {
-      return "0đ"; // Fallback value or any other default handling
+      return "0đ";
     }
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
   };
@@ -114,7 +118,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
     try {
       setLoadingSpin(true);
       const res = await RemoveCartOnePorduct(ListCart._id, id, user._id);
-
       if (res.data) {
         setTimeout(() => {
           setLoadingSpin(false);
@@ -126,6 +129,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
       console.error("Error in handleRemoveCartProduct:", error);
     }
   };
+
   const handlePay = () => {
     setLoadingCart(true);
     try {
@@ -144,8 +148,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
   const handleShowNocations = () => {
     setShowHiden(true);
     setLoading(true);
-
-    // Simple loading mock. You should add cleanup logic in real world.
     setTimeout(() => {
       setLoading(false);
     }, 2000);
@@ -161,8 +163,10 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
   };
 
   useEffect(() => {
-    FetchDataNocatifionsAPI();
-  }, []);
+    if (user?._id) {
+      FetchDataNocatifionsAPI();
+    }
+  }, [user]);
 
   function formatTimeAgo(dateString) {
     const date = new Date(dateString);
@@ -192,7 +196,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
     try {
       navigate(`/orderstatus/${orderId}`);
       let res = await UpdateDataNocatifions(id);
-
       if (res && res.data && res.data.EC === 0) {
         FetchDataNocatifionsAPI();
         setShowHiden(false);
@@ -201,7 +204,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
       console.log(error);
     }
   };
-  // tìm kiếm
 
   const handleSearchProducts = () => {
     setOpenSearch(true);
@@ -229,24 +231,19 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
     }
   }, [keywordSearch]);
 
-  // tìm kiếm btn
-
   const btnHandleChangeSearch = () => {
     setOpenSearch(false);
-
     const keyword = keywordSearch.trim();
     if (!keyword) {
       console.error("Keyword is empty");
       return;
     }
-
-    // Điều hướng đến trang tìm kiếm và gọi dispatch
     navigate(`search?q=${keyword}`);
     dispatch(SearchAction(data, totalPage));
     setKeywordSearch("");
   };
 
-  const unreadNotifications = DataNotifications.filter(
+  const unreadNotifications = (DataNotifications || []).filter(
     (item) =>
       item.read === false && item.isCheck === false && item.isAdmin === false
   );
@@ -272,11 +269,8 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
         user._id,
         newQuantity
       );
-
       if (res.data && res.data.EC === 0) {
-        // Kiểm tra response từ API
-        // Không cần setTimeout, cập nhật ngay sau khi API thành công
-        CartListProductsUser(); // Refresh giỏ hàng
+        CartListProductsUser();
         setLoadingSpin(false);
       } else {
         throw new Error(res.data?.message || "Update failed");
@@ -284,14 +278,30 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
     } catch (error) {
       setLoadingSpin(false);
       console.error("Error updating quantity:", error);
-      // Có thể thêm thông báo lỗi cho người dùng
-      // message.error('Cập nhật số lượng thất bại');
     }
   };
-  const debouncedUpdate = debounce(handleUpdateQuantity, 10, {
-    leading: false, // Không gọi ngay lần đầu
-    trailing: true, // Chỉ gọi sau khi ngừng click 500ms
+
+  const debouncedUpdate = debounce(handleUpdateQuantity, 300, {
+    leading: false,
+    trailing: true,
   });
+
+  useEffect(() => {
+    return () => {
+      debouncedUpdate.cancel();
+    };
+  }, [debouncedUpdate]);
+
+  const debouncedFetchSearch = debounce(() => {
+    if (keywordSearch.trim()) {
+      FetchSearhProductsAPI();
+    }
+  }, 300);
+
+  useEffect(() => {
+    debouncedFetchSearch();
+    return () => debouncedFetchSearch.cancel();
+  }, [keywordSearch]);
 
   return (
     <div className="header_main_dosin w-full flex justify-between items-center h-full m-auto">
@@ -320,7 +330,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
           value={keywordSearch}
           onKeyDown={(e) => {
             if (e.key === "Enter" && keywordSearch.trim()) {
-              btnHandleChangeSearch(); // Gọi hàm tìm kiếm khi nhấn Enter
+              btnHandleChangeSearch();
             }
           }}
         />
@@ -354,15 +364,12 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
           </li>
           <li className="px-5 relative" onClick={showLoading}>
             <IoCartOutline size={30} />
-            {
-              ListCart && ListCart.items ? (
-                <span className="cart_items">{ListCart.items.length}</span>
-              ) : (
-                <span className="cart_items">0</span>
-              ) // Show 0 if ListCart is empty or undefined
-            }
+            {ListCart && ListCart.items ? (
+              <span className="cart_items">{ListCart.items.length}</span>
+            ) : (
+              <span className="cart_items">0</span>
+            )}
           </li>
-
           <li className="px-5">
             {user ? (
               <Dropdown
@@ -389,12 +396,12 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
             <div className="flex items-center gap-2">
               <HiShoppingBag className="cart_color_item text-green-600" />
               <span>
-                Hiện đang có{" "}
+                Hiện đang có
                 {ListCart && ListCart.items ? (
-                  <span className="">{ListCart.items.length}</span>
+                  <span className=""> {ListCart.items.length} </span>
                 ) : (
                   <span className="">0</span>
-                )}{" "}
+                )}
                 sản phẩm trong giỏ hàng
               </span>
             </div>
@@ -412,33 +419,34 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
             <span className="text-center">Số lượng</span>
             <span className="">Thành tiền</span>
           </div>
-          {ListCart && ListCart.items && ListCart.items.length > 0 ? (
-            ListCart.items.map((cart, index) => {
+          {ListCart?.items?.length > 0 ? (
+            ListCart.items.map((cart) => {
+              const imageUrl =
+                cart?.productId?.variants?.[0]?.images?.[0]?.url ||
+                "https://via.placeholder.com/100";
               return (
                 <div
                   className="item_list_cart_total flex items-center"
-                  key={index}
+                  key={cart._id}
                 >
                   <div>
                     <img
-                      src={cart.productId.variants[0]?.images[0]?.url}
-                      alt={cart.productId.name}
+                      src={imageUrl}
+                      alt={cart.productId?.name || "Product"}
                       width={100}
                     />
                   </div>
                   <div className="">
                     <span className="whitespace-nowrap">
-                      {cart.productId.name}
+                      {cart.productId?.name || "Unknown Product"}
                     </span>
                     <p className="uppercase">
-                      {cart.color} - {cart.size}
+                      {cart.color || "N/A"} - {cart.size || "N/A"}
                     </p>
-
                     <div className="flex items-center gap-5">
                       <span className="border-r-2 pr-4">
                         {formatPrice(cart.price)}
                       </span>
-
                       <MdDeleteForever
                         className="cursor-pointer"
                         size={20}
@@ -508,7 +516,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
             </div>
           )}
         </Modal>
-
         <Drawer
           closable
           destroyOnClose
@@ -529,17 +536,15 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
           </Button>
           {unreadNotifications && unreadNotifications.length > 0 ? (
             unreadNotifications.map((item) => (
-              <div>
+              <div key={item._id}>
                 <div
-                  className="border-b-2 p-1 cursor-pointer "
+                  className="border-b-2 p-1 cursor-pointer"
                   onClick={() => handleBtnNocafition(item._id, item.orderId)}
-                  key={item._id}
                 >
                   {item.message}
                   <div className="mt-1">{formatTimeAgo(item.createdAt)}</div>
-
                   {item.read === false && (
-                    <div className="w-3 h-3 bg-blue-600 rounded-full float-right -mt-4 "></div>
+                    <div className="w-3 h-3 bg-blue-600 rounded-full float-right -mt-4"></div>
                   )}
                 </div>
               </div>

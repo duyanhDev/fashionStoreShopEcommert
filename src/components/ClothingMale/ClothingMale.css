@@ -50,63 +50,67 @@
   border-radius: 50%;
   transition: all 0.2s;
 }
+/* ClothingMale.css */
 
-.colletion .size_products {
-  list-style: none;
-  position: relative;
-  margin: 5px;
-  cursor: pointer;
-  width: 57.45px;
-  height: 38.6px;
+/* Container chứa danh sách kích thước */
+.collection_size {
+  width: 100%; /* Đảm bảo container chiếm toàn bộ chiều rộng */
+  max-width: 208px; /* Giữ nguyên chiều rộng tối đa 208px (w-52) */
+}
+
+/* Danh sách kích thước */
+.collection_size ul {
   display: flex;
-  justify-content: center;
+  flex-wrap: wrap; /* Cho phép các ô xuống dòng */
+  gap: 8px; /* Khoảng cách giữa các ô */
+  padding: 0;
+  margin: 0;
+  list-style: none; /* Bỏ dấu đầu dòng của ul */
+}
+
+/* Mỗi ô kích thước */
+.size_products {
+  flex: 0 0 auto; /* Không co giãn, giữ kích thước cố định */
+  width: 40px; /* Chiều rộng cố định cho mỗi ô */
+  height: 40px; /* Chiều cao cố định cho mỗi ô */
+  display: flex;
   align-items: center;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+  justify-content: center;
+  border: 1px solid #d9d9d9; /* Viền nhẹ */
+  border-radius: 4px; /* Bo góc */
+  background: #fff; /* Màu nền trắng */
+  transition: all 0.3s ease; /* Hiệu ứng mượt mà */
 }
 
-/* Ẩn checkbox */
-.colletion input[type="checkbox"] {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
+/* Checkbox ẩn đi, chỉ hiển thị label */
+.size_products input[type="checkbox"] {
+  display: none; /* Ẩn checkbox mặc định */
 }
 
-/* Định dạng cho span */
-.colletion .size_products span {
-  text-align: center;
+/* Label của kích thước */
+.size_products label {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
   font-size: 14px;
+  color: #333;
+}
+
+/* Khi checkbox được chọn */
+.size_products input[type="checkbox"]:checked + label {
+  background: #1890ff; /* Màu nền khi được chọn (xanh dương) */
+  color: #fff; /* Màu chữ trắng */
+  border-color: #1890ff; /* Viền xanh */
 }
 
 /* Hiệu ứng hover */
-.colletion .size_products:hover {
-  background-color: #f0f0f0;
+.size_products:hover {
+  border-color: #1890ff; /* Viền xanh khi hover */
+  background: #f0f7ff; /* Màu nền nhạt khi hover */
 }
-
-.colletion .collection_size label {
-  width: 100%;
-  text-align: center;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* Hiệu ứng khi checkbox được chọn */
-.colletion input[type="checkbox"]:checked + label {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 100%;
-  background-color: #007bff;
-  /* Màu xanh */
-  color: white;
-  /* Màu chữ */
-  border-radius: 4px;
-}
-
 .filter-select-color__item-list.flex.justify-center {
   padding: 5px;
 }
@@ -267,7 +271,6 @@ li.male_clothing span {
 }
 
 .main_product_male_h1 {
-  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   color: #000;
   display: -webkit-box;
@@ -341,4 +344,37 @@ li.male_clothing span {
 :where(.css-dev-only-do-not-override-apn68).ant-rate
   .ant-rate-star:not(:last-child) {
   margin-inline-end: 3px;
+}
+
+@media (max-width: 480px) {
+  .sort_product_items {
+    margin: 0;
+  }
+  .home_item_products {
+    padding: 0;
+    width: 100%;
+  }
+  .home_item_products .home_item_products_div h1 {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .flex.items-center.gap-3.home_item_products_div {
+    margin-left: 35px;
+  }
+  li.male_clothing {
+    padding: 5px 10px;
+    cursor: pointer;
+    text-wrap: nowrap;
+  }
+  .colletion_left {
+    display: none;
+  }
+  .flex.colletion {
+    width: 100%;
+    margin: auto;
+  }
+
+  .male_left {
+    margin-left: 0px;
+  }
 }

@@ -14,7 +14,9 @@ const ClothingMale = () => {
   const navigate = useNavigate(); // Fixed: lowercase navigate
   const dispatch = useDispatch();
 
-  console.log(param);
+  const desc = ["terrible", "bad", "normal", "good", "wonderful"];
+
+  const [ratings, setRatings] = useState({});
 
   const [hidden, setHidden] = useState(false);
   const [checkFilter, setCheckFilter] = useState(false);
@@ -236,10 +238,10 @@ const ClothingMale = () => {
 
   const SkeletonCard = () => (
     <Card
-      style={{ width: 200.8 }}
+      style={{ width: 260, marginLeft: "2px" }}
       cover={<Skeleton.Image active style={{ width: "100%", height: 200 }} />}
     >
-      <Skeleton active paragraph={{ rows: 5 }} />
+      <Skeleton active paragraph={{ rows: 6 }} />
     </Card>
   );
 
@@ -414,7 +416,7 @@ const ClothingMale = () => {
           </div>
         </div>
         <div className="colletion_right flex-1">
-          <div className="w-full flex justify-between items-center px-10">
+          <div className="home_item_products w-full flex justify-between items-center px-10 ">
             <div className="flex items-center gap-3">
               <Link>
                 <h1 className="text-[#a3a3a3]">Trang chủ</h1>
@@ -426,7 +428,10 @@ const ClothingMale = () => {
                 </h1>
               </Link>
             </div>
-            <div className="flex items-center gap-3">
+            <div
+              className="flex items-center gap-3 home_item_products_div
+             "
+            >
               <Link>
                 <h1 className="text-[#333] text-xl font-bold">
                   Đồ {OptionGender(param.gender)}
@@ -439,8 +444,8 @@ const ClothingMale = () => {
             </div>
           </div>
           <div className="mt-5">
-            <div className="ml-10 mt-5">
-              <div className="relative">
+            <div className="ml-10 mt-5 sort_product_items">
+              <div className="relative ">
                 <ul className="flex items-center gap-3">
                   <div ref={menuRef}>
                     <li
@@ -479,73 +484,113 @@ const ClothingMale = () => {
               </div>
             </div>
             <div className="mt-3 male_left">
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 mx-3 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {loading ? (
                   [...Array(20)].map((_, index) => <SkeletonCard key={index} />)
                 ) : products && products.length > 0 ? (
                   products.map((product, index) => (
                     <div
-                      className="main_product_male cursor-pointer mt-5"
-                      key={index + 1}
+                      className="product-card group rounded-xl overflow-hidden bg-white shadow-md hover:shadow-xl transition-all duration-300"
+                      key={product._id}
                     >
-                      <div className="w-10 h-10 absolute right-0">
-                        <span className="percent">{product.discount}%</span>
-                      </div>
-                      <div>
+                      <div className="relative">
                         <img
-                          src={product.variants[0]?.images[0]?.url}
-                          alt="ảnh"
-                          className="image_product_gender"
+                          className="w-full h-48 object-cover transition-transform duration-500 hover:scale-105"
+                          src={
+                            product.variants[0]?.images[0]?.url ||
+                            "/default-image.jpg"
+                          }
+                          alt={product.name}
                         />
+                        {typeof product.discount !== "undefined" && (
+                          <span className="absolute top-2 right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                            -{product.discount || 0}%
+                          </span>
+                        )}
+                        <div className="absolute bottom-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <button className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 text-gray-600"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                              />
+                            </svg>
+                          </button>
+                          <button
+                            className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
+                            onClick={() =>
+                              handelModelProductCart(
+                                product._id,
+                                product.variants,
+                                product.price,
+                                product.discountedPrice,
+                                product.name,
+                                product.discount
+                              )
+                            }
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 text-gray-600"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                              />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
-                      <div className="mt-2">
-                        <h1 className="main_product_male_h1 text-center">
+                      <div
+                        className="p-3"
+                        onClick={() => handleDetails(product._id)}
+                      >
+                        <p className="text-xs text-gray-600 uppercase tracking-wider font-medium">
+                          {product.brand}
+                        </p>
+                        <h3 className="text-sm font-semibold text-gray-900 line-clamp-1 mt-1">
                           {product.name}
-                        </h1>
-                        <div className="flex gap-5 items-center justify-center">
-                          <span className="line-through text-red-500">
-                            {formatPrice(product.costPrice)}
-                          </span>
-                          <span>{formatPrice(product.discountedPrice)}</span>
+                        </h3>
+                        <div className="mt-2 flex items-center justify-between">
+                          <div>
+                            <span className="text-base font-bold text-red-600">
+                              {formatPrice(product.discountedPrice)}
+                            </span>
+
+                            {product.discount > 0 && (
+                              <span className="text-xs  text-gray-500 line-through ml-2">
+                                {formatPrice(product.price)}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex gap-0 mx-4 items-center justify-between">
-                          <span className="line-through text-red-500">
-                            <Rate
-                              disabled
-                              defaultValue={5}
-                              style={{ fontSize: "14px" }}
-                            />
-                          </span>
-                          <span style={{ fontSize: "14px" }}>
-                            Đã bán {product.sold}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-center m-2">
-                        <Button
-                          onClick={() => navigate(`/product/${product._id}`)}
-                        >
-                          Xem chi tiết sản phẩm
-                        </Button>
+                        <Flex className="mt-2">
+                          <Rate
+                            tooltips={desc}
+                            onChange={(value) => handleRate(product._id, value)}
+                            value={ratings[product._id] || 0}
+                            className="text-yellow-400"
+                          />
+                        </Flex>
                       </div>
                     </div>
                   ))
                 ) : (
                   <div className="flex w-full h-80 justify-center items-center whitespace-pre-wrap">
-                    <p>
-                      Không tìm thấy sản phẩm phù hợp theo yêu cầu của bạn!{" "}
-                      <br />
-                      <span className="text-center mx-12">
-                        Vui lòng{" "}
-                        <span
-                          className="font-bold border-b-2 border-[#333] cursor-pointer"
-                          onClick={handleFilterProduct}
-                        >
-                          quay lại{" "}
-                        </span>
-                        để tiếp tục mua sắm bạn nhé!
-                      </span>
-                    </p>
+                    <p>Không tìm thấy sản phẩm...</p>
                   </div>
                 )}
               </div>

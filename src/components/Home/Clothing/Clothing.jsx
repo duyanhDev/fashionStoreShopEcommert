@@ -17,6 +17,8 @@ export default function Clothing({ ListProducts }) {
   const [listItems, setListItems] = useState();
   const [price, setPrice] = useState(0);
   const [costPrice, setCostPrice] = useState(0);
+  const [productname, setProductname] = useState("");
+  const [discount, setDiscount] = useState(0);
   const [visibleItems, setVisibleItems] = useState(20);
   const [visibleAoItems, setVisibleAoItems] = useState(20);
   const [visibleQuanItems, setVisibleQuanItems] = useState(20);
@@ -52,12 +54,21 @@ export default function Clothing({ ListProducts }) {
 
   const handleDetails = (id) => navigate(`product/${id}`);
 
-  const handelModelProductCart = (id, items, price, costPrice) => {
+  const handelModelProductCart = (
+    id,
+    items,
+    price,
+    costPrice,
+    name,
+    discount
+  ) => {
     setIdProducts(id);
     setListItems(items);
     setPrice(price);
     setCostPrice(costPrice);
     setModalCartOpen(true);
+    setProductname(name);
+    setDiscount(discount);
   };
 
   const ProductCard = ({ product }) => (
@@ -97,7 +108,9 @@ export default function Clothing({ ListProducts }) {
                 product._id,
                 product.variants,
                 product.price,
-                product.costPrice
+                product.discountedPrice,
+                product.name,
+                product.discount
               )
             }
           >
@@ -128,14 +141,12 @@ export default function Clothing({ ListProducts }) {
         <div className="mt-2 flex items-center justify-between">
           <div>
             <span className="text-base font-bold text-red-600">
-              {formatPrice(
-                product.discountedPrice || product.costPrice || product.price
-              )}
+              {formatPrice(product.discountedPrice)}
             </span>
 
             {product.discount > 0 && (
               <span className="text-xs  text-gray-500 line-through ml-2">
-                {formatPrice(product.costPrice)}
+                {formatPrice(product.price)}
               </span>
             )}
           </div>
@@ -154,7 +165,7 @@ export default function Clothing({ ListProducts }) {
 
   const renderProductSection = (title, products, visibleCount, onLoadMore) => (
     <section className="py-8">
-      <div className="container mx-auto px-3 lg:px-8">
+      <div className="max-w-full sm:max-w-[480px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px] mx-auto px-4">
         <h2 className="text-2xl font-bold text-gray-800 mb-6 relative inline-block">
           {title}
           <span className="absolute bottom-0 left-0 w-12 h-1 bg-orange-500 rounded"></span>
@@ -185,6 +196,8 @@ export default function Clothing({ ListProducts }) {
           listItems={listItems}
           price={price}
           costPrice={costPrice}
+          productname={productname}
+          discount={discount}
         />
       </div>
     </section>
@@ -197,9 +210,9 @@ export default function Clothing({ ListProducts }) {
   return (
     <div className="bg-gray-50 min-h-screen">
       <section className="py-8">
-        <div className="container mx-auto px-3 lg:px-8">
+        <div className="max-w-full sm:max-w-[480px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px]  lg:px-8">
           <div
-            className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-6"
+            className="grid grid-cols-2 sm:grid-cols-2 mx-3 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-6"
             data-aos="fade-up"
           >
             {loading
