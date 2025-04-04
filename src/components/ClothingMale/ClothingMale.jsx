@@ -258,6 +258,9 @@ const ClothingMale = () => {
     }
   };
 
+  const handleDetails = (id) => {
+    navigate(`/product/${id}`);
+  };
   return (
     <section>
       <SliderComponent />

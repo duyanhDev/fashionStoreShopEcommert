@@ -9,7 +9,12 @@ const ProductCart = ({
   listItems,
   price,
   costPrice,
+  productname,
+  discount,
 }) => {
+  const [Size, setSize] = useState("");
+
+  const [count, setCount] = useState(1);
   const getDefaultColor = (items) => {
     if (!items || items.length === 0) return "đen";
     const hasBlack = items.some((item) => item.color === "đen");
@@ -57,8 +62,19 @@ const ProductCart = ({
       ? filterSize.flatMap((item) => item.sizes)
       : [];
 
-  console.log("filterProducts:", filterProducts); // Debug
+  const plusCount = () => {
+    setCount((prve) => prve + 1);
+  };
 
+  const minusCount = () => {
+    if (count > 1) {
+      setCount((prve) => prve - 1);
+    }
+  };
+
+  const handleOnClickSize = (size) => {
+    setSize((prev) => (prev === size ? "" : size));
+  };
   return (
     <Modal
       centered
@@ -122,10 +138,8 @@ const ProductCart = ({
           <span className="bg-orange-200 text-orange-700 text-xs px-2 py-1 rounded">
             #Bán chạy
           </span>
-          <h2 className="text-xl font-semibold mt-2">
-            ÁO KHOÁC DÙ UNISEX - TOTODAY
-          </h2>
-          <p className="text-yellow-500">⭐ 5/5 | SKU: U1AKD06401FBYBA</p>
+          <h2 className="text-xl font-semibold mt-2">{productname}</h2>
+          <p className="text-yellow-500">⭐ 5/5 | SKU: {IdProduct}</p>
 
           <div className="flex items-center gap-2">
             <span className="text-red-500 text-xl font-bold">
@@ -134,7 +148,7 @@ const ProductCart = ({
             <span className="text-gray-400 line-through">
               {formatPrice(price)}
             </span>
-            <span className="text-green-600">-19%</span>
+            <span className="text-green-600">-{discount}%</span>
           </div>
 
           <div className="mt-3">
@@ -189,9 +203,9 @@ const ProductCart = ({
                       sizeItem.quantity <= 0
                         ? "bg-gray-200 text-gray-500"
                         : "bg-white"
-                    }`}
+                    } ${Size === sizeItem.size && "active_bg"} `}
                     disabled={sizeItem.quantity <= 0} // Vô hiệu hóa nếu hết hàng
-                    onClick={() => console.log("xx")}
+                    onClick={() => handleOnClickSize(sizeItem.size)}
                   >
                     {sizeItem.size}
                     <span className="ml-2">({sizeItem.quantity})</span>
@@ -206,9 +220,13 @@ const ProductCart = ({
           <div className="mt-3">
             <p className="font-semibold">Số lượng</p>
             <div className="flex items-center border rounded w-24">
-              <button className="px-3 py-1">-</button>
-              <span className="px-4">1</span>
-              <button className="px-3 py-1">+</button>
+              <button className="px-3 py-1" onClick={minusCount}>
+                -
+              </button>
+              <span className="px-4">{count}</span>
+              <button className="px-3 py-1" onClick={plusCount}>
+                +
+              </button>
             </div>
           </div>
 
