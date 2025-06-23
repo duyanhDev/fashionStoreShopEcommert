@@ -131,7 +131,6 @@ const EditCustom = () => {
 
   const handleChange = (field) => (e) => {
     const value = e?.target?.value ?? e;
-    console.log(value);
 
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -148,8 +147,6 @@ const EditCustom = () => {
       onSuccess("ok"); // Gọi callback thành công
     }
   };
-
-  console.log(selectedImage);
 
   const handleChangeCity = (value) => {
     const selected = ProvineData.find((item) => item.id === value);

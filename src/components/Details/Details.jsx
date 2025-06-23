@@ -1,27 +1,31 @@
+"use client";
+
 import "./Details.css";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/free-mode";
 import "swiper/css/navigation";
 import "swiper/css/thumbs";
 import { FreeMode, Navigation, Thumbs } from "swiper/modules";
-import { Rate, Button, Flex, notification, Image, Avatar, Input } from "antd";
+import { Rate, Button, Flex, notification, Image, Avatar } from "antd";
 import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
 import { useOutletContext, useParams } from "react-router-dom";
 import {
   ListOneProductAPI,
-  PutFeedbackProductAPI,
+  ListSlugProductAPI,
   toggleLikeRatingAPI,
 } from "../../service/ApiProduct";
 import { AddCartAPI } from "../../service/Cart";
 import { useSelector } from "react-redux";
 import moment from "moment";
-
 import ReactPaginate from "react-paginate";
+
 const Details = () => {
   const [api, contextHolder] = notification.useNotification();
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
+  const [mainSwiper, setMainSwiper] = useState(null);
+  const [id, setId] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [brand, setBrand] = useState("");
@@ -51,6 +55,8 @@ const Details = () => {
   const itemsPerPage = 5;
   const [currentPage, setCurrentPage] = useState(0);
 
+  console.log(param);
+
   const pageCount = Math.ceil(feedback.length / itemsPerPage);
   const offset = currentPage * itemsPerPage;
   const currentFeedback = feedback
@@ -64,9 +70,7 @@ const Details = () => {
     setCurrentPage(selected);
   };
 
-  const onChange = (value) => {
-    console.log("changed", value);
-  };
+  const onChange = (value) => {};
   const [count, setCount] = useState(1);
 
   const handleIncrment = (value) => {
@@ -84,7 +88,7 @@ const Details = () => {
 
   const FetchAPIDetaillProuduct = async () => {
     try {
-      const res = await ListOneProductAPI(param.id);
+      const res = await ListSlugProductAPI(param.slug);
 
       if (res && res.data && res.data.EC === 0) {
         const ImagesUrl =
@@ -99,6 +103,7 @@ const Details = () => {
           res.data.data.variants &&
           res.data.data.variants.length > 0 &&
           res.data.data.variants.map((item) => item.sizes);
+        setId(res.data.data._id || "");
         setName(res.data.data.name || "");
         setDescription(res.data.data.description);
         setBrand(res.data.data.brand || "");
@@ -120,7 +125,13 @@ const Details = () => {
 
   useEffect(() => {
     FetchAPIDetaillProuduct();
-  }, []);
+  }, [param.slug]);
+
+  useEffect(() => {
+    if (variants.length > 0 && !SelectedColor) {
+      setSelectedColor(variants[0].color);
+    }
+  }, [variants]);
 
   const total = pricediscount ? count * pricediscount : count * price;
 
@@ -130,11 +141,84 @@ const Details = () => {
     SetSizeCart(item);
   };
 
-  const handleColor = (item) => {
-    setChecked(true);
-    setSelectedColor(item);
-    SetcolorCart(item);
+  // Thêm state mới
+  const [activeThumbIndex, setActiveThumbIndex] = useState(0);
+
+  // Tạo danh sách tất cả ảnh từ tất cả variants
+  const allImages = variants.reduce((acc, variant) => {
+    return [
+      ...acc,
+      ...variant.images.map((img) => ({ ...img, color: variant.color })),
+    ];
+  }, []);
+
+  // Tìm index của ảnh đầu tiên của màu được chọn trong danh sách tất cả ảnh
+  const getFirstImageIndexOfColor = (color) => {
+    return allImages.findIndex((img) => img.color === color);
   };
+
+  // Cập nhật handleColor function
+  const handleColor = useCallback(
+    (item) => {
+      setChecked(true);
+      setSelectedColor(item);
+      SetcolorCart(item);
+
+      // Tìm index của ảnh đầu tiên của màu được chọn
+      const firstImageIndex = getFirstImageIndexOfColor(item);
+      if (firstImageIndex !== -1) {
+        setActiveThumbIndex(firstImageIndex);
+
+        // Reset Swiper với delay để đảm bảo DOM đã cập nhật
+        setTimeout(() => {
+          if (mainSwiper) {
+            mainSwiper.slideTo(firstImageIndex, 300);
+            mainSwiper.update();
+          }
+          if (thumbsSwiper) {
+            thumbsSwiper.slideTo(firstImageIndex, 300);
+            thumbsSwiper.update();
+          }
+        }, 100);
+      }
+    },
+    [mainSwiper, thumbsSwiper, allImages]
+  );
+
+  // Thêm handler cho thumbnail click
+  const handleThumbnailClick = useCallback(
+    (index) => {
+      setActiveThumbIndex(index);
+      if (mainSwiper) {
+        mainSwiper.slideTo(index);
+      }
+
+      // Cập nhật màu được chọn dựa trên ảnh được click
+      const clickedImage = allImages[index];
+      if (clickedImage && clickedImage.color !== SelectedColor) {
+        setSelectedColor(clickedImage.color);
+        SetcolorCart(clickedImage.color);
+        setChecked(true);
+      }
+    },
+    [mainSwiper, allImages, SelectedColor]
+  );
+
+  // Cập nhật main swiper để sync với thumbnail
+  const handleSlideChange = useCallback(
+    (swiper) => {
+      setActiveThumbIndex(swiper.activeIndex);
+
+      // Cập nhật màu được chọn dựa trên slide hiện tại
+      const currentImage = allImages[swiper.activeIndex];
+      if (currentImage && currentImage.color !== SelectedColor) {
+        setSelectedColor(currentImage.color);
+        SetcolorCart(currentImage.color);
+        setChecked(true);
+      }
+    },
+    [allImages, SelectedColor]
+  );
 
   const priceShift = discount ? pricediscount : price;
 
@@ -146,7 +230,6 @@ const Details = () => {
         duration: 3,
         type: "warning",
       });
-      // navigation("/login");
       return;
     }
 
@@ -160,29 +243,11 @@ const Details = () => {
       });
       return;
     }
-    // if (stock <= 0) {
-    //   api.open({
-    //     message: "Sản phẩm đã bán hết",
-    //     description:
-    //       "Vui lòng khách hàng đợi shop nhập thêm hoặc mua sản phẩm mới",
-    //     duration: 3,
-    //     type: "warning",
-    //   });
-    //   return;
-    // }
-    // if (count > stock) {
-    //   api.open({
-    //     message: `Sản phẩm  hiện giờ chỉ còn ${stock} sản phẩm`,
-    //     description: `Khách hàng chỉnh số lượng cho phù hợp với số lượng sản phẩm`,
-    //     duration: 3,
-    //     type: "warning",
-    //   });
-    //   return;
-    // }
+
     try {
       const res = await AddCartAPI(
         user._id,
-        param.id,
+        id,
         count,
         sizeCart,
         colorCart,
@@ -195,7 +260,7 @@ const Details = () => {
           description: (
             <div className="flex gap-2 p-2 ">
               <img
-                src={variants[0]?.images[0]?.url}
+                src={variants[0]?.images[0]?.url || "/placeholder.svg"}
                 className="img_cart"
                 alt="lỗi"
               />
@@ -215,22 +280,6 @@ const Details = () => {
     }
   };
 
-  // const handleFeedBack = async () => {
-  //   try {
-  //     const res = await PutFeedbackProductAPI(
-  //       param.id,
-  //       user._id,
-  //       ratings,
-  //       review
-  //     );
-
-  //     if (res && res.data) {
-  //       setReivew("");
-  //       FetchAPIDetaillProuduct();
-  //     }
-  //   } catch (error) {}
-  // };
-
   const TotalRatings =
     feedback &&
     feedback?.reduce((acc, current) => {
@@ -245,7 +294,6 @@ const Details = () => {
         duration: 3,
         type: "warning",
       });
-      // navigation("/login");
       return;
     }
     try {
@@ -258,74 +306,180 @@ const Details = () => {
       console.log(error);
     }
   };
+
   const TotalStock = variants
     .map((item) => item.sizes.reduce((acc, size) => acc + size.quantity, 0))
     .reduce((acc, total) => acc + total, 0);
 
-  return (
-    <div className="Details w-full">
-      {contextHolder}
-      <div className="Details_main flex">
-        <div className="w-1/2">
-          <Swiper
-            loop={true}
-            spaceBetween={10}
-            navigation={true}
-            thumbs={{
-              swiper:
-                thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null,
-            }}
-            modules={[FreeMode, Navigation, Thumbs]}
-            className="mySwiper2 "
-          >
-            {image &&
-              image.length > 0 &&
-              image.map((images, index) => {
-                const url = images.map((image) => {
-                  return image.url;
-                });
+  // Navigation handlers với error handling
+  const handleMainPrev = useCallback(() => {
+    try {
+      if (mainSwiper && !mainSwiper.destroyed) {
+        mainSwiper.slidePrev();
+      }
+    } catch (error) {
+      console.error("Error in handleMainPrev:", error);
+    }
+  }, [mainSwiper]);
 
-                return (
-                  <>
-                    <SwiperSlide key={index}>
-                      <Image
-                        src={url}
-                        preview={{
-                          src: url,
-                        }}
+  const handleMainNext = useCallback(() => {
+    try {
+      if (mainSwiper && !mainSwiper.destroyed) {
+        mainSwiper.slideNext();
+      }
+    } catch (error) {
+      console.error("Error in handleMainNext:", error);
+    }
+  }, [mainSwiper]);
+
+  const handleThumbPrev = useCallback(() => {
+    try {
+      if (thumbsSwiper && !thumbsSwiper.destroyed) {
+        thumbsSwiper.slidePrev();
+      }
+    } catch (error) {
+      console.error("Error in handleThumbPrev:", error);
+    }
+  }, [thumbsSwiper]);
+
+  const handleThumbNext = useCallback(() => {
+    try {
+      if (thumbsSwiper && !thumbsSwiper.destroyed) {
+        thumbsSwiper.slideNext();
+      }
+    } catch (error) {
+      console.error("Error in handleThumbNext:", error);
+    }
+  }, [thumbsSwiper]);
+
+  return (
+    <div className="Details ">
+      {contextHolder}
+      <div className="Details_main flex flex-col md:flex-row gap-4 md:gap-8">
+        <div className="sm:w-full md:w-1/2">
+          <div className="relative">
+            <Swiper
+              onSwiper={setMainSwiper}
+              onSlideChange={handleSlideChange}
+              loop={allImages.length > 1}
+              spaceBetween={10}
+              navigation={false}
+              thumbs={{
+                swiper:
+                  thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null,
+              }}
+              modules={[FreeMode, Navigation, Thumbs]}
+              className="mySwiper2"
+              key={`main-all-images`}
+            >
+              {allImages.map((image, index) => (
+                <SwiperSlide key={`all-${index}`}>
+                  <Image
+                    src={image.url || "/placeholder.svg"}
+                    preview={{
+                      src: image.url,
+                    }}
+                    alt={`${name} - ${image.color} - ${index + 1}`}
+                  />
+                </SwiperSlide>
+              ))}
+            </Swiper>
+
+            {allImages.length > 1 && (
+              <>
+                <button
+                  onClick={handleMainPrev}
+                  className="custom-nav-btn custom-nav-prev"
+                  aria-label="Previous image"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M15 18L9 12L15 6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+
+                <button
+                  onClick={handleMainNext}
+                  className="custom-nav-btn custom-nav-next"
+                  aria-label="Next image"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M9 18L15 12L9 6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </>
+            )}
+          </div>
+
+          {allImages.length > 0 && (
+            <div className="compact-thumbnail-wrapper flex justify-center items-center">
+              <Swiper
+                onSwiper={setThumbsSwiper}
+                loop={false}
+                spaceBetween={8}
+                slidesPerView="auto"
+                freeMode={true}
+                watchSlidesProgress={true}
+                modules={[FreeMode, Navigation, Thumbs]}
+                className="compact-thumbnail-swiper"
+                key={`compact-thumb-all-images`}
+              >
+                {allImages.map((image, index) => (
+                  <SwiperSlide
+                    key={`compact-thumb-all-${index}`}
+                    className="compact-thumbnail-slide"
+                  >
+                    <div
+                      className={`compact-thumbnail-container ${
+                        index === activeThumbIndex ? "active" : ""
+                      } ${
+                        image.color === SelectedColor ? "current-color" : ""
+                      }`}
+                      onClick={() => handleThumbnailClick(index)}
+                    >
+                      <img
+                        src={image.url || "/placeholder.svg"}
+                        className="compact-thumbnail-image"
+                        alt={`${name} ${image.color} thumbnail ${index + 1}`}
                       />
-                    </SwiperSlide>
-                  </>
-                );
-              })}
-          </Swiper>
-          <Swiper
-            onSwiper={setThumbsSwiper}
-            loop={true}
-            spaceBetween={10}
-            slidesPerView={4}
-            freeMode={true}
-            watchSlidesProgress={true}
-            modules={[FreeMode, Navigation, Thumbs]}
-            className="mySwiper"
-          >
-            {image &&
-              image.length > 0 &&
-              image.map((images, index) => {
-                const url = images.map((image) => {
-                  return image.url;
-                });
-                return (
-                  <>
-                    <SwiperSlide key={index}>
-                      <img src={url} className="object-cover" />
-                    </SwiperSlide>
-                  </>
-                );
-              })}
-          </Swiper>
+                      {/* Hiển thị indicator cho màu hiện tại */}
+                      {image.color === SelectedColor && (
+                        <div className="color-indicator">
+                          <div className="color-dot"></div>
+                        </div>
+                      )}
+                    </div>
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            </div>
+          )}
         </div>
-        <div className="w-1/2 doisi_detail__main">
+
+        <div className="w-full md:w-1/2 doisi_detail__main">
           <div className="border border-b-2 ">
             <div className="p-4">
               <span className="text-[#484848] font-normal text-sm">
@@ -357,6 +511,7 @@ const Details = () => {
               </h1>
             </div>
           </div>
+
           <div className="border border-b-2">
             <div className="p-4">
               <div className="flex items-center gap-1 ">
@@ -365,58 +520,44 @@ const Details = () => {
                   {color.length} màu
                 </span>
               </div>
-              <div className="flex items-center gap-2 mt-2 cursor-pointer">
-                {color.map((color, index) => {
-                  if (color === "đen") {
-                    return (
-                      <div
-                        className={`${
-                          SelectedColor === color && checked
-                            ? `colorBtn color_black`
-                            : `color_black`
-                        }`}
-                        key={index}
-                        onClick={() => handleColor(color)} // Corrected: Passes a function
-                      ></div>
-                    );
-                  } else if (color === "trắng") {
-                    return (
-                      <div
-                        className={`${
-                          SelectedColor === color && checked
-                            ? `colorBtn`
-                            : `color_white`
-                        }`}
-                        key={index}
-                        onClick={() => handleColor(color)}
-                      ></div>
-                    );
-                  } else if (color === "vàng") {
-                    return (
-                      <div
-                        className={`${
-                          SelectedColor === color && checked
-                            ? `colorBtn color_yellor`
-                            : `color_yellor`
-                        }`}
-                        key={index}
-                        onClick={() => handleColor(color)}
-                      ></div>
-                    );
-                  } else {
-                    return (
-                      <div
-                        className={`${
-                          SelectedColor === color && checked
-                            ? `colorBtn color_red`
-                            : `color_red`
-                        }`}
-                        key={index}
-                        onClick={() => handleColor(color)}
-                      ></div>
-                    );
-                  }
-                })}
+
+              <div className="flex items-center gap-3 mt-3">
+                {variants.map((variant, index) => (
+                  <div
+                    key={index}
+                    className={`color-swatch ${
+                      SelectedColor === variant.color ? "selected" : ""
+                    }`}
+                    onClick={() => handleColor(variant.color)}
+                  >
+                    <img
+                      src={variant.images[0]?.url || "/placeholder.svg"}
+                      alt={`${name} - ${variant.color}`}
+                      className="color-swatch-image"
+                    />
+                    <div className="color-swatch-overlay">
+                      {SelectedColor === variant.color && (
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="check-icon"
+                        >
+                          <path
+                            d="M20 6L9 17L4 12"
+                            stroke="white"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="color-name">{variant.color}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -439,9 +580,9 @@ const Details = () => {
                       <button
                         key={index}
                         onClick={() => handleSize(item.size)}
-                        disabled={item.quantity === 0} // Disable nếu số lượng bằng 0
-                        className={`size-button  ${
-                          sizeCart === item.size ? "bg-black text-white" : ""
+                        disabled={item.quantity === 0}
+                        className={`size-button ${
+                          sizeCart === item.size ? "selected" : ""
                         } ${item.quantity === 0 ? "disabled" : ""}`}
                       >
                         {item.size} (
@@ -451,6 +592,7 @@ const Details = () => {
               </div>
             </div>
           </div>
+
           <div className="border border-b-2">
             <div className="p-4">
               <div className="flex items-center gap-1">
@@ -458,13 +600,11 @@ const Details = () => {
               </div>
             </div>
           </div>
+
           <div className="">
             <div className="p-4">
               <div className="flex items-center gap-1">
-                <h4
-                  className="text-[#b3b3b3] font-normal text-sm"
-                  onChange={(e) => setStock(e.target.value)}
-                >
+                <h4 className="text-[#b3b3b3] font-normal text-sm">
                   {`${
                     TotalStock > 0
                       ? `${TotalStock} sản phẩm có sẵn`
@@ -474,10 +614,7 @@ const Details = () => {
               </div>
 
               <div className="flex items-center gap-1">
-                <h4
-                  className="text-[#b3b3b3] font-normal text-sm"
-                  onChange={(e) => setStock(e.target.value)}
-                >
+                <h4 className="text-[#b3b3b3] font-normal text-sm">
                   {sumProducts} sản phẩm đã bán
                 </h4>
               </div>
@@ -493,11 +630,17 @@ const Details = () => {
                   </Button>
                   <input
                     type="number"
-                    disabled
-                    className="w-10 h-10 text-center "
                     min={1}
+                    max={TotalStock}
                     value={count}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value, 10);
+                      if (!isNaN(value) && value >= 1 && value <= TotalStock) {
+                        setCount(value);
+                      }
+                    }}
                   />
+
                   <Button
                     className="w-10 h-10 border-none outline-none "
                     style={{ background: "none", outline: "none" }}
@@ -506,29 +649,32 @@ const Details = () => {
                     <PlusOutlined className="mr-6" />
                   </Button>
                 </div>
-                <div className="w-3/4">
-                  <Flex
-                    vertical
-                    gap="small"
-                    style={{
-                      width: "100%",
-                    }}
-                  >
-                    <Button
-                      type="primary"
-                      block
-                      style={{ backgroundColor: "black", color: "white" }}
-                      onClick={handleAddProduct}
+                {TotalStock > 0 && (
+                  <div className="w-3/4">
+                    <Flex
+                      vertical
+                      gap="small"
+                      style={{
+                        width: "100%",
+                      }}
                     >
-                      Thêm vào giỏ hàng
-                    </Button>
-                  </Flex>
-                </div>
+                      <Button
+                        type="primary"
+                        block
+                        style={{ backgroundColor: "black", color: "white" }}
+                        onClick={handleAddProduct}
+                      >
+                        Thêm vào giỏ hàng
+                      </Button>
+                    </Flex>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
+
       <div className="feedback">
         <div className="w-1/5 star ">
           <div className=" ">
@@ -590,7 +736,7 @@ const Details = () => {
                             focusable="false"
                             data-prefix="fas"
                             data-icon="heart"
-                            className={`svg-inline--fa fa-heart w-5 ${
+                            className={`svg-inline--fa fa-heart w-5 cursor-pointer ${
                               user?._id && item.likes.includes(user._id)
                                 ? "text-[#ed2b48]"
                                 : ""
@@ -622,7 +768,7 @@ const Details = () => {
                             focusable="false"
                             data-prefix="far"
                             data-icon="heart"
-                            className="svg-inline--fa fa-heart w-5"
+                            className="svg-inline--fa fa-heart w-5 cursor-pointer"
                             role="img"
                             xmlns="http://www.w3.org/2000/svg"
                             viewBox="0 0 512 512"
@@ -643,7 +789,7 @@ const Details = () => {
                           return (
                             <img
                               className="feedback_images"
-                              src={url}
+                              src={url || "/placeholder.svg"}
                               alt="lỗi"
                               key={index}
                             />
@@ -688,17 +834,6 @@ const Details = () => {
             containerClassName={"pagination"}
             activeClassName={"active"}
           />
-          {/* <div className="w-full text-center flex justify-center gap-2">
-            <Input
-              showCount
-              maxLength={50}
-              onChange={(e) => setReivew(e.target.value)}
-              className="w-4/5"
-              placeholder="Phản hồi sản phẩm tại đây nhé!!"
-              value={review}
-            />
-            <Button onClick={handleFeedBack}>Gửi phản hồi</Button>
-          </div> */}
         </div>
       </div>
     </div>

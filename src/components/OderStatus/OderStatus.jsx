@@ -18,7 +18,9 @@ import { FaTruck } from "react-icons/fa";
 import io from "socket.io-client";
 import FeedBack from "../FeedBack/FeeBack";
 
-const socket = io("http://localhost:9000", {
+import GoogleMapsStyleDelivery from "../Map/Map";
+
+const socket = io("https://fashionstoreshopecommertbe.onrender.com", {
   withCredentials: true,
   reconnection: true,
   reconnectionAttempts: 5,
@@ -91,8 +93,6 @@ const OderStatus = () => {
   const UpdateOderStatusCalled = async (orderStatus) => {
     try {
       let res = await updateShippingCancelled(param.id, orderStatus);
-
-      console.log(res);
 
       if (res && res.data && res.data.EC === 0) {
         setData(res.data.data);
@@ -248,8 +248,6 @@ const OderStatus = () => {
               {data.items &&
                 data.items.length > 0 &&
                 data.items.map((item) => {
-                  console.log(item);
-
                   return (
                     <div
                       className="flex justify-between mt-2 items-center border-b-2"
@@ -329,6 +327,7 @@ const OderStatus = () => {
           </div>
         </div>
       </div>
+      <GoogleMapsStyleDelivery />
       <div>
         <FeedBack
           modal2Open={modal2Open}

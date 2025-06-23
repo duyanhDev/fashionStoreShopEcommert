@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import "./ClothingMale.css";
-import { Radio, Space, Slider, Button, Card, Skeleton, Flex, Rate } from "antd";
+import {
+  Radio,
+  Space,
+  Slider,
+  Button,
+  Card,
+  Skeleton,
+  Rate,
+  Drawer,
+  notification,
+} from "antd";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { ListCategoryAPI } from "../../service/ApiCategory";
@@ -8,14 +17,22 @@ import ReactPaginate from "react-paginate";
 import { fetchProducts } from "../../redux/actions/filterAction";
 import SliderComponent from "../Slider/Slider";
 import ProductCart from "../ProductCart/ProductCart";
+import "./ClothingMale.css";
+import {
+  addToWishlistAPI,
+  getWishlistAPI,
+  RemoveToWishListAPI,
+} from "../../service/WishList";
 
 const ClothingMale = () => {
+  const { user } = useSelector((state) => state.auth);
   const param = useParams();
   const location = useLocation();
-  const navigate = useNavigate(); // Fixed: lowercase navigate
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const [modalCartOpen, setModalCartOpen] = useState(false);
-
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [api, contextHolder] = notification.useNotification();
   const [IdProduct, setIdProducts] = useState("");
   const [listItems, setListItems] = useState();
   const [price, setPrice] = useState(0);
@@ -26,6 +43,7 @@ const ClothingMale = () => {
   const desc = ["terrible", "bad", "normal", "good", "wonderful"];
 
   const [ratings, setRatings] = useState({});
+  const [WishList, setWishList] = useState([]);
 
   const [hidden, setHidden] = useState(false);
   const [checkFilter, setCheckFilter] = useState(false);
@@ -48,7 +66,7 @@ const ClothingMale = () => {
   const colorParms = queryParams.get("color") || "";
   const savedSortPrice = queryParams.get("sortPrice") || "";
   const savedCategory = queryParams.get("Category") || "";
-  const savedCurrentPage = parseInt(queryParams.get("currentPage")) || 1;
+  const savedCurrentPage = Number.parseInt(queryParams.get("currentPage")) || 1;
   const savedSortDate = queryParams.get("sortDate") || "";
   const savedSortSold = queryParams.get("sortSold") || "";
   const urlMinPrice = Number(queryParams.get("minPrice")) || undefined;
@@ -70,7 +88,7 @@ const ClothingMale = () => {
       maxPrice: urlMaxPrice,
       care: careParams,
       size: sizeParams,
-      color: colorParms, // Use URL params for consistency
+      color: colorParms,
       currentPage: savedCurrentPage,
     };
   }, [
@@ -103,7 +121,6 @@ const ClothingMale = () => {
             );
             if (foundCategory) setValueId(foundCategory._id);
           }
-          // Sync state with URL on mount
           if (sizeParams.length > 0) setSize(sizeParams);
           if (careParams) setSelectedCare(careParams);
           if (urlMinPrice || urlMaxPrice)
@@ -114,7 +131,7 @@ const ClothingMale = () => {
       }
     };
     fetchListCategoryAndInitialize();
-  }, []); // Run only once on mount
+  }, []);
 
   // Fetch products when URL changes or categories load
   useEffect(() => {
@@ -122,7 +139,7 @@ const ClothingMale = () => {
       const params = getFetchParams();
       dispatch(fetchProducts(params));
     }
-  }, [param.gender, location.search, listCategory.length, dispatch]); // Depend on URL changes
+  }, [param.gender, location.search, listCategory.length, dispatch]);
 
   // Handle click outside for filter menu
   useEffect(() => {
@@ -224,7 +241,7 @@ const ClothingMale = () => {
   };
 
   const handleOnClickColor = (value) => {
-    let color = value;
+    const color = value;
     setColor(value);
     const queryParams = new URLSearchParams(location.search);
     queryParams.set("color", color);
@@ -247,10 +264,10 @@ const ClothingMale = () => {
 
   const SkeletonCard = () => (
     <Card
-      style={{ width: 260, marginLeft: "2px" }}
+      className="w-full max-w-sm mx-auto bg-white rounded-2xl shadow-lg overflow-hidden"
       cover={<Skeleton.Image active style={{ width: "100%", height: 200 }} />}
     >
-      <Skeleton active paragraph={{ rows: 6 }} />
+      <Skeleton active paragraph={{ rows: 4 }} />
     </Card>
   );
 
@@ -263,12 +280,12 @@ const ClothingMale = () => {
       case "unisex":
         return "Unisex";
       default:
-        return "Không có giới tinh";
+        return "Không có giới tính";
     }
   };
 
-  const handleDetails = (id) => {
-    navigate(`/product/${id}`);
+  const handleDetails = (slug) => {
+    navigate(`/product/${slug}`);
   };
 
   const handelModelProductCart = (
@@ -288,263 +305,380 @@ const ClothingMale = () => {
     setDiscount(discount);
   };
 
-  return (
-    <section>
-      <SliderComponent />
-      <div className="flex colletion">
-        <div className="colletion_left">
-          <div>
-            <h1>Loại sản phẩm</h1>
-            <Radio.Group className="mr-5" onChange={onChange} value={valueId}>
-              <Space direction="vertical">
-                {listCategory.length > 0 &&
-                  listCategory.map((category) => (
-                    <Radio value={category._id} key={category._id}>
-                      {category.name}
-                    </Radio>
-                  ))}
-              </Space>
-            </Radio.Group>
-          </div>
-          <div>
-            <h1 className="mt-2">Bộ sưu tập</h1>
-            <Radio.Group
-              className="mr-5"
-              onChange={onChangeCare}
-              value={selectedCare}
-            >
-              <Space direction="vertical">
-                {products &&
-                  products
-                    .filter(
-                      (item, index, self) =>
-                        index === self.findIndex((t) => t.care === item.care)
-                    )
-                    .map((item) => (
-                      <Radio key={item.care} value={item.care}>
-                        {item.care}
-                      </Radio>
-                    ))}
-              </Space>
-            </Radio.Group>
-          </div>
-          <div className="mt-2">
-            <h1>Kích cỡ</h1>
-            <div className="w-52 collection_size">
-              <ul className="flex items-center flex-wrap">
-                {["S", "M", "L", "XL", "XXL", "28", "29", "30", "31", "32"].map(
-                  (sizeOption) => (
-                    <li className="size_products" key={sizeOption}>
-                      <input
-                        type="checkbox"
-                        id={`size-${sizeOption}`}
-                        value={sizeOption}
-                        checked={size.includes(sizeOption)}
-                        onChange={() => handleCheckboxChange(sizeOption)}
-                      />
-                      <label htmlFor={`size-${sizeOption}`}>
-                        <span>{sizeOption}</span>
-                      </label>
-                    </li>
-                  )
-                )}
-              </ul>
-            </div>
-          </div>
-          <div className="mt-2">
-            <h1>Màu sắc</h1>
+  const handleRate = (productId, value) => {
+    setRatings((prev) => ({ ...prev, [productId]: value }));
+  };
 
-            <div className="grid grid-cols-4 -ml-6 ">
-              <div className="filter-select-color__item-list flex justify-center">
-                <input
-                  type="radio"
-                  id="color_yellow"
-                  name="color" // Ensure all radio buttons share the same name
-                  className="m-auto flex items-center mt-2"
-                  value="vàng"
-                  onChange={() => handleOnClickColor("vàng")}
-                />
-                <label htmlFor="color_yellow">
-                  <div className="filter-select-color_button flex items-center justify-center m-auto"></div>
-                  <span className="text-center">Vàng</span>
-                </label>
-              </div>
-              <div className="filter-select-color__item-list flex justify-center">
-                <input
-                  type="radio"
-                  id="color_green"
-                  name="color" // Ensure all radio buttons share the same name
-                  className="m-auto flex items-center mt-2"
-                  value="xanh lá cây"
-                  onChange={() => handleOnClickColor("xanh lá cây")}
-                />
-                <label htmlFor="color_green">
-                  <div className="filter-select-green flex items-center justify-center m-auto"></div>
-                  <span className="text-center">Xanh lá</span>
-                </label>
-              </div>
+  const handlAddWishList = async (productId) => {
+    if (!user) {
+      api["error"]({
+        message: "Vui lòng đăng nhập",
+        description: "Khách hàng đăng nhập mới sử dụng được tính năng này",
+      });
+      return;
+    }
+    try {
+      const res = await addToWishlistAPI(user?._id, productId);
 
-              <div className="filter-select-color__item-list flex justify-center ">
-                <input
-                  type="radio"
-                  id="color_black"
-                  name="color"
-                  className="m-auto flex items-center mt-2"
-                  value="đen"
-                  onChange={() => handleOnClickColor("đen")}
-                />
+      if (res && res.data && res.data.EC === 0) {
+        api["success"]({
+          message: "Đã thêm vào danh sách yêu thích",
+          description: res.data.message,
+        });
+        fetchListWishList();
+      }
+    } catch (error) {
+      api["error"]({
+        message: "Sản phẩm đã tồn tại danh sách yêu thích",
+        description: "Sản phẩm đã tồn tại danh sách yêu thích",
+      });
+    }
+  };
 
-                <label htmlFor="color_black">
-                  <div className="filter-select-black flex items-center justify-center m-auto"></div>
-                  <span className="text-center m">Đen</span>
-                </label>
-              </div>
-              <div className="filter-select-color__item-list flex justify-center  ">
-                <input
-                  type="radio"
-                  id="color_red"
-                  name="color"
-                  className="m-auto flex items-center mt-2"
-                  value="đỏ"
-                  onChange={() => handleOnClickColor("đỏ")}
-                />
-                <label htmlFor="color_red">
-                  <div className="filter-select-red flex items-center justify-center m-auto"></div>
-                  <span className="text-center m">Đỏ</span>
-                </label>
-              </div>
-              <div className="filter-select-color__item-list flex justify-center ">
-                <input
-                  type="radio"
-                  id="color_white"
-                  name="color"
-                  className="m-auto flex items-center mt-2"
-                  value="trắng"
-                  onChange={() => handleOnClickColor("trắng")}
-                />
-                <label htmlFor="color_white">
-                  <div className="filter-select-white flex items-center justify-center m-auto"></div>
-                  <span className="text-center m">trắng</span>
-                </label>
-              </div>
-            </div>
-            {/* Repeat for other colors */}
+  const fetchListWishList = async () => {
+    try {
+      const res = await getWishlistAPI(user?._id);
+      if (res && res.data && res.data.EC === 0) {
+        setWishList(res.data.data.products);
+      }
+    } catch (error) {
+      throw new Error("Lỗi lấy danh sách yêu thích");
+    }
+  };
 
-            <div className="w-52">
-              <h1>Lọc theo giá</h1>
-              <Slider
-                className="w-full"
-                range
-                marks={marks}
-                value={priceRange}
-                min={0}
-                max={1000000}
-                step={50000}
-                onChange={handleRangeChange}
-              />
-            </div>
-          </div>
+  const handleRemoveWishList = async (productId) => {
+    try {
+      const res = await RemoveToWishListAPI(user?._id, productId);
+
+      if (res && res.data && res.data.EC === 0) {
+        api["success"]({
+          message: "Đã xóa khỏi danh sách yêu thích",
+        });
+        fetchListWishList();
+      }
+    } catch (error) {
+      api["error"]({
+        message: "Lỗi khi xóa sản phẩm khỏi danh sách yêu thích",
+        description: "Lỗi khi xóa sản phẩm khỏi danh sách yêu thích",
+      });
+    }
+  };
+  useEffect(() => {
+    fetchListWishList();
+  }, [user?._id]);
+
+  const isProductInWishlist = WishList?.map((item) => item.product._id);
+
+  // Filter Component
+  const FilterContent = () => (
+    <div className="space-y-6">
+      <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-3">
+        Bộ lọc sản phẩm
+      </h2>
+
+      {/* Category Filter */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">
+          Loại sản phẩm
+        </h3>
+        <Radio.Group onChange={onChange} value={valueId} className="w-full">
+          <Space direction="vertical" className="w-full">
+            {listCategory.length > 0 &&
+              listCategory.map((category) => (
+                <Radio
+                  key={category._id}
+                  value={category._id}
+                  className="text-gray-700 hover:text-green-600"
+                >
+                  {category.name}
+                </Radio>
+              ))}
+          </Space>
+        </Radio.Group>
+      </div>
+
+      {/* Care Collection Filter */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">Bộ sưu tập</h3>
+        <Radio.Group
+          onChange={onChangeCare}
+          value={selectedCare}
+          className="w-full"
+        >
+          <Space direction="vertical" className="w-full">
+            {products &&
+              products
+                .filter(
+                  (item, index, self) =>
+                    index === self.findIndex((t) => t.care === item.care)
+                )
+                .map((item) => (
+                  <Radio
+                    key={item.care}
+                    value={item.care}
+                    className="text-gray-700 hover:text-green-600"
+                  >
+                    {item.care}
+                  </Radio>
+                ))}
+          </Space>
+        </Radio.Group>
+      </div>
+
+      {/* Size Filter */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">Kích cỡ</h3>
+        <div className="grid grid-cols-5 gap-2">
+          {["S", "M", "L", "XL", "XXL", "28", "29", "30", "31", "32"].map(
+            (sizeOption) => (
+              <label
+                key={sizeOption}
+                className={`flex items-center justify-center w-10 h-10 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+                  size.includes(sizeOption)
+                    ? "border-green-500 bg-green-500 text-white"
+                    : "border-gray-300 hover:border-green-400 text-gray-700"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  value={sizeOption}
+                  checked={size.includes(sizeOption)}
+                  onChange={() => handleCheckboxChange(sizeOption)}
+                  className="hidden"
+                />
+                <span className="text-sm font-medium">{sizeOption}</span>
+              </label>
+            )
+          )}
         </div>
-        <div className="colletion_right flex-1">
-          <div className="home_item_products w-full flex justify-between items-center px-10 ">
-            <div className="flex items-center gap-3">
-              <Link>
-                <h1 className="text-[#a3a3a3]">Trang chủ</h1>
-              </Link>
-              /
-              <Link>
-                <h1 className="text-[#a3a3a3]">
-                  Đồ {OptionGender(param.gender)}
-                </h1>
-              </Link>
-            </div>
-            <div
-              className="flex items-center gap-3 home_item_products_div
-             "
+      </div>
+
+      {/* Color Filter */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">Màu sắc</h3>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { value: "vàng", label: "Vàng", color: "bg-yellow-400" },
+            { value: "xanh lá cây", label: "Xanh lá", color: "bg-green-500" },
+            { value: "đen", label: "Đen", color: "bg-black" },
+            { value: "đỏ", label: "Đỏ", color: "bg-red-500" },
+            {
+              value: "trắng",
+              label: "Trắng",
+              color: "bg-white border-2 border-gray-300",
+            },
+          ].map((colorOption) => (
+            <label
+              key={colorOption.value}
+              className="flex flex-col items-center cursor-pointer group"
             >
-              <Link>
-                <h1 className="text-[#333] text-xl font-bold">
-                  Đồ {OptionGender(param.gender)}
-                </h1>
-              </Link>
-              /
-              <Link className="ml-3 font-normal products_link relative">
-                Trang {savedCurrentPage} - {products.length} sản phẩm
-              </Link>
+              <input
+                type="radio"
+                name="color"
+                value={colorOption.value}
+                onChange={() => handleOnClickColor(colorOption.value)}
+                className="hidden"
+              />
+              <div
+                className={`w-8 h-8 rounded-full ${colorOption.color} group-hover:scale-110 transition-transform duration-200 shadow-md`}
+              />
+              <span className="text-xs text-gray-600 mt-1">
+                {colorOption.label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Price Range Filter */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">
+          Lọc theo giá
+        </h3>
+        <Slider
+          range
+          marks={marks}
+          value={priceRange}
+          min={0}
+          max={1000000}
+          step={50000}
+          onChange={handleRangeChange}
+          className="mb-4"
+        />
+        <div className="flex justify-between text-sm text-gray-600">
+          <span>{formatPrice(priceRange[0])}</span>
+          <span>{formatPrice(priceRange[1])}</span>
+        </div>
+      </div>
+
+      {/* Clear Filters */}
+      {hidden && (
+        <Button
+          onClick={handleFilterProduct}
+          className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 border-none rounded-xl h-10"
+        >
+          Xóa tất cả bộ lọc
+        </Button>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-white">
+      <SliderComponent />
+      {contextHolder}
+      <div className="clothing-male-wrapper">
+        <div className="clothing-male-layout-grid">
+          {/* Desktop Sidebar Filters */}
+          <div className="clothing-male-sidebar">
+            <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-4">
+              <FilterContent />
             </div>
           </div>
-          <div className="mt-5">
-            <div className="ml-10 mt-5 sort_product_items">
-              <div className="relative ">
-                <ul className="flex items-center gap-3">
-                  <div ref={menuRef}>
-                    <li
-                      className="male_clothing"
-                      onClick={() => setCheckFilter((prev) => !prev)}
-                    >
-                      <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full dark:bg-[#070e41] bg-[#ffffff] px-8 py-1 text-sm font-medium dark:text-gray-50 text-black backdrop-blur-3xl">
-                        SẮP XẾP THEO
-                      </span>
-                    </li>
-                    {checkFilter && (
-                      <ul className="top-12 absolute z-40 sort_products">
-                        <li onClick={() => handleSortDate("newest")}>
-                          Mới nhất
-                        </li>
-                        <li onClick={() => handleSortDesAndAsc("asc")}>
-                          Giá: thấp - cao
-                        </li>
-                        <li onClick={() => handleSortDesAndAsc("desc")}>
-                          Giá: cao - thấp
-                        </li>
-                        <li onClick={() => handleSortSold("hot")}>
-                          Bán chạy nhất
-                        </li>
-                      </ul>
-                    )}
-                  </div>
-                  {hidden && (
-                    <li className="male_clothing" onClick={handleFilterProduct}>
-                      <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full dark:bg-[#070e41] bg-[#ffffff] px-8 py-1 text-sm font-medium dark:text-gray-50 text-black backdrop-blur-3xl">
-                        XÓA LỌC
-                      </span>
-                    </li>
-                  )}
-                </ul>
+
+          {/* Main Content */}
+          <div className="clothing-male-main-content">
+            {/* Breadcrumb */}
+            <div className="bg-white rounded-2xl shadow-lg p-4 mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm">
+                  <Link to="/" className="text-gray-500 hover:text-green-600">
+                    Trang chủ
+                  </Link>
+                  <span className="text-gray-400">/</span>
+                  <span className="text-gray-700 font-medium">
+                    Đồ {OptionGender(param.gender)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-700 font-semibold">
+                    Trang {savedCurrentPage} - {products?.length || 0} sản phẩm
+                  </span>
+                </div>
               </div>
             </div>
-            <div className="mt-3 male_left">
-              <div className="grid grid-cols-1 sm:grid-cols-2 mx-3 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {loading ? (
-                  [...Array(20)].map((_, index) => <SkeletonCard key={index} />)
-                ) : products && products.length > 0 ? (
-                  products.map((product, index) => (
-                    <div
-                      className="product-card group rounded-xl overflow-hidden bg-white shadow-md hover:shadow-xl transition-all duration-300"
-                      key={product._id}
-                    >
-                      <div className="relative">
-                        <img
-                          className="w-full h-48 object-cover transition-transform duration-500 hover:scale-105"
-                          src={
-                            product.variants[0]?.images[0]?.url ||
-                            "/default-image.jpg"
-                          }
-                          alt={product.name}
-                        />
-                        {typeof product.discount !== "undefined" && (
-                          <span className="absolute top-2 right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
-                            -{product.discount || 0}%
-                          </span>
-                        )}
-                        <div className="absolute bottom-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <button className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100">
+
+            {/* Mobile Filter Button & Sort Controls */}
+            <div className="bg-white rounded-2xl shadow-lg p-4 mb-6">
+              <div className="flex items-center justify-between gap-4">
+                {/* Mobile Filter Button */}
+                <Button
+                  onClick={() => setFilterDrawerOpen(true)}
+                  className="clothing-male-filter-btn bg-green-500 hover:bg-green-600 text-white border-none rounded-xl px-4 h-10 flex items-center gap-2"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                    />
+                  </svg>
+                  Bộ lọc
+                </Button>
+
+                {/* Sort Controls */}
+                <div className="relative" ref={menuRef}>
+                  <Button
+                    onClick={() => setCheckFilter((prev) => !prev)}
+                    className="bg-green-500 hover:bg-green-600 text-white border-none rounded-xl px-6 h-10"
+                  >
+                    Sắp xếp theo
+                  </Button>
+                  {checkFilter && (
+                    <div className="absolute top-12 right-0 z-50 bg-white rounded-xl shadow-xl border border-gray-200 py-2 min-w-48">
+                      <button
+                        onClick={() => handleSortDate("newest")}
+                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-gray-700"
+                      >
+                        Mới nhất
+                      </button>
+                      <button
+                        onClick={() => handleSortDesAndAsc("asc")}
+                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-gray-700"
+                      >
+                        Giá: thấp - cao
+                      </button>
+                      <button
+                        onClick={() => handleSortDesAndAsc("desc")}
+                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-gray-700"
+                      >
+                        Giá: cao - thấp
+                      </button>
+                      <button
+                        onClick={() => handleSortSold("hot")}
+                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-gray-700"
+                      >
+                        Bán chạy nhất
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Products Grid */}
+            <div className="clothing-male-grid">
+              {loading ? (
+                [...Array(12)].map((_, index) => <SkeletonCard key={index} />)
+              ) : products && products.length > 0 ? (
+                products.map((product) => (
+                  <div
+                    key={product._id}
+                    className="clothing-male-card bg-white rounded-2xl shadow-lg overflow-hidden group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                  >
+                    <div className="relative">
+                      <img
+                        className="clothing-male-image w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        src={
+                          product.variants[0]?.images[0]?.url ||
+                          "/placeholder.svg?height=250&width=350"
+                        }
+                        alt={product.name}
+                      />
+                      {product.discount > 0 && (
+                        <span className="absolute top-3 right-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                          -{product.discount}%
+                        </span>
+                      )}
+                      <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        {isProductInWishlist.includes(product._id) ? (
+                          <>
+                            <button
+                              className="bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
+                              onClick={() => handleRemoveWishList(product._id)}
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 text-green-600"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                                />
+                              </svg>
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
+                            onClick={() => handlAddWishList(product._id)}
+                          >
                             <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4 text-gray-600"
+                              className="w-4 h-4 text-gray-600"
                               fill="none"
-                              viewBox="0 0 24 24"
                               stroke="currentColor"
+                              viewBox="0 0 24 24"
                             >
                               <path
                                 strokeLinecap="round"
@@ -554,135 +688,191 @@ const ClothingMale = () => {
                               />
                             </svg>
                           </button>
-                          <button
-                            className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
-                            onClick={() =>
-                              handelModelProductCart(
-                                product._id,
-                                product.variants,
-                                product.price,
-                                product.discountedPrice,
-                                product.name,
-                                product.discount
-                              )
-                            }
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4 text-gray-600"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                      <div
-                        className="p-3"
-                        onClick={() => handleDetails(product._id)}
-                      >
-                        <p className="text-xs text-gray-600 uppercase tracking-wider font-medium">
-                          {product.brand}
-                        </p>
-                        <h3 className="text-sm font-semibold text-gray-900 line-clamp-1 mt-1">
-                          {product.name}
-                        </h3>
-                        <div className="mt-2 flex items-center justify-between">
-                          <div>
-                            <span className="text-base font-bold text-red-600">
-                              {formatPrice(product.discountedPrice)}
-                            </span>
+                        )}
 
-                            {product.discount > 0 && (
-                              <span className="text-xs  text-gray-500 line-through ml-2">
-                                {formatPrice(product.price)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <Flex className="mt-2">
-                          <Rate
-                            tooltips={desc}
-                            onChange={(value) => handleRate(product._id, value)}
-                            value={ratings[product._id] || 0}
-                            className="text-yellow-400"
-                          />
-                        </Flex>
+                        <button
+                          onClick={() =>
+                            handelModelProductCart(
+                              product._id,
+                              product.variants,
+                              product.price,
+                              product.discountedPrice,
+                              product.name,
+                              product.discount
+                            )
+                          }
+                          className="bg-green-500 hover:bg-green-600 p-2 rounded-full shadow-lg transition-colors"
+                        >
+                          <svg
+                            className="w-4 h-4 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                            />
+                          </svg>
+                        </button>
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="flex w-full h-80 justify-center items-center whitespace-pre-wrap">
-                    <p>Không tìm thấy sản phẩm...</p>
+                    <div
+                      className="clothing-male-content"
+                      onClick={() => handleDetails(product.slug)}
+                    >
+                      <p className="text-sm text-green-600 uppercase tracking-wider font-medium mb-2">
+                        {product.brand}
+                      </p>
+                      <h3 className="clothing-male-title font-semibold text-gray-900 line-clamp-2 mb-3 cursor-pointer hover:text-green-600">
+                        {product.name}
+                      </h3>
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <span className="clothing-male-price font-bold text-green-600">
+                            {formatPrice(product.discountedPrice)}
+                          </span>
+                          {product.discount > 0 && (
+                            <span className="clothing-male-original-price text-gray-500 line-through ml-2">
+                              {formatPrice(product.price)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <Rate
+                        disabled
+                        value={ratings[product._id] || 4}
+                        className="text-yellow-400 text-sm"
+                      />
+                    </div>
                   </div>
-                )}
-              </div>
-              <div className="mt-10 flex justify-center items-center">
-                {products && products.length > 0 && (
-                  <ReactPaginate
-                    previousLabel={
-                      <svg
-                        viewBox="64 64 896 896"
-                        focusable="false"
-                        data-icon="left"
-                        width="1em"
-                        height="1em"
-                        fill="currentColor"
-                        aria-hidden="true"
-                      >
-                        <path d="M724 218.3V141c0-6.7-7.7-10.4-12.9-6.3L260.3 486.8a31.86 31.86 0 000 50.3l450.8 352.1c5.3 4.1 12.9.4 12.9-6.3v-77.3c0-4.9-2.3-9.6-6.1-12.6l-360-281 360-281.1c3.8-3 6.1-7.7 6.1-12.6z" />
-                      </svg>
-                    }
-                    nextLabel={
-                      <svg
-                        viewBox="64 64 896 896"
-                        focusable="false"
-                        data-icon="right"
-                        width="16px"
-                        height="16px"
-                        fill="currentColor"
-                        aria-hidden="true"
-                      >
-                        <path d="M765.7 486.8L314.9 134.7A7.97 7.97 0 00302 141v77.3c0 4.9 2.3 9.6 6.1 12.6l360 281.1-360 281.1c-3.9 3-6.1 7.7-6.1 12.6V883c0 6.7 7.7 10.4 12.9 6.3l450.8-352.1a31.96 31.96 0 000-50.4z" />
-                      </svg>
-                    }
-                    initialPage={savedCurrentPage - 1}
-                    breakLabel={null}
-                    pageCount={totalPages}
-                    marginPagesDisplayed={3}
-                    pageRangeDisplayed={3}
-                    onPageChange={handlePageClick}
-                    containerClassName="flex items-center gap-2"
-                    pageLinkClassName="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded"
-                    activeLinkClassName="bg-blue-500 text-white"
-                    previousClassName="p-2"
-                    nextClassName="p-2"
-                    disabledClassName="opacity-50"
-                  />
-                )}
-              </div>
+                ))
+              ) : (
+                <div className="col-span-full flex justify-center items-center h-64 bg-white rounded-2xl shadow-lg">
+                  <div className="text-center">
+                    <svg
+                      className="w-16 h-16 text-gray-400 mx-auto mb-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1}
+                        d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                      />
+                    </svg>
+                    <p className="text-gray-500 text-lg">
+                      Không tìm thấy sản phẩm nào
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-            <ProductCart
-              modalCartOpen={modalCartOpen}
-              setModalCartOpen={setModalCartOpen}
-              IdProduct={IdProduct}
-              listItems={listItems}
-              price={price}
-              costPrice={costPrice}
-              productname={productname}
-              discount={discount}
-            />
+
+            {/* Pagination */}
+            {products && products.length > 0 && (
+              <div className="mt-8 flex justify-center">
+                <ReactPaginate
+                  previousLabel={
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 19l-7-7 7-7"
+                      />
+                    </svg>
+                  }
+                  nextLabel={
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  }
+                  initialPage={savedCurrentPage - 1}
+                  breakLabel="..."
+                  pageCount={totalPages}
+                  marginPagesDisplayed={2}
+                  pageRangeDisplayed={3}
+                  onPageChange={handlePageClick}
+                  containerClassName="clothing-male-pagination flex items-center gap-2 flex-wrap justify-center"
+                  pageLinkClassName="clothing-male-page-link flex items-center justify-center rounded-xl border border-gray-300 hover:border-green-500 hover:bg-green-50 text-gray-700 hover:text-green-600 transition-colors text-sm"
+                  activeLinkClassName="bg-green-500 text-white border-green-500 hover:bg-green-600"
+                  previousClassName="p-1 sm:p-2 rounded-xl border border-gray-300 hover:border-green-500 hover:bg-green-50 text-gray-700 hover:text-green-600 transition-colors"
+                  nextClassName="p-1 sm:p-2 rounded-xl border border-gray-300 hover:border-green-500 hover:bg-green-50 text-gray-700 hover:text-green-600 transition-colors"
+                  disabledClassName="opacity-50 cursor-not-allowed"
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
-    </section>
+
+      {/* Mobile Filter Drawer */}
+      <Drawer
+        title={
+          <div className="flex items-center gap-2">
+            <svg
+              className="w-5 h-5 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+              />
+            </svg>
+            <span className="text-lg font-semibold text-gray-900">
+              Bộ lọc sản phẩm
+            </span>
+          </div>
+        }
+        placement="left"
+        onClose={() => setFilterDrawerOpen(false)}
+        open={filterDrawerOpen}
+        width={320}
+        className="clothing-male-drawer"
+        bodyStyle={{ padding: "20px" }}
+        headerStyle={{
+          borderBottom: "1px solid #e5e7eb",
+          paddingBottom: "16px",
+        }}
+      >
+        <FilterContent />
+      </Drawer>
+
+      <ProductCart
+        modalCartOpen={modalCartOpen}
+        setModalCartOpen={setModalCartOpen}
+        IdProduct={IdProduct}
+        listItems={listItems}
+        price={price}
+        costPrice={costPrice}
+        productname={productname}
+        discount={discount}
+      />
+    </div>
   );
 };
 

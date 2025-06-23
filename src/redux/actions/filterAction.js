@@ -18,8 +18,6 @@ export const setTotalPages = (total) => ({
 });
 
 export const fetchProducts = (params) => async (dispatch) => {
-  console.log("size", params.color);
-
   dispatch(setLoading(true));
   try {
     const response = await CategoryProductsGender(

@@ -1,412 +1,44 @@
-/* Login.css */
-
-/* General Styles */
-.login-container {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f0f2f5;
-  position: relative;
+/* Custom styles for Ant Design components */
+.custom-password-input .ant-input-affix-wrapper {
+  border-radius: 12px !important;
+  height: 48px !important;
+  border-width: 2px !important;
+  transition: all 0.2s ease !important;
 }
 
-/* Loading Overlay */
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+.custom-password-input .ant-input-affix-wrapper:hover {
+  border-color: #d1d5db !important;
 }
 
-/* Main Layout */
-.login-wrapper {
-  display: flex;
-  width: 100%;
-  max-width: 1200px;
-  height: 100vh;
-  background: #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
-  overflow: hidden;
+.custom-password-input .ant-input-affix-wrapper:focus,
+.custom-password-input .ant-input-affix-wrapper-focused {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
 }
 
-/* Left Side - Image */
-.login-image {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f5f5f5;
+.custom-password-input.error .ant-input-affix-wrapper {
+  border-color: #fca5a5 !important;
+  background-color: #fef2f2 !important;
 }
 
-.login-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.custom-password-input .ant-input {
+  background: transparent !important;
 }
 
-/* Right Side - Form */
-.login-form-container {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  background: #fff;
+/* Custom scrollbar for better aesthetics */
+::-webkit-scrollbar {
+  width: 6px;
 }
 
-.login-form {
-  width: 100%;
-  max-width: 400px;
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
 }
 
-.login-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1a1a1a;
-  text-align: center;
-  margin-bottom: 24px;
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
 }
 
-/* Google Login Button */
-.google-login-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 12px;
-  background: #fff;
-  border: 1px solid #d9d9d9;
-  border-radius: 8px;
-  font-size: 16px;
-  color: #1a1a1a;
-  transition: all 0.3s ease;
-}
-
-.google-login-btn:hover {
-  background: #f5f5f5;
-  border-color: #1890ff;
-}
-
-/* Divider */
-.divider {
-  display: flex;
-  align-items: center;
-  margin: 24px 0;
-}
-
-.divider span {
-  padding: 0 16px;
-  color: #8c8c8c;
-  font-size: 14px;
-}
-
-.divider::before,
-.divider::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: #d9d9d9;
-}
-
-/* Form Group */
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: #1a1a1a;
-  margin-bottom: 8px;
-}
-
-.form-group input,
-.form-group .ant-input-password {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #d9d9d9;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: all 0.3s ease;
-}
-
-.form-group input:focus,
-.form-group .ant-input-password:focus {
-  border-color: #1890ff;
-  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
-  outline: none;
-}
-
-.form-group .input-error {
-  border-color: #ff4d4f !important;
-}
-
-.form-group .error-text {
-  color: #ff4d4f;
-  font-size: 12px;
-  margin-top: 4px;
-  display: block;
-}
-
-/* Form Options */
-.form-options {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.remember-me {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: #1a1a1a;
-}
-
-.remember-me input {
-  width: 16px;
-  height: 16px;
-}
-
-.forgot-password {
-  font-size: 14px;
-  color: #1890ff;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-.forgot-password:hover {
-  text-decoration: underline;
-}
-
-/* Login Button */
-.login-btn {
-  width: 100%;
-  padding: 12px;
-  background: #1890ff;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 500;
-  color: #fff;
-  transition: all 0.3s ease;
-}
-
-.login-btn:hover {
-  background: #40a9ff;
-}
-
-/* Register Link */
-.register-link {
-  text-align: center;
-  margin-top: 16px;
-  font-size: 14px;
-  color: #8c8c8c;
-}
-
-.register-link button {
-  background: none;
-  border: none;
-  color: #1890ff;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.register-link button:hover {
-  text-decoration: underline;
-}
-
-/* OTP Modal */
-.otp-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.otp-modal-content {
-  background: #fff;
-  padding: 32px;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 400px;
-  text-align: center;
-  position: relative;
-}
-
-.otp-modal-content h3 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin-bottom: 8px;
-}
-
-.otp-modal-content p {
-  font-size: 14px;
-  color: #8c8c8c;
-  margin-bottom: 24px;
-}
-
-.otp-inputs {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.otp-inputs input {
-  width: 48px;
-  height: 48px;
-  text-align: center;
-  font-size: 18px;
-  border: 1px solid #d9d9d9;
-  border-radius: 8px;
-  outline: none;
-  transition: all 0.3s ease;
-}
-
-.otp-inputs input:focus {
-  border-color: #1890ff;
-  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
-}
-
-.otp-verify-btn {
-  width: 100%;
-  padding: 12px;
-  background: #1890ff;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  color: #fff;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.otp-verify-btn:hover {
-  background: #40a9ff;
-}
-
-.otp-resend {
-  margin-top: 16px;
-  font-size: 14px;
-  color: #8c8c8c;
-}
-
-.otp-resend button {
-  background: none;
-  border: none;
-  color: #1890ff;
-  cursor: pointer;
-}
-
-.otp-resend button:disabled {
-  color: #d9d9d9;
-  cursor: not-allowed;
-}
-
-.otp-close-btn {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: #8c8c8c;
-  cursor: pointer;
-}
-
-/* Responsive Design */
-@media (max-width: 1024px) {
-  .login-wrapper {
-    flex-direction: column;
-    height: auto;
-    border-radius: 0;
-  }
-
-  .login-image {
-    width: 100%;
-    height: 300px;
-  }
-
-  .login-form-container {
-    padding: 32px;
-  }
-}
-
-@media (max-width: 768px) {
-  .login-form-container {
-    padding: 24px;
-  }
-
-  .login-form {
-    max-width: 100%;
-  }
-
-  .login-title {
-    font-size: 24px;
-  }
-
-  .google-login-btn,
-  .login-btn {
-    padding: 10px;
-    font-size: 14px;
-  }
-
-  .otp-modal-content {
-    max-width: 90%;
-    padding: 24px;
-  }
-
-  .otp-inputs input {
-    width: 40px;
-    height: 40px;
-    font-size: 16px;
-  }
-}
-
-@media (max-width: 480px) {
-  .login-image {
-    height: 200px;
-  }
-
-  .login-form-container {
-    padding: 16px;
-  }
-
-  .login-title {
-    font-size: 20px;
-  }
-
-  .form-group input,
-  .form-group .ant-input-password {
-    padding: 10px;
-    font-size: 14px;
-  }
-
-  .otp-inputs {
-    gap: 8px;
-  }
-
-  .otp-inputs input {
-    width: 36px;
-    height: 36px;
-    font-size: 14px;
-  }
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }

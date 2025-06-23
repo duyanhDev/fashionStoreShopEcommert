@@ -4,6 +4,8 @@ import {
   IoSearch,
   IoNotificationsOutline,
   IoCartOutline,
+  IoMenuOutline,
+  IoCloseOutline,
 } from "react-icons/io5";
 import { Dropdown, Button, Drawer, Modal } from "antd";
 import { LogoutOutlined, SettingOutlined } from "@ant-design/icons";
@@ -44,6 +46,8 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
   const [DataNotifications, setDataNotifications] = useState([]);
   const [keywordSearch, setKeywordSearch] = useState("");
   const [totalPage, setTotalPage] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchVisible, setSearchVisible] = useState(false);
 
   const handleLogOut = () => {
     dispatch(logout());
@@ -65,6 +69,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
     alignItems: "center",
     gap: 8,
   };
+
   const items = [
     {
       key: "user-name",
@@ -77,7 +82,10 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
       key: "profile ",
       icon: <FaRegUserCircle size={18} />,
       label: <span style={{ flex: 1 }}>Thông tin tài khoản</span>,
-      onClick: () => navigate(`/profile/${user?.name || ""}`),
+      onClick: () => {
+        navigate(`/profile/${user?.name || ""}`);
+        setMobileMenuOpen(false);
+      },
       style: itemStyle,
     },
     ...(user
@@ -86,7 +94,10 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
             key: "orders",
             icon: <FaRegListAlt size={18} />,
             label: <span style={{ flex: 1 }}>Đơn hàng của tôi</span>,
-            onClick: () => navigate("/order"),
+            onClick: () => {
+              navigate("/order");
+              setMobileMenuOpen(false);
+            },
             style: itemStyle,
           },
         ]
@@ -98,7 +109,10 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
             key: "admin",
             icon: <RiAdminLine size={20} />,
             label: <span style={{ flex: 1 }}>Quản trị viên</span>,
-            onClick: () => navigate("/admin"),
+            onClick: () => {
+              navigate("/admin");
+              setMobileMenuOpen(false);
+            },
             style: itemStyle,
           },
           { type: "divider" },
@@ -108,7 +122,10 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
       key: "settings",
       icon: <MdOutlineVolunteerActivism size={18} />,
       label: <span style={{ flex: 1 }}>Danh sách yêu thích</span>,
-      onClick: () => navigate("/wishlist"),
+      onClick: () => {
+        navigate("/wishlist");
+        setMobileMenuOpen(false);
+      },
       style: itemStyle,
     },
     {
@@ -258,6 +275,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
     navigate(`search?q=${keyword}`);
     dispatch(SearchAction(data, totalPage));
     setKeywordSearch("");
+    setSearchVisible(false);
   };
 
   const unreadNotifications = (DataNotifications || []).filter(
@@ -320,262 +338,495 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
     return () => debouncedFetchSearch.cancel();
   }, [keywordSearch]);
 
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const toggleMobileSearch = () => {
+    setSearchVisible(!searchVisible);
+  };
+
   return (
-    <div className="header_main_dosin w-full flex justify-between items-center h-full m-auto">
-      <div className="flex items-center doin_image">
-        <ul className="flex items-center justify-between">
-          <li className="px-5">
-            <Link to="/" className="image_logo">
-              <img
-                src="https://dosi-in.com/images/assets/icons/logo.svg"
-                alt="Logo"
-              />
-            </Link>
-          </li>
-          <li>
-            <Link className="text_shop text-xl">Shopping</Link>
-          </li>
-        </ul>
-      </div>
-      <div className="input_search_item input relative flex items-center">
-        <input
-          type="text"
-          placeholder="Tìm kiếm sản phẩm"
-          className=" absolute w-full outline-none"
-          onClick={handleSearchProducts}
-          onChange={handleChangeInput}
-          value={keywordSearch}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && keywordSearch.trim()) {
-              btnHandleChangeSearch();
-            }
-          }}
-        />
-        <IoSearch
-          color="#ccc"
-          className="absolute right-0 m-4 text-2xl"
-          onClick={btnHandleChangeSearch}
-        />
-        <Search
-          open={openSerch}
-          setOpen={setOpenSearch}
-          show={showSearch}
-          setShow={setShowSearch}
-          keywordSearch={keywordSearch}
-          setKeywordSearch={setKeywordSearch}
-          data={data}
-          setData={setData}
-          onSearch={(keyword) => {
-            // 🟢 Gọi API tìm kiếm ở đây
-            FetchSearhProductsAPI(keyword); // bạn tự định nghĩa
-          }}
-        />
-      </div>
-      <div className="w-3/12 flex justify-between doin_right px-5">
-        <ul className="dosin_right_items flex justify-end w-full items-center">
-          <li className="px-5 relative" onClick={handleShowNocations}>
-            <IoNotificationsOutline size={30} />
-            {unreadNotifications && unreadNotifications.length > 0 ? (
-              <span className="cart_items mr-1">
-                {unreadNotifications.filter((item) => !item.read).length}
+    <>
+      {/* Main Header */}
+      <div className="header_main_dosin w-full flex justify-between items-center h-full mx-auto px-2 sm:px-4 lg:px-6">
+        {/* Logo Section */}
+        <div className="flex items-center doin_image flex-shrink-0">
+          <ul className="flex items-center justify-between">
+            <li className="px-2 sm:px-3 lg:px-5">
+              <Link to="/" className="image_logo">
+                <img
+                  src="https://dosi-in.com/images/assets/icons/logo.svg"
+                  alt="Logo"
+                  className="h-8 sm:h-10 w-auto"
+                />
+              </Link>
+            </li>
+            <li className="hidden sm:block">
+              <Link className="text_shop text-lg sm:text-xl">Shopping</Link>
+            </li>
+          </ul>
+        </div>
+
+        {/* Desktop Search */}
+        <div className="input_search_item input relative items-center hidden md:flex flex-1 max-w-md mx-4">
+          <input
+            type="text"
+            placeholder="Tìm kiếm sản phẩm"
+            className="absolute w-full outline-none px-4 py-2 pr-12 border rounded-lg"
+            onClick={handleSearchProducts}
+            onChange={handleChangeInput}
+            value={keywordSearch}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && keywordSearch.trim()) {
+                btnHandleChangeSearch();
+              }
+            }}
+          />
+          <IoSearch
+            color="#ccc"
+            className="absolute right-0 m-4 text-2xl cursor-pointer"
+            onClick={btnHandleChangeSearch}
+          />
+          <Search
+            open={openSerch}
+            setOpen={setOpenSearch}
+            show={showSearch}
+            setShow={setShowSearch}
+            keywordSearch={keywordSearch}
+            setKeywordSearch={setKeywordSearch}
+            data={data}
+            setData={setData}
+            onSearch={(keyword) => {
+              FetchSearhProductsAPI(keyword);
+            }}
+          />
+        </div>
+
+        {/* Desktop Right Section */}
+        <div className="hidden md:flex w-auto justify-between doin_right px-2 sm:px-5">
+          <ul className="dosin_right_items flex justify-end items-center space-x-2 sm:space-x-4">
+            <li
+              className="relative cursor-pointer"
+              onClick={handleShowNocations}
+            >
+              <IoNotificationsOutline size={24} className="sm:w-7 sm:h-7" />
+              <span className="cart_items absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {unreadNotifications && unreadNotifications.length > 0
+                  ? unreadNotifications.filter((item) => !item.read).length
+                  : 0}
               </span>
-            ) : (
-              <span className="cart_items mr-1">0</span>
-            )}
-          </li>
-          <li className="px-5 relative" onClick={showLoading}>
-            <IoCartOutline size={30} />
-            {ListCart && ListCart.items ? (
-              <span className="cart_items">{ListCart.items.length}</span>
-            ) : (
-              <span className="cart_items">0</span>
-            )}
-          </li>
-          <li className="px-5">
-            {user ? (
-              <Dropdown
-                menu={{
-                  items,
-                }}
-                trigger={["click"]}
-              >
-                <a onClick={(e) => e.preventDefault()}>
-                  <img
-                    src={user.avatar}
-                    alt={user.name}
-                    className="w-8 h-8 rounded-full"
-                  />
-                </a>
-              </Dropdown>
-            ) : (
-              <FaUser size={25} onClick={handleLogOut} />
-            )}
-          </li>
-        </ul>
-        <Modal
-          title={
-            <div className="flex items-center gap-2">
-              <HiShoppingBag className="cart_color_item text-green-600" />
-              <span>
-                Hiện đang có
-                {ListCart && ListCart.items ? (
-                  <span className=""> {ListCart.items.length} </span>
-                ) : (
-                  <span className="">0</span>
-                )}
-                sản phẩm trong giỏ hàng
+            </li>
+            <li className="relative cursor-pointer" onClick={showLoading}>
+              <IoCartOutline size={24} className="sm:w-7 sm:h-7" />
+              <span className="cart_items absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {ListCart && ListCart.items ? ListCart.items.length : 0}
               </span>
-            </div>
-          }
-          placement="right"
-          open={open}
-          centered
-          loading={loading}
-          onCancel={() => setOpen(false)}
-          className="relative cart_products_item"
-        >
-          <div className="item_list_cart_products">
-            <span className=" ">Hình ảnh</span>
-            <span className=" ">Sản phẩm</span>
-            <span className="text-center">Số lượng</span>
-            <span className="">Thành tiền</span>
-          </div>
-          {ListCart?.items?.length > 0 ? (
-            ListCart.items.map((cart) => {
-              const imageUrl =
-                cart?.productId?.variants?.[0]?.images?.[0]?.url ||
-                "https://via.placeholder.com/100";
-              return (
-                <div
-                  className="item_list_cart_total flex items-center"
-                  key={cart._id}
+            </li>
+            <li>
+              {user ? (
+                <Dropdown
+                  menu={{
+                    items,
+                  }}
+                  trigger={["click"]}
                 >
-                  <div>
+                  <a onClick={(e) => e.preventDefault()}>
                     <img
-                      src={imageUrl}
-                      alt={cart.productId?.name || "Product"}
-                      width={100}
+                      src={user.avatar}
+                      alt={user.name}
+                      className="w-8 h-8 rounded-full cursor-pointer"
+                    />
+                  </a>
+                </Dropdown>
+              ) : (
+                <FaUser
+                  size={20}
+                  className="cursor-pointer"
+                  onClick={handleLogOut}
+                />
+              )}
+            </li>
+          </ul>
+        </div>
+
+        {/* Mobile Right Section */}
+        <div className="flex md:hidden items-center space-x-3">
+          {/* Mobile Search Toggle */}
+          <IoSearch
+            size={24}
+            className="cursor-pointer"
+            onClick={toggleMobileSearch}
+          />
+
+          {/* Mobile Cart */}
+          <div className="relative cursor-pointer" onClick={showLoading}>
+            <IoCartOutline size={24} />
+            <span className="cart_items absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              {ListCart && ListCart.items ? ListCart.items.length : 0}
+            </span>
+          </div>
+
+          {/* Mobile Menu Toggle */}
+          <button onClick={toggleMobileMenu} className="cursor-pointer">
+            {mobileMenuOpen ? (
+              <IoCloseOutline size={28} />
+            ) : (
+              <IoMenuOutline size={28} />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Search Bar */}
+      {searchVisible && (
+        <div className="md:hidden px-4 py-2 border-t bg-white">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Tìm kiếm sản phẩm"
+              className="w-full outline-none px-4 py-2 pr-12 border rounded-lg"
+              onClick={handleSearchProducts}
+              onChange={handleChangeInput}
+              value={keywordSearch}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && keywordSearch.trim()) {
+                  btnHandleChangeSearch();
+                }
+              }}
+            />
+            <IoSearch
+              color="#ccc"
+              className="absolute right-0 top-1/2 transform -translate-y-1/2 mr-4 text-2xl cursor-pointer"
+              onClick={btnHandleChangeSearch}
+            />
+          </div>
+          <Search
+            open={openSerch}
+            setOpen={setOpenSearch}
+            show={showSearch}
+            setShow={setShowSearch}
+            keywordSearch={keywordSearch}
+            setKeywordSearch={setKeywordSearch}
+            data={data}
+            setData={setData}
+            onSearch={(keyword) => {
+              FetchSearhProductsAPI(keyword);
+            }}
+          />
+        </div>
+      )}
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden absolute top-full left-0 right-0 bg-white border-t shadow-lg z-50">
+          <div className="px-4 py-6">
+            {/* User Info */}
+            {user ? (
+              <div className="flex items-center space-x-3 mb-6 pb-4 border-b">
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="w-10 h-10 rounded-full"
+                />
+                <span className="font-semibold">{user.name}</span>
+              </div>
+            ) : (
+              <div className="mb-6 pb-4 border-b">
+                <Button
+                  type="primary"
+                  className="w-full"
+                  onClick={() => {
+                    handleLogOut();
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  Đăng Nhập
+                </Button>
+              </div>
+            )}
+
+            {/* Mobile Menu Items */}
+            <div className="space-y-4">
+              {/* Notifications */}
+              <div
+                className="flex items-center justify-between py-2 cursor-pointer"
+                onClick={() => {
+                  handleShowNocations();
+                  setMobileMenuOpen(false);
+                }}
+              >
+                <div className="flex items-center space-x-3">
+                  <IoNotificationsOutline size={20} />
+                  <span>Thông báo</span>
+                </div>
+                <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {unreadNotifications && unreadNotifications.length > 0
+                    ? unreadNotifications.filter((item) => !item.read).length
+                    : 0}
+                </span>
+              </div>
+
+              {user && (
+                <>
+                  {/* Profile */}
+                  <div
+                    className="flex items-center space-x-3 py-2 cursor-pointer"
+                    onClick={() => {
+                      navigate(`/profile/${user?.name || ""}`);
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <FaRegUserCircle size={20} />
+                    <span>Thông tin tài khoản</span>
+                  </div>
+
+                  {/* Orders */}
+                  <div
+                    className="flex items-center space-x-3 py-2 cursor-pointer"
+                    onClick={() => {
+                      navigate("/order");
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <FaRegListAlt size={20} />
+                    <span>Đơn hàng của tôi</span>
+                  </div>
+
+                  {/* Admin */}
+                  {user?.role === "admin" && (
+                    <div
+                      className="flex items-center space-x-3 py-2 cursor-pointer"
+                      onClick={() => {
+                        navigate("/admin");
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <RiAdminLine size={20} />
+                      <span>Quản trị viên</span>
+                    </div>
+                  )}
+
+                  {/* Wishlist */}
+                  <div
+                    className="flex items-center space-x-3 py-2 cursor-pointer"
+                    onClick={() => {
+                      navigate("/wishlist");
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <MdOutlineVolunteerActivism size={20} />
+                    <span>Danh sách yêu thích</span>
+                  </div>
+
+                  {/* Logout */}
+                  <div
+                    className="flex items-center space-x-3 py-2 cursor-pointer text-red-600"
+                    onClick={() => {
+                      handleLogOut();
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <LogoutOutlined />
+                    <span>Đăng Xuất</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cart Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <HiShoppingBag className="cart_color_item text-green-600" />
+            <span className="text-sm sm:text-base">
+              Hiện đang có
+              <span className="mx-1">
+                {ListCart && ListCart.items ? ListCart.items.length : 0}
+              </span>
+              sản phẩm trong giỏ hàng
+            </span>
+          </div>
+        }
+        placement="right"
+        open={open}
+        centered
+        loading={loading}
+        onCancel={() => setOpen(false)}
+        className="relative cart_products_item"
+        width={window.innerWidth < 768 ? "95%" : 600}
+      >
+        {/* Cart Header - Hidden on mobile */}
+        <div className="item_list_cart_products hidden sm:grid">
+          <span>Hình ảnh</span>
+          <span>Sản phẩm</span>
+          <span className="text-center">Số lượng</span>
+          <span>Thành tiền</span>
+        </div>
+
+        {ListCart?.items?.length > 0 ? (
+          ListCart.items.map((cart) => {
+            const imageUrl =
+              cart?.productId?.variants?.[0]?.images?.[0]?.url ||
+              "https://via.placeholder.com/100";
+            return (
+              <div
+                className="item_list_cart_total flex flex-col sm:flex-row items-start sm:items-center py-4 border-b"
+                key={cart._id}
+              >
+                {/* Product Image */}
+                <div className="w-full sm:w-auto mb-2 sm:mb-0 flex justify-center sm:justify-start">
+                  <img
+                    src={imageUrl}
+                    alt={cart.productId?.name || "Product"}
+                    className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded"
+                  />
+                </div>
+
+                {/* Product Info */}
+                <div className="flex-1 px-0 sm:px-4 mb-2 sm:mb-0">
+                  <h4 className="font-medium text-sm sm:text-base mb-1 line-clamp-2">
+                    {cart.productId?.name || "Unknown Product"}
+                  </h4>
+                  <p className="text-xs sm:text-sm text-gray-600 uppercase mb-2">
+                    {cart.color || "N/A"} - {cart.size || "N/A"}
+                  </p>
+                  <div className="flex items-center justify-between sm:justify-start gap-3">
+                    <span className="text-sm sm:text-base font-semibold text-orange-600">
+                      {formatPrice(cart.price)}
+                    </span>
+                    <MdDeleteForever
+                      className="cursor-pointer hover:text-orange-600"
+                      size={20}
+                      color="rgb(242, 153, 74)"
+                      onClick={() => handleRemoveCartProduct(cart._id)}
                     />
                   </div>
-                  <div className="">
-                    <span className="whitespace-nowrap">
-                      {cart.productId?.name || "Unknown Product"}
-                    </span>
-                    <p className="uppercase">
-                      {cart.color || "N/A"} - {cart.size || "N/A"}
-                    </p>
-                    <div className="flex items-center gap-5">
-                      <span className="border-r-2 pr-4">
-                        {formatPrice(cart.price)}
-                      </span>
-                      <MdDeleteForever
-                        className="cursor-pointer"
-                        size={20}
-                        color=""
-                        style={{ color: "rgb(242, 153, 74)" }}
-                        onClick={() => handleRemoveCartProduct(cart._id)}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-center">
-                    <div className="flex justify-center items-center border border-gray-400 rounded-lg overflow-hidden w-4/5">
-                      <button
-                        className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-lg font-bold"
-                        onClick={() => handleMinus(cart._id, cart.quantity)}
-                        disabled={loadingSpin}
-                      >
-                        −
-                      </button>
-                      <input
-                        type="number"
-                        className="w-10 h-8 text-center text-lg font-semibold text-gray-900 bg-transparent border-x border-gray-300 outline-none appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        value={cart.quantity}
-                        min={1}
-                        readOnly
-                      />
-                      <button
-                        className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-lg font-bold"
-                        onClick={() => handlePlus(cart._id, cart.quantity)}
-                        disabled={loadingSpin}
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                  <div className="">{formatPrice(cart.totalItemPrice)}</div>
                 </div>
-              );
-            })
-          ) : (
-            <div className="h-96 flex justify-center items-center gap-3">
-              <FaCartArrowDown className="cart-icon" size={120} />
-              <span>Giỏ hàng chưa có gì :(, chọn mua đồ bạn nhé)</span>
-            </div>
-          )}
-          {ListCart && ListCart.items && ListCart.items.length > 0 ? (
-            <div className="flex justify-between items-center">
-              <p className="font-semibold text-base ml-5 mt-2 whitespace-nowrap">
-                Tổng tiền :{" "}
+
+                {/* Quantity Controls */}
+                <div className="w-full sm:w-auto flex justify-center mb-2 sm:mb-0">
+                  <div className="flex items-center border border-gray-400 rounded-lg overflow-hidden">
+                    <button
+                      className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-lg font-bold"
+                      onClick={() => handleMinus(cart._id, cart.quantity)}
+                      disabled={loadingSpin}
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      className="w-12 h-8 text-center text-lg font-semibold text-gray-900 bg-transparent border-x border-gray-300 outline-none appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      value={cart.quantity}
+                      min={1}
+                      readOnly
+                    />
+                    <button
+                      className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-lg font-bold"
+                      onClick={() => handlePlus(cart._id, cart.quantity)}
+                      disabled={loadingSpin}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* Total Price */}
+                <div className="w-full sm:w-auto text-center sm:text-right">
+                  <span className="font-semibold text-base text-green-600">
+                    {formatPrice(cart.totalItemPrice)}
+                  </span>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="h-64 sm:h-96 flex flex-col justify-center items-center gap-3">
+            <FaCartArrowDown className="cart-icon text-gray-400" size={80} />
+            <span className="text-center text-gray-600 px-4">
+              Giỏ hàng chưa có gì :(, chọn mua đồ bạn nhé
+            </span>
+          </div>
+        )}
+
+        {ListCart && ListCart.items && ListCart.items.length > 0 && (
+          <div className="flex flex-col sm:flex-row justify-between items-center mt-4 pt-4 border-t gap-3">
+            <p className="font-semibold text-base sm:text-lg text-center sm:text-left">
+              Tổng tiền:{" "}
+              <span className="text-green-600 text-lg sm:text-xl">
                 {ListCart && ListCart.totalPrice !== undefined
                   ? formatPrice(ListCart.totalPrice)
                   : "0đ"}
-              </p>
-              <Button
-                className="flex justify-center w-32 items-center ml-14 mt-1"
-                type="primary"
-                onClick={() => handlePay()}
-              >
-                Đặt Hàng
-              </Button>
-            </div>
-          ) : (
-            <div></div>
-          )}
-          {loadingSpin && (
-            <div className="overlay flex items-center justify-center w-full h-full">
-              <ClipLoader className="" />
-            </div>
-          )}
-        </Modal>
-        <Drawer
-          closable
-          destroyOnClose
-          title={<p>Thông Báo</p>}
-          placement="right"
-          open={showHiden}
-          loading={loading}
-          onClose={() => setShowHiden(false)}
+              </span>
+            </p>
+            <Button
+              className="w-full sm:w-auto min-w-32"
+              type="primary"
+              size="large"
+              onClick={() => handlePay()}
+            >
+              Đặt Hàng
+            </Button>
+          </div>
+        )}
+
+        {loadingSpin && (
+          <div className="overlay flex items-center justify-center w-full h-full absolute top-0 left-0 bg-white bg-opacity-80 z-10">
+            <ClipLoader />
+          </div>
+        )}
+      </Modal>
+
+      {/* Notifications Drawer */}
+      <Drawer
+        closable
+        destroyOnClose
+        title={<p>Thông Báo</p>}
+        placement="right"
+        open={showHiden}
+        loading={loading}
+        onClose={() => setShowHiden(false)}
+        width={window.innerWidth < 768 ? "90%" : 400}
+      >
+        <Button
+          type="primary"
+          style={{
+            marginBottom: 16,
+          }}
+          onClick={handleShowNocations}
+          className="w-full sm:w-auto"
         >
-          <Button
-            type="primary"
-            style={{
-              marginBottom: 16,
-            }}
-            onClick={handleShowNocations}
-          >
-            Reload
-          </Button>
-          {unreadNotifications && unreadNotifications.length > 0 ? (
-            unreadNotifications.map((item) => (
-              <div key={item._id}>
-                <div
-                  className="border-b-2 p-1 cursor-pointer"
-                  onClick={() => handleBtnNocafition(item._id, item.orderId)}
-                >
-                  {item.message}
-                  <div className="mt-1">{formatTimeAgo(item.createdAt)}</div>
+          Reload
+        </Button>
+        {unreadNotifications && unreadNotifications.length > 0 ? (
+          unreadNotifications.map((item) => (
+            <div key={item._id}>
+              <div
+                className="border-b-2 p-3 cursor-pointer hover:bg-gray-50 rounded"
+                onClick={() => handleBtnNocafition(item._id, item.orderId)}
+              >
+                <p className="text-sm sm:text-base mb-2">{item.message}</p>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs sm:text-sm text-gray-500">
+                    {formatTimeAgo(item.createdAt)}
+                  </span>
                   {item.read === false && (
-                    <div className="w-3 h-3 bg-blue-600 rounded-full float-right -mt-4"></div>
+                    <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
                   )}
                 </div>
               </div>
-            ))
-          ) : (
-            <p>Hiện tại không có thông báo nào</p>
-          )}
-        </Drawer>
-      </div>
-    </div>
+            </div>
+          ))
+        ) : (
+          <p className="text-center text-gray-500 py-8">
+            Hiện tại không có thông báo nào
+          </p>
+        )}
+      </Drawer>
+    </>
   );
 };
 

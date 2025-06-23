@@ -8,16 +8,34 @@ import {
   InputNumber,
   Upload,
   message,
+  Card,
+  Row,
+  Col,
+  Divider,
+  Form,
+  Tag,
 } from "antd";
 
 import ImgCrop from "antd-img-crop";
 import { useEffect, useState } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+import {
+  PlusOutlined,
+  DeleteOutlined,
+  ShoppingOutlined,
+  TagsOutlined,
+  PictureOutlined,
+  DollarOutlined,
+  InfoCircleOutlined,
+} from "@ant-design/icons";
 
 import { ListCategoryAPI } from "../../service/ApiCategory";
 import { createProductAPI } from "../../service/ApiProduct";
 import { useNavigate } from "react-router-dom";
+
+const { Title, Text } = Typography;
+
 const Create = () => {
   const [name, setName] = useState("");
   const [gender, setGender] = useState("");
@@ -27,36 +45,34 @@ const Create = () => {
   const [price, setPrice] = useState("");
   const [costPrice, setCostPrice] = useState("");
   const [discount, setDisscount] = useState(0);
-  const [stock, setStock] = useState("");
-  const [size, setSize] = useState([]);
-  const [color, setColor] = useState([]);
-  const [image, setImageFiles] = useState([]);
   const [brand, setBrand] = useState("");
   const [care, setCare] = useState("");
   const [categoryId, setCategoryId] = useState();
   const [messageApi, contextHolder] = message.useMessage();
-
   const navigate = useNavigate();
-  // xử lí ảnh
+
+  const [image, setImageFiles] = useState([]);
   const [fileList, setFileList] = useState([]);
+
+  const [variantsInput, setVariantsInput] = useState([
+    {
+      color: "",
+      sizes: [{ size: "", quantity: 0 }],
+    },
+  ]);
 
   const onChangeImg = ({ fileList: newFileList }) => {
     setFileList(newFileList);
-
-    // Lưu trữ các file ảnh thực tế, không phải chỉ tên
     const files = newFileList.map((file) => file.originFileObj);
     setImageFiles(files);
   };
 
   const onPreview = async (file) => {
-    // You can handle image preview here if needed
-    // Example: display modal with the selected image
     const src = file.url || (await getBase64(file.originFileObj));
     const imgWindow = window.open(src);
     imgWindow.document.write(`<img src="${src}" />`);
   };
 
-  // Function to convert file to base64 for preview
   const getBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -65,28 +81,62 @@ const Create = () => {
       reader.readAsDataURL(file);
     });
   };
-  const handleNameChange = (e) => {
-    setName(e.target.value);
-  };
-
-  const handleDescriptionChange = (e) => {
-    setDescription(e.target.value);
-  };
 
   const handleChange = (value) => {
     setCategoryId(value);
   };
 
-  const handleChangeSize = (value) => {
-    setSize(value);
+  const onChange = (value) => {
+    setPrice(value);
   };
 
-  const handleChangeClor = (value) => {
-    setColor(value);
+  const onChangeStock = (value) => {
+    // Deprecated
+  };
+
+  const onChangeGender = (value) => {
+    setGender(value);
   };
 
   const onChangeDiscount = (value) => {
     setDisscount(value);
+  };
+
+  const handleAddVariant = () => {
+    setVariantsInput([
+      ...variantsInput,
+      { color: "", sizes: [{ size: "", quantity: 0 }] },
+    ]);
+  };
+
+  const handleRemoveVariant = (index) => {
+    const updated = [...variantsInput];
+    updated.splice(index, 1);
+    setVariantsInput(updated);
+  };
+
+  const handleVariantChange = (index, field, value) => {
+    const updated = [...variantsInput];
+    updated[index][field] = value;
+    setVariantsInput(updated);
+  };
+
+  const handleSizeChange = (variantIndex, sizeIndex, field, value) => {
+    const updated = [...variantsInput];
+    updated[variantIndex].sizes[sizeIndex][field] = value;
+    setVariantsInput(updated);
+  };
+
+  const addSizeToVariant = (variantIndex) => {
+    const updated = [...variantsInput];
+    updated[variantIndex].sizes.push({ size: "", quantity: 0 });
+    setVariantsInput(updated);
+  };
+
+  const removeSizeFromVariant = (variantIndex, sizeIndex) => {
+    const updated = [...variantsInput];
+    updated[variantIndex].sizes.splice(sizeIndex, 1);
+    setVariantsInput(updated);
   };
 
   useEffect(() => {
@@ -98,288 +148,606 @@ const Create = () => {
             label: category.name,
             value: category._id,
           }));
-          setOptionCategory(dataCategory); // Set the options with IDs and names
+          setOptionCategory(dataCategory);
         }
       } catch (error) {
         console.log(error);
       }
     };
-
     FetchCategory();
   }, []);
 
-  const optionsSize = [
-    { label: "S", value: "S" },
-    { label: "M", value: "M" },
-    { label: "L", value: "L" },
-    { label: "XL", value: "XL" },
-    { label: "XXL", value: "XXL" },
-    { label: "28", value: "28" },
-    { label: "29", value: "29" },
-    { label: "30", value: "30" },
-    { label: "31", value: "31" },
-  ];
-
-  const colorArr = ["đen", "trắng", "xanh", "nâu", "be"];
-  const genderArr = ["male", "female", "unisex"];
-  const optionsColor = colorArr.map((color) => ({
-    label: color,
-    value: color,
-  }));
-
-  const optionGender = genderArr.map((gender) => ({
-    label: gender,
-    value: gender,
-  }));
-
-  const onChange = (value) => {
-    setPrice(value);
-  };
-
-  const onChangeStock = (value) => {
-    setStock(value);
-  };
-  const onChangeGender = (value) => {
-    setGender(value);
-  };
-
   const handleCreate = async () => {
     try {
-      const res = await createProductAPI(
-        name,
-        gender,
-        description,
-        categoryId,
-        brand,
-        care,
-        price,
-        discount,
-        stock,
-        size,
-        color,
-        image,
-        costPrice
-      );
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("gender", gender);
+      formData.append("description", description);
+      formData.append("category", categoryId);
+      formData.append("brand", brand);
+      formData.append("care", care);
+      formData.append("price", price);
+      formData.append("discount", discount);
+      formData.append("costPrice", costPrice);
 
+      image.forEach((img) => formData.append("images", img));
+      formData.append("variantsInput", JSON.stringify(variantsInput));
+
+      const res = await createProductAPI(formData);
       if (res) {
-        const key = "updatable";
-
-        // Display loading message and success notification
-        messageApi.open({
-          key,
-          type: "loading",
-          content: "Loading...",
-        });
-        setTimeout(() => {
-          messageApi.open({
-            key,
-            type: "success",
-            content: "Products added successfully!",
-            duration: 2,
-          });
-        }, 1000);
-        // setName("");
-        // setBrand("");
-        // setCare("");
-        // setDescription("");
-        // setCategory("");
-        // setStock("");
-        // setColor([]);
-        // setSize([]);
-        // setDisscount("");
-        // setPrice("");
-        // setImageFiles("");
-        // setCostPrice("");
+        messageApi.success("Tạo sản phẩm thành công");
+        navigate("/admin");
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
-    <div className="w-full ml-6 flex ">
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        padding: "24px",
+      }}
+    >
       {contextHolder}
-      <div className="w-3/5">
-        <Typography.Title level={5}>Name</Typography.Title>
-        <Input maxLength={200} value={name} onChange={handleNameChange} />
-        <div className="mt-2">
-          <Typography.Title level={5}>Gender</Typography.Title>
-          <Space
-            style={{
-              width: "50%",
-            }}
-            direction="vertical"
-          >
-            <Select
-              allowClear
-              style={{
-                width: "100%",
-              }}
-              placeholder="Please select"
-              value={gender}
-              onChange={onChangeGender}
-              options={optionGender}
-            />
-          </Space>
-        </div>
-
-        <Typography.Title level={5}>Brand</Typography.Title>
-        <Input
-          maxLength={200}
-          value={brand}
-          onChange={(e) => setBrand(e.target.value)}
-        />
-        <Typography.Title level={5}>Care</Typography.Title>
-        <Input
-          maxLength={200}
-          value={care}
-          onChange={(e) => setCare(e.target.value)}
-        />
-        <Typography.Title level={5} className="mt-4">
-          Description
-        </Typography.Title>
-        <Input.TextArea
-          showCount
-          maxLength={1000}
-          value={description}
-          onChange={handleDescriptionChange}
-          placeholder="disable resize"
+      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+        {/* Header */}
+        <Card
           style={{
-            height: 120,
-            resize: "none",
+            marginBottom: "24px",
+            borderRadius: "16px",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+            border: "none",
           }}
-        />
-        <Typography.Title level={5}>Content</Typography.Title>
-        <ReactQuill value={"1"} style={{ height: "300px" }} />
-      </div>
-      <div className="w-2/5 ">
-        <Flex gap="small" wrap className="mt-8 ml-5 ">
-          <Button onClick={() => navigate("/admin")}>Cancel</Button>
-          <Button type="primary" onClick={handleCreate}>
-            Create
-          </Button>
-        </Flex>
-        <div className="ml-5 mt-2">
-          <Typography.Title level={5}>Category</Typography.Title>
-          <Space
-            style={{
-              width: "50%",
-            }}
-            direction="vertical"
-          >
-            <Select
-              mode="multiple"
-              allowClear
+        >
+          <Flex align="center" gap="middle">
+            <div
               style={{
-                width: "100%",
+                width: "48px",
+                height: "48px",
+                borderRadius: "12px",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "white",
+                fontSize: "20px",
               }}
-              placeholder="Please select"
-              value={categoryId} // This should hold the category ID(s)
-              onChange={handleChange}
-              options={opitonCategory} // Use options with IDs and names
-            />
-          </Space>
-        </div>
-
-        <div className="ml-5 mt-2">
-          <Typography.Title level={5}>Giá bán</Typography.Title>
-          <Input
-            type="number"
-            style={{ width: "50%" }}
-            min={1}
-            value={costPrice}
-            onChange={(e) => setCostPrice(e.target.value)}
-          />
-        </div>
-        <div className="ml-5 mt-2">
-          <Typography.Title level={5}>Giá nhập</Typography.Title>
-          <InputNumber
-            style={{
-              width: "50%",
-            }}
-            min={1}
-            value={price}
-            onChange={onChange}
-          />
-        </div>
-        <div className="ml-5 mt-2">
-          <Typography.Title level={5}>discount</Typography.Title>
-          <InputNumber
-            style={{
-              width: "50%",
-            }}
-            min={0}
-            max={90000000}
-            value={discount}
-            onChange={onChangeDiscount}
-          />
-        </div>
-        <div className="ml-5 mt-2">
-          <Typography.Title level={5}>Stock</Typography.Title>
-          <InputNumber
-            style={{
-              width: "50%",
-            }}
-            min={0}
-            max={10000}
-            value={stock}
-            onChange={onChangeStock}
-          />
-        </div>
-        <div className="ml-5 mt-2">
-          <Typography.Title level={5}>Size</Typography.Title>
-          <Space
-            style={{
-              width: "50%",
-            }}
-            direction="vertical"
-          >
-            <Select
-              mode="multiple"
-              allowClear
-              style={{
-                width: "100%",
-              }}
-              placeholder="Please select"
-              value={size}
-              onChange={handleChangeSize}
-              options={optionsSize}
-            />
-          </Space>
-        </div>
-        <div className="ml-5 mt-2">
-          <Typography.Title level={5}>Color</Typography.Title>
-          <Space
-            style={{
-              width: "50%",
-            }}
-            direction="vertical"
-          >
-            <Select
-              mode="multiple"
-              allowClear
-              style={{
-                width: "100%",
-              }}
-              placeholder="Please select"
-              value={color}
-              onChange={handleChangeClor}
-              options={optionsColor}
-            />
-          </Space>
-        </div>
-        <div className="ml-5 mt-2">
-          <ImgCrop rotationSlider>
-            <Upload
-              listType="picture-card"
-              fileList={fileList}
-              onChange={onChangeImg}
-              onPreview={onPreview}
-              multiple
-              beforeUpload={() => false} // Prevent automatic upload
             >
-              {fileList.length < 5 && "+ Upload"}
-            </Upload>
-          </ImgCrop>
-        </div>
+              <ShoppingOutlined />
+            </div>
+            <div>
+              <Title level={2} style={{ margin: 0, color: "#1a1a1a" }}>
+                Tạo sản phẩm mới
+              </Title>
+              <Text type="secondary">Thêm sản phẩm vào cửa hàng của bạn</Text>
+            </div>
+          </Flex>
+        </Card>
+
+        <Row gutter={[24, 24]}>
+          {/* Left Column - Basic Info */}
+          <Col xs={24} lg={14}>
+            {/* Basic Information */}
+            <Card
+              title={
+                <Flex align="center" gap="small">
+                  <InfoCircleOutlined style={{ color: "#667eea" }} />
+                  <span>Thông tin cơ bản</span>
+                </Flex>
+              }
+              style={{
+                marginBottom: "24px",
+                borderRadius: "16px",
+                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.06)",
+                border: "none",
+              }}
+            >
+              <Space
+                direction="vertical"
+                size="middle"
+                style={{ width: "100%" }}
+              >
+                <div>
+                  <Text
+                    strong
+                    style={{
+                      color: "#1a1a1a",
+                      marginBottom: "8px",
+                      display: "block",
+                    }}
+                  >
+                    Tên sản phẩm *
+                  </Text>
+                  <Input
+                    placeholder="Nhập tên sản phẩm"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    size="large"
+                    style={{ borderRadius: "8px" }}
+                  />
+                </div>
+
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Text
+                      strong
+                      style={{
+                        color: "#1a1a1a",
+                        marginBottom: "8px",
+                        display: "block",
+                      }}
+                    >
+                      Giới tính
+                    </Text>
+                    <Select
+                      placeholder="Chọn giới tính"
+                      value={gender}
+                      onChange={onChangeGender}
+                      options={[
+                        { label: "Nam", value: "male" },
+                        { label: "Nữ", value: "female" },
+                        { label: "Unisex", value: "unisex" },
+                      ]}
+                      size="large"
+                      style={{ width: "100%", borderRadius: "8px" }}
+                    />
+                  </Col>
+                  <Col span={12}>
+                    <Text
+                      strong
+                      style={{
+                        color: "#1a1a1a",
+                        marginBottom: "8px",
+                        display: "block",
+                      }}
+                    >
+                      Thương hiệu
+                    </Text>
+                    <Input
+                      placeholder="Nhập thương hiệu"
+                      value={brand}
+                      onChange={(e) => setBrand(e.target.value)}
+                      size="large"
+                      style={{ borderRadius: "8px" }}
+                    />
+                  </Col>
+                </Row>
+
+                <div>
+                  <Text
+                    strong
+                    style={{
+                      color: "#1a1a1a",
+                      marginBottom: "8px",
+                      display: "block",
+                    }}
+                  >
+                    Hướng dẫn sử dụng / Chất liệu
+                  </Text>
+                  <Input
+                    placeholder="Nhập hướng dẫn sử dụng hoặc chất liệu"
+                    value={care}
+                    onChange={(e) => setCare(e.target.value)}
+                    size="large"
+                    style={{ borderRadius: "8px" }}
+                  />
+                </div>
+
+                <div>
+                  <Text
+                    strong
+                    style={{
+                      color: "#1a1a1a",
+                      marginBottom: "8px",
+                      display: "block",
+                    }}
+                  >
+                    Mô tả sản phẩm
+                  </Text>
+                  <Input.TextArea
+                    placeholder="Nhập mô tả chi tiết về sản phẩm"
+                    rows={4}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    style={{ borderRadius: "8px" }}
+                  />
+                </div>
+
+                <div>
+                  <Text
+                    strong
+                    style={{
+                      color: "#1a1a1a",
+                      marginBottom: "8px",
+                      display: "block",
+                    }}
+                  >
+                    Nội dung chi tiết
+                  </Text>
+                  <div style={{ borderRadius: "8px", overflow: "hidden" }}>
+                    <ReactQuill
+                      value={"1"}
+                      style={{ height: 200 }}
+                      theme="snow"
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginTop: "40px" }}>
+                  <Text
+                    strong
+                    style={{
+                      color: "#1a1a1a",
+                      marginBottom: "8px",
+                      display: "block",
+                    }}
+                  >
+                    Danh mục sản phẩm *
+                  </Text>
+                  <Select
+                    placeholder="Chọn danh mục"
+                    value={categoryId}
+                    onChange={handleChange}
+                    options={opitonCategory}
+                    size="large"
+                    style={{ width: "100%", borderRadius: "8px" }}
+                    suffixIcon={<TagsOutlined style={{ color: "#667eea" }} />}
+                  />
+                </div>
+              </Space>
+            </Card>
+
+            {/* Product Variants */}
+            <Card
+              title={
+                <Flex align="center" gap="small">
+                  <TagsOutlined style={{ color: "#667eea" }} />
+                  <span>Biến thể sản phẩm</span>
+                </Flex>
+              }
+              style={{
+                marginBottom: "24px",
+                borderRadius: "16px",
+                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.06)",
+                border: "none",
+              }}
+            >
+              <Space
+                direction="vertical"
+                size="middle"
+                style={{ width: "100%" }}
+              >
+                {variantsInput.map((variant, i) => (
+                  <Card
+                    key={i}
+                    size="small"
+                    style={{
+                      background: "#f8fafc",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "12px",
+                    }}
+                    extra={
+                      <Button
+                        type="text"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() => handleRemoveVariant(i)}
+                        style={{ borderRadius: "6px" }}
+                      >
+                        Xóa màu
+                      </Button>
+                    }
+                  >
+                    <Space
+                      direction="vertical"
+                      size="middle"
+                      style={{ width: "100%" }}
+                    >
+                      <div>
+                        <Text
+                          strong
+                          style={{ marginBottom: "8px", display: "block" }}
+                        >
+                          Màu sắc
+                        </Text>
+                        <Input
+                          placeholder="Nhập màu sắc (VD: Đỏ, Xanh, Vàng...)"
+                          value={variant.color}
+                          onChange={(e) =>
+                            handleVariantChange(i, "color", e.target.value)
+                          }
+                          style={{ borderRadius: "6px" }}
+                        />
+                      </div>
+
+                      <div>
+                        <Text
+                          strong
+                          style={{ marginBottom: "8px", display: "block" }}
+                        >
+                          Kích thước và số lượng
+                        </Text>
+                        <Space
+                          direction="vertical"
+                          size="small"
+                          style={{ width: "100%" }}
+                        >
+                          {variant.sizes.map((sz, j) => (
+                            <Flex key={j} gap="small" align="center">
+                              <Input
+                                placeholder="Size (VD: S, M, L, XL)"
+                                value={sz.size}
+                                onChange={(e) =>
+                                  handleSizeChange(i, j, "size", e.target.value)
+                                }
+                                style={{ flex: 1, borderRadius: "6px" }}
+                              />
+                              <InputNumber
+                                placeholder="Số lượng"
+                                value={sz.quantity}
+                                onChange={(val) =>
+                                  handleSizeChange(i, j, "quantity", val)
+                                }
+                                min={0}
+                                style={{ width: "120px", borderRadius: "6px" }}
+                              />
+                              <Button
+                                type="text"
+                                danger
+                                icon={<DeleteOutlined />}
+                                onClick={() => removeSizeFromVariant(i, j)}
+                                style={{ borderRadius: "6px" }}
+                              />
+                            </Flex>
+                          ))}
+                          <Button
+                            type="dashed"
+                            icon={<PlusOutlined />}
+                            onClick={() => addSizeToVariant(i)}
+                            style={{ width: "100%", borderRadius: "6px" }}
+                          >
+                            Thêm size
+                          </Button>
+                        </Space>
+                      </div>
+                    </Space>
+                  </Card>
+                ))}
+
+                <Button
+                  type="dashed"
+                  icon={<PlusOutlined />}
+                  onClick={handleAddVariant}
+                  style={{
+                    width: "100%",
+                    height: "48px",
+                    borderRadius: "8px",
+                    borderColor: "#667eea",
+                    color: "#667eea",
+                  }}
+                >
+                  Thêm biến thể màu mới
+                </Button>
+              </Space>
+            </Card>
+          </Col>
+
+          {/* Right Column - Pricing & Images */}
+          <Col xs={24} lg={10}>
+            {/* Pricing */}
+            <Card
+              title={
+                <Flex align="center" gap="small">
+                  <DollarOutlined style={{ color: "#667eea" }} />
+                  <span>Thông tin giá</span>
+                </Flex>
+              }
+              style={{
+                marginBottom: "24px",
+                borderRadius: "16px",
+                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.06)",
+                border: "none",
+              }}
+            >
+              <Space
+                direction="vertical"
+                size="middle"
+                style={{ width: "100%" }}
+              >
+                <div>
+                  <Text
+                    strong
+                    style={{
+                      color: "#1a1a1a",
+                      marginBottom: "8px",
+                      display: "block",
+                    }}
+                  >
+                    Giá nhập (VNĐ)
+                  </Text>
+                  <InputNumber
+                    placeholder="0"
+                    value={costPrice}
+                    onChange={(val) => setCostPrice(val)}
+                    formatter={(value) =>
+                      `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                    }
+                    parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
+                    size="large"
+                    style={{ width: "100%", borderRadius: "8px" }}
+                    min={0}
+                  />
+                </div>
+
+                <div>
+                  <Text
+                    strong
+                    style={{
+                      color: "#1a1a1a",
+                      marginBottom: "8px",
+                      display: "block",
+                    }}
+                  >
+                    Giá bán (VNĐ) *
+                  </Text>
+                  <InputNumber
+                    placeholder="0"
+                    value={price}
+                    onChange={onChange}
+                    formatter={(value) =>
+                      `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                    }
+                    parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
+                    size="large"
+                    style={{ width: "100%", borderRadius: "8px" }}
+                    min={0}
+                  />
+                </div>
+
+                <div>
+                  <Text
+                    strong
+                    style={{
+                      color: "#1a1a1a",
+                      marginBottom: "8px",
+                      display: "block",
+                    }}
+                  >
+                    Giảm giá (%)
+                  </Text>
+                  <InputNumber
+                    placeholder="0"
+                    value={discount}
+                    onChange={onChangeDiscount}
+                    size="large"
+                    style={{ width: "100%", borderRadius: "8px" }}
+                    min={0}
+                    max={100}
+                  />
+                </div>
+
+                {price && discount > 0 && (
+                  <div
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #667eea20, #764ba220)",
+                      padding: "16px",
+                      borderRadius: "8px",
+                      border: "1px solid #667eea30",
+                    }}
+                  >
+                    <Text strong style={{ color: "#667eea" }}>
+                      Giá sau giảm:{" "}
+                      {((price * (100 - discount)) / 100).toLocaleString()} VNĐ
+                    </Text>
+                  </div>
+                )}
+              </Space>
+            </Card>
+
+            {/* Product Images */}
+            <Card
+              title={
+                <Flex align="center" gap="small">
+                  <PictureOutlined style={{ color: "#667eea" }} />
+                  <span>Hình ảnh sản phẩm</span>
+                </Flex>
+              }
+              style={{
+                marginBottom: "24px",
+                borderRadius: "16px",
+                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.06)",
+                border: "none",
+              }}
+            >
+              <div>
+                <Text
+                  type="secondary"
+                  style={{ marginBottom: "16px", display: "block" }}
+                >
+                  Tải lên tối đa 5 hình ảnh. Hình ảnh đầu tiên sẽ là ảnh đại
+                  diện.
+                </Text>
+                <ImgCrop rotationSlider>
+                  <Upload
+                    listType="picture-card"
+                    fileList={fileList}
+                    onChange={onChangeImg}
+                    onPreview={onPreview}
+                    multiple
+                    beforeUpload={() => false}
+                    style={{ borderRadius: "8px" }}
+                  >
+                    {fileList.length < 5 && (
+                      <div style={{ textAlign: "center" }}>
+                        <PlusOutlined
+                          style={{
+                            fontSize: "24px",
+                            color: "#667eea",
+                            marginBottom: "8px",
+                          }}
+                        />
+                        <div style={{ color: "#667eea", fontSize: "14px" }}>
+                          Tải ảnh lên
+                        </div>
+                      </div>
+                    )}
+                  </Upload>
+                </ImgCrop>
+              </div>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* Action Buttons */}
+        <Card
+          style={{
+            borderRadius: "16px",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+            border: "none",
+            background: "white",
+          }}
+        >
+          <Flex justify="space-between" align="center">
+            <div>
+              <Text type="secondary">
+                Kiểm tra kỹ thông tin trước khi tạo sản phẩm
+              </Text>
+            </div>
+            <Flex gap="middle">
+              <Button
+                size="large"
+                onClick={() => navigate("/admin")}
+                style={{
+                  borderRadius: "8px",
+                  minWidth: "120px",
+                  height: "48px",
+                }}
+              >
+                Hủy bỏ
+              </Button>
+              <Button
+                type="primary"
+                size="large"
+                onClick={handleCreate}
+                style={{
+                  borderRadius: "8px",
+                  minWidth: "120px",
+                  height: "48px",
+                  background:
+                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  border: "none",
+                  boxShadow: "0 4px 16px rgba(102, 126, 234, 0.3)",
+                }}
+              >
+                Tạo sản phẩm
+              </Button>
+            </Flex>
+          </Flex>
+        </Card>
       </div>
     </div>
   );

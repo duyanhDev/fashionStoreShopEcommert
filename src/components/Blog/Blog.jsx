@@ -1,259 +1,419 @@
-import "./Blog.css";
-import main_pc from "./../../assets/Image/main-pc.png";
-import concept from "../../assets/Image/concept-el-1.svg";
-import lion from "../../assets/Image/gryffindor.svg";
-import snake from "../../assets/Image/slytherin.svg";
-import concept3 from "../../assets/Image/concept-el-3.svg";
-import soi from "../../assets/Image/hufflepuff.svg";
-import daibang from "../../assets/Image/ravenclaw.svg";
-import content from "../../assets/Image/badge-2.webp";
-import { useOutletContext } from "react-router-dom";
-import { Link } from "react-router-dom";
-import { Swiper, SwiperSlide } from "swiper/react";
+import React, { useState } from "react";
+import {
+  Search,
+  Calendar,
+  User,
+  Tag,
+  ChevronRight,
+  Filter,
+  Grid,
+  List,
+} from "lucide-react";
 
-// Import Swiper styles
-import "swiper/css";
-import "swiper/css/pagination";
-import "swiper/css/navigation";
-
-// import required modules
-import { Autoplay, Pagination, Navigation } from "swiper/modules";
-import { useRef } from "react";
 const Blog = () => {
-  const { user, ListProducts } = useOutletContext();
-  const formatPrice = (price) => {
-    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
-  };
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [viewMode, setViewMode] = useState("grid");
 
-  const progressCircle = useRef(null);
-  const progressContent = useRef(null);
-  const onAutoplayTimeLeft = (s, time, progress) => {
-    progressCircle.current.style.setProperty("--progress", 1 - progress);
-    progressContent.current.textContent = `${Math.ceil(time / 1000)}s`;
-  };
+  // Sample blog data
+  const blogPosts = [
+    {
+      id: 1,
+      title: "Top 10 Xu Hướng Thời Trang Bền Vững 2024",
+      excerpt:
+        "Khám phá những xu hướng thời trang bền vững đang định hình ngành công nghiệp thời trang hiện đại. Từ chất liệu tái chế đến thiết kế tối giản...",
+      image:
+        "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop",
+      category: "Thời trang",
+      author: "Nguyễn Minh",
+      date: "16.06.2025",
+      readTime: "5 phút đọc",
+      featured: true,
+    },
+    {
+      id: 2,
+      title: "Cách Phối Đồ Với Áo Thun Basic Chuẩn Trend",
+      excerpt:
+        "Áo thun basic là item không thể thiếu trong tủ đồ. Hãy cùng khám phá những cách phối đồ thông minh để tạo ra outfit ấn tượng...",
+      image:
+        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&h=600&fit=crop",
+      category: "Phối đồ",
+      author: "Trần Hương",
+      date: "15.06.2025",
+      readTime: "3 phút đọc",
+    },
+    {
+      id: 3,
+      title: "Bí Quyết Chăm Sóc Quần Áo Cotton Đúng Cách",
+      excerpt:
+        "Cotton là chất liệu phổ biến nhất trong thời trang. Tìm hiểu cách giặt, ủi và bảo quản quần áo cotton để sản phẩm luôn như mới...",
+      image:
+        "https://images.unsplash.com/photo-1445205170230-053b83016050?w=800&h=600&fit=crop",
+      category: "Chăm sóc",
+      author: "Lê Văn A",
+      date: "14.06.2025",
+      readTime: "4 phút đọc",
+    },
+    {
+      id: 4,
+      title: "Những Màu Sắc Thời Trang Hot Nhất Mùa Hè",
+      excerpt:
+        "Mùa hè 2024 mang đến những gam màu tươi sáng và năng động. Cùng khám phá palette màu sắc đang được yêu thích nhất...",
+      image:
+        "https://images.unsplash.com/photo-1516762689617-e1cfddf819d1?w=800&h=600&fit=crop",
+      category: "Xu hướng",
+      author: "Phạm Thu",
+      date: "13.06.2025",
+      readTime: "6 phút đọc",
+    },
+    {
+      id: 5,
+      title: "Style Minimalist: Phong Cách Tối Giản Đầy Tinh Tế",
+      excerpt:
+        "Minimalist không chỉ là xu hướng mà còn là triết lý sống. Tìm hiểu cách áp dụng phong cách tối giản vào tủ đồ của bạn...",
+      image:
+        "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&h=600&fit=crop",
+      category: "Lifestyle",
+      author: "Vũ Minh",
+      date: "12.06.2025",
+      readTime: "7 phút đọc",
+    },
+    {
+      id: 6,
+      title: "Giày Sneakers: Từ Thể Thao Đến Streetwear",
+      excerpt:
+        "Sneakers đã trở thành biểu tượng của văn hóa streetwear. Cùng tìm hiểu lịch sử và cách phối giày sneakers sao cho phù hợp...",
+      image:
+        "https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=800&h=600&fit=crop",
+      category: "Phụ kiện",
+      author: "Hoàng Nam",
+      date: "11.06.2025",
+      readTime: "5 phút đọc",
+    },
+  ];
 
-  const ProductBestSale =
-    ListProducts &&
-    ListProducts.length > 0 &&
-    ListProducts.filter((item) => item.sold > 2100);
+  const categories = [
+    { id: "all", name: "Tất cả", count: blogPosts.length },
+    { id: "fashion", name: "Thời trang", count: 2 },
+    { id: "styling", name: "Phối đồ", count: 1 },
+    { id: "care", name: "Chăm sóc", count: 1 },
+    { id: "trend", name: "Xu hướng", count: 1 },
+    { id: "lifestyle", name: "Lifestyle", count: 1 },
+  ];
+
+  const featuredPost = blogPosts.find((post) => post.featured);
+  const otherPosts = blogPosts.filter((post) => !post.featured);
 
   return (
-    <div className="main_blog">
-      <div className="relative group overflow-hidden">
-        {/* Hình ảnh */}
-        <img
-          src={main_pc}
-          alt="Harry Potter"
-          className="w-full transition-transform duration-500 group-hover:scale-110"
-        />
-
-        {/* Lớp overlay */}
-        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-500"></div>
-
-        {/* Nội dung hiển thị khi hover */}
-        <div className="absolute inset-0 flex flex-col justify-center items-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-          <h1 className="text-2xl font-bold">GIỚI THIỆU</h1>
-          <p className="text-sm mt-2">
-            Khám phá thế giới phép thuật của OWNDAYS x Harry Potter
-          </p>
+    <div className="min-h-screen  text-white mt-28">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-green-800 to-green-600 py-16">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center">
+            <h1 className="text-5xl font-bold mb-4">Blog Thời Trang</h1>
+            <p className="text-xl text-green-100 max-w-2xl mx-auto">
+              Khám phá thế giới thời trang với những bài viết chất lượng, xu
+              hướng mới nhất và bí quyết phối đồ độc đáo
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="w-full h-full mt-20">
-        <div className="m-auto text-center flex justify-center items-center ">
-          <img src={concept} alt="lion" className="w-1/4" />
-        </div>
-        <div className="w-1/2 m-auto text-center flex justify-between items-center gap-10 ">
-          <img src={lion} alt="lion" />
-          <div className="text-white mt-2">
-            <h1>Trải nghiệm thế giới kỳ diệu của DoisinIn</h1>
-            <h2 className="Text_h2 ">
-              Bắt đầu cuộc hành trình thú vị cùng bộ sưu tập Quần áo, Giày và
-              Phụ kiện DoisinIn x OWNDAYS. Bộ sưu tập giới hạn này mang đến
-              nhiều thiết kế độc đáo, sử dụng chất liệu cao cấp như cotton
-              thoáng mát và da bền bỉ, tôn vinh phong cách thời trang hiện đại
-              lấy cảm hứng từ thế giới phép thuật. Mỗi mẫu quần áo và giày trong
-              bộ sưu tập đều mang dấu ấn đặc trưng, từ áo hoodie ấm áp, áo thun
-              cá tính đến giày sneakers năng động. Các chi tiết như biểu tượng
-              bảo bối tử thần Deathly Hallows, hình ảnh cây đũa phép, chổi bay
-              hay đồng hồ Time-Turner của Hermione được thể hiện tinh tế, tạo
-              nên một phong cách thời trang đậm chất huyền bí và cá tính.
-            </h2>
+      {/* Search Bar */}
+      <div className="bg-gray-900 py-8">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="relative flex-1 max-w-lg">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm bài viết..."
+                className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-white"
+              />
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Filter className="w-5 h-5 text-gray-400" />
+                <select className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-green-500">
+                  <option>Mới nhất</option>
+                  <option>Phổ biến</option>
+                  <option>Cũ nhất</option>
+                </select>
+              </div>
+              <div className="flex bg-gray-800 rounded-lg border border-gray-700">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`p-2 ${
+                    viewMode === "grid"
+                      ? "bg-green-600 text-white"
+                      : "text-gray-400"
+                  } rounded-l-lg`}
+                >
+                  <Grid className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`p-2 ${
+                    viewMode === "list"
+                      ? "bg-green-600 text-white"
+                      : "text-gray-400"
+                  } rounded-r-lg`}
+                >
+                  <List className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
           </div>
-          <img src={snake} alt="lion" />
         </div>
+      </div>
 
-        <div className="w-1/2 m-auto text-center flex justify-center items-center gap-10">
-          <Link className="l-hp__btn-inner" to="/">
-            <i>T</i>
-            <i>ấ</i>
-            <i>t</i>
-            <i>&nbsp;</i>
-            <i>c</i>
-            <i>ả</i>
-            <i>&nbsp;</i>
-            <i>m</i>
-            <i>ó</i>
-            <i>n</i>
-            <i>&nbsp;</i>
-            <i>đ</i>
-            <i>ồ</i>
-          </Link>
-        </div>
-        <div className="w-1/2 m-auto flex justify-between items-center">
-          <img src={soi} alt="sói" />
-          <div className="mt-16">
-            <img src={concept3} alt="cúp" />
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar */}
+          <div className="lg:w-1/4">
+            <div className="bg-gray-900 rounded-xl p-6 sticky top-6">
+              <h3 className="text-xl font-semibold mb-6 text-green-400">
+                Danh mục
+              </h3>
+              <div className="space-y-2">
+                {categories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => setSelectedCategory(category.id)}
+                    className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${
+                      selectedCategory === category.id
+                        ? "bg-green-600 text-white"
+                        : "text-gray-300 hover:bg-gray-800"
+                    }`}
+                  >
+                    <span>{category.name}</span>
+                    <span className="text-sm bg-gray-700 px-2 py-1 rounded">
+                      {category.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Newsletter Signup */}
+              <div className="mt-8 p-4 bg-gradient-to-r from-green-600 to-green-500 rounded-lg">
+                <h4 className="font-semibold mb-2">Đăng ký nhận tin</h4>
+                <p className="text-sm text-green-100 mb-3">
+                  Nhận những bài viết mới nhất về thời trang
+                </p>
+                <input
+                  type="email"
+                  placeholder="Email của bạn"
+                  className="w-full px-3 py-2 bg-white text-black rounded mb-3 text-sm"
+                />
+                <button className="w-full bg-black text-white py-2 rounded font-medium hover:bg-gray-800 transition-colors">
+                  Đăng ký
+                </button>
+              </div>
+            </div>
           </div>
-          <img src={daibang} alt="sói" />
-        </div>
-        <div className="mt-40 w-1/2 m-auto">
-          <h2 className="l-hp__title">
-            <span>Best Seller</span>
-          </h2>
-          <div className="w-full grid grid-cols-3 gap-4">
-            {ProductBestSale &&
-              ProductBestSale.length > 0 &&
-              ProductBestSale.map((item, index) => {
-                return (
-                  <div className="card h-80  w-full">
-                    <div className="content_blog">
-                      <div className="back">
-                        <div className="back-content">
-                          <div className="-m-2">
-                            <div className="img mt-12px px-3">
-                              <img
-                                className="w-full h-auto object-cover"
-                                src={
-                                  item.variants[0]?.images[0]?.url ||
-                                  "default-image-url"
-                                }
-                              />
-                            </div>
-                          </div>
 
-                          <strong className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px] block">
-                            {item.name}
-                          </strong>
-                        </div>
+          {/* Main Content */}
+          <div className="lg:w-3/4">
+            {/* Featured Post */}
+            {featuredPost && (
+              <div className="mb-12">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-2 h-8 bg-green-500 rounded"></div>
+                  <h2 className="text-2xl font-bold text-green-400">
+                    Bài viết nổi bật
+                  </h2>
+                </div>
+                <div className="bg-gray-900 rounded-2xl overflow-hidden hover:transform hover:scale-[1.02] transition-all duration-300">
+                  <div className="md:flex">
+                    <div className="md:w-1/2">
+                      <img
+                        src={featuredPost.image}
+                        alt={featuredPost.title}
+                        className="w-full h-64 md:h-full object-cover"
+                      />
+                    </div>
+                    <div className="md:w-1/2 p-8">
+                      <div className="flex items-center gap-4 mb-4">
+                        <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm">
+                          {featuredPost.category}
+                        </span>
+                        <span className="text-gray-400 text-sm flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          {featuredPost.date}
+                        </span>
                       </div>
-                      <div className="front">
-                        <div className="img">
-                          <img src={item.variants[0]?.images[0]?.url} />
-                          <div className="circle"></div>
-                          <div className="circle" id="right"></div>
-                          <div className="circle" id="bottom"></div>
+                      <h3 className="text-2xl font-bold mb-4 hover:text-green-400 transition-colors cursor-pointer">
+                        {featuredPost.title}
+                      </h3>
+                      <p className="text-gray-300 mb-4 leading-relaxed">
+                        {featuredPost.excerpt}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm text-gray-400">
+                          <User className="w-4 h-4" />
+                          <span>{featuredPost.author}</span>
+                          <span>•</span>
+                          <span>{featuredPost.readTime}</span>
                         </div>
-
-                        <div className="front-content">
-                          <small className="badge">Pasta</small>
-                          <div className="description">
-                            <div className="title">
-                              <p className="title">
-                                <strong className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px] block">
-                                  {item.name}
-                                </strong>
-                              </p>
-                            </div>
-                            <p className="card-footer">
-                              {formatPrice(item.costPrice)} &nbsp; | &nbsp;{" "}
-                              {item.discount}%
-                            </p>
-                          </div>
-                        </div>
+                        <button className="flex items-center gap-2 text-green-400 hover:text-green-300 transition-colors">
+                          Đọc tiếp
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              </div>
+            )}
+
+            {/* Other Posts */}
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-2 h-8 bg-green-500 rounded"></div>
+                <h2 className="text-2xl font-bold text-green-400">
+                  Bài viết khác
+                </h2>
+              </div>
+
+              {viewMode === "grid" ? (
+                <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {otherPosts.map((post) => (
+                    <article
+                      key={post.id}
+                      className="bg-gray-900 rounded-xl overflow-hidden hover:transform hover:scale-105 transition-all duration-300 group"
+                    >
+                      <div className="relative">
+                        <img
+                          src={post.image}
+                          alt={post.title}
+                          className="w-full h-48 object-cover group-hover:brightness-110 transition-all duration-300"
+                        />
+                        <div className="absolute top-4 left-4">
+                          <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm">
+                            {post.category}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="p-6">
+                        <div className="flex items-center gap-2 text-sm text-gray-400 mb-3">
+                          <Calendar className="w-4 h-4" />
+                          <span>{post.date}</span>
+                          <span>•</span>
+                          <span>{post.readTime}</span>
+                        </div>
+                        <h3 className="text-lg font-semibold mb-3 group-hover:text-green-400 transition-colors cursor-pointer line-clamp-2">
+                          {post.title}
+                        </h3>
+                        <p className="text-gray-300 text-sm mb-4 line-clamp-3">
+                          {post.excerpt}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-sm text-gray-400">
+                            <User className="w-4 h-4" />
+                            <span>{post.author}</span>
+                          </div>
+                          <button className="text-green-400 hover:text-green-300 transition-colors">
+                            <ChevronRight className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {otherPosts.map((post) => (
+                    <article
+                      key={post.id}
+                      className="bg-gray-900 rounded-xl overflow-hidden hover:bg-gray-800 transition-colors group"
+                    >
+                      <div className="md:flex">
+                        <div className="md:w-1/3">
+                          <img
+                            src={post.image}
+                            alt={post.title}
+                            className="w-full h-48 md:h-full object-cover"
+                          />
+                        </div>
+                        <div className="md:w-2/3 p-6">
+                          <div className="flex items-center gap-4 mb-3">
+                            <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm">
+                              {post.category}
+                            </span>
+                            <span className="text-gray-400 text-sm flex items-center gap-1">
+                              <Calendar className="w-4 h-4" />
+                              {post.date}
+                            </span>
+                          </div>
+                          <h3 className="text-xl font-semibold mb-3 group-hover:text-green-400 transition-colors cursor-pointer">
+                            {post.title}
+                          </h3>
+                          <p className="text-gray-300 mb-4">{post.excerpt}</p>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-sm text-gray-400">
+                              <User className="w-4 h-4" />
+                              <span>{post.author}</span>
+                              <span>•</span>
+                              <span>{post.readTime}</span>
+                            </div>
+                            <button className="flex items-center gap-2 text-green-400 hover:text-green-300 transition-colors">
+                              Đọc tiếp
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Pagination */}
+            <div className="flex justify-center items-center gap-2 mt-12">
+              <button className="px-4 py-2 bg-gray-800 text-gray-400 rounded-lg hover:bg-gray-700 transition-colors">
+                Trước
+              </button>
+              <button className="px-4 py-2 bg-green-600 text-white rounded-lg">
+                1
+              </button>
+              <button className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors">
+                2
+              </button>
+              <button className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors">
+                3
+              </button>
+              <span className="px-2 text-gray-500">...</span>
+              <button className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors">
+                10
+              </button>
+              <button className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors">
+                Sau
+              </button>
+            </div>
           </div>
         </div>
       </div>
-      <div className="w-full flex  justify-between gap-2 mt-20">
-        <Swiper
-          spaceBetween={30}
-          centeredSlides={true}
-          autoplay={{
-            delay: 2500,
-            disableOnInteraction: false,
-          }}
-          pagination={{
-            clickable: true,
-          }}
-          navigation={true}
-          modules={[Autoplay, Pagination, Navigation]}
-          onAutoplayTimeLeft={onAutoplayTimeLeft}
-          className="mySwiper flex-grow basis-[60%]"
-        >
-          <SwiperSlide className="main_image ">
-            <img
-              src="https://media3.coolmate.me/cdn-cgi/image/width=1800,height=1200,quality=80,format=auto/uploads/March2025/Active_women_1.jpg"
-              alt="loi"
-              className="h-full object-cover"
-            />
-          </SwiperSlide>
-          <SwiperSlide className="main_image ">
-            <img
-              src="https://pos.nvncdn.com/d0f3ca-7136/album/albumCT/20231222_OLXAhETY.jpg"
-              alt="loi"
-              className="h-full object-contain"
-            />
-          </SwiperSlide>
 
-          <div className="autoplay-progress" slot="container-end">
-            <svg viewBox="0 0 48 48" ref={progressCircle}>
-              <circle cx="24" cy="24" r="20"></circle>
-            </svg>
-            <span ref={progressContent}></span>
-          </div>
-        </Swiper>
-
-        <div className="flex-grow basis-[40%] m-auto">
-          <div className="flex  justify-center items-center gap-2">
-            <img src={content} className="w-32 h-32" alt="gioi thieu" />
-            <h1 className="text-4xl font-bold text-[#f9c967]">Dosiin là ai?</h1>
-          </div>
-          <p className="text-center p-4 text-white font-bold  p_text">
-            Một Website bán đồ thời trang Online cho tất cả giới tính nhưng toàn
-            bị chê chưa có tính thời trang trong thiết kế? Một Startup ứng dụng
-            công nghệ để thay đổi ngành thời trang truyền thống theo hướng D2C
-            Online, mang lại sự tiện lợi và tiết kiệm hơn cho các đấng mày râu
-            ,chị em? Một Thương Hiệu đồ thời trang cho nam giới ,phụ nữ , hướng
-            tới các sản phẩm tối giản, tập trung vào chất liệu và sự bền vững:
-            Substainable Fashion? ? Một doanh nghiệp bán hàng Online đầu tiên
-            tại Việt Nam có chính sách kỳ quặc: cho phép khách hàng đổi trả sản
-            phẩm tới 60 ngày kể cả đã qua sử dụng? Một "Zappos" của Việt Nam khi
-            đứng ra cam kết hài lòng 100% cho khách hàng mua sắm Online bằng 11
-            điều cụ thể? Một Startup nguồn lực hạn chế đã có chương trình
-            Care&Share đóng góp cho hoạt động từ thiện ý nghĩa? Một Startup mới
-            3 năm tuổi còn gặp nhiều khó khăn mà đi xây dựng Văn Hóa Doanh
-            Nghiệp?
+      {/* Footer CTA */}
+      <div className="bg-gradient-to-r from-green-600 to-green-800 py-16 mt-16">
+        <div className="max-w-4xl mx-auto text-center px-4">
+          <h2 className="text-3xl font-bold mb-4">
+            Không bỏ lỡ xu hướng mới nhất
+          </h2>
+          <p className="text-xl text-green-100 mb-8">
+            Đăng ký để nhận những bài viết chất lượng về thời trang và phong
+            cách sống
           </p>
-        </div>
-      </div>
-
-      <div className="w-full flex items-center justify-between gap-4 mt-16 px-14">
-        <div className="w-1/2">
-          <h1 className="text-white text-2xl font-bold ">VĂN HÓA DOSIIN</h1>
-          <div>
-            <span className="text-white text_span-title">
-              Ở DOSIIN, văn hóa không chỉ là một bộ tài liệu, mà đó là "cẩm
-              nang" và "quy tắc ứng xử" cho tất cả nhân viên của DOSIIN bất kể
-              ai, và bất kể vị trí gì. DOSIIN coi việc xây dựng Văn Hóa là một
-              phần quan trọng trong việc xây dựng doanh nghiệp phát triển mạnh
-              và bền vững. 10 điều về Văn Hóa DOSIIN được coi là "bộ luật
-              DOSIIN" định hướng cho mọi hành vi và tính cách của con người
-              DOSIIN.
-            </span>
+          <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+            <input
+              type="email"
+              placeholder="Nhập email của bạn"
+              className="flex-1 px-4 py-3 rounded-lg border-0 text-black"
+            />
+            <button className="bg-black text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors">
+              Đăng ký ngay
+            </button>
           </div>
-        </div>
-
-        <div className="text-white w-1/2">
-          <img
-            className="w-full h-auto"
-            src="https://media3.coolmate.me/cdn-cgi/image/quality=80,format=auto/uploads/October2023/mceclip0_65.png"
-            alt="lỗis"
-          />
         </div>
       </div>
     </div>

@@ -1,31 +1,31 @@
+/* Base styles - Mobile First Approach */
 .main_profile {
-  /* min-height: 100vh; */
   min-height: 100vh;
-  padding   : 40px;
+  padding: 1rem;
   margin-top: 64px;
+  background: #d9d9d9;
 }
 
 .info-name {
-  position        : absolute;
-  width           : 1300px;
-  margin          : auto;
-  height          : 250px;
+  position: relative;
+  width: 100%;
+  max-width: 1300px;
+  margin: 0 auto;
   background-color: #fff;
-  border-radius   : 10px;
-  margin-top      : 10px;
-  padding         : 40px;
-  left            : 50%;
-  transform       : translateX(-50%);
+  border-radius: 10px;
+  margin-top: 10px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .icon_users {
-  width     : 100px;
-  height    : auto;
+  width: 80px;
+  height: auto;
   object-fit: cover;
 }
 
 .text_rank {
-  font-size: 26px;
+  font-size: clamp(1.2rem, 4vw, 1.6rem);
 }
 
 .account-line__text {
@@ -34,74 +34,47 @@
 
 .account-line_value {
   background-color: #d9d9d9;
-  /* Mặc định màu xám */
-  border-radius   : 100vmax;
-  display         : block;
-  height          : 4px;
-  position        : relative;
-  width           : 100%;
-  transition      : background-color 0.3s ease, width 0.3s ease;
+  border-radius: 100vmax;
+  display: block;
+  height: 4px;
+  position: relative;
+  width: 100%;
+  transition: background-color 0.3s ease, width 0.3s ease;
 }
 
-/* Màu xanh khi đạt mốc "Mới" */
+/* Progress bar colors for different tiers */
 .account-line_value.active.new {
-  background: linear-gradient(to right,
-      #f5a623 -1% 0%,
-      #f5a623 8% 20%,
-      /* Tô màu xanh đến điểm Mới */
-      #d9d9d9 20%);
+  background: linear-gradient(to right, #f5a623 0% 20%, #d9d9d9 20%);
 }
 
-/* Màu xanh đến mốc "Bạc" */
 .account-line_value.active.silver {
-  background: linear-gradient(to right,
-      #f5a623 45% 0%,
-      #f5a623 45% 28%,
-      /* Tô màu xanh từ "Mới" đến "Bạc" */
-      #d9d9d9 28%);
+  background: linear-gradient(to right, #f5a623 0% 28%, #d9d9d9 28%);
 }
 
-/* Màu vàng khi đạt mốc "Vàng" */
 .account-line_value.active.gold {
-  background: linear-gradient(to right,
-      #f5a623 45% 0%,
-      #f5a623 68% 28%,
-      /* Màu xanh từ "Mới" đến "Bạc" */
-      #f5a623 45%,
-      /* Màu vàng từ "Bạc" đến "Vàng" */
-      #d9d9d9 45%
-      /* Phần còn lại */
-    );
+  background: linear-gradient(to right, #f5a623 0% 45%, #d9d9d9 45%);
 }
 
-/* Màu bạch kim khi đạt mốc "Bạch Kim" */
 .account-line_value.active.platinum {
-  background: linear-gradient(to right,
-      #f5a623 45% 0%,
-      #f5a623 45% 45%,
-      /* Màu xanh từ "Mới" đến "Bạc" */
-      #f5a623 100%,
-      /* Màu vàng từ "Bạc" đến "Vàng" */
-      #e5e4e2 70%,
-      /* Màu bạch kim từ "Vàng" đến "Bạch Kim" */
-      #d9d9d9 100%);
+  background: linear-gradient(to right, #f5a623 0% 70%, #e5e4e2 70% 100%);
 }
 
 .account-line__text:before {
   background-color: #2f5acf;
-  border          : 0.125rem solid #fff;
-  border-radius   : 100vmax;
-  bottom          : 100%;
-  box-sizing      : border-box;
-  content         : "";
-  height          : 0.75rem;
-  left            : 0;
-  position        : absolute;
-  width           : 0.75rem;
-  top             : -12px;
+  border: 0.125rem solid #fff;
+  border-radius: 100vmax;
+  bottom: 100%;
+  box-sizing: border-box;
+  content: "";
+  height: 0.75rem;
+  left: 0;
+  position: absolute;
+  width: 0.75rem;
+  top: -12px;
 }
 
-span.account-line__text.account-line_hangbac.absolute {
+/* Tier position indicators - responsive */
+.account-line__text.account-line_hangbac.absolute {
   left: 20%;
 }
 
@@ -113,39 +86,449 @@ span.account-line__text.account-line_hangbac.absolute {
   left: 65%;
 }
 
-img.object-cover.palatium {
-  margin-left: -95px;
+.profile_username {
+  position: relative;
+  width: 100%;
+  max-width: 1300px;
+  margin: 2rem auto 0;
+  min-height: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-.profile_username.relative.bottom-0 {
-  width     : 1300px;
-  margin-top: 20%;
-  min-height: 500px;
-  left      : 50%;
-  transform : translateX(-50%);
+.account_list_btn {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .account_list_btn p {
-  margin-top: 20px;
+  margin: 0;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.account_list_btn p:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.account_list_btn p img {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  margin-right: 0.5rem;
+}
+
+.account_list_btn p span {
+  font-size: clamp(0.9rem, 2.5vw, 1.25rem);
+  font-weight: 600;
+  color: #333;
+}
+
+.account-image {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 1rem;
 }
 
 .account-image img {
   border-radius: 50%;
-  margin-top   : 25px;
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  margin-top: 1rem;
+  border: 3px solid #f0f0f0;
+}
+
+.account-image h1 {
+  font-size: clamp(1.2rem, 3vw, 1.5rem);
+  margin-bottom: 0.5rem;
 }
 
 .account-profile_check {
-  padding: 30px;
+  padding: 1rem;
 }
 
+.profile-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.profile-info-row:last-child {
+  border-bottom: none;
+}
+
+.profile-info-row span:first-child {
+  color: #666;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.profile-info-row span:last-child {
+  color: #333;
+  font-weight: 600;
+  text-align: right;
+  word-break: break-word;
+}
+
+/* Modal responsive styles */
 .ant-modal.css-dev-only-do-not-override-apn68 {
-  width: 800px;
+  width: 90% !important;
+  max-width: 800px;
 }
 
 .ant-col.ant-form-item-label.css-dev-only-do-not-override-apn68 {
-  width: 118px;
+  width: auto;
+  min-width: 100px;
 }
 
+/* Xóa hoặc comment out rule này */
+/*
 .main_profile button.ant-btn.css-dev-only-do-not-override-apn68.ant-btn-primary.ant-btn-color-primary.ant-btn-variant-solid {
   display: none;
+}
+*/
+
+/* Hoặc sửa đổi để chỉ ẩn button cụ thể, não phải tất cả */
+.main_profile .hidden-button {
+  display: none;
+}
+
+/* Form styles for better mobile experience */
+.profile-form-container {
+  max-width: 100%;
+  padding: 1rem;
+}
+
+.profile-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.profile-form-item {
+  flex: 1;
+}
+
+.profile-form-item label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.profile-form-item input,
+.profile-form-item .ant-select {
+  width: 100%;
+}
+
+/* Image upload responsive */
+.image-upload-container {
+  max-width: 100%;
+  margin: 1rem 0;
+}
+
+.image-upload-area {
+  border: 2px dashed #d9d9d9;
+  border-radius: 8px;
+  padding: 2rem 1rem;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.image-upload-area:hover {
+  border-color: #1890ff;
+  background-color: #f6ffed;
+}
+
+.image-preview {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+/* Responsive breakpoints */
+
+/* Small Mobile (320px - 479px) */
+@media (max-width: 479px) {
+  .main_profile {
+    padding: 0.5rem;
+    margin-top: 60px;
+  }
+
+  .info-name {
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .info-name h1 {
+    font-size: 1.2rem;
+  }
+
+  .icon_users {
+    width: 60px;
+  }
+
+  .profile_username {
+    margin-top: 1rem;
+    gap: 0.75rem;
+  }
+
+  .account_list_btn p {
+    padding: 0.5rem;
+  }
+
+  .account_list_btn p span {
+    font-size: 0.85rem;
+  }
+
+  .account-image img {
+    width: 100px;
+    height: 100px;
+  }
+
+  .account-profile_check {
+    padding: 0.75rem;
+  }
+
+  .profile-info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .profile-info-row span:last-child {
+    text-align: left;
+    font-size: 0.9rem;
+  }
+
+  .ant-modal.css-dev-only-do-not-override-apn68 {
+    width: 95% !important;
+    margin: 0 auto;
+  }
+}
+
+/* Large Mobile (480px - 767px) */
+@media (min-width: 480px) and (max-width: 767px) {
+  .main_profile {
+    padding: 0.75rem;
+  }
+
+  .info-name {
+    padding: 1rem;
+  }
+
+  .profile_username {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .account-image img {
+    width: 140px;
+    height: 140px;
+  }
+
+  .profile-info-row {
+    padding: 0.5rem 0;
+  }
+}
+
+/* Tablet (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .main_profile {
+    padding: 1.5rem;
+  }
+
+  .info-name {
+    padding: 1.5rem;
+  }
+
+  .profile_username {
+    flex-direction: row;
+    gap: 1.5rem;
+  }
+
+  .account_list_btn {
+    width: 35%;
+  }
+
+  .profile-content {
+    width: 65%;
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  .account-image {
+    width: 40%;
+  }
+
+  .account-profile_check {
+    width: 60%;
+    padding: 1rem;
+  }
+
+  .profile-form-row {
+    flex-direction: row;
+    gap: 1rem;
+  }
+}
+
+/* Desktop (1024px - 1199px) */
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .main_profile {
+    padding: 2rem;
+  }
+
+  .info-name {
+    padding: 2rem;
+  }
+
+  .profile_username {
+    flex-direction: row;
+    gap: 2rem;
+  }
+
+  .account_list_btn {
+    width: 30%;
+  }
+
+  .profile-content {
+    width: 70%;
+    background: white;
+    border-radius: 8px;
+    padding: 2rem;
+    display: flex;
+    gap: 2rem;
+  }
+
+  .account-image {
+    width: 35%;
+  }
+
+  .account-image img {
+    width: 180px;
+    height: 180px;
+  }
+
+  .account-profile_check {
+    width: 65%;
+    padding: 1.5rem;
+  }
+}
+
+/* Large Desktop (1200px+) */
+@media (min-width: 1200px) {
+  .main_profile {
+    padding: 2.5rem;
+  }
+
+  .info-name {
+    padding: 2.5rem;
+  }
+
+  .profile_username {
+    flex-direction: row;
+    gap: 2.5rem;
+  }
+
+  .account_list_btn {
+    width: 25%;
+  }
+
+  .profile-content {
+    width: 75%;
+    background: white;
+    border-radius: 8px;
+    padding: 2rem;
+    display: flex;
+    gap: 2rem;
+  }
+
+  .account-image {
+    width: 30%;
+  }
+
+  .account-image img {
+    width: 200px;
+    height: 200px;
+  }
+
+  .account-profile_check {
+    width: 70%;
+    padding: 2rem;
+  }
+}
+
+/* Utility classes */
+.responsive-text {
+  font-size: clamp(0.875rem, 2vw, 1rem);
+}
+
+.responsive-title {
+  font-size: clamp(1.25rem, 4vw, 2rem);
+  font-weight: bold;
+}
+
+.responsive-subtitle {
+  font-size: clamp(1rem, 3vw, 1.5rem);
+  font-weight: 600;
+}
+
+/* Loading and transition states */
+.fade-in {
+  animation: fadeIn 0.6s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Focus states for accessibility */
+.account_list_btn p:focus {
+  outline: 2px solid #1890ff;
+  outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+  .main_profile {
+    background: white;
+    padding: 1rem;
+  }
+
+  .account_list_btn {
+    display: none;
+  }
+
+  .info-name,
+  .profile-content {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
 }

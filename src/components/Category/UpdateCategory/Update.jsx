@@ -25,8 +25,6 @@ const Update = ({ isModalOpen, setIsModel, isCategory, FetchApiCategory }) => {
     fetchCategory();
   }, [isCategory]);
 
-  console.log(isCategory);
-
   useEffect(() => {
     const handleEnterPress = (event) => {
       if (event.key === "Enter") {

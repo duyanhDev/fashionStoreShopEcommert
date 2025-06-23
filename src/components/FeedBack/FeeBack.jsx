@@ -148,8 +148,6 @@ const FeedBack = ({ modal2Open, setModal2Open, data, userid }) => {
           {data.items &&
             data.items.length > 0 &&
             data.items.map((item) => {
-              console.log("item", item);
-
               return (
                 <div
                   className="feedback_radio w-full flex justify-between mt-2 items-center border-b-2"

@@ -1,28 +1,44 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import {
+  MessageCircle,
+  Bot,
+  Phone,
+  Instagram,
+  Facebook,
+  ArrowUp,
+  X,
+  Plus,
+  Sparkles,
+} from "lucide-react";
 import "./App.css";
 import Header from "./components/Header/Header";
 import { getListProductsAPI } from "./service/ApiProduct";
 
 // import required modules
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import { CartListProduct } from "./service/Cart";
 import Footer from "./components/Footer/Footer";
-import { UpOutlined } from "@ant-design/icons";
 import Message from "./components/Messages/Message";
 
 function App() {
-  const { user, token, refreshToken } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.auth);
 
   const [isVisible, setIsVisible] = useState(false);
   const [ListProducts, setListProducts] = useState([]);
   const [ListCart, setListCard] = useState([]);
   const [open, setOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const Navigate = useNavigate();
   const location = useLocation();
   const hideFooter = location.pathname === "/cart";
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" }); // scroll mượt
+  }, [pathname]);
 
   const ListProducsData = async () => {
     try {
@@ -59,10 +75,11 @@ function App() {
     }
   };
 
-  user &&
-    useEffect(() => {
+  useEffect(() => {
+    if (user && user._id) {
       CartListProductsUser();
-    }, [user._id]);
+    }
+  }, [user?._id]);
 
   useEffect(() => {
     const navHeader = document.querySelector(".nav_header");
@@ -87,7 +104,79 @@ function App() {
     });
   };
 
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   // tự động logout
+
+  const handleChatClick = () => {
+    if (user?.role === "customer") {
+      setOpen((prev) => !prev);
+    }
+    setIsMenuOpen(false);
+  };
+
+  const handleAIClick = () => {
+    Navigate("/ChatAi");
+    setIsMenuOpen(false);
+  };
+
+  const menuItems = [
+    {
+      icon: <Bot className="w-5 h-5" />,
+      label: "AI Assistant",
+      onClick: handleAIClick,
+      color:
+        "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700",
+      glow: "shadow-green-500/30",
+    },
+    ...(user?.role === "customer"
+      ? [
+          {
+            icon: <MessageCircle className="w-5 h-5" />,
+            label: "Chat Support",
+            onClick: handleChatClick,
+            color:
+              "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700",
+            glow: "shadow-emerald-500/30",
+          },
+        ]
+      : []),
+    {
+      icon: <Phone className="w-5 h-5" />,
+      label: "Zalo",
+      onClick: () => {
+        window.open("https://zalo.me/0123456789", "_blank"); // Thay số Zalo thật
+        setIsMenuOpen(false);
+      },
+      color:
+        "bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700",
+      glow: "shadow-teal-500/30",
+    },
+    {
+      icon: <Instagram className="w-5 h-5" />,
+      label: "Instagram",
+      onClick: () => {
+        window.open("https://instagram.com/your_instagram", "_blank"); // Thay Instagram thật
+        setIsMenuOpen(false);
+      },
+      color:
+        "bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600",
+      glow: "shadow-green-500/30",
+    },
+    {
+      icon: <Facebook className="w-5 h-5" />,
+      label: "Facebook",
+      onClick: () => {
+        window.open("https://facebook.com/your_facebook", "_blank"); // Thay Facebook thật
+        setIsMenuOpen(false);
+      },
+      color:
+        "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700",
+      glow: "shadow-emerald-600/30",
+    },
+  ];
 
   return (
     <div className="container_nav">
@@ -98,7 +187,7 @@ function App() {
           CartListProductsUser={CartListProductsUser}
         />
         <div className="nav_menu flex justify-center items-center gap-3">
-          <ul className="flex gap-10">
+          <ul className="flex gap-10 lg:mt-3">
             {/* product_hover */}
             <li className="">
               <Link to="/category/unisex" className="">
@@ -386,10 +475,10 @@ function App() {
               <Link to="category/female">Nữ</Link>
             </li>
             <li>
-              <Link>Phụ kiện</Link>
+              <Link target="_top">Phụ kiện</Link>
             </li>
             <li className="name_product_app">
-              <Link>Thương hiệu</Link>
+              <Link target="_top">Thương hiệu</Link>
             </li>
             <li className="name_product_app">
               <Link to="/ranking">Xếp hạng</Link>
@@ -406,46 +495,93 @@ function App() {
           context={{ ListProducts, CartListProductsUser, ListCart, user }}
         />
       </div>
-
-      <div className="fixed right-0 bottom-0 mb-24 chat_ai transition-opacity duration-300 z-10">
-        <button
-          className="w-10 h-10 bg-blue-700 rounded-full flex items-center justify-center text-white hover:bg-blue-800 transition-colors text-wrap"
-          onClick={() => Navigate("/ChatAi")}
+      <div className="fixed right-6 bottom-6 z-50">
+        {/* Menu Items */}
+        <div
+          className={`absolute bottom-20 right-0 transition-all duration-500 ${
+            isMenuOpen
+              ? "opacity-100 translate-y-0 scale-100"
+              : "opacity-0 translate-y-8 scale-95 pointer-events-none"
+          }`}
         >
-          AI
-        </button>
-      </div>
+          {menuItems.map((item, index) => (
+            <div
+              key={index}
+              className={`mb-4 transform transition-all duration-500 ${
+                isMenuOpen
+                  ? "translate-x-0 opacity-100"
+                  : "translate-x-8 opacity-0"
+              }`}
+              style={{
+                transitionDelay: isMenuOpen
+                  ? `${index * 100}ms`
+                  : `${(menuItems.length - index - 1) * 100}ms`,
+              }}
+            >
+              <div className="flex items-center justify-end group">
+                {/* Label */}
+                <div className="mr-4 px-4 py-2 bg-gray-900/90 backdrop-blur-md text-white text-sm rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap transform group-hover:translate-x-0 translate-x-2">
+                  {item.label}
+                  <div className="absolute right-0 top-1/2 transform translate-x-full -translate-y-1/2 w-0 h-0 border-l-4 border-l-gray-900/90 border-t-4 border-t-transparent border-b-4 border-b-transparent"></div>
+                </div>
 
-      {user?.role === "customer" ? (
-        <div className="fixed right-0 bottom-14 mb-24 chat_sp transition-opacity duration-300 z-10">
+                {/* Button */}
+                <button
+                  onClick={item.onClick}
+                  className={`relative w-14 h-14 ${item.color} rounded-2xl flex items-center justify-center text-white shadow-xl ${item.glow} transform hover:scale-110 hover:-translate-y-1 transition-all duration-300 group-hover:shadow-2xl overflow-hidden`}
+                >
+                  <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative z-10">{item.icon}</div>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Main FAB Button */}
+        <button
+          onClick={toggleMenu}
+          className={`relative w-16 h-16 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 rounded-2xl flex items-center justify-center text-white shadow-2xl shadow-green-500/30 transform transition-all duration-500 hover:scale-110 hover:shadow-3xl overflow-hidden group ${
+            isMenuOpen ? "rotate-45 scale-110" : "rotate-0 hover:rotate-12"
+          }`}
+        >
+          {/* Animated background */}
+          <div className="absolute inset-0 bg-gradient-to-r from-teal-600 via-emerald-600 to-green-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+          {/* Ripple effect */}
+          <div className="absolute inset-0 bg-white/20 rounded-2xl scale-0 group-active:scale-100 transition-transform duration-300"></div>
+
+          <div className="relative z-10 transition-transform duration-300">
+            {isMenuOpen ? (
+              <X className="w-7 h-7" />
+            ) : (
+              <Plus className="w-7 h-7" />
+            )}
+          </div>
+        </button>
+
+        {/* Scroll to Top Button */}
+        <div
+          className={`absolute -top-20 right-0 transition-all duration-500 ${
+            isVisible && !isMenuOpen
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-4 pointer-events-none"
+          }`}
+        >
           <button
-            className="w-10 h-10 bg-blue-700 rounded-full flex items-center justify-center text-white hover:bg-blue-800 transition-colors text-wrap"
-            onClick={() => setOpen((prev) => !prev)}
+            onClick={scrollToTop}
+            className="w-12 h-12 bg-gray-800/90 backdrop-blur-md hover:bg-gray-700 rounded-xl flex items-center justify-center text-white shadow-xl transform hover:scale-110 hover:-translate-y-1 transition-all duration-300 group"
           >
-            CHAT
+            <ArrowUp className="w-5 h-5 group-hover:animate-bounce" />
           </button>
         </div>
-      ) : (
-        <div></div>
-      )}
+      </div>
 
       {open && (
         <div className="fixed bottom-0 right-0 message_users">
           <Message open={open} setOpen={setOpen} />
         </div>
       )}
-      <div
-        className={`fixed right-0 bottom-0 mb-7 transition-opacity duration-300 z-10 ${
-          isVisible ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
-      >
-        <button
-          onClick={scrollToTop}
-          className="w-10 h-10 bg-blue-700 rounded-full flex items-center justify-center hover:bg-blue-800 transition-colors"
-        >
-          <UpOutlined className="text-[#fff]" />
-        </button>
-      </div>
 
       {!hideFooter && <Footer />}
     </div>

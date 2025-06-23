@@ -1,6 +1,6 @@
 /* Trong file CSS */
-@import url("https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap");
-
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
+@import "highlight.js/styles/github.css";
 /* Sử dụng trong component */
 @tailwind base;
 @tailwind components;
@@ -10,15 +10,18 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: "Times New Roman", Times, serif, Arial;
-  line-height: 1.5;
-  /* font-optical-sizing: auto; */
-  line-height: inherit;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+  background-color: #fff;
+  color: #231f20;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  margin: 0;
 }
 
 .container_nav {
@@ -56,10 +59,11 @@ body {
 }
 
 .nav_menu a {
+  text-transform: uppercase;
   font-size: 16px;
-  line-height: 1.5rem;
-  font-weight: 400;
-  color: #484848;
+  line-height: 1.5rem 24px;
+  font-weight: bold;
+  color: #000;
 }
 
 .nav_menu a:hover {
@@ -118,7 +122,7 @@ img {
   z-index: 9999;
 }
 
-@media screen and (min-width: 365px) and (max-width: 667px) {
+@media screen and (min-width: 200px) and (max-width: 667px) {
   .nav_menu ul {
     width: 100%;
     justify-content: space-evenly;
@@ -135,5 +139,5 @@ img {
   }
 }
 footer.bg-black.text-white.p-8 {
-  margin-top: 20px;
+  margin-top: 0;
 }

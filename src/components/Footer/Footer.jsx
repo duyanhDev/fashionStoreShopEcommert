@@ -2,7 +2,7 @@ import React from "react";
 
 const Footer = () => {
   return (
-    <footer className="bg-black text-white p-8">
+    <footer className="bg-black text-white p-8 mt-0">
       {/* Top Section */}
       <div className="mb-8  flex gap-10">
         <div>

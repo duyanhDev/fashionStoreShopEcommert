@@ -17,7 +17,6 @@ const ViewSearch = ({}) => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const searchKeyword = params.get("q") || ""; // Lấy giá trị của `q`
-  console.log(searchKeyword);
 
   const handleAPISerchData = async () => {
     const nextPage = page + 1;

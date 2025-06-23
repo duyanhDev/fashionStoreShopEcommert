@@ -1,380 +1,439 @@
-.colletion {
-  margin: 20px 60px;
+/* Clothing Male Component - Responsive với 267.2px cho desktop/tablet */
+
+/* Reset and base styles */
+.clothing-male-wrapper {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   min-height: 100vh;
 }
 
-.colletion .colletion_left {
-  max-width: 305px;
-  /* width: 100%; */
+.clothing-male-wrapper *,
+.clothing-male-wrapper *::before,
+.clothing-male-wrapper *::after {
+  box-sizing: border-box;
 }
 
-.colletion_left::-webkit-scrollbar {
-  width: 8px;
-  /* Độ rộng của thanh cuộn */
+/* Layout Grid */
+.clothing-male-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.2rem;
+  width: 100%;
 }
 
-.colletion_left::-webkit-scrollbar-thumb {
-  background-color: #ccc;
-  /* Màu thanh trượt */
-  border-radius: 4px;
-  /* Làm tròn thanh trượt */
+/* Sidebar - Hidden on mobile */
+.clothing-male-sidebar {
+  display: none;
 }
 
-.colletion_left::-webkit-scrollbar-track {
-  background: transparent;
-  /* Nền phía sau thanh trượt */
+/* Main Content Area */
+.clothing-male-main-content {
+  width: 100%;
+  min-width: 0;
 }
 
-.ant-radio-group.ant-radio-group-outline.mr-5.css-dev-only-do-not-override-apn68 {
-  margin-left: -23px;
+/* Products Grid - Mobile First (responsive) */
+.clothing-male-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem 0;
 }
 
-.colletion_left h1 {
-  color: #a3a3a3;
+/* Product Card - Mobile First */
+.clothing-male-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  height: auto;
+  width: 100%;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.clothing-male-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+/* Product Image Container */
+.clothing-male-card .relative {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px 16px 0 0;
+}
+
+/* Product Image - Responsive */
+.clothing-male-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s ease;
+}
+
+.clothing-male-card:hover .clothing-male-image {
+  transform: scale(1.03);
+}
+
+/* Discount Badge */
+.clothing-male-card .absolute.top-3.right-3 {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.4rem 0.6rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+  z-index: 10;
+}
+
+/* Action Buttons */
+.clothing-male-card .absolute.bottom-3.right-3 {
+  display: flex;
+  gap: 0.4rem;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.3s ease;
+}
+
+.clothing-male-card:hover .absolute.bottom-3.right-3 {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.clothing-male-card .absolute.bottom-3.right-3 button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.clothing-male-card .absolute.bottom-3.right-3 button:first-child {
+  background: rgba(255, 255, 255, 0.9);
+  color: #374151;
+}
+
+.clothing-male-card .absolute.bottom-3.right-3 button:last-child {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+}
+
+.clothing-male-card .absolute.bottom-3.right-3 button:hover {
+  transform: scale(1.1);
+}
+
+/* Product Content */
+.clothing-male-content {
+  padding: 1rem;
+  background: white;
+}
+
+/* Brand */
+.clothing-male-content p:first-child {
+  color: #22c55e;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+}
+
+/* Product Title */
+.clothing-male-title {
+  font-size: 0.9rem;
+  line-height: 1.3;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.8rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.4rem;
+}
+
+/* Price Container */
+.clothing-male-content .flex.items-center.justify-between {
+  margin-bottom: 0.8rem;
+}
+
+/* Product Price */
+.clothing-male-price {
   font-size: 1rem;
   font-weight: 700;
+  color: #22c55e;
 }
 
-:where(.css-dev-only-do-not-override-apn68).ant-radio-wrapper .ant-radio-inner {
-  box-sizing: border-box;
-  position: relative;
-  inset-block-start: 0;
-  inset-inline-start: 0;
-  display: block;
-  width: 20px;
-  height: 20px;
-  background-color: #ffffff;
-  border-color: #d9d9d9;
-  border-style: solid;
-  border-width: 1px;
-  border-radius: 50%;
-  transition: all 0.2s;
-}
-/* ClothingMale.css */
-
-/* Container chứa danh sách kích thước */
-.collection_size {
-  width: 100%; /* Đảm bảo container chiếm toàn bộ chiều rộng */
-  max-width: 208px; /* Giữ nguyên chiều rộng tối đa 208px (w-52) */
+.clothing-male-original-price {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  text-decoration: line-through;
+  margin-left: 0.4rem;
 }
 
-/* Danh sách kích thước */
-.collection_size ul {
-  display: flex;
-  flex-wrap: wrap; /* Cho phép các ô xuống dòng */
-  gap: 8px; /* Khoảng cách giữa các ô */
-  padding: 0;
-  margin: 0;
-  list-style: none; /* Bỏ dấu đầu dòng của ul */
+/* Rating Stars */
+.clothing-male-content .ant-rate {
+  font-size: 0.8rem;
 }
 
-/* Mỗi ô kích thước */
-.size_products {
-  flex: 0 0 auto; /* Không co giãn, giữ kích thước cố định */
-  width: 40px; /* Chiều rộng cố định cho mỗi ô */
-  height: 40px; /* Chiều cao cố định cho mỗi ô */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #d9d9d9; /* Viền nhẹ */
-  border-radius: 4px; /* Bo góc */
-  background: #fff; /* Màu nền trắng */
-  transition: all 0.3s ease; /* Hiệu ứng mượt mà */
+/* Filter Button */
+.clothing-male-filter-btn {
+  background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  height: 44px !important;
+  padding: 0 1.2rem !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3) !important;
+  transition: all 0.3s ease !important;
 }
 
-/* Checkbox ẩn đi, chỉ hiển thị label */
-.size_products input[type="checkbox"] {
-  display: none; /* Ẩn checkbox mặc định */
+/* Breadcrumb and Header Cards */
+.clothing-male-main-content > div:first-child,
+.clothing-male-main-content > div:nth-child(2) {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* Label của kích thước */
-.size_products label {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 14px;
-  color: #333;
-}
-
-/* Khi checkbox được chọn */
-.size_products input[type="checkbox"]:checked + label {
-  background: #1890ff; /* Màu nền khi được chọn (xanh dương) */
-  color: #fff; /* Màu chữ trắng */
-  border-color: #1890ff; /* Viền xanh */
-}
-
-/* Hiệu ứng hover */
-.size_products:hover {
-  border-color: #1890ff; /* Viền xanh khi hover */
-  background: #f0f7ff; /* Màu nền nhạt khi hover */
-}
-.filter-select-color__item-list.flex.justify-center {
-  padding: 5px;
-}
-
-.filter-select-color__item-list input[type="radio"] {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.filter-select-color_button {
-  position: relative;
-  width: 26px;
-  height: 26px;
-  background-color: rgb(252, 222, 112);
-  border-radius: 50%;
-}
-
-.filter-select-green {
-  position: relative;
-  width: 26px;
-  height: 26px;
-  background-color: rgb(85, 124, 86);
-  border-radius: 50%;
-}
-
-.filter-select-black {
-  position: relative;
-  width: 26px;
-  height: 26px;
-  background-color: rgb(0, 0, 0);
-  border-radius: 50%;
-}
-
-.filter-select-red {
-  position: relative;
-  width: 26px;
-  height: 26px;
-  background-color: rgb(206, 13, 13);
-  border-radius: 50%;
-}
-
-.filter-select-white {
-  position: relative;
-  width: 26px;
-  height: 26px;
-  background-color: rgb(246, 246, 246);
-  border-radius: 50%;
-  border: 1px solid #333;
-}
-
-.filter-select-color__item-list
-  input[type="radio"]:checked
-  + label
-  .filter-select-color_button::before,
-.filter-select-color__item-list
-  input[type="radio"]:checked
-  + label
-  .filter-select-black::before,
-.filter-select-color__item-list
-  input[type="radio"]:checked
-  + label
-  .filter-select-red::before,
-.filter-select-color__item-list
-  input[type="radio"]:checked
-  + label
-  .filter-select-white::before,
-.filter-select-color__item-list
-  input[type="radio"]:checked
-  + label
-  .filter-select-green::before,
-.filter-select-color__item-list
-  input[type="radio"]:checked
-  + label
-  .filter-select-white::before {
-  position: absolute;
-  content: "";
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: 1px solid #2f5acf;
-  border-radius: 50%;
-  content: "";
-  height: 32px;
-  left: 50%;
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 32px;
-}
-
-/* Đổi màu của track (đường chạy) */
-.ant-slider-track {
-  background-color: black !important;
-}
-
-/* Đổi màu của handle (nút kéo) */
-.ant-slider-handle {
-  border-color: black !important;
-}
-
-/* Đổi màu khi nút kéo được chọn */
-.ant-slider-handle:focus,
-.ant-slider-handle:hover,
-.ant-slider-handle:active {
-  border-color: black !important;
-  box-shadow: 0 0 0 5px rgba(0, 0, 0, 0.2) !important;
-}
-
-/* Đổi màu của rail (đường phía sau) */
-.ant-slider-rail {
-  background-color: #ccc !important;
-  /* Hoặc màu tùy ý */
-}
-
-.ant-slider-mark-text:nth-child(2) {
-  right: 0% !important;
-  left: auto !important;
-
-  transform: translateX(-50%);
-}
-
-.increase {
-  margin-left: -80px;
-}
-
-.img_male {
-  width: 120px;
-  height: 156px;
-  object-fit: cover;
-  border-radius: 8px;
-}
-
-li.male_clothing {
-  padding: 10px 20px;
-  cursor: pointer;
-  text-wrap: nowrap;
-}
-
-li.male_clothing span {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.main_product_male {
-  display: flex;
-  flex-direction: column;
-  box-shadow: 2px 2px 11px hsla(0, 3%, 7%, 0.1) !important;
-  background: #fff;
-  border-radius: 5px;
-  position: relative;
-  width: 216px;
-  min-height: 320px;
-}
-
-.male_left {
-  margin-left: 42px;
-}
-
-.main_product_male_h1 {
-  -webkit-box-orient: vertical;
-  color: #000;
-  display: -webkit-box;
-  font-size: 14px;
-  font-style: normal;
-  font-weight: 600;
-  line-height: normal;
+/* Sort Dropdown */
+.clothing-male-main-content .relative .absolute {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   overflow: hidden;
-  text-decoration: none;
-  text-overflow: ellipsis;
-  transition: all 0.2s ease-in-out;
-  word-break: break-all !important;
-  text-transform: uppercase;
-  margin-bottom: 5px;
 }
 
-.percent {
-  position: absolute;
-  align-items: center;
-  background: #eb5757;
-  border-radius: 0 3px 3px 3px;
-  color: #fff;
+/* Pagination */
+.clothing-male-pagination {
   display: flex;
-  font-family: Roboto;
-  font-size: 12px;
-  font-style: normal;
-  font-weight: 700;
-  height: 35.76px;
+  align-items: center;
   justify-content: center;
-  letter-spacing: 0.3px;
-  line-height: 14px;
-  width: 35.76px;
-  z-index: 9;
-  top: -10px;
-  right: 10px;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+  padding: 1rem 0;
 }
 
-.percent:after {
-  content: "";
-  display: block;
-  position: absolute;
-  width: 0;
-  height: 0;
-  top: 1.75px;
-  left: -8.5px;
-  border-bottom: 7px solid #eb5757;
-  border-right: 11px solid transparent;
-  transform: rotate(-90deg);
+.clothing-male-page-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  color: #6b7280;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: white;
 }
 
-.image_product_gender {
-  object-fit: cover;
-  width: 216px;
-  height: 216px;
+/* Tablet Styles - 3 columns với 267.2px */
+@media (min-width: 768px) {
+  .clothing-male-wrapper {
+    padding: 2rem;
+  }
+
+  .clothing-male-layout-grid {
+    gap: 1rem;
+  }
+
+  .clothing-male-grid {
+    grid-template-columns: repeat(3, 267.2px);
+    gap: 1rem;
+    justify-content: center;
+    padding: 1.5rem 0;
+  }
+
+  .clothing-male-card {
+    width: 267.2px;
+    max-width: 267.2px;
+    min-width: 267.2px;
+    border-radius: 18px;
+  }
+
+  .clothing-male-image {
+    width: 267.2px;
+    height: 240px;
+  }
+
+  .clothing-male-content {
+    padding: 1.2rem;
+    width: 267.2px;
+  }
+
+  .clothing-male-title {
+    font-size: 1rem;
+  }
+
+  .clothing-male-price {
+    font-size: 1.1rem;
+  }
+
+  .clothing-male-page-link {
+    width: 40px;
+    height: 40px;
+    font-size: 0.9rem;
+  }
 }
 
-.sort_products {
-  background: #fff;
-  border-radius: 6px;
-  box-shadow: 2px 2px 11px hsla(0, 3%, 7%, 0.1);
-  padding: 16px;
-  top: 100%;
-  width: 165px;
+/* Desktop Styles - 4 columns với 267.2px */
+@media (min-width: 1024px) {
+  .clothing-male-wrapper {
+    padding: 1rem;
+  }
+
+  .clothing-male-layout-grid {
+    grid-template-columns: 290px 1fr;
+    gap: 3rem;
+  }
+
+  .clothing-male-sidebar {
+    display: block;
+  }
+
+  .clothing-male-grid {
+    grid-template-columns: repeat(4, 267.2px);
+    gap: 1.2rem;
+    justify-content: center;
+    padding: 2rem 0;
+  }
+
+  .clothing-male-card {
+    width: 267.2px;
+    max-width: 267.2px;
+    min-width: 267.2px;
+    border-radius: 20px;
+  }
+
+  .clothing-male-image {
+    width: 267.2px;
+    height: 260px;
+  }
+
+  .clothing-male-content {
+    padding: 1.5rem;
+    width: 267.2px;
+  }
+
+  .clothing-male-title {
+    font-size: 1.1rem;
+  }
+
+  .clothing-male-price {
+    font-size: 1.2rem;
+  }
+
+  .clothing-male-filter-btn {
+    display: none !important;
+  }
+
+  .clothing-male-page-link {
+    width: 44px;
+    height: 44px;
+    font-size: 0.9rem;
+  }
 }
 
-.sort_products li {
-  padding: 10px;
-  cursor: pointer;
+/* Large Desktop - Tăng gap một chút */
+@media (min-width: 1200px) {
+  .clothing-male-wrapper {
+    padding: 2rem;
+    max-width: 1500px;
+  }
+
+  .clothing-male-layout-grid {
+    grid-template-columns: 290px 1fr;
+    gap: 2rem;
+  }
+
+  .clothing-male-grid {
+    gap: 1rem;
+  }
+
+  .clothing-male-image {
+    height: 280px;
+  }
 }
 
-:where(.css-dev-only-do-not-override-apn68).ant-rate
-  .ant-rate-star:not(:last-child) {
-  margin-inline-end: 3px;
+/* Extra Large Desktop */
+@media (min-width: 1400px) {
+  /* .clothing-male-grid {
+    gap: 2rem;
+  } */
 }
 
+/* Mobile nhỏ - 1 column */
 @media (max-width: 480px) {
-  .sort_product_items {
-    margin: 0;
-  }
-  .home_item_products {
-    padding: 0;
-    width: 100%;
-  }
-  .home_item_products .home_item_products_div h1 {
-    font-size: 14px;
-    font-weight: 500;
-  }
-  .flex.items-center.gap-3.home_item_products_div {
-    margin-left: 35px;
-  }
-  li.male_clothing {
-    padding: 5px 10px;
-    cursor: pointer;
-    text-wrap: nowrap;
-  }
-  .colletion_left {
-    display: none;
-  }
-  .flex.colletion {
-    width: 100%;
-    margin: auto;
+  .clothing-male-wrapper {
+    padding: 1rem;
   }
 
-  .male_left {
-    margin-left: 0px;
+  .clothing-male-grid {
+    grid-template-columns: (2, 1fr);
+    gap: 1rem;
+    justify-items: center;
   }
+
+  .clothing-male-card {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .clothing-male-image {
+    height: 220px;
+  }
+
+  .clothing-male-content {
+    padding: 1rem;
+  }
+
+  .clothing-male-title {
+    font-size: 0.9rem;
+  }
+
+  .clothing-male-price {
+    font-size: 1rem;
+  }
+}
+
+/* Loading states */
+.clothing-male-grid .ant-skeleton {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* Hover effects cho pagination */
+.clothing-male-page-link:hover {
+  border-color: #22c55e;
+  background: #f0fdf4;
+  color: #16a34a;
+  transform: translateY(-1px);
+}
+
+.clothing-male-page-link.active {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  border-color: #22c55e;
 }

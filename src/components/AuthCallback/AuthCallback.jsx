@@ -23,7 +23,7 @@ const AuthCallback = () => {
 
           // Fetch user details with the token
           const response = await fetch(
-            "https://fashionstoreshopecommertbe.onrender.com/auth/user",
+            "https://fashionstoreshopecommertbe.onrender.com/user",
             {
               headers: {
                 Authorization: `Bearer ${token}`,

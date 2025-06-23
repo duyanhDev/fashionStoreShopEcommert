@@ -1,3 +1,5 @@
+"use client";
+
 import "./Profile.css";
 import logo_user from "./../../assets/Image/mceclip0_92.png";
 import silver from "./../../assets/Image/mceclip0_56.png";
@@ -30,6 +32,8 @@ import {
   Tabs,
 } from "antd";
 import moment from "moment";
+
+const { Option } = Select;
 
 const PersonalInfoForm = ({ id }) => {
   const [form] = Form.useForm();
@@ -94,88 +98,102 @@ const PersonalInfoForm = ({ id }) => {
   return (
     <>
       {contextHolder}
-      <Form form={form} onFinish={onFinish}>
-        <Form.Item
-          name="passworded"
-          label="Mật khẩu cũ"
-          value={currentPassword}
-          onChange={(e) => setCurrentPassword(e.target.value)}
-          rules={[
-            {
-              required: true,
-              message: "Vui lòng nhập mật khẩu cũ!",
-            },
-            {
-              min: 6,
-              message: "Mật khẩu phải có ít nhất 6 ký tự!",
-            },
-          ]}
-          hasFeedback
-        >
-          <Input.Password />
-        </Form.Item>
-
-        <Form.Item
-          name="password"
-          label="Mật khẩu mới"
-          value={newPassWord}
-          onChange={(e) => setNewPassword(e.target.value)}
-          rules={[
-            {
-              required: true,
-              message: "Vui lòng nhập mật khẩu mới!",
-            },
-            {
-              min: 6,
-              message: "Mật khẩu mới phải có ít nhất 6 ký tự!",
-            },
-          ]}
-          hasFeedback
-        >
-          <Input.Password />
-        </Form.Item>
-
-        <Form.Item
-          name="confirm"
-          label="Nhập lại mật khẩu mới"
-          dependencies={["password"]}
-          value={confirmPassWord}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          hasFeedback
-          rules={[
-            {
-              required: true,
-              message: "Vui lòng xác nhận lại mật khẩu mới!",
-            },
-            ({ getFieldValue }) => ({
-              validator(_, value) {
-                if (!value || getFieldValue("password") === value) {
-                  return Promise.resolve();
-                }
-                return Promise.reject(
-                  new Error("Mật khẩu xác nhận không khớp với mật khẩu mới!")
-                );
+      <div className="profile-form-container">
+        <Form form={form} onFinish={onFinish} layout="vertical">
+          <Form.Item
+            name="passworded"
+            label="Mật khẩu cũ"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng nhập mật khẩu cũ!",
               },
-            }),
-          ]}
-        >
-          <Input.Password />
-        </Form.Item>
-        <Form.Item>
-          <Button
-            className="w-full h-10"
-            htmlType="submit"
-            onClick={() => handleUpdatePassWord()}
+              {
+                min: 6,
+                message: "Mật khẩu phải có ít nhất 6 ký tự!",
+              },
+            ]}
+            hasFeedback
           >
-            Cập nhật
-          </Button>
-        </Form.Item>
-      </Form>
+            <Input.Password
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              size="large"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="password"
+            label="Mật khẩu mới"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng nhập mật khẩu mới!",
+              },
+              {
+                min: 6,
+                message: "Mật khẩu mới phải có ít nhất 6 ký tự!",
+              },
+            ]}
+            hasFeedback
+          >
+            <Input.Password
+              value={newPassWord}
+              onChange={(e) => setNewPassword(e.target.value)}
+              size="large"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="confirm"
+            label="Nhập lại mật khẩu mới"
+            dependencies={["password"]}
+            hasFeedback
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng xác nhận lại mật khẩu mới!",
+              },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue("password") === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(
+                    new Error("Mật khẩu xác nhận không khớp với mật khẩu mới!")
+                  );
+                },
+              }),
+            ]}
+          >
+            <Input.Password
+              value={confirmPassWord}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              size="large"
+            />
+          </Form.Item>
+          <Form.Item>
+            <Button
+              type="primary"
+              className="w-full"
+              size="large"
+              htmlType="submit"
+              onClick={() => handleUpdatePassWord()}
+            >
+              Cập nhật
+            </Button>
+          </Form.Item>
+        </Form>
+      </div>
     </>
   );
 };
+
 const Profile = () => {
   const { user } = useSelector((state) => state.auth);
+
+  console.log(user);
+
   const id = user._id;
 
   const [points, setPoints] = useState(0);
@@ -207,13 +225,13 @@ const Profile = () => {
   const [selectedDate, setSelectedDate] = useState(formattedDate);
 
   // tỉnh huyện xã
-
   const [ProvineData, SetProvineData] = useState([]);
   const [SeletectIdProvine, SetSeletectIdProvine] = useState("");
   const [districtData, SetDistrictData] = useState([]);
   const [SeletectIdDistrict, SetSeletectIdDistrict] = useState("");
   const [WarmData, setWarmData] = useState([]);
   const [SeletectIdWarm, SetSeletectIdWarm] = useState("");
+
   /// Check time
   useEffect(() => {
     if (inputDate.isValid()) {
@@ -222,6 +240,7 @@ const Profile = () => {
       setSelectedDate(null);
     }
   }, [dateBrith]);
+
   const onChangeDateTime = (date, dateString) => {
     if (date) {
       setSelectedDate(date);
@@ -229,7 +248,6 @@ const Profile = () => {
   };
 
   // update anh
-
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith("image/")) {
@@ -302,37 +320,40 @@ const Profile = () => {
     console.log(key);
   };
 
-  const FetchDataProvince = async () => {
-    let url = "https://esgoo.net/api-tinhthanh/1/0.htm";
+  console.log(selectedImage);
 
-    let res = await axios.get(url);
+  const FetchDataProvince = async () => {
+    const url = "https://esgoo.net/api-tinhthanh/1/0.htm";
+
+    const res = await axios.get(url);
 
     if (res && res.data && res.data.data) {
-      let data = res.data.data;
+      const data = res.data.data;
       SetProvineData(data);
     }
   };
 
   const FeachDataDistrict = async () => {
-    let url = `https://esgoo.net/api-tinhthanh/2/${SeletectIdProvine}.htm`;
+    const url = `https://esgoo.net/api-tinhthanh/2/${SeletectIdProvine}.htm`;
 
-    let res = await axios.get(url);
+    const res = await axios.get(url);
 
     if (res && res.data && res.data.data) {
-      let data = res.data.data;
+      const data = res.data.data;
       SetDistrictData(data);
     }
   };
 
   const FeachDataWarn = async () => {
-    let url = `https://esgoo.net/api-tinhthanh/3/${SeletectIdDistrict}.htm`;
-    let res = await axios.get(url);
+    const url = `https://esgoo.net/api-tinhthanh/3/${SeletectIdDistrict}.htm`;
+    const res = await axios.get(url);
 
     if (res && res.data && res.data.data) {
-      let data = res.data.data;
+      const data = res.data.data;
       setWarmData(data);
     }
   };
+
   useEffect(() => {
     FetchDataProvince();
   }, []);
@@ -356,6 +377,7 @@ const Profile = () => {
     SetSeletectIdDistrict(value);
     setdistrict(selected?.name || "");
   };
+
   const handleOnChangeWarm = (value, name) => {
     const selected = WarmData.find((item) => item.id === value);
     SetSeletectIdWarm(value);
@@ -367,35 +389,39 @@ const Profile = () => {
       key: "1",
       label: "Cập nhật thông tin cá nhân",
       children: (
-        <>
-          <div className="max-w-xl mx-auto p-6 space-y-6">
-            {/* Full Name Input */}
-            <div className="relative">
-              <label className="text-sm text-gray-600">Họ tên của bạn</label>
-              <input
-                type="text"
-                className="w-full p-3 border rounded-full bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Đặng Trịnh Duy Anh"
-              />
-            </div>
+        <div className="profile-form-container">
+          {/* Full Name Input */}
+          <div className="profile-form-item">
+            <label>Họ tên của bạn</label>
+            <Input
+              size="large"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Đặng Trịnh Duy Anh"
+            />
+          </div>
 
-            {/* Date Selection */}
-            <div className="relative">
-              <label className="text-sm text-gray-600">Năm Sinh</label>
-              <div>
-                <DatePicker
-                  value={selectedDate}
-                  format="DD-MM-YYYY"
-                  onChange={onChangeDateTime}
-                />
-              </div>
-            </div>
-            {/* Gender Selection */}
-            <div className="flex space-x-6">
+          {/* Date Selection */}
+          <div className="profile-form-item">
+            <label>Năm Sinh</label>
+            <DatePicker
+              size="large"
+              value={selectedDate}
+              format="DD-MM-YYYY"
+              onChange={onChangeDateTime}
+              style={{ width: "100%" }}
+            />
+          </div>
+
+          {/* Gender Selection */}
+          <div className="profile-form-item">
+            <label>Giới tính</label>
+            <div className="flex gap-4 mt-2">
               {["Nam", "Nữ"].map((item) => (
-                <label key={item} className="flex items-center space-x-2">
+                <label
+                  key={item}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
                   <input
                     type="radio"
                     className="w-4 h-4 text-blue-600"
@@ -406,231 +432,234 @@ const Profile = () => {
                 </label>
               ))}
             </div>
+          </div>
 
-            {/* Phone Input */}
-            <div className="space-y-4">
-              <div className="relative">
-                <label className="text-sm text-gray-600">Số điện thoại</label>
-                <input
-                  type="tel"
-                  className="w-full p-3 border rounded-full bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="số điện thoại"
-                />
-              </div>
+          {/* Phone Input */}
+          <div className="profile-form-item">
+            <label>Số điện thoại</label>
+            <Input
+              size="large"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Số điện thoại"
+            />
+          </div>
+
+          {/* Height Slider */}
+          <div className="profile-form-item">
+            <div className="flex justify-between mb-2">
+              <label>Chiều cao</label>
+              <span className="text-sm font-medium">{height}cm</span>
+            </div>
+            <input
+              type="range"
+              min="140"
+              max="200"
+              value={height}
+              onChange={(e) => setHeight(e.target.value)}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
+
+          {/* Weight Slider */}
+          <div className="profile-form-item">
+            <div className="flex justify-between mb-2">
+              <label>Cân nặng</label>
+              <span className="text-sm font-medium">{weight}kg</span>
+            </div>
+            <input
+              type="range"
+              min="40"
+              max="120"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
+
+          {/* Address Selection */}
+          <div className="profile-form-row">
+            <div className="profile-form-item">
+              <label>Thành phố</label>
+              <Select
+                size="large"
+                value={city}
+                onChange={handleOnChangeProvine}
+                placeholder="Chọn thành phố"
+              >
+                {ProvineData &&
+                  ProvineData?.map((provine) => {
+                    return (
+                      <Option key={provine.id} value={provine.id}>
+                        {provine.name}
+                      </Option>
+                    );
+                  })}
+              </Select>
             </div>
 
-            {/* Height Slider */}
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <label className="text-sm">Chiều cao</label>
-                <span className="text-sm">{height}cm</span>
-              </div>
-              <input
-                type="range"
-                min="140"
-                max="200"
-                value={height}
-                onChange={(e) => setHeight(e.target.value)}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
+            <div className="profile-form-item">
+              <label>Quận/Huyện</label>
+              <Select
+                size="large"
+                placeholder="Chọn Quận/Huyện"
+                value={district}
+                onChange={handleOnChangeDistrict}
+              >
+                {districtData &&
+                  districtData?.map((district) => {
+                    return (
+                      <Option key={district.id} value={district.id}>
+                        {district.name}
+                      </Option>
+                    );
+                  })}
+              </Select>
             </div>
 
-            {/* Weight Slider */}
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <label className="text-sm">Cân nặng</label>
-                <span className="text-sm">{weight}kg</span>
-              </div>
-              <input
-                type="range"
-                min="40"
-                max="120"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
-            </div>
-            <div className="flex justify-between items-center gap-4">
-              <Form.Item label="Thành phố">
-                <Select value={city} onChange={handleOnChangeProvine}>
-                  {ProvineData &&
-                    ProvineData?.map((provine) => {
-                      return (
-                        <Option key={provine.id} value={provine.id}>
-                          {provine.name}
-                        </Option>
-                      );
-                    })}
-                </Select>
-              </Form.Item>
-
-              <Form.Item label="Quận/Huyện">
-                <Select
-                  placeholder="Chọn Quận/Huyện"
-                  value={district}
-                  onChange={handleOnChangeDistrict}
-                >
-                  {districtData &&
-                    districtData?.map((district) => {
-                      return (
-                        <Option key={district.id} value={district.id}>
-                          {district.name}
-                        </Option>
-                      );
-                    })}
-                </Select>
-              </Form.Item>
-
-              <Form.Item label="Phường/Xã">
-                <Select
-                  placeholder="Chọn xã"
-                  value={ward}
-                  onChange={handleOnChangeWarm}
-                >
-                  {WarmData &&
-                    WarmData?.map((ward) => {
-                      return (
-                        <Option key={ward.id} value={ward.id}>
-                          {ward.name}
-                        </Option>
-                      );
-                    })}
-                </Select>
-              </Form.Item>
-            </div>
-
-            <div>
-              <div className="max-w-md mx-auto p-4">
-                <div className="mb-3">
-                  <h2 className="text-lg font-semibold text-gray-800">
-                    Tải lên hình ảnh
-                  </h2>
-                  <p className="text-sm text-gray-500">
-                    Chọn hoặc kéo thả hình ảnh
-                  </p>
-                </div>
-
-                <div
-                  className={`relative border-2 rounded-xl p-4 text-center ${
-                    isDragging
-                      ? "border-blue-500 bg-blue-50 shadow-md"
-                      : "border-gray-200 bg-gray-50 hover:border-blue-400 hover:bg-gray-50"
-                  } transition-all duration-200 ease-in-out`}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                >
-                  {!previewUrl ? (
-                    <div className="space-y-3">
-                      <div className="flex justify-center">
-                        {/* Image Plus Icon */}
-                        <svg
-                          className="w-12 h-12 text-blue-500"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <rect x="3" y="3" width="18" height="18" rx="2" />
-                          <path d="M12 8v8m-4-4h8" />
-                        </svg>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-sm text-gray-600">
-                          Kéo thả hình ảnh vào đây hoặc
-                        </p>
-                        <label className="inline-block">
-                          <span className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg cursor-pointer hover:bg-blue-600 transition-colors shadow-sm hover:shadow-md">
-                            Chọn tệp
-                          </span>
-                          <input
-                            type="file"
-                            className="hidden"
-                            accept="image/*"
-                            onChange={handleImageChange}
-                          />
-                        </label>
-                      </div>
-                      <p className="text-xs text-gray-500">
-                        Hỗ trợ: JPG, PNG, GIF (Tối đa 5MB)
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="relative">
-                      <img
-                        src={previewUrl}
-                        alt="Preview"
-                        className="max-h-48 mx-auto rounded-lg shadow-lg"
-                      />
-                      <button
-                        onClick={removeImage}
-                        className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-md"
-                      >
-                        {/* X Icon */}
-                        <svg
-                          className="w-4 h-4"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path d="M18 6L6 18M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {selectedImage && (
-                  <div className="mt-3">
-                    <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-blue-50 rounded-lg">
-                          {/* Upload Icon */}
-                          <svg
-                            className="w-4 h-4 text-blue-500"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                          >
-                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                            <path d="M17 8l-5-5-5 5" />
-                            <path d="M12 3v12" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-700">
-                            {selectedImage.name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {(selectedImage.size / (1024 * 1024)).toFixed(2)} MB
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-sm hover:shadow-md"
-                        onClick={() =>
-                          console.log("Upload image:", selectedImage)
-                        }
-                      >
-                        Tải lên
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+            <div className="profile-form-item">
+              <label>Phường/Xã</label>
+              <Select
+                size="large"
+                placeholder="Chọn xã"
+                value={ward}
+                onChange={handleOnChangeWarm}
+              >
+                {WarmData &&
+                  WarmData?.map((ward) => {
+                    return (
+                      <Option key={ward.id} value={ward.id}>
+                        {ward.name}
+                      </Option>
+                    );
+                  })}
+              </Select>
             </div>
           </div>
-        </>
+
+          {/* Image Upload */}
+          <div className="image-upload-container">
+            <div className="mb-3">
+              <h3 className="responsive-subtitle">Tải lên hình ảnh</h3>
+              <p className="text-sm text-gray-500">
+                Chọn hoặc kéo thả hình ảnh
+              </p>
+            </div>
+
+            <div
+              className={`image-upload-area ${
+                isDragging
+                  ? "border-blue-500 bg-blue-50"
+                  : "hover:border-blue-400"
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              {!previewUrl ? (
+                <div className="space-y-3">
+                  <div className="flex justify-center">
+                    <svg
+                      className="w-12 h-12 text-blue-500"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <path d="M12 8v8m-4-4h8" />
+                    </svg>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-600">
+                      Kéo thả hình ảnh vào đây hoặc
+                    </p>
+                    <label className="inline-block">
+                      <span className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg cursor-pointer hover:bg-blue-600 transition-colors">
+                        Chọn tệp
+                      </span>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                      />
+                    </label>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Hỗ trợ: JPG, PNG, GIF (Tối đa 5MB)
+                  </p>
+                </div>
+              ) : (
+                <div className="relative">
+                  <img
+                    src={previewUrl || "/placeholder.svg"}
+                    alt="Preview"
+                    className="image-preview mx-auto"
+                  />
+                  <button
+                    onClick={removeImage}
+                    className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {selectedImage && (
+              <div className="mt-3">
+                <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                      <svg
+                        className="w-4 h-4 text-blue-500"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                        <path d="M17 8l-5-5-5 5" />
+                        <path d="M12 3v12" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">
+                        {selectedImage.name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {(selectedImage.size / (1024 * 1024)).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => console.log("Upload image:", selectedImage)}
+                  >
+                    Tải lên
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       ),
     },
     {
       key: "2",
       label: "Cập nhật mật khẩu",
-      children: <PersonalInfoForm id={id} />, // Replace with actual content
+      children: <PersonalInfoForm id={id} />,
     },
   ];
 
@@ -647,55 +676,59 @@ const Profile = () => {
         selectedDate,
         height,
         weight,
+        user.role,
         selectedImage
       );
       if (res) {
         message.success("Profile updated successfully");
+        setOpenResponsive(false);
       }
     } catch (error) {
       console.log(error);
     }
   };
+
   return (
-    <div className="w-full  bg-[#d9d9d9] relative main_profile ">
+    <div className="main_profile fade-in">
+      {/* User Info Header */}
       <div className="info-name">
-        <div className="flex justify-between  ">
-          <div className="w-2/3">
-            <h1 className="text-2xl text-[#231f20]">HI, {name}</h1>
-            {/* <img className="icon_users mt-3" src={logo_user} alt="logo user" />
-             */}
-            {points >= bachkim ? (
-              <img
-                src={palatium}
-                alt="lên hạng"
-                className="icon_users mt-4 w-52"
-                style={{ height: "50px" }}
-              />
-            ) : points >= vang ? (
-              <img
-                src={gold}
-                alt="lên hạng"
-                className="w-32"
-                style={{ height: "50px" }}
-              />
-            ) : points >= bac ? (
-              <img
-                src={silver} // Use a placeholder for the lowest rank
-                alt="lên hạng"
-                className="w-32 mt-4"
-                style={{ height: "50px" }}
-              />
-            ) : (
-              <img
-                src={logo_user} // Use a placeholder for the lowest rank
-                alt="lên hạng"
-                className="w-32 mt-4"
-                style={{ height: "50px" }}
-              />
-            )}
-            <div className="flex items-center gap-2 mt-5">
-              <p className="account-line__description flex items-center gap-1">
-                Chi tiêu thêm
+        <div className="flex flex-col lg:flex-row justify-between gap-4">
+          <div className="flex-1">
+            <h1 className="responsive-title text-[#231f20] mb-4">HI, {name}</h1>
+
+            {/* Tier Badge */}
+            <div className="mb-4">
+              {points >= bachkim ? (
+                <img
+                  src={palatium || "/placeholder.svg"}
+                  alt="Bạch kim"
+                  className="icon_users"
+                />
+              ) : points >= vang ? (
+                <img
+                  src={gold || "/placeholder.svg"}
+                  alt="Vàng"
+                  className="icon_users"
+                />
+              ) : points >= bac ? (
+                <img
+                  src={silver || "/placeholder.svg"}
+                  alt="Bạc"
+                  className="icon_users"
+                />
+              ) : (
+                <img
+                  src={logo_user || "/placeholder.svg"}
+                  alt="Mới"
+                  className="icon_users"
+                />
+              )}
+            </div>
+
+            {/* Progress Info */}
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <p className="responsive-text flex flex-wrap items-center gap-1">
+                <span>Chi tiêu thêm</span>
                 <b className="text-blue-500 font-bold">
                   {points >= bachkim
                     ? formatPrice(0)
@@ -703,50 +736,43 @@ const Profile = () => {
                     ? `${formatPrice(bachkim - points)}`
                     : points >= bac
                     ? `${formatPrice(vang - points)}`
-                    : points <= bac
-                    ? `${formatPrice(bac - points)}`
-                    : `${0}`}
-
-                  {/* Initial progress to the first rank */}
+                    : `${formatPrice(bac - points)}`}
                 </b>
                 <span>để lên hạng</span>
                 <b className="text--outline font-bold">
                   <div className="mt-1">
                     {points >= bachkim ? (
                       <img
-                        src={palatium}
-                        alt="lên hạng"
-                        className="w-16"
-                        style={{ height: "26px" }}
+                        src={palatium || "/placeholder.svg"}
+                        alt="Bạch kim"
+                        className="w-16 h-auto"
                       />
                     ) : points >= vang ? (
                       <img
-                        src={palatium}
-                        alt="lên hạng"
-                        className="w-16"
-                        style={{ height: "26px" }}
+                        src={palatium || "/placeholder.svg"}
+                        alt="Bạch kim"
+                        className="w-16 h-auto"
                       />
                     ) : points >= bac ? (
                       <img
-                        src={gold}
-                        alt="lên hạng"
-                        className="w-16"
-                        style={{ height: "26px" }}
+                        src={gold || "/placeholder.svg"}
+                        alt="Vàng"
+                        className="w-16 h-auto"
                       />
                     ) : (
                       <img
-                        src={silver}
-                        alt="lên hạng"
-                        className="w-16"
-                        style={{ height: "26px" }}
+                        src={silver || "/placeholder.svg"}
+                        alt="Bạc"
+                        className="w-16 h-auto"
                       />
                     )}
                   </div>
                 </b>
               </p>
-              ;
             </div>
-            <div className="mt-2">
+
+            {/* Progress Bar */}
+            <div className="relative">
               <span
                 className={`account-line_value ${
                   points >= bachkim
@@ -762,178 +788,169 @@ const Profile = () => {
               ></span>
               <span className="account-line__text absolute">
                 <img
-                  src={logo_user}
+                  src={logo_user || "/placeholder.svg"}
                   className="h-auto w-16 object-cover"
                   style={{ height: "26px" }}
                 />
               </span>
-              <span className="account-line__text account-line_hangbac absolute ">
+              <span className="account-line__text account-line_hangbac absolute">
                 <img
-                  src={silver}
+                  src={silver || "/placeholder.svg"}
                   className="h-auto w-16 object-cover"
                   style={{ height: "26px" }}
                 />
               </span>
-              <span className="account-line__text account-line_hangvang absolute ">
+              <span className="account-line__text account-line_hangvang absolute">
                 <img
-                  src={gold}
-                  className=" object-cover "
+                  src={gold || "/placeholder.svg"}
+                  className="object-cover"
                   style={{ width: "72px", height: "26px" }}
                 />
               </span>
-              <span className="account-line__text account-line_hangbachkim absolute  ">
+              <span className="account-line__text account-line_hangbachkim absolute">
                 <img
-                  src={palatium}
-                  className=" object-cover palatium "
+                  src={palatium || "/placeholder.svg"}
+                  className="object-cover palatium"
                   style={{ width: "202px", height: "26px" }}
                 />
               </span>
             </div>
           </div>
-          <div className="">
-            <p className="text-xl text-[#00000099]">Tổng chi tiêu </p>
-            <p className="text-center text-2xl font-bold text-[#000000]">
+
+          {/* Total Spending */}
+          <div className="text-center lg:text-right">
+            <p className="responsive-text text-[#00000099] mb-2">
+              Tổng chi tiêu
+            </p>
+            <p className="responsive-title text-[#000000]">
               {formatPrice(points || 0)}
             </p>
           </div>
         </div>
       </div>
-      <div className="profile_username relative bottom-0 flex justify-between gap-10">
-        <div className="w-2/6 account_list_btn">
-          <p className="flex items-center p-1 bg-white w-full rounded-md">
-            <img src={img5} className="h-auto w-9 object-cover" />
-            <span className="text-[#333] ml-2 font-bold text-xl">
-              Thông tin tài khoản
-            </span>
-          </p>
-          <p className="flex items-center p-1 bg-white  w-full rounded-md">
-            <img src={img4} className="h-auto w-9 object-cover" />
-            <span className="text-[#333] ml-2 font-bold text-xl">
-              Lịch Sử đơn hàng
-            </span>
-          </p>
-          <p className="flex items-center p-1 bg-white  w-full rounded-md">
-            <img src={img1} className="h-auto w-9 object-cover" />
-            <span className="text-[#333] ml-2 font-bold text-xl">
-              Lịch sử mua sắm
-            </span>
-          </p>
-          <p className="flex items-center p-1 bg-white  w-full rounded-md">
-            <img src={img2} className="h-auto w-9 object-cover" />
-            <span className="text-[#333] ml-2 font-bold text-xl">
-              Đánh giá phản hổi
-            </span>
-          </p>
-          <p className="flex items-center p-1 bg-white  w-full rounded-md">
-            <img src={img1} className="h-auto w-9 object-cover" />
-            <span className="text-[#333] ml-2 font-bold text-xl">
-              Lịch sử mua sắm
-            </span>
-          </p>
-          <p className="flex items-center p-1 bg-white  w-full rounded-md">
-            <img src={img2} className="h-auto w-9 object-cover" />
-            <span className="text-[#333] ml-2 font-bold text-xl">
-              Đánh giá phản hổi
-            </span>
-          </p>
-          <p className="flex items-center p-1 bg-white  w-full rounded-md">
-            <img src={img3} className="h-auto w-9 object-cover" />
-            <span className="text-[#333] ml-2 font-bold text-xl">
-              Đăng xuất
-            </span>
-          </p>
+
+      {/* Main Profile Content */}
+      <div className="profile_username">
+        {/* Navigation Menu */}
+        <div className="account_list_btn">
+          {[
+            { img: img5, text: "Thông tin tài khoản" },
+            { img: img4, text: "Lịch Sử đơn hàng" },
+            { img: img1, text: "Lịch sử mua sắm" },
+            { img: img2, text: "Đánh giá phản hồi" },
+            { img: img6, text: "Yêu thích" },
+            { img: img3, text: "Đăng xuất" },
+          ].map((item, index) => (
+            <p
+              key={index}
+              className="fade-in"
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
+              <img src={item.img || "/placeholder.svg"} alt={item.text} />
+              <span>{item.text}</span>
+            </p>
+          ))}
         </div>
 
-        <div className="w-2/3 bg-white rounded-md p-7 flex justify-around gap-5">
-          <div className="account-image w-60">
-            <h1 className="text-2xl font-bold">Thông tin tài khoản</h1>
-            <img src={image} alt="avtart" className="w-48 h-48 object-cover" />
+        {/* Profile Information */}
+        <div className="profile-content">
+          <div className="account-image">
+            <h1 className="responsive-subtitle">Thông tin tài khoản</h1>
+            <img src={image || "/placeholder.svg"} alt="Avatar" />
           </div>
-          <div className="w-3/4 ">
-            <div className="account-profile_check">
-              <div className="mt-6 flex justify-between gap-3 ">
-                <span className="text-gray-600 font-medium">Họ Và Tên</span>
-                <span className="text-gray-950 font-bold">{name}</span>
-              </div>
 
-              <div className="mt-4 flex justify-between gap-3 ">
-                <span className="text-gray-600 font-medium">Số điện thoại</span>
-                <span className="text-gray-950 font-bold">{phone}</span>
-              </div>
+          <div className="account-profile_check">
+            <div className="profile-info-row">
+              <span>Họ Và Tên</span>
+              <span>{name}</span>
+            </div>
 
-              <div className="mt-4 flex justify-between gap-3 ">
-                <span className="text-gray-600 font-medium">Giới tính</span>
-                <span className="text-gray-950 font-bold">{gender}</span>
-              </div>
-              <div className="mt-4 flex justify-between gap-3 ">
-                <span className="text-gray-600 font-medium">
-                  Ngày sinh<span className="text-xs">(ngày/tháng/năm)</span>
-                </span>
-                <span className="text-gray-950 font-bold">{formattedDate}</span>
-              </div>
-              <div className="mt-4 flex justify-between gap-3 ">
-                <span className="text-gray-600 font-medium">Chiều cao</span>
-                <span className="text-gray-950 font-bold">{height}cm</span>
-              </div>
-              <div className="mt-4 flex justify-between gap-3 ">
-                <span className="text-gray-600 font-medium">Cân nặng</span>
-                <span className="text-gray-950 font-bold">{weight}kg</span>
-              </div>
-              <div className="mt-4 flex justify-between gap-3 ">
-                <span className="text-gray-600 font-medium">
-                  Tỉnh/Thành Phố
-                </span>
-                <span className="text-gray-950 font-bold">{city}</span>
-              </div>
-              <div className="mt-4 flex justify-between gap-3 ">
-                <span className="text-gray-600 font-medium">Quận/Huyện</span>
-                <span className="text-gray-950 font-bold">{district}</span>
-              </div>
-              <div className="mt-4 flex justify-between gap-3 ">
-                <span className="text-gray-600 font-medium">Phường/Xã</span>
-                <span className="text-gray-950 font-bold">{ward}</span>
-              </div>
-              <div className="mt-4 flex justify-between gap-3 ">
-                <span className="text-gray-600 font-medium">Email</span>
-                <span className="text-gray-950 font-bold">{email}</span>
-              </div>
-              <div className="mt-4 flex justify-between gap-3 ">
-                <span className="text-gray-600 font-medium">Mật khẩu</span>
-                <span className="text-gray-950 font-bold">
-                  *******************
-                </span>
-              </div>
+            <div className="profile-info-row">
+              <span>Số điện thoại</span>
+              <span>{phone}</span>
+            </div>
 
-              <div className="mt-4 flex justify-between gap-3 ">
-                <Button onClick={() => setOpenResponsive(true)}>
-                  Cập Nhật
-                </Button>
-              </div>
+            <div className="profile-info-row">
+              <span>Giới tính</span>
+              <span>{gender}</span>
+            </div>
+
+            <div className="profile-info-row">
+              <span>
+                Ngày sinh<span className="text-xs ml-1">(ngày/tháng/năm)</span>
+              </span>
+              <span>{formattedDate}</span>
+            </div>
+
+            <div className="profile-info-row">
+              <span>Chiều cao</span>
+              <span>{height}cm</span>
+            </div>
+
+            <div className="profile-info-row">
+              <span>Cân nặng</span>
+              <span>{weight}kg</span>
+            </div>
+
+            <div className="profile-info-row">
+              <span>Tỉnh/Thành Phố</span>
+              <span>{city}</span>
+            </div>
+
+            <div className="profile-info-row">
+              <span>Quận/Huyện</span>
+              <span>{district}</span>
+            </div>
+
+            <div className="profile-info-row">
+              <span>Phường/Xã</span>
+              <span>{ward}</span>
+            </div>
+
+            <div className="profile-info-row">
+              <span>Email</span>
+              <span>{email}</span>
+            </div>
+
+            <div className="profile-info-row">
+              <span>Mật khẩu</span>
+              <span>*******************</span>
+            </div>
+
+            <div className="mt-6">
+              <Button
+                type="primary"
+                size="large"
+                onClick={() => setOpenResponsive(true)}
+                className="w-full"
+              >
+                Cập Nhật
+              </Button>
             </div>
           </div>
         </div>
       </div>
-      <div className="w-3/6">
-        <Modal
-          title="Thông tin tài khoản"
-          centered
-          open={openResponsive}
-          onCancel={() => setOpenResponsive(false)}
-          footer={
-            <Button onClick={() => handleUpdateProfileUser()}>Cập Nhật</Button>
-          }
-          width={{
-            with: "1000px",
-            sm: "80%",
-            md: "70%",
-            lg: "60%",
-            xl: "50%",
-            xxl: "40%",
-          }}
-        >
-          <Tabs defaultActiveKey="1" items={items} onChange={onChange} />
-        </Modal>
-      </div>
+
+      {/* Update Modal */}
+      <Modal
+        title="Thông tin tài khoản"
+        centered
+        open={openResponsive}
+        onCancel={() => setOpenResponsive(false)}
+        footer={
+          <Button
+            type="primary"
+            size="large"
+            onClick={() => handleUpdateProfileUser()}
+          >
+            Cập Nhật
+          </Button>
+        }
+        width="90%"
+        style={{ maxWidth: "800px" }}
+      >
+        <Tabs defaultActiveKey="1" items={items} onChange={onChange} />
+      </Modal>
     </div>
   );
 };

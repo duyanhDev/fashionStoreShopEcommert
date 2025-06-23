@@ -12,8 +12,9 @@ import {
 import { useSelector } from "react-redux";
 
 const socket = io("https://fashionstoreshopecommertbe.onrender.com", {
-  transports: ["websocket", "polling"], // Đảm bảo cả 2 phương thức đều có
   withCredentials: true,
+  reconnection: true,
+  reconnectionAttempts: 5,
 });
 
 // const socket = io("https://fashionstoreshop.onrender.com/", {
@@ -106,8 +107,6 @@ const ChatSp = () => {
       console.error("Error fetching messages:", error);
     }
   };
-
-  console.log(data);
 
   useEffect(() => {
     socket.on("connect", () => {

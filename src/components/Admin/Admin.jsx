@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
   GiftFilled,
@@ -13,35 +13,65 @@ import { FaOpencart } from "react-icons/fa";
 import { FaSquarePollVertical } from "react-icons/fa6";
 import { AiTwotoneAppstore } from "react-icons/ai";
 import { RiBillLine } from "react-icons/ri";
-
+import { FcFeedback } from "react-icons/fc";
 const menuItems = [
-  { icon: <FiHome />, label: "Dashboard", to: "" },
-  { icon: <UserOutlined />, label: "User Custom", to: "/admin/usercustom" },
-  { icon: <FiHome />, label: "Products", to: "/admin/products" },
-  { icon: <FaOpencart />, label: "Category", to: "category" },
-  { icon: <FaSquarePollVertical />, label: "Reports", to: "/reports" },
-  { icon: <RiBillLine />, label: "Orders", to: "order" },
+  { icon: <FiHome />, label: "Thống kê ", to: "" },
+  {
+    icon: <UserOutlined />,
+    label: "Tài khoản khách hàng",
+    to: "/admin/usercustom",
+  },
+  { icon: <FiHome />, label: "Sản phẩm", to: "/admin/products" },
+  { icon: <FaOpencart />, label: "Danh mục", to: "category" },
+  { icon: <FaSquarePollVertical />, label: "Báo cáo", to: "/reports" },
+  { icon: <RiBillLine />, label: "Đơn hàng", to: "order" },
   { icon: <AiTwotoneAppstore />, label: "Manage Store", to: "/manage-store" },
   {
     icon: <MessageOutlined />,
-    label: "Support Chat",
+    label: "Trò chuyện",
     to: "/admin/support-chat",
   },
-  { icon: <GiftFilled />, label: "Voucher", to: "/admin/voucher" },
+  { icon: <GiftFilled />, label: "Mã giảm giá", to: "/admin/voucher" },
+  {
+    icon: <FcFeedback />,
+    label: "Phản hồi",
+    to: "/admin/review",
+  },
 ];
 
 const Admin = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
+  const sidebarRef = useRef(null);
 
   const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
+    setIsSidebarOpen((prev) => !prev);
   };
+
+  // ❗ Đóng sidebar khi click ra ngoài (mobile only)
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    if (isSidebarOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isSidebarOpen]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Sidebar */}
       <aside
+        ref={sidebarRef}
         className={`fixed top-0 left-0 h-full w-64 z-40 bg-white/90 backdrop-blur-md shadow-xl transition-transform transform ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0 md:static md:block`}
@@ -70,7 +100,7 @@ const Admin = () => {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col ">
+      <div className="flex-1 flex flex-col">
         {/* Header */}
         <header className="flex items-center justify-between bg-white shadow-md h-16 px-4 md:px-6">
           <button onClick={toggleSidebar} className="text-2xl md:hidden">
