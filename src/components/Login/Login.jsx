@@ -99,7 +99,8 @@ const LoginForm = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = "https://fashionstoreshopecommertbe.onrender.com";
+    window.location.href =
+      "https://fashion-store-shop-ecommert.vercel.app/auth/google";
   };
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
