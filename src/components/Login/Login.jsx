@@ -100,7 +100,7 @@ const LoginForm = () => {
 
   const handleGoogleLogin = () => {
     window.location.href =
-      "https://fashion-store-shop-ecommert.vercel.app/auth/google";
+      "https://fashionstoreshopecommertbe.onrender.com/auth/google";
   };
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);

@@ -18,7 +18,7 @@ const FacebookLogin = () => {
       const { accessToken, userID } = data;
 
       const res = await axios.post(
-        "https://fashion-store-shop-ecommert.vercel.app/auth/facebook",
+        "https://fashionstoreshopecommertbe.onrender.comauth/facebook",
         {
           accessToken,
           userID,

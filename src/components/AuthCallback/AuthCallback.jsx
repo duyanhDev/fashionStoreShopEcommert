@@ -23,7 +23,7 @@ const AuthCallback = () => {
 
           // Fetch user details with the token
           const response = await fetch(
-            "https://fashion-store-shop-ecommert.vercel.app/user",
+            "https://fashionstoreshopecommertbe.onrender.com/user",
             {
               headers: {
                 Authorization: `Bearer ${token}`,
