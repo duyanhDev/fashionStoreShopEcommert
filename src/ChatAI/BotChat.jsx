@@ -12,6 +12,8 @@ const BotChatAI = () => {
       sender: "bot",
     },
   ]);
+  console.log("xxx");
+
   const { user, ListProducts } = useOutletContext();
   const [inputMessage, setInputMessage] = useState("");
   const messagesEndRef = useRef(null);
