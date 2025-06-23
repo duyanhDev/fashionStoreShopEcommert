@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Search,
   Calendar,
@@ -11,86 +11,14 @@ import {
 } from "lucide-react";
 import { Button } from "antd";
 import { useNavigate } from "react-router-dom";
+import { getAllBlog } from "../../service/Blog";
+import moment from "moment";
+
 const Blog = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
+  const [blogPosts, setBlogPosts] = useState([]);
   const navigate = useNavigate();
-  // Sample blog data
-  const blogPosts = [
-    {
-      id: 1,
-      title: "Top 10 Xu Hướng Thời Trang Bền Vững 2024",
-      excerpt:
-        "Khám phá những xu hướng thời trang bền vững đang định hình ngành công nghiệp thời trang hiện đại. Từ chất liệu tái chế đến thiết kế tối giản...",
-      image:
-        "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop",
-      category: "Thời trang",
-      author: "Nguyễn Minh",
-      date: "16.06.2025",
-      readTime: "5 phút đọc",
-      featured: true,
-    },
-    {
-      id: 2,
-      title: "Cách Phối Đồ Với Áo Thun Basic Chuẩn Trend",
-      excerpt:
-        "Áo thun basic là item không thể thiếu trong tủ đồ. Hãy cùng khám phá những cách phối đồ thông minh để tạo ra outfit ấn tượng...",
-      image:
-        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&h=600&fit=crop",
-      category: "Phối đồ",
-      author: "Trần Hương",
-      date: "15.06.2025",
-      readTime: "3 phút đọc",
-    },
-    {
-      id: 3,
-      title: "Bí Quyết Chăm Sóc Quần Áo Cotton Đúng Cách",
-      excerpt:
-        "Cotton là chất liệu phổ biến nhất trong thời trang. Tìm hiểu cách giặt, ủi và bảo quản quần áo cotton để sản phẩm luôn như mới...",
-      image:
-        "https://images.unsplash.com/photo-1445205170230-053b83016050?w=800&h=600&fit=crop",
-      category: "Chăm sóc",
-      author: "Lê Văn A",
-      date: "14.06.2025",
-      readTime: "4 phút đọc",
-    },
-    {
-      id: 4,
-      title: "Những Màu Sắc Thời Trang Hot Nhất Mùa Hè",
-      excerpt:
-        "Mùa hè 2024 mang đến những gam màu tươi sáng và năng động. Cùng khám phá palette màu sắc đang được yêu thích nhất...",
-      image:
-        "https://images.unsplash.com/photo-1516762689617-e1cfddf819d1?w=800&h=600&fit=crop",
-      category: "Xu hướng",
-      author: "Phạm Thu",
-      date: "13.06.2025",
-      readTime: "6 phút đọc",
-    },
-    {
-      id: 5,
-      title: "Style Minimalist: Phong Cách Tối Giản Đầy Tinh Tế",
-      excerpt:
-        "Minimalist không chỉ là xu hướng mà còn là triết lý sống. Tìm hiểu cách áp dụng phong cách tối giản vào tủ đồ của bạn...",
-      image:
-        "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&h=600&fit=crop",
-      category: "Lifestyle",
-      author: "Vũ Minh",
-      date: "12.06.2025",
-      readTime: "7 phút đọc",
-    },
-    {
-      id: 6,
-      title: "Giày Sneakers: Từ Thể Thao Đến Streetwear",
-      excerpt:
-        "Sneakers đã trở thành biểu tượng của văn hóa streetwear. Cùng tìm hiểu lịch sử và cách phối giày sneakers sao cho phù hợp...",
-      image:
-        "https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=800&h=600&fit=crop",
-      category: "Phụ kiện",
-      author: "Hoàng Nam",
-      date: "11.06.2025",
-      readTime: "5 phút đọc",
-    },
-  ];
 
   const categories = [
     { id: "all", name: "Tất cả", count: blogPosts.length },
@@ -104,6 +32,21 @@ const Blog = () => {
   const featuredPost = blogPosts.find((post) => post.featured);
   const otherPosts = blogPosts.filter((post) => !post.featured);
 
+  const fetchApiBlog = async () => {
+    try {
+      const res = await getAllBlog();
+      console.log(res);
+      if (res && res.data && res.data.EC === 0) {
+        setBlogPosts(res.data.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchApiBlog();
+  }, []);
   return (
     <div className="min-h-screen  text-white mt-28">
       {/* Header */}
@@ -230,11 +173,12 @@ const Blog = () => {
                     Tạo Bài Viết
                   </Button>
                 </div>
+
                 <div className="bg-gray-900 rounded-2xl overflow-hidden hover:transform hover:scale-[1.02] transition-all duration-300">
                   <div className="md:flex">
                     <div className="md:w-1/2">
                       <img
-                        src={featuredPost.image}
+                        src={featuredPost.img[0]?.url}
                         alt={featuredPost.title}
                         className="w-full h-64 md:h-full object-cover"
                       />
@@ -246,7 +190,7 @@ const Blog = () => {
                         </span>
                         <span className="text-gray-400 text-sm flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
-                          {featuredPost.date}
+                          {moment(featuredPost.createdAt).format("DD/MM/YYYY")}
                         </span>
                       </div>
                       <h3 className="text-2xl font-bold mb-4 hover:text-green-400 transition-colors cursor-pointer">
@@ -258,7 +202,7 @@ const Blog = () => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm text-gray-400">
                           <User className="w-4 h-4" />
-                          <span>{featuredPost.author}</span>
+                          <span>{featuredPost.userId.name}</span>
                           <span>•</span>
                           <span>{featuredPost.readTime}</span>
                         </div>
@@ -291,7 +235,7 @@ const Blog = () => {
                     >
                       <div className="relative">
                         <img
-                          src={post.image}
+                          src={post.img[0]?.url}
                           alt={post.title}
                           className="w-full h-48 object-cover group-hover:brightness-110 transition-all duration-300"
                         />
@@ -312,12 +256,12 @@ const Blog = () => {
                           {post.title}
                         </h3>
                         <p className="text-gray-300 text-sm mb-4 line-clamp-3">
-                          {post.excerpt}
+                          {moment(post.createdAt).format("DD/MM/YYYY")}
                         </p>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 text-sm text-gray-400">
                             <User className="w-4 h-4" />
-                            <span>{post.author}</span>
+                            <span>{post.userId.name}</span>
                           </div>
                           <button className="text-green-400 hover:text-green-300 transition-colors">
                             <ChevronRight className="w-5 h-5" />

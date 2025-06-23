@@ -16,6 +16,8 @@ import {
   Alert,
   Image,
   Tooltip,
+  Switch,
+  InputNumber,
 } from "antd";
 import {
   PlusOutlined,
@@ -27,6 +29,8 @@ import {
   LoadingOutlined,
   DeleteOutlined,
   PictureOutlined,
+  ClockCircleOutlined,
+  StarOutlined,
 } from "@ant-design/icons";
 import { generateBlogByGeminiAPi } from "../../service/ChatBot";
 import { CreateBlog } from "../../service/Blog";
@@ -50,6 +54,8 @@ const GeminiBlogGenerator = () => {
   const [saved, setSaved] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [fileList, setFileList] = useState([]);
+  const [readTime, setReadTime] = useState("");
+  const [featured, setFeatured] = useState(false);
 
   const showModal = () => setIsModalVisible(true);
 
@@ -67,6 +73,8 @@ const GeminiBlogGenerator = () => {
     setSaved(false);
     setFileList([]);
     setShowPreview(false);
+    setReadTime("");
+    setFeatured(false);
   };
 
   const handleGenerate = async () => {
@@ -95,6 +103,8 @@ const GeminiBlogGenerator = () => {
         tip: newTip,
         content: newContent,
         keywords: keywords,
+        readTime: readTime,
+        featured: featured,
       });
 
       message.success("🤖 AI đã tạo nội dung thành công!");
@@ -119,7 +129,9 @@ const GeminiBlogGenerator = () => {
       formData.append("content", values.content);
       formData.append("slug", values.title.toLowerCase().replace(/\s+/g, "-"));
       formData.append("regex", values.keywords || "");
-      formData.append("author", "685047211a43fd53e1936c34");
+      formData.append("userId", "685047211a43fd53e1936c34");
+      formData.append("readTime", values.readTime);
+      formData.append("featured", values.featured);
 
       if (images.length > 0) {
         images.forEach((img) => formData.append("img", img));
@@ -271,7 +283,7 @@ const GeminiBlogGenerator = () => {
 
           <Form form={form} layout="vertical" onFinish={handleSave}>
             <Row gutter={16}>
-              <Col span={16}>
+              <Col span={12}>
                 <Form.Item
                   name="title"
                   label="Tiêu đề"
@@ -286,7 +298,7 @@ const GeminiBlogGenerator = () => {
                   />
                 </Form.Item>
               </Col>
-              <Col span={8}>
+              <Col span={6}>
                 <Form.Item name="keywords" label="Từ khóa">
                   <Input
                     value={keywords}
@@ -295,15 +307,61 @@ const GeminiBlogGenerator = () => {
                   />
                 </Form.Item>
               </Col>
+              <Col span={6}>
+                <Form.Item
+                  name="readTime"
+                  label={
+                    <div className="flex items-center space-x-1">
+                      <ClockCircleOutlined className="text-orange-500" />
+                      <span>Thời gian đọc (phút)</span>
+                    </div>
+                  }
+                >
+                  <Input
+                    value={readTime}
+                    onChange={(value) => setReadTime(value)}
+                    size="large"
+                    min={1}
+                    max={60}
+                    placeholder="5"
+                    className="w-full"
+                  />
+                </Form.Item>
+              </Col>
             </Row>
 
-            <Form.Item name="tip" label="Mẹo mở đầu">
-              <Input
-                value={tip}
-                onChange={(e) => setTip(e.target.value)}
-                size="large"
-              />
-            </Form.Item>
+            <Row gutter={16}>
+              <Col span={18}>
+                <Form.Item name="tip" label="Mẹo mở đầu">
+                  <Input
+                    value={tip}
+                    onChange={(e) => setTip(e.target.value)}
+                    size="large"
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={6}>
+                <Form.Item
+                  name="featured"
+                  label={
+                    <div className="flex items-center space-x-1">
+                      <StarOutlined className="text-yellow-500" />
+                      <span>Bài viết nổi bật</span>
+                    </div>
+                  }
+                  valuePropName="checked"
+                >
+                  <Switch
+                    checked={featured}
+                    onChange={(checked) => setFeatured(checked)}
+                    size="default"
+                    checkedChildren="Có"
+                    unCheckedChildren="Không"
+                    className="bg-gray-300"
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
 
             <Form.Item
               name="content"

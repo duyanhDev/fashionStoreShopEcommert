@@ -8,4 +8,7 @@ const CreateBlog = async (formData) => {
   });
 };
 
-export { CreateBlog };
+const getAllBlog = async () => {
+  return await axios.get("api/v1/all-blog");
+};
+export { CreateBlog, getAllBlog };
