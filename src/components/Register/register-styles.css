@@ -1,0 +1,40 @@
+/* Custom styles for Register form */
+.register .ant-input {
+  border-radius: 12px !important;
+  height: 48px !important;
+  border-width: 2px !important;
+  transition: all 0.2s ease !important;
+}
+
+.register .ant-input:hover {
+  border-color: #d1d5db !important;
+}
+
+.register .ant-input:focus {
+  border-color: #16a34a !important;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2) !important;
+}
+
+.register .ant-btn {
+  border-radius: 12px !important;
+  height: 48px !important;
+  font-weight: 600 !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #6b7280;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #16a34a;
+}
