@@ -1,5 +1,3 @@
-"use client";
-
 import { FcGoogle } from "react-icons/fc";
 import { Button, notification, Spin, Input } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
