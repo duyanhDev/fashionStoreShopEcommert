@@ -97,7 +97,8 @@ const ChatSp = () => {
 
     try {
       let res = await getMessagesList(user._id);
-      if (res?.data) {
+
+      if (res && res.EC === 0) {
         SetData(res.data);
         scrollToBottom();
       }
@@ -105,6 +106,8 @@ const ChatSp = () => {
       console.error("Error fetching messages:", error);
     }
   };
+
+  console.log(data);
 
   useEffect(() => {
     socket.on("connect", () => {
@@ -168,48 +171,54 @@ const ChatSp = () => {
 
   useEffect(() => {
     getListSenderId();
+    fetchgetMessList();
   }, [user._id]);
+
   return (
     <div className="chat_container ">
       <div className="flex justify-between m-6 main_chat">
         <div className="w-1/5 main_chat-users">
           <h1 className="text_main-h1 text-center">Tất cả</h1>
-          {MessFriends.filter(
-            (item, index, self) =>
-              item.recipient?._id &&
-              item.recipient?._id !== user._id && // Lọc bỏ cuộc trò chuyện với chính mình
-              index ===
-                self.findIndex((t) => t.recipient?._id === item.recipient?._id)
-          ).map((item) => (
-            <div
-              key={item.recipient._id}
-              className="mt-5 cursor-pointer"
-              onClick={onChangeIsread}
-            >
+          {MessFriends &&
+            MessFriends.length > 0 &&
+            MessFriends.filter(
+              (item, index, self) =>
+                item.recipient?._id &&
+                item.recipient?._id !== user._id && // Lọc bỏ cuộc trò chuyện với chính mình
+                index ===
+                  self.findIndex(
+                    (t) => t.recipient?._id === item.recipient?._id
+                  )
+            ).map((item) => (
               <div
-                className="flex justify-center gap-3 items-center"
-                onClick={() => handleChangeSetId(item.recipient._id)}
+                key={item.recipient._id}
+                className="mt-5 cursor-pointer"
+                onClick={onChangeIsread}
               >
-                <img
-                  src={item.recipient.avatar}
-                  className="w-12 h-12 rounded-full"
-                  alt="avatar"
-                />
-                <div className="w-32">
-                  <span>{item.recipient.name}</span>
-                  <p
-                    className={`${
-                      item.isRead ? "text-blue-400" : "text-black font-bold"
-                    }`}
-                  >
-                    {item.messageSender?._id === user?._id
-                      ? `Bạn: ${item.content}`
-                      : item.content}
-                  </p>
+                <div
+                  className="flex justify-center gap-3 items-center"
+                  onClick={() => handleChangeSetId(item.recipient._id)}
+                >
+                  <img
+                    src={item.recipient.avatar}
+                    className="w-12 h-12 rounded-full"
+                    alt="avatar"
+                  />
+                  <div className="w-32">
+                    <span>{item.recipient.name}</span>
+                    <p
+                      className={`${
+                        item.isRead ? "text-blue-400" : "text-black font-bold"
+                      }`}
+                    >
+                      {item.messageSender?._id === user?._id
+                        ? `Bạn: ${item.content}`
+                        : item.content}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
 
         <div className="w-4/5">

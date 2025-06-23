@@ -32,8 +32,6 @@ import {
 import moment from "moment";
 
 const PersonalInfoForm = ({ id }) => {
-  console.log(id);
-
   const [form] = Form.useForm();
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -62,7 +60,6 @@ const PersonalInfoForm = ({ id }) => {
 
       // Call API
       const res = await ChanglePasswordAPI(id, currentPassword, newPassWord);
-      console.log(res);
 
       if (res && res.data.success === true) {
         api["success"]({
@@ -340,8 +337,6 @@ const Profile = () => {
     FetchDataProvince();
   }, []);
 
-  console.log(WarmData);
-
   useEffect(() => {
     FeachDataDistrict();
   }, [SeletectIdProvine]);
@@ -351,22 +346,21 @@ const Profile = () => {
   }, [SeletectIdDistrict]);
 
   const handleOnChangeProvine = (value, name) => {
+    const selected = ProvineData.find((item) => item.id === value);
     SetSeletectIdProvine(value);
-    setCity(name.label);
+    setCity(selected?.name || "");
   };
 
   const handleOnChangeDistrict = (value, name) => {
+    const selected = districtData.find((item) => item.id === value);
     SetSeletectIdDistrict(value);
-    setdistrict(name.label);
+    setdistrict(selected?.name || "");
   };
   const handleOnChangeWarm = (value, name) => {
-    console.log(name);
-
+    const selected = WarmData.find((item) => item.id === value);
     SetSeletectIdWarm(value);
-    setward(name.label);
+    setward(selected?.name || "");
   };
-
-  console.log(ward);
 
   const items = [
     {
@@ -459,111 +453,52 @@ const Profile = () => {
               />
             </div>
             <div className="flex justify-between items-center gap-4">
-              <div>
-                <p>Tỉnh/Thành Phố</p>
+              <Form.Item label="Thành phố">
+                <Select value={city} onChange={handleOnChangeProvine}>
+                  {ProvineData &&
+                    ProvineData?.map((provine) => {
+                      return (
+                        <Option key={provine.id} value={provine.id}>
+                          {provine.name}
+                        </Option>
+                      );
+                    })}
+                </Select>
+              </Form.Item>
+
+              <Form.Item label="Quận/Huyện">
                 <Select
-                  showSearch
-                  style={{
-                    width: 200,
-                  }}
-                  placeholder="Tỉnh hoặc thành phố"
-                  optionFilterProp="label"
-                  filterSort={(optionA, optionB) =>
-                    (optionA?.label ?? "")
-                      .toLowerCase()
-                      .localeCompare((optionB?.label ?? "").toLowerCase())
-                  }
-                  value={SeletectIdProvine}
-                  onChange={(value, option) =>
-                    handleOnChangeProvine(value, option)
-                  }
-                  options={
-                    ProvineData && ProvineData.length > 0
-                      ? [
-                          {
-                            value: "",
-                            label: "Chọn Tỉnh/Phố",
-                            disabled: true,
-                          },
-                          ...ProvineData.map((provine) => ({
-                            value: provine.id,
-                            label: provine.name,
-                          })),
-                        ]
-                      : []
-                  }
-                />
-              </div>
-              <div>
-                <p>Quận/Huyện</p>
+                  placeholder="Chọn Quận/Huyện"
+                  value={district}
+                  onChange={handleOnChangeDistrict}
+                >
+                  {districtData &&
+                    districtData?.map((district) => {
+                      return (
+                        <Option key={district.id} value={district.id}>
+                          {district.name}
+                        </Option>
+                      );
+                    })}
+                </Select>
+              </Form.Item>
+
+              <Form.Item label="Phường/Xã">
                 <Select
-                  showSearch
-                  style={{
-                    width: 200,
-                  }}
-                  placeholder="Quận/Huyện"
-                  optionFilterProp="label"
-                  filterSort={(optionA, optionB) =>
-                    (optionA?.label ?? "")
-                      .toLowerCase()
-                      .localeCompare((optionB?.label ?? "").toLowerCase())
-                  }
-                  value={SeletectIdDistrict}
-                  onChange={(value, option) =>
-                    handleOnChangeDistrict(value, option)
-                  }
-                  options={
-                    districtData && districtData.length > 0
-                      ? [
-                          {
-                            value: "",
-                            label: "Chọn Quận/Huyện",
-                            disabled: true,
-                          },
-                          ...districtData.map((district) => ({
-                            value: district.id,
-                            label: district.full_name,
-                          })),
-                        ]
-                      : []
-                  }
-                />
-              </div>
-              <div>
-                <p>Phường/Xã</p>
-                <Select
-                  showSearch
-                  style={{
-                    width: 200,
-                  }}
-                  placeholder="Phường/Xã"
-                  optionFilterProp="label"
-                  filterSort={(optionA, optionB) =>
-                    (optionA?.label ?? "")
-                      .toLowerCase()
-                      .localeCompare((optionB?.label ?? "").toLowerCase())
-                  }
-                  value={SeletectIdWarm}
-                  onChange={(value, option) =>
-                    handleOnChangeWarm(value, option)
-                  }
-                  options={
-                    WarmData && WarmData.length > 0
-                      ? [
-                          {
-                            value: "",
-                            label: "Chọn Phường/Xã",
-                            disabled: true,
-                          },
-                          ...WarmData.map((warm) => ({
-                            value: warm.id,
-                            label: warm.full_name,
-                          })),
-                        ]
-                      : []
-                  }
-                />
-              </div>
+                  placeholder="Chọn xã"
+                  value={ward}
+                  onChange={handleOnChangeWarm}
+                >
+                  {WarmData &&
+                    WarmData?.map((ward) => {
+                      return (
+                        <Option key={ward.id} value={ward.id}>
+                          {ward.name}
+                        </Option>
+                      );
+                    })}
+                </Select>
+              </Form.Item>
             </div>
 
             <div>
@@ -715,7 +650,6 @@ const Profile = () => {
         selectedImage
       );
       if (res) {
-        console.log(res);
         message.success("Profile updated successfully");
       }
     } catch (error) {

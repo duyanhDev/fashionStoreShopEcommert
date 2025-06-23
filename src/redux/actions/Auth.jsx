@@ -2,19 +2,28 @@
 export const LOGIN = "LOGIN";
 export const LOGOUT = "LOGOUT";
 export const SEARCH = "SEARCH";
-export const login = (token, user) => ({
+export const login = (
+  token,
+  user,
+  refreshToken,
+  accessTokenExpiredTime,
+  refreshTokenExpiredTime
+) => ({
   type: LOGIN,
-  payload: { token, user },
+  payload: {
+    token,
+    user,
+    refreshToken,
+    accessTokenExpiredTime,
+    refreshTokenExpiredTime,
+  },
 });
 
 export const logout = () => ({
   type: LOGOUT,
 });
 
-export const Search = (data, totalpage) => (
-  console.log(data),
-  {
-    type: SEARCH,
-    payload: { data, totalpage },
-  }
-);
+export const Search = (data, totalpage) => ({
+  type: SEARCH,
+  payload: { data, totalpage },
+});

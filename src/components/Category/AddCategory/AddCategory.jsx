@@ -13,8 +13,6 @@ const AddCategory = ({
 }) => {
   const [messageApi, contextHolder] = message.useMessage();
 
-  console.log(name, description);
-
   const handleOk = async () => {
     try {
       const res = await AddCategoryAPI(name, description);

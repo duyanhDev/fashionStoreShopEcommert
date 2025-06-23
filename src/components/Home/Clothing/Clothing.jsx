@@ -1,17 +1,23 @@
 import "./Clothing.css";
-import { Flex, Rate, Skeleton, Card, Button } from "antd";
+import { Flex, Rate, Skeleton, Card, Button, notification } from "antd";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import ProductCart from "../../ProductCart/ProductCart";
+import {
+  addToWishlistAPI,
+  getWishlistAPI,
+  RemoveToWishListAPI,
+} from "../../../service/WishList";
+import { useSelector } from "react-redux";
 
 export default function Clothing({ ListProducts }) {
   const desc = ["terrible", "bad", "normal", "good", "wonderful"];
   const [loading, setLoading] = useState(true);
   const [ratings, setRatings] = useState({});
   const navigate = useNavigate();
-
+  const { user } = useSelector((state) => state.auth);
   const [modalCartOpen, setModalCartOpen] = useState(false);
   const [IdProduct, setIdProducts] = useState("");
   const [listItems, setListItems] = useState();
@@ -23,12 +29,20 @@ export default function Clothing({ ListProducts }) {
   const [visibleAoItems, setVisibleAoItems] = useState(20);
   const [visibleQuanItems, setVisibleQuanItems] = useState(20);
   const [visibleGiayItems, setVisibleGiayItems] = useState(20);
+  const [WishList, setWishList] = useState([]);
+  const [api, contextHolder] = notification.useNotification();
 
   const itemsPerLoad = 20;
 
-  const aoProducts = ListProducts.filter((p) => p.category.name === "Áo");
-  const quanProducts = ListProducts.filter((p) => p.category.name === "Quần");
-  const giayProducts = ListProducts.filter((p) => p.category.name === "Giày");
+  const aoProducts = ListProducts.filter(
+    (p) => p.category && p.category.name === "Áo"
+  );
+  const quanProducts = ListProducts.filter(
+    (p) => p.category && p.category.name === "Quần"
+  );
+  const giayProducts = ListProducts.filter(
+    (p) => p.category && p.category.name === "Giày"
+  );
 
   const formatPrice = (price) => {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
@@ -70,7 +84,59 @@ export default function Clothing({ ListProducts }) {
     setProductname(name);
     setDiscount(discount);
   };
+  const handlAddWishList = async (productId) => {
+    try {
+      const res = await addToWishlistAPI(user?._id, productId);
+      console.log(res);
+      if (res && res.data && res.data.EC === 0) {
+        api["success"]({
+          message: "Đã thêm vào danh sách yêu thích",
+          description: res.data.message,
+        });
+        fetchListWishList();
+      }
+    } catch (error) {
+      api["error"]({
+        message: "Sản phẩm đã tồn tại danh sách yêu thích",
+        description: "Sản phẩm đã tồn tại danh sách yêu thích",
+      });
+    }
+  };
 
+  const fetchListWishList = async () => {
+    try {
+      const res = await getWishlistAPI(user?._id);
+      if (res && res.data && res.data.EC === 0) {
+        setWishList(res.data.data.products);
+      }
+    } catch (error) {
+      throw new Error("Lỗi lấy danh sách yêu thích");
+    }
+  };
+
+  const handleRemoveWishList = async (productId) => {
+    console.log("productId", productId);
+    try {
+      const res = await RemoveToWishListAPI(user?._id, productId);
+
+      if (res && res.data && res.data.EC === 0) {
+        api["success"]({
+          message: "Đã xóa khỏi danh sách yêu thích",
+        });
+        fetchListWishList();
+      }
+    } catch (error) {
+      api["error"]({
+        message: "Lỗi khi xóa sản phẩm khỏi danh sách yêu thích",
+        description: "Lỗi khi xóa sản phẩm khỏi danh sách yêu thích",
+      });
+    }
+  };
+  useEffect(() => {
+    fetchListWishList();
+  }, [user?._id]);
+
+  const isProductInWishlist = WishList?.map((item) => item.product._id);
   const ProductCard = ({ product }) => (
     <div className="product-card rounded-xl overflow-hidden bg-white shadow-md hover:shadow-xl transition-all duration-300">
       <div className="relative">
@@ -84,23 +150,50 @@ export default function Clothing({ ListProducts }) {
             -{product.discount || 0}%
           </span>
         )}
-        <div className="absolute bottom-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <button className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4 text-gray-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+        <div className="absolute bottom-2 right-2 flex gap-2 ">
+          {isProductInWishlist.includes(product._id) ? (
+            <>
+              <button
+                className="p-1.5 rounded-full shadow-md "
+                onClick={() => handleRemoveWishList(product._id)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4  text-red-700 "
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                  />
+                </svg>
+              </button>
+            </>
+          ) : (
+            <button
+              className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
+              onClick={() => handlAddWishList(product._id)}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-              />
-            </svg>
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 text-gray-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                />
+              </svg>
+            </button>
+          )}
           <button
             className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
             onClick={() =>
@@ -209,6 +302,7 @@ export default function Clothing({ ListProducts }) {
 
   return (
     <div className="bg-gray-50 min-h-screen">
+      {contextHolder}
       <section className="py-8">
         <div className="max-w-full sm:max-w-[480px] md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px]  lg:px-8">
           <div

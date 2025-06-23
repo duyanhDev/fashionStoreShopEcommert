@@ -1,7 +1,10 @@
-import { Modal } from "antd";
+import { Modal, notification } from "antd";
 import { useState, useEffect } from "react";
 import { LeftOutlined, RightOutlined, HeartOutlined } from "@ant-design/icons";
-
+import "./Style.css";
+import { AddCartAPI } from "../../service/Cart";
+import { useSelector } from "react-redux";
+import { useNavigate, useOutletContext } from "react-router-dom";
 const ProductCart = ({
   modalCartOpen,
   setModalCartOpen,
@@ -12,9 +15,14 @@ const ProductCart = ({
   productname,
   discount,
 }) => {
+  const { user } = useSelector((state) => state.auth);
   const [Size, setSize] = useState("");
-
+  const { CartListProductsUser, ListCart } = useOutletContext();
   const [count, setCount] = useState(1);
+
+  const navigate = useNavigate();
+
+  const [api, contextHolder] = notification.useNotification();
   const getDefaultColor = (items) => {
     if (!items || items.length === 0) return "đen";
     const hasBlack = items.some((item) => item.color === "đen");
@@ -75,6 +83,82 @@ const ProductCart = ({
   const handleOnClickSize = (size) => {
     setSize((prev) => (prev === size ? "" : size));
   };
+
+  const handleAddProduct = async () => {
+    if (!user) {
+      api.open({
+        message: "Yêu cầu đăng nhập",
+        description: "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.",
+        duration: 3,
+        type: "warning",
+      });
+      return false;
+    }
+
+    if (!Size || !color) {
+      api.open({
+        message: "Lỗi",
+        description:
+          "Vui lòng chọn kích thước và màu sắc trước khi thêm vào giỏ hàng.",
+        duration: 3,
+        type: "warning",
+      });
+      return false;
+    }
+
+    try {
+      const res = await AddCartAPI(
+        user._id,
+        IdProduct,
+        count,
+        Size,
+        color,
+        costPrice
+      );
+
+      if (res && res.data && res.data.cart) {
+        api.open({
+          message: "Đã thêm vào giỏ hàng",
+          description: (
+            <div className="flex gap-2 p-2">
+              <img
+                src={images[0]?.images[0]?.url}
+                className="img_cart"
+                alt="lỗi"
+              />
+              <div>
+                <h1 className="whitespace-nowrap">{productname}</h1>
+                <h1>{`${color} / ${Size}`}</h1>
+                <h1>{`${costPrice} / ${price}`}</h1>
+              </div>
+            </div>
+          ),
+          duration: 15,
+        });
+        setSize("");
+        CartListProductsUser();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error adding product to cart:", error);
+      api.open({
+        message: "Lỗi",
+        description: "Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại.",
+        duration: 3,
+        type: "error",
+      });
+      return false;
+    }
+  };
+
+  const handleOrder = async () => {
+    const isSuccess = await handleAddProduct();
+    if (isSuccess) {
+      navigate("/cart");
+    }
+  };
+
   return (
     <Modal
       centered
@@ -231,14 +315,21 @@ const ProductCart = ({
           </div>
 
           <div className="mt-4 flex gap-3">
-            <button className="bg-green-500 text-white px-6 py-2 rounded font-semibold">
+            <button
+              className="bg-green-500 text-white px-6 py-2 rounded font-semibold"
+              onClick={() => handleOrder()}
+            >
               MUA NGAY
             </button>
-            <button className="bg-gray-500 text-white px-6 py-2 rounded font-semibold">
+            <button
+              className="bg-gray-500 text-white px-6 py-2 rounded font-semibold"
+              onClick={handleAddProduct}
+            >
               THÊM GIỎ HÀNG
             </button>
           </div>
         </div>
+        {contextHolder}
       </div>
     </Modal>
   );

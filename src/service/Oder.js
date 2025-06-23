@@ -106,6 +106,28 @@ const OrderStatusOneProduct = async (id) => {
   return await axios.get(`api/v1/get-order-one/${id}`);
 };
 
+const updateShippingCancelled = async (id, orderStatus) => {
+  try {
+    return await axios.put(`api/v1/update-order/${id}`, {
+      orderStatus,
+    });
+  } catch (error) {
+    console.log(
+      "Error updating shipping status:",
+      error.response?.data || error.message
+    );
+  }
+};
+
+// lọc sản phẩm theo trạng thái
+
+const filterOrdersByStatus = async (status) => {
+  try {
+    return await axios.post(`api/v1/filter-order/${status}`);
+  } catch (error) {
+    console.log(error);
+  }
+};
 export {
   listOderUserIdAPI,
   createOrder,
@@ -115,4 +137,6 @@ export {
   OrderStatusOneProduct,
   updateShipping,
   UpDateCompleted,
+  updateShippingCancelled,
+  filterOrdersByStatus,
 };

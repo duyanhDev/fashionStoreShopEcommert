@@ -29,13 +29,15 @@ const ForgetPassword = ({ open, setOpen }) => {
     setLoading(true);
     try {
       const res = await Forgotpassword(email);
-      console.log(res);
-      setOpen(false);
-      api["success"]({
-        message: "Lấy lại mật khẩu",
-        description:
-          "Bạn đã lấy lại mật khẩu thành công , xin hãy check lại email của bạn !!",
-      });
+
+      if (res) {
+        setOpen(false);
+        api["success"]({
+          message: "Lấy lại mật khẩu",
+          description:
+            "Bạn đã lấy lại mật khẩu thành công , xin hãy check lại email của bạn !!",
+        });
+      }
     } catch (error) {
       console.error(error);
     } finally {

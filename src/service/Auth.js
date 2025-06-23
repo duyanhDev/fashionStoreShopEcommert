@@ -27,6 +27,7 @@ const update_profileUser = async (
   dateOfBirth,
   height,
   weight,
+  role,
   avatar
 ) => {
   const data = new FormData();
@@ -42,7 +43,7 @@ const update_profileUser = async (
   data.append("dateOfBirth", dateOfBirth);
   data.append("height", height);
   data.append("weight", weight);
-
+  data.append("role", role);
   // Ensure avatar is either a file or null before appending
   if (avatar) {
     // If avatar is a file, append it
@@ -103,6 +104,14 @@ const SendverifyOTP = async (email) => {
 const verifyOTP = async (email, otp) => {
   return await axios.put("api/v1/veryfy-otp", { email, otp });
 };
+
+const RefreshTokenUser = async () => {
+  return await axios.post("api/v1/refresh-token");
+};
+
+const DeleteUserAPI = async (id) => {
+  return await axios.delete(`api/v1/delete-user/${id}`);
+};
 export {
   LoginAuth,
   UserAuth,
@@ -113,4 +122,6 @@ export {
   RegisterUser,
   SendverifyOTP,
   verifyOTP,
+  RefreshTokenUser,
+  DeleteUserAPI,
 };

@@ -37,8 +37,6 @@ const Blog = () => {
     ListProducts.length > 0 &&
     ListProducts.filter((item) => item.sold > 2100);
 
-  console.log(ProductBestSale);
-
   return (
     <div className="main_blog">
       <div className="relative group overflow-hidden">

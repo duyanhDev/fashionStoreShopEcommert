@@ -1,12 +1,15 @@
-import { Button, Popover, Steps } from "antd";
+import { Button, notification, Popover, Steps } from "antd";
 
 import "mapbox-gl/dist/mapbox-gl.css";
 import "./OderStaus.css";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { OrderStatusOneProduct } from "../../service/Oder";
+import {
+  OrderStatusOneProduct,
+  updateShippingCancelled,
+} from "../../service/Oder";
 import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { EditOutlined } from "@ant-design/icons";
+import { EditOutlined, SmileOutlined } from "@ant-design/icons";
 import { FaUser, FaMoneyBill } from "react-icons/fa";
 import { RiBillFill } from "react-icons/ri";
 import { IoIosNotifications } from "react-icons/io";
@@ -14,9 +17,11 @@ import { FaTruck } from "react-icons/fa";
 
 import io from "socket.io-client";
 import FeedBack from "../FeedBack/FeeBack";
-const socket = io("https://fashionstoreshopecommertbe.onrender.com", {
-  transports: ["websocket", "polling"], // Đảm bảo cả 2 phương thức đều có
+
+const socket = io("http://localhost:9000", {
   withCredentials: true,
+  reconnection: true,
+  reconnectionAttempts: 5,
 });
 
 // const socket = io("https://fashionstoreshop.onrender.com/", {
@@ -32,14 +37,15 @@ const OderStatus = () => {
   const [data, setData] = useState([]);
   const { user } = useSelector((state) => state.auth);
   const [modal2Open, setModal2Open] = useState(false);
+
+  const [api, contextHolder] = notification.useNotification();
+
   const Navigate = useNavigate();
   const fetchAPIOrderStatus = async () => {
     try {
       const res = await OrderStatusOneProduct(param.id);
 
       if (res && res.data && res.data.EC === 0) {
-        console.log(res.data.data);
-
         SetOrderStatus(res.data.data.orderStatus);
         setCreatedAt(res.data.data.createdAt);
         setData(res.data.data);
@@ -82,8 +88,28 @@ const OderStatus = () => {
     setModal2Open(true);
   };
 
+  const UpdateOderStatusCalled = async (orderStatus) => {
+    try {
+      let res = await updateShippingCancelled(param.id, orderStatus);
+
+      console.log(res);
+
+      if (res && res.data && res.data.EC === 0) {
+        setData(res.data.data);
+        api.open({
+          message: "Hủy đơn hàng thành công",
+          description: res.data.message,
+          icon: <SmileOutlined style={{ color: "#108ee9" }} />,
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
     <div className="main_order ">
+      {contextHolder}
       <div className="main_ranking__status">
         <h1 className="m-auto font-bold text-4xl" style={{ width: "1300px" }}>
           Đơn Mua
@@ -180,7 +206,15 @@ const OderStatus = () => {
               >
                 Hoàn thành
               </li>
-              <li>Đã hủy</li>
+              <li
+                className={`${
+                  data.orderStatus === "Cancelled"
+                    ? "text-amber-950 border-b-amber-800 border-b-2"
+                    : ""
+                }`}
+              >
+                Đã hủy
+              </li>
             </ul>
           </div>
 
@@ -200,6 +234,8 @@ const OderStatus = () => {
                         return "Đang giao";
                       case "Completed":
                         return "Đơn hàng đã giao thành công";
+                      case "Cancelled":
+                        return "Đơn hàng đã hủy";
                       default:
                         return "Trạng thái không xác định";
                     }
@@ -212,6 +248,8 @@ const OderStatus = () => {
               {data.items &&
                 data.items.length > 0 &&
                 data.items.map((item) => {
+                  console.log(item);
+
                   return (
                     <div
                       className="flex justify-between mt-2 items-center border-b-2"
@@ -219,7 +257,9 @@ const OderStatus = () => {
                     >
                       <div
                         className="flex gap-2 items-center"
-                        onClick={() => Navigate(`/product/${item.productId}`)}
+                        onClick={() =>
+                          Navigate(`/product/${item.productId.id}`)
+                        }
                       >
                         <img
                           className="w-24 h-24 rounded-full object-cover"
@@ -230,6 +270,10 @@ const OderStatus = () => {
                           <span>{item.name}</span>
                           <span className="text-xs block">
                             Màu: {item.color}
+                          </span>
+
+                          <span className="text-xs block">
+                            Kích thước: {item.size}
                           </span>
                           <span className="text-xs block">
                             Số lượng: {item.quantity}
@@ -260,10 +304,26 @@ const OderStatus = () => {
                     Đánh giá
                   </Button>
                 )}
-                <Button className="bg-amber-800 text-white">Mua lại</Button>
+                {data.orderStatus === "Cancelled" && (
+                  <Button
+                    className="bg-amber-800 text-white"
+                    onClick={() => UpdateOderStatusCalled("Processing")}
+                  >
+                    Mua lại
+                  </Button>
+                )}
                 <Button className="bg-amber-800 text-white">
                   Liên hệ người bán
                 </Button>
+
+                {data.orderStatus === "Processing" && (
+                  <Button
+                    className="bg-amber-800 text-white"
+                    onClick={() => UpdateOderStatusCalled("Cancelled")}
+                  >
+                    Hủy đơn hàng
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -275,6 +335,7 @@ const OderStatus = () => {
           setModal2Open={setModal2Open}
           data={data}
           userid={user?._id}
+          setData={setData}
         />
       </div>
     </div>

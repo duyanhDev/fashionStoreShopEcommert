@@ -1,34 +1,199 @@
-/* Tạo kích thước vuông cho các icon */
-.icon-square {
-  width: 40px; /* Chiều rộng cố định */
-  height: 40px; /* Chiều cao cố định */
-  font-size: 24px; /* Kích thước của icon */
+/* OrderAdmin.css */
+
+.order-admin-container {
+  padding: 16px;
+  background-color: #f0f2f5;
+  min-height: 100vh;
+}
+
+.order-breadcrumb {
+  margin-bottom: 16px;
+  padding: 8px 16px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.order-admin-header {
+  margin-bottom: 16px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.order-admin-header .ant-card-body {
+  padding: 16px 24px;
+}
+
+.order-admin-header h2 {
+  margin-bottom: 0;
+  color: #1890ff;
   display: flex;
-  justify-content: center;
   align-items: center;
-  cursor: pointer; /* Hiển thị con trỏ chuột khi hover vào icon */
-  transition: color 0.3s ease; /* Thêm hiệu ứng chuyển màu */
+  gap: 10px;
 }
 
-/* Màu sắc cho các icon */
-.check {
-  color: #1890ff; /* Màu xanh của Ant Design */
+.header-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
-.delete {
-  color: #ff4d4f; /* Màu đỏ của Ant Design */
+.order-stats {
+  margin-bottom: 16px;
 }
 
-/* Hiệu ứng hover cho các icon */
-.icon-square:hover {
-  background-color: rgba(0, 0, 0, 0.1); /* Thêm màu nền khi hover vào icon */
+.stat-card {
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s;
 }
 
-/* Thêm màu sắc khi hover */
-.icon-square.check:hover {
-  color: #40a9ff; /* Màu khi hover vào icon Check */
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.icon-square.delete:hover {
-  color: #f5222d; /* Màu khi hover vào icon Delete */
+.total-card .ant-statistic-title {
+  color: #1890ff;
+}
+
+.processing-card .ant-statistic-title {
+  color: #faad14;
+}
+
+.shipping-card .ant-statistic-title {
+  color: #13c2c2;
+}
+
+.completed-card .ant-statistic-title {
+  color: #52c41a;
+}
+
+.order-admin-filters {
+  margin-bottom: 16px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.search-input,
+.status-select,
+.date-picker {
+  height: 40px;
+}
+
+.reset-button {
+  height: 40px;
+  width: 100%;
+}
+
+.order-admin-table {
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.order-admin-table .ant-card-body {
+  padding: 0;
+  overflow: auto;
+  border-radius: 8px;
+}
+
+.ant-table {
+  border-radius: 8px;
+}
+
+.ant-table-thead > tr > th {
+  background-color: #f7f7f7;
+  font-weight: 600;
+}
+
+.product-name-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.payment-tag,
+.status-tag {
+  margin: 4px 0;
+  padding: 4px 8px;
+  font-weight: 500;
+  border-radius: 4px;
+}
+
+.btn-action {
+  margin: 4px;
+  border-radius: 4px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.btn-warning {
+  background-color: #faad14;
+  border-color: #faad14;
+}
+
+.btn-warning:hover {
+  background-color: #ffc53d;
+  border-color: #ffc53d;
+}
+
+.btn-primary {
+  background-color: #1890ff;
+  border-color: #1890ff;
+}
+
+.btn-info {
+  background-color: #13c2c2;
+  border-color: #13c2c2;
+}
+
+.btn-success {
+  background-color: #52c41a;
+  border-color: #52c41a;
+}
+
+.btn-danger {
+  background-color: #ff4d4f;
+  border-color: #ff4d4f;
+}
+
+.order-row-waiting {
+  background-color: rgba(250, 173, 20, 0.05);
+}
+
+.order-row-shipping {
+  background-color: rgba(19, 194, 194, 0.05);
+}
+
+.order-row-completed {
+  background-color: rgba(82, 196, 26, 0.05);
+}
+
+.order-row-cancelled {
+  background-color: rgba(255, 77, 79, 0.05);
+}
+
+.summary-row {
+  background-color: #f7faff;
+  font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .order-admin-container {
+    padding: 8px;
+  }
+
+  .product-name-cell {
+    max-width: 150px;
+  }
+
+  .header-actions {
+    justify-content: flex-start;
+    margin-top: -16px;
+  }
 }

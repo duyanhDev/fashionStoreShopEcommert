@@ -26,8 +26,6 @@ const View = ({ isModalOpen, setIsModel, isCategory }) => {
     setIsModel(false);
   };
 
-  console.log(name);
-
   return (
     <>
       <Modal

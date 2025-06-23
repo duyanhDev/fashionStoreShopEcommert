@@ -7,6 +7,7 @@ import CartProducts from "../components/CartProducts/CartProducts";
 import Category from "../components/Category/Category";
 import ClothingMale from "../components/ClothingMale/ClothingMale";
 import Details from "../components/Details/Details";
+import EditCustom from "../components/EditCustom/EditCustom";
 import ForgetPassword from "../components/ForgetPassword/ForgetPassword";
 import Home from "../components/Home/Home";
 import DeliveryMap from "../components/Map/Map";
@@ -21,9 +22,16 @@ import ViewSearch from "../components/Sumsearch/ViewSearch";
 import ChatSp from "../components/SupportChat/ChatSp";
 import UpLoad from "../components/UpLoadProducts/UpLoad";
 import UserStatsCard from "../components/UserChar/UserChart";
+import UsersCustom from "../components/Users/Usercustom";
 import VNpay from "../components/VNpay/VNpay";
 import Voucher from "../components/Voucher/Voucher";
-import View from "../components/VỉewProducts/View";
+import View from "../components/ViewProducts/View";
+import FavoritesList from "../components/FavoritesList/FavoritesList";
+import ProductReviewAdmin from "../components/ProductReviewAdmin/ProductReviewAdmin";
+import LoginForm from "../components/Login/Login";
+import RegisterForm from "../components/Register/Register";
+import GeminiBlogGenerator from "../components/GeminiBlogGenerator/GeminiBlogGenerator";
+import AdminPostCreator from "../components/AdminPostCreator/AdminPostCreator";
 
 export const RouterLayout = [
   {
@@ -32,7 +40,7 @@ export const RouterLayout = [
     index: true,
   },
   {
-    path: "/product/:id",
+    path: "/product/:slug",
     element: <Details />,
   },
   {
@@ -79,6 +87,22 @@ export const RouterLayout = [
     path: "/blog",
     element: <Blog />,
   },
+  {
+    path: "/wishlist",
+    element: <FavoritesList />,
+  },
+  {
+    path: "/login",
+    element: <LoginForm />,
+  },
+  {
+    path: "/Register",
+    element: <RegisterForm />,
+  },
+  {
+    path: "/create/blog",
+    element: <AdminPostCreator />,
+  },
 ];
 
 export const RouterAdmin = [
@@ -95,6 +119,18 @@ export const RouterAdmin = [
       { path: "order", element: <OrderAdmin /> },
       { path: "support-chat", element: <ChatSp /> },
       { path: "voucher", element: <Voucher /> },
+      {
+        path: "usercustom",
+        element: <UsersCustom />,
+      },
+      {
+        path: "usercustom/:id",
+        element: <EditCustom />,
+      },
+      {
+        path: "review",
+        element: <ProductReviewAdmin />,
+      },
     ],
   },
 ];

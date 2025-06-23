@@ -19,9 +19,15 @@ import {
 import Search from "../SearchProducts/Search";
 import { searchProductsByNameAPI } from "../../service/ApiProduct";
 import { HiShoppingBag } from "react-icons/hi";
-import { MdDeleteForever } from "react-icons/md";
+import { MdDeleteForever, MdOutlineVolunteerActivism } from "react-icons/md";
 import { debounce } from "lodash";
-import { FaCartArrowDown, FaUser } from "react-icons/fa";
+import {
+  FaCartArrowDown,
+  FaRegListAlt,
+  FaRegUserCircle,
+  FaUser,
+} from "react-icons/fa";
+import { RiAdminLine } from "react-icons/ri";
 
 const Header = ({ user, ListCart, CartListProductsUser }) => {
   const dispatch = useDispatch();
@@ -52,58 +58,69 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
     }, 2000);
   };
 
+  const itemStyle = {
+    minWidth: 200,
+    padding: "8px 12px",
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  };
   const items = [
     {
-      key: "1",
+      key: "user-name",
       label: user?.name || "My name",
       disabled: true,
+      style: { ...itemStyle, fontWeight: "bold", color: "#1890ff" },
     },
+    { type: "divider" },
     {
-      type: "divider",
-    },
-    {
-      key: "2",
-      label: "Profile",
-      extra: "⌘P",
-      onClick: () => {
-        navigate(`/profile/${user?.name || ""}`);
-      },
+      key: "profile ",
+      icon: <FaRegUserCircle size={18} />,
+      label: <span style={{ flex: 1 }}>Thông tin tài khoản</span>,
+      onClick: () => navigate(`/profile/${user?.name || ""}`),
+      style: itemStyle,
     },
     ...(user
       ? [
           {
-            key: "3",
-            label: "Đơn hàng",
-            extra: "⌘B",
+            key: "orders",
+            icon: <FaRegListAlt size={18} />,
+            label: <span style={{ flex: 1 }}>Đơn hàng của tôi</span>,
             onClick: () => navigate("/order"),
+            style: itemStyle,
           },
         ]
       : []),
-    {
-      key: "4",
-      label: "Settings",
-      icon: <SettingOutlined />,
-      extra: "⌘S",
-    },
-    ...(user && user.isAdmin
+    { type: "divider" },
+    ...(user?.role === "admin"
       ? [
           {
-            key: "5",
-            label: "Admin",
-            icon: <SettingOutlined />,
-            extra: "⌘S",
-            onClick: () => {
-              navigate("/admin");
-            },
+            key: "admin",
+            icon: <RiAdminLine size={20} />,
+            label: <span style={{ flex: 1 }}>Quản trị viên</span>,
+            onClick: () => navigate("/admin"),
+            style: itemStyle,
           },
+          { type: "divider" },
         ]
       : []),
     {
-      key: "6",
-      label: user?.name ? "Đăng Xuất" : "Đăng Nhập",
+      key: "settings",
+      icon: <MdOutlineVolunteerActivism size={18} />,
+      label: <span style={{ flex: 1 }}>Danh sách yêu thích</span>,
+      onClick: () => navigate("/wishlist"),
+      style: itemStyle,
+    },
+    {
+      key: "auth",
       icon: <LogoutOutlined />,
-      extra: "⌘S",
+      label: (
+        <span style={{ flex: 1 }}>
+          {user?.name ? "Đăng Xuất" : "Đăng Nhập"}
+        </span>
+      ),
       onClick: handleLogOut,
+      style: itemStyle,
     },
   ].filter(Boolean);
 
@@ -296,7 +313,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
     if (keywordSearch.trim()) {
       FetchSearhProductsAPI();
     }
-  }, 300);
+  }, 500);
 
   useEffect(() => {
     debouncedFetchSearch();
@@ -324,7 +341,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
         <input
           type="text"
           placeholder="Tìm kiếm sản phẩm"
-          className="w-full outline-none"
+          className=" absolute w-full outline-none"
           onClick={handleSearchProducts}
           onChange={handleChangeInput}
           value={keywordSearch}
@@ -348,6 +365,10 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
           setKeywordSearch={setKeywordSearch}
           data={data}
           setData={setData}
+          onSearch={(keyword) => {
+            // 🟢 Gọi API tìm kiếm ở đây
+            FetchSearhProductsAPI(keyword); // bạn tự định nghĩa
+          }}
         />
       </div>
       <div className="w-3/12 flex justify-between doin_right px-5">

@@ -1,7 +1,6 @@
-import { Link, Outlet } from "react-router-dom";
-import "./Admin.css";
+import { useState } from "react";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import {
-  GifOutlined,
   GiftFilled,
   MessageOutlined,
   SearchOutlined,
@@ -14,90 +13,89 @@ import { FaOpencart } from "react-icons/fa";
 import { FaSquarePollVertical } from "react-icons/fa6";
 import { AiTwotoneAppstore } from "react-icons/ai";
 import { RiBillLine } from "react-icons/ri";
+
+const menuItems = [
+  { icon: <FiHome />, label: "Dashboard", to: "" },
+  { icon: <UserOutlined />, label: "User Custom", to: "/admin/usercustom" },
+  { icon: <FiHome />, label: "Products", to: "/admin/products" },
+  { icon: <FaOpencart />, label: "Category", to: "category" },
+  { icon: <FaSquarePollVertical />, label: "Reports", to: "/reports" },
+  { icon: <RiBillLine />, label: "Orders", to: "order" },
+  { icon: <AiTwotoneAppstore />, label: "Manage Store", to: "/manage-store" },
+  {
+    icon: <MessageOutlined />,
+    label: "Support Chat",
+    to: "/admin/support-chat",
+  },
+  { icon: <GiftFilled />, label: "Voucher", to: "/admin/voucher" },
+];
+
 const Admin = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const location = useLocation();
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
   return (
-    <div className="container">
-      <div className="nav flex justify-between  ">
-        <div className="w-1/6 text-center p-4">
+    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Sidebar */}
+      <aside
+        className={`fixed top-0 left-0 h-full w-64 z-40 bg-white/90 backdrop-blur-md shadow-xl transition-transform transform ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0 md:static md:block`}
+      >
+        <div className="text-3xl font-bold text-blue-600 text-center py-6 border-b">
           <Link to="/">DOIIN</Link>
         </div>
-        <div className="flex justify-between w-5/6 h-20 p-4 ">
-          <div className="relative w-80 h-8 flex items-center cursor-pointer">
+        <ul className="mt-6 space-y-2 px-4">
+          {menuItems.map((item) => (
+            <li key={item.label}>
+              <Link
+                to={item.to}
+                className={`flex items-center gap-3 p-3 rounded-xl transition-all hover:bg-blue-100 text-gray-700 ${
+                  location.pathname === item.to ||
+                  location.pathname === `/admin/${item.to}`
+                    ? "bg-blue-500 text-white shadow-md"
+                    : ""
+                }`}
+              >
+                {item.icon}
+                <span className="font-medium">{item.label}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </aside>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col ">
+        {/* Header */}
+        <header className="flex items-center justify-between bg-white shadow-md h-16 px-4 md:px-6">
+          <button onClick={toggleSidebar} className="text-2xl md:hidden">
+            ☰
+          </button>
+
+          <div className="relative hidden sm:block w-72">
             <input
               type="text"
-              className="w-full h-full nav_input p-5"
-              placeholder="Tìm kiếm sản phẩm "
+              placeholder="Tìm kiếm sản phẩm..."
+              className="w-full rounded-full bg-gray-100 px-10 py-2 border focus:ring-2 focus:ring-blue-500 outline-none"
             />
-            <SearchOutlined className="absolute right-0 text-xl mr-3 text-[#ccc]" />
+            <SearchOutlined className="absolute left-3 top-2.5 text-gray-400 text-lg" />
           </div>
-          <div className="flex items-center gap-10 ">
-            <h1>
-              <IoMdNotificationsOutline size={30} />
-            </h1>
+
+          <div className="flex items-center gap-5">
+            <IoMdNotificationsOutline size={28} className="text-gray-700" />
             <Avatar size={40} icon={<UserOutlined />} />
           </div>
-        </div>
-      </div>
-      <div className="nav_content flex ">
-        <div className="nav_left w-1/6 text-center ">
-          <ul className="nav_content_ul text-center m-auto ">
-            <li>
-              <Link to="" className="nav-link">
-                <FiHome />
-                Dashobar
-              </Link>
-            </li>
-            <li>
-              <Link to="/admin/products" className="nav-link">
-                <FiHome />
-                Products
-              </Link>
-            </li>
-            <li>
-              <Link to="category" className="nav-link">
-                <FaOpencart />
-                Category
-              </Link>
-            </li>
-            <li>
-              <Link to="/reports" className="nav-link ">
-                <FaSquarePollVertical />
-                Reports
-              </Link>
-            </li>
-            <li>
-              <Link to="/suppliers" className="nav-link">
-                <UserOutlined />
-                Suppliers
-              </Link>
-            </li>
-            <li>
-              <Link to="order" className="nav-link">
-                <RiBillLine />
-                Orders
-              </Link>
-            </li>
-            <li>
-              <Link to="/manage-store" className="nav-link">
-                <AiTwotoneAppstore />
-                Manage Store
-              </Link>
-            </li>
-            <li>
-              <Link to="/admin/support-chat" className="nav-link">
-                <MessageOutlined />
-                Support Chat
-              </Link>
-            </li>
-            <li>
-              <Link to="/admin/voucher" className="nav-link">
-                <GiftFilled />
-                Voucher
-              </Link>
-            </li>
-          </ul>
-        </div>
-        <Outlet />
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <Outlet />
+        </main>
       </div>
     </div>
   );

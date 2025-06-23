@@ -83,8 +83,6 @@ export default function UserStatsCard() {
     try {
       const res = await ListAllSumProduct();
       if (res && res.data) {
-        console.log(res.data);
-
         setTotal(res.data.totalProductsSold);
       }
     } catch (error) {}

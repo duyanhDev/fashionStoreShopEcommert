@@ -1,9 +1,19 @@
-import { Modal, Flex, Rate, Input, message, Upload } from "antd";
+import {
+  Modal,
+  Flex,
+  Rate,
+  Input,
+  message,
+  Upload,
+  Checkbox,
+  Radio,
+} from "antd";
 import ImgCrop from "antd-img-crop";
 import { useState } from "react";
 
 import "./FeedBack.css";
 import { feeckacksProductsAPI } from "../../service/ApiProduct";
+import { set } from "nprogress";
 
 const FeedBack = ({ modal2Open, setModal2Open, data, userid }) => {
   const desc = [1, 2, 3, 4, 5];
@@ -12,7 +22,8 @@ const FeedBack = ({ modal2Open, setModal2Open, data, userid }) => {
   const [messageApi, contextHolder] = message.useMessage();
   const [fileList, setFileList] = useState([]);
   const [images, setImages] = useState([]);
-  console.log(value);
+
+  const [selectedProducts, setSelectedProducts] = useState([]);
 
   const formatPrice = (price) => {
     // Nếu price là chuỗi, chuyển đổi nó thành một số
@@ -29,12 +40,12 @@ const FeedBack = ({ modal2Open, setModal2Open, data, userid }) => {
     setContent(e.target.value);
   };
 
-  const ids =
-    data.items &&
-    data.items.length > 0 &&
-    data.items.map((item) => {
-      return item.productId;
-    });
+  // const ids =
+  //   data.items &&
+  //   data.items.length > 0 &&
+  //   data.items.map((item) => {
+  //     return item.productId;
+  //   });
 
   const handleFeedBack = async () => {
     if (!content) {
@@ -48,8 +59,13 @@ const FeedBack = ({ modal2Open, setModal2Open, data, userid }) => {
     }
 
     try {
-      let res = await feeckacksProductsAPI(ids, userid, value, content, images);
-      console.log(res);
+      let res = await feeckacksProductsAPI(
+        selectedProducts,
+        userid,
+        value,
+        content,
+        images
+      );
 
       if (res?.EC === "cập nhật thành công") {
         // Kiểm tra đúng phản hồi API
@@ -61,6 +77,8 @@ const FeedBack = ({ modal2Open, setModal2Open, data, userid }) => {
 
         setContent("");
         setValue(0);
+        setFileList([]);
+        setImages([]);
       } else {
         messageApi.open({
           type: "error",
@@ -108,6 +126,14 @@ const FeedBack = ({ modal2Open, setModal2Open, data, userid }) => {
         : imgWindow.document.write(image.outerHTML);
     });
 
+  const handleSelectProduct = (productId) => {
+    if (selectedProducts === productId) {
+      setSelectedProducts(null);
+    } else {
+      setSelectedProducts(productId);
+    }
+  };
+
   return (
     <div>
       {contextHolder}
@@ -122,12 +148,19 @@ const FeedBack = ({ modal2Open, setModal2Open, data, userid }) => {
           {data.items &&
             data.items.length > 0 &&
             data.items.map((item) => {
+              console.log("item", item);
+
               return (
                 <div
-                  className="flex justify-between mt-2 items-center border-b-2"
+                  className="feedback_radio w-full flex justify-between mt-2 items-center border-b-2"
                   key={item._id}
+                  onClick={() => handleSelectProduct(item.productId.id)}
                 >
-                  <div className="flex gap-2 items-center">
+                  <Radio
+                    checked={selectedProducts === item.productId.id}
+                    onChange={() => handleSelectProduct(item.productId.id)}
+                  />
+                  <div className="w-2/3 flex items-center gap-2 ">
                     <img
                       className="w-24 h-24 rounded-full object-cover"
                       src={item.image}
@@ -139,10 +172,10 @@ const FeedBack = ({ modal2Open, setModal2Open, data, userid }) => {
                       <span className="text-xs block">
                         Số lượng: {item.quantity}
                       </span>
+                      <div className="text-amber-900">
+                        {formatPrice(item.price)}
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-amber-900">
-                    {formatPrice(item.price)}
                   </div>
                 </div>
               );

@@ -1,4 +1,4 @@
-import { Button, Card, Flex, Rate, Skeleton } from "antd";
+import { Button, Card, Flex, notification, Rate, Skeleton } from "antd";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "./Home.css";
 // Import Swiper styles
@@ -17,9 +17,17 @@ import Unisex from "./../../assets/Image/Home/Unisex.png";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import ProductCart from "../ProductCart/ProductCart";
+import {
+  addToWishlistAPI,
+  getWishlistAPI,
+  RemoveToWishListAPI,
+} from "../../service/WishList";
+import { useSelector } from "react-redux";
 
 const Home = () => {
   const { ListProducts } = useOutletContext();
+  const { user } = useSelector((state) => state.auth);
+  const [api, contextHolder] = notification.useNotification();
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const desc = ["terrible", "bad", "normal", "good", "wonderful"];
@@ -31,6 +39,7 @@ const Home = () => {
   const [costPrice, setCostPrice] = useState(0);
   const [productname, setProductname] = useState("");
   const [discount, setDiscount] = useState(0);
+  const [WishList, setWishList] = useState([]);
 
   const formatPrice = (price) => {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
@@ -83,9 +92,66 @@ const Home = () => {
     });
   }, []);
 
+  const handlAddWishList = async (productId) => {
+    try {
+      const res = await addToWishlistAPI(user?._id, productId);
+      console.log(res);
+      if (res && res.data && res.data.EC === 0) {
+        api["success"]({
+          message: "Đã thêm vào danh sách yêu thích",
+          description: res.data.message,
+        });
+        fetchListWishList();
+      }
+    } catch (error) {
+      api["error"]({
+        message: "Sản phẩm đã tồn tại danh sách yêu thích",
+        description: "Sản phẩm đã tồn tại danh sách yêu thích",
+      });
+    }
+  };
+
+  const fetchListWishList = async () => {
+    try {
+      const res = await getWishlistAPI(user?._id);
+      if (res && res.data && res.data.EC === 0) {
+        setWishList(res.data.data.products);
+      }
+    } catch (error) {
+      throw new Error("Lỗi lấy danh sách yêu thích");
+    }
+  };
+
+  const handleRemoveWishList = async (productId) => {
+    console.log("productId", productId);
+    try {
+      const res = await RemoveToWishListAPI(user?._id, productId);
+
+      if (res && res.data && res.data.EC === 0) {
+        api["success"]({
+          message: "Đã xóa khỏi danh sách yêu thích",
+        });
+        fetchListWishList();
+      }
+    } catch (error) {
+      api["error"]({
+        message: "Lỗi khi xóa sản phẩm khỏi danh sách yêu thích",
+        description: "Lỗi khi xóa sản phẩm khỏi danh sách yêu thích",
+      });
+    }
+  };
+  useEffect(() => {
+    fetchListWishList();
+  }, [user?._id]);
+
+  // đổi màu buton thêm vào danh sách yêu thích
+
+  const isProductInWishlist = WishList?.map((item) => item.product._id);
+
   return (
     <>
       <SliderComponent />
+      {contextHolder}
       <div className="m-auto  home_doisin">
         <div className="flex justify-center m-auto items-center mt-8 ">
           <div className="title_line relative w-10  "></div>
@@ -266,23 +332,50 @@ const Home = () => {
                               -{item.discount || 0}%
                             </span>
                           )}
-                          <div className="absolute bottom-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <button className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4 text-gray-600"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
+                          <div className="absolute bottom-2 right-2 flex gap-2 ">
+                            {isProductInWishlist.includes(item._id) ? (
+                              <>
+                                <button
+                                  className="p-1.5 rounded-full shadow-md "
+                                  onClick={() => handleRemoveWishList(item._id)}
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-4 w-4  text-red-700 "
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                                    />
+                                  </svg>
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
+                                onClick={() => handlAddWishList(item._id)}
                               >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                                />
-                              </svg>
-                            </button>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-4 w-4 text-gray-600"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                                  />
+                                </svg>
+                              </button>
+                            )}
                             <button
                               className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
                               onClick={() =>

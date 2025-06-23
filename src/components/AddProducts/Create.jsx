@@ -162,8 +162,6 @@ const Create = () => {
       );
 
       if (res) {
-        console.log(res);
-
         const key = "updatable";
 
         // Display loading message and success notification

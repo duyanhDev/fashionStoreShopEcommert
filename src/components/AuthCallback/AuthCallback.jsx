@@ -21,8 +21,6 @@ const AuthCallback = () => {
           // Decode the token to get user ID
           const decoded = jwtDecode(token);
 
-          console.log(token);
-
           // Fetch user details with the token
           const response = await fetch(
             "https://fashionstoreshopecommertbe.onrender.com/auth/user",
@@ -33,14 +31,8 @@ const AuthCallback = () => {
             }
           );
 
-          console.log(response);
-
           if (response.ok) {
             const userData = await response.json();
-            console.log(userData);
-
-            // Store in localStorage
-            localStorage.setItem("authToken", token);
 
             // Dispatch to Redux store
             dispatch(login(token, userData));

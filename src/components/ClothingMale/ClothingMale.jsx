@@ -7,12 +7,21 @@ import { ListCategoryAPI } from "../../service/ApiCategory";
 import ReactPaginate from "react-paginate";
 import { fetchProducts } from "../../redux/actions/filterAction";
 import SliderComponent from "../Slider/Slider";
+import ProductCart from "../ProductCart/ProductCart";
 
 const ClothingMale = () => {
   const param = useParams();
   const location = useLocation();
   const navigate = useNavigate(); // Fixed: lowercase navigate
   const dispatch = useDispatch();
+  const [modalCartOpen, setModalCartOpen] = useState(false);
+
+  const [IdProduct, setIdProducts] = useState("");
+  const [listItems, setListItems] = useState();
+  const [price, setPrice] = useState(0);
+  const [costPrice, setCostPrice] = useState(0);
+  const [productname, setProductname] = useState("");
+  const [discount, setDiscount] = useState(0);
 
   const desc = ["terrible", "bad", "normal", "good", "wonderful"];
 
@@ -261,6 +270,24 @@ const ClothingMale = () => {
   const handleDetails = (id) => {
     navigate(`/product/${id}`);
   };
+
+  const handelModelProductCart = (
+    id,
+    items,
+    price,
+    costPrice,
+    name,
+    discount
+  ) => {
+    setIdProducts(id);
+    setListItems(items);
+    setPrice(price);
+    setCostPrice(costPrice);
+    setModalCartOpen(true);
+    setProductname(name);
+    setDiscount(discount);
+  };
+
   return (
     <section>
       <SliderComponent />
@@ -642,6 +669,16 @@ const ClothingMale = () => {
                 )}
               </div>
             </div>
+            <ProductCart
+              modalCartOpen={modalCartOpen}
+              setModalCartOpen={setModalCartOpen}
+              IdProduct={IdProduct}
+              listItems={listItems}
+              price={price}
+              costPrice={costPrice}
+              productname={productname}
+              discount={discount}
+            />
           </div>
         </div>
       </div>

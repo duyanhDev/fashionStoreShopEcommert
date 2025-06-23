@@ -1,8 +1,6 @@
 .search_nav {
   width: 1000px;
-  height: 100%;
-  min-height: 100vh;
-  top: 101px;
+  top: 50px;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }

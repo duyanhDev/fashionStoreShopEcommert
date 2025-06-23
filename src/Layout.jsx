@@ -6,12 +6,14 @@ import App from "./App";
 import { useSelector } from "react-redux";
 import LoginForm from "./components/Login/Login";
 import AuthCallback from "./components/AuthCallback/AuthCallback";
+import NotFound from "./NotFound/NotFound";
 function MainLayout() {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
 
   return (
     <Router>
       <Routes>
+        <Route path="*" element={<NotFound />} />
         <Route path="/" element={<App />}>
           {RouterLayout.map((route, index) => (
             <Route key={index} path={route.path} element={route.element} />
@@ -19,7 +21,7 @@ function MainLayout() {
         </Route>
         <Route path="/login" element={<LoginForm />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        {isAuthenticated && user.isAdmin === true ? (
+        {isAuthenticated && user.role === "admin" ? (
           RouterAdmin.map((adminRoute, index) => (
             <Route
               key={index}

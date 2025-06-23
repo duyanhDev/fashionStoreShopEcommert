@@ -40,6 +40,10 @@ const CartProducts = ({}) => {
   const [selectedVouCher, setSelectedVoucher] = useState(null);
   const [checkedItems, setCheckedItems] = useState([]);
 
+  const [ghnDistrictId, setGhnDistrictId] = useState("");
+  const [ghnWardCode, setGhnWardCode] = useState("");
+  const [ghnPickStationId, setGhnPickStationId] = useState(1442); // Mặc định, có thể thay đổi
+
   const formatPrice = (price) => {
     const numericPrice =
       typeof price === "string"
@@ -51,44 +55,58 @@ const CartProducts = ({}) => {
   // Các hàm xử lý địa chỉ (giữ nguyên)
   const DataProvine = async () => {
     try {
-      let api = "https://esgoo.net/api-tinhthanh/1/0.htm";
-      let res = await axios.get(api);
+      let api =
+        "https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/province";
+      let res = await axios.get(api, {
+        headers: { Token: "6501032d-0b70-11ef-b1d4-92b443b7a897" }, // Thay bằng token hợp lệ của bạn
+      });
       if (res.data && res.data.data) {
         const dataProvines = res.data.data.map((data) => ({
-          id: data.id,
-          name: data.name,
+          id: data.ProvinceID,
+          name: data.ProvinceName,
         }));
         SetProvine(dataProvines);
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error("Error fetching provinces:", error);
+    }
   };
 
   const DistrstData = async () => {
     try {
-      let url = `https://esgoo.net/api-tinhthanh/2/${id}.htm`;
-      let res = await axios.get(url);
+      let url = `https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/district?province_id=${id}`;
+      let res = await axios.get(url, {
+        headers: { Token: "6501032d-0b70-11ef-b1d4-92b443b7a897" },
+      });
       if (res.data && res.data.data) {
         const data = res.data.data.map((item) => ({
-          id: item.id,
-          name: item.full_name,
+          id: item.DistrictID,
+          name: item.DistrictName,
         }));
         setDistrict(data);
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error("Error fetching districts:", error);
+    }
   };
 
   const WarnData = async () => {
     try {
-      let url = `https://esgoo.net/api-tinhthanh/3/${selectedDistrict}.htm`;
-      let res = await axios.get(url);
+      let url = `https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/ward?district_id=${selectedDistrict}`;
+      let res = await axios.get(url, {
+        headers: { Token: "6501032d-0b70-11ef-b1d4-92b443b7a897" },
+      });
       if (res.data && res.data.data) {
+        console.log("Wards in District 1442 (Quận 1):", res.data.data);
         const data = res.data.data.map((item) => ({
-          id: item.id,
-          name: item.full_name,
+          id: item.WardCode,
+          name: item.WardName,
         }));
         setWarn(data);
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error("Error fetching wards:", error);
+    }
   };
 
   useEffect(() => {
@@ -113,8 +131,12 @@ const CartProducts = ({}) => {
   };
 
   const handleDistrictChange = (value, name) => {
+    console.log(name);
+
     setSelectedDistrict(value);
     setDistrictName(name.label);
+    setGhnDistrictId(value);
+    // Lưu WardCode của GHN
   };
 
   const onChange = (e) => {
@@ -261,7 +283,6 @@ const CartProducts = ({}) => {
   // Hàm xử lý chọn/bỏ chọn voucher
 
   const handleVoucherChange = (discountValue, voucherId, content) => {
-    console.log("Trước khi thay đổi:", { selectedVouCher, voucherId });
     if (selectedVouCher === voucherId) {
       // Bỏ chọn voucher
       setSelectedVoucher(null);
@@ -333,7 +354,6 @@ const CartProducts = ({}) => {
       ),
     },
   ];
-
   const handleOrder = async () => {
     try {
       setLoadingSpin(true);
@@ -346,7 +366,7 @@ const CartProducts = ({}) => {
         !email ||
         !number ||
         !fullAddress ||
-        !district ||
+        !districtName ||
         !wardName
       ) {
         notification.error({
@@ -356,40 +376,124 @@ const CartProducts = ({}) => {
         setLoadingSpin(false);
         return;
       }
-      let res = await createOrder(
-        user._id,
-        Name,
-        number,
-        formattedItems,
-        fullAddress,
-        city,
-        districtName,
-        wardName,
-        value,
-        email,
-        CartId,
-        productId,
-        discountValue,
-        idDiscount
+
+      const ghnOrderData = {
+        payment_type_id: value === "cod" ? 2 : 1,
+        note: "Đơn hàng từ website",
+        required_note: "CHOXEMHANGKHONGTHU",
+        from_name: "ShopDior", // Thêm thông tin người gửi
+        from_phone: "0373081693", // Số điện thoại người gửi
+        from_address:
+          "123 Đường ABC, Phường Phú Lợi, Thành phố Thủ Dầu Một, Bình Dương", // Địa chỉ đầy đủ
+        from_ward_name: "Phường Phú Lợi",
+        from_district_name: "Thành phố Thủ Dầu Một",
+        from_province_name: "Bình Dương",
+        return_phone: "0373081693",
+        return_address:
+          "123 Đường ABC, Phường Phú Lợi, Thành phố Thủ Dầu Một, Bình Dương",
+        return_district_id: 1538,
+        return_ward_code: "440109",
+        client_order_code: `DH${Date.now()}`,
+        to_name: Name,
+        to_phone: number,
+        to_address: fullAddress,
+        to_ward_code: String(ghnWardCode), // Sửa thành mã hợp lệ
+        to_district_id: ghnDistrictId,
+        cod_amount: finalPrice,
+        content: "Sản phẩm mua online",
+        weight: 1000,
+        length: 10,
+        width: 10,
+        height: 10,
+        pick_station_id: ghnPickStationId,
+        service_id: 0,
+        service_type_id: 2,
+        items: Products.map((item) => ({
+          name: item.name || "Sản phẩm",
+          code: item.id || `PROD${Date.now()}`,
+          quantity: item.quantity || 1,
+          price: item.price || finalPrice / Products.length,
+          length: item.length || 10,
+          width: item.width || 10,
+          height: item.height || 10,
+          weight: item.weight || 1000,
+          category: { level1: "Sản phẩm" },
+        })),
+      };
+      console.log(ghnOrderData);
+
+      let ghnResponse = await axios.post(
+        "https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/create",
+        ghnOrderData,
+        {
+          headers: {
+            Token: "6501032d-0b70-11ef-b1d4-92b443b7a897",
+            ShopId: "192215",
+            "Content-Type": "application/json",
+          },
+        }
       );
-      if (res && res.data.EC === 0) {
-        await CartListProductsUser();
-        setTimeout(() => {
-          setLoadingSpin(false);
-          api.open({
-            message: "Đặt Hàng",
-            description: "Chúc mừng quý khách đã đặt hàng thành công tại shop",
-            icon: <SmileOutlined style={{ color: "#108ee9" }} />,
+
+      if (ghnResponse.data && ghnResponse.data.code === 200) {
+        let res = await createOrder(
+          user._id,
+          Name,
+          number,
+          formattedItems,
+          fullAddress,
+          city,
+          districtName,
+          wardName,
+          value,
+          email,
+          CartId,
+          productId,
+          discountValue,
+          idDiscount
+        );
+
+        if (res && res.data.EC === 0) {
+          await CartListProductsUser();
+          setTimeout(() => {
+            setLoadingSpin(false);
+            api.open({
+              message: "Đặt Hàng",
+              description:
+                "Chúc mừng quý khách đã đặt hàng thành công tại shop",
+              icon: <SmileOutlined style={{ color: "#108ee9" }} />,
+            });
+            if (res.data.orderUrl) window.location.href = res.data.orderUrl;
+            else if (res.data.vnpUrl) window.location.href = res.data.vnpUrl;
+            else if (res.data.data.shortLink)
+              window.location.href = res.data.data.payUrl;
+          }, 3000);
+        } else {
+          notification.error({
+            message: "Lỗi",
+            description: res.data.EM || "Tạo đơn hàng trong hệ thống thất bại.",
           });
-          if (res.data.orderUrl) window.location.href = res.data.orderUrl;
-          else if (res.data.vnpUrl) window.location.href = res.data.vnpUrl;
-          else if (res.data.data.shortLink)
-            window.location.href = res.data.data.payUrl;
-        }, 3000);
+          setLoadingSpin(false);
+        }
+      } else {
+        notification.error({
+          message: "Lỗi GHN",
+          description:
+            ghnResponse.data.message ||
+            "Đặt hàng qua GHN thất bại. Kiểm tra mã địa lý.",
+        });
+        setLoadingSpin(false);
       }
     } catch (error) {
       setLoadingSpin(false);
-      console.error("Order creation failed:", error);
+      console.error(
+        "Order creation failed:",
+        error.response?.data || error.message
+      );
+      notification.error({
+        message: "Lỗi",
+        description:
+          error.response?.data?.message || "Có lỗi xảy ra khi đặt hàng.",
+      });
     }
   };
 
@@ -496,6 +600,7 @@ const CartProducts = ({}) => {
                 onChange={(value, name) => {
                   setSelectedWarnDistrict(value);
                   setWardName(name.label);
+                  setGhnWardCode(value);
                 }}
               />
             </div>
