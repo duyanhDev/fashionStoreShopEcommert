@@ -9,11 +9,12 @@ import {
   Grid,
   List,
 } from "lucide-react";
-
+import { Button } from "antd";
+import { useNavigate } from "react-router-dom";
 const Blog = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
-
+  const navigate = useNavigate();
   // Sample blog data
   const blogPosts = [
     {
@@ -216,11 +217,18 @@ const Blog = () => {
             {/* Featured Post */}
             {featuredPost && (
               <div className="mb-12">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-2 h-8 bg-green-500 rounded"></div>
+                <div className="relative flex items-center gap-2 mb-4 ">
+                  <div className="w-2 h-8 bg-green-500 rounded "></div>
                   <h2 className="text-2xl font-bold text-green-400">
                     Bài viết nổi bật
                   </h2>
+
+                  <Button
+                    className="absolute right-0 bg-green-500 rounded"
+                    onClick={() => navigate("/create/blog")}
+                  >
+                    Tạo Bài Viết
+                  </Button>
                 </div>
                 <div className="bg-gray-900 rounded-2xl overflow-hidden hover:transform hover:scale-[1.02] transition-all duration-300">
                   <div className="md:flex">
