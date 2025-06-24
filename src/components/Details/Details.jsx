@@ -297,7 +297,7 @@ const Details = () => {
       return;
     }
     try {
-      const res = await toggleLikeRatingAPI(param.id, ratings, user._id);
+      const res = await toggleLikeRatingAPI(id, ratings, user._id);
 
       if (res && res.data && res.data.success === true) {
         FetchAPIDetaillProuduct();

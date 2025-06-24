@@ -129,7 +129,7 @@ const GeminiBlogGenerator = () => {
       formData.append("content", values.content);
       formData.append("slug", values.title.toLowerCase().replace(/\s+/g, "-"));
       formData.append("regex", values.keywords || "");
-      formData.append("userId", "685047211a43fd53e1936c34");
+      formData.append("userId", "673017dde4526bd79cc61fa6");
       formData.append("readTime", values.readTime);
       formData.append("featured", values.featured);
 

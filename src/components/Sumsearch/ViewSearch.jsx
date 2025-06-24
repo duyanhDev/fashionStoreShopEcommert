@@ -49,7 +49,7 @@ const ViewSearch = ({}) => {
               <div
                 className="product-header-search-1 "
                 key={product.id}
-                onClick={() => navigate(`/product/${product._id}`)}
+                onClick={() => navigate(`/product/${product.slug}`)}
               >
                 <img
                   src={

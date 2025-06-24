@@ -20,7 +20,7 @@ import FeedBack from "../FeedBack/FeeBack";
 
 import GoogleMapsStyleDelivery from "../Map/Map";
 
-const socket = io("https://fashionstoreshopecommertbe.onrender.com", {
+const socket = io("http://localhost:9000", {
   withCredentials: true,
   reconnection: true,
   reconnectionAttempts: 5,
@@ -248,6 +248,8 @@ const OderStatus = () => {
               {data.items &&
                 data.items.length > 0 &&
                 data.items.map((item) => {
+                  console.log(item);
+
                   return (
                     <div
                       className="flex justify-between mt-2 items-center border-b-2"
@@ -256,7 +258,7 @@ const OderStatus = () => {
                       <div
                         className="flex gap-2 items-center"
                         onClick={() =>
-                          Navigate(`/product/${item.productId.id}`)
+                          Navigate(`/product/${item.productId.slug}`)
                         }
                       >
                         <img

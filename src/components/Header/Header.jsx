@@ -7,11 +7,11 @@ import {
   IoMenuOutline,
   IoCloseOutline,
 } from "react-icons/io5";
-import { Dropdown, Button, Drawer, Modal } from "antd";
-import { LogoutOutlined, SettingOutlined } from "@ant-design/icons";
+import { Dropdown, Button, Drawer, Modal, message } from "antd";
+import { LogoutOutlined } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
 import { logout, Search as SearchAction } from "../../redux/actions/Auth";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { RemoveCartOnePorduct, UpdateCartQuantity } from "../../service/Cart";
 import ClipLoader from "react-spinners/ClipLoader";
 import {
@@ -23,6 +23,7 @@ import { searchProductsByNameAPI } from "../../service/ApiProduct";
 import { HiShoppingBag } from "react-icons/hi";
 import { MdDeleteForever, MdOutlineVolunteerActivism } from "react-icons/md";
 import { debounce } from "lodash";
+
 import {
   FaCartArrowDown,
   FaRegListAlt,
@@ -48,6 +49,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
   const [totalPage, setTotalPage] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchVisible, setSearchVisible] = useState(false);
+  const [inputValue, setInputValue] = useState({}); // Local state for input values
 
   const handleLogOut = () => {
     dispatch(logout());
@@ -79,7 +81,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
     },
     { type: "divider" },
     {
-      key: "profile ",
+      key: "profile",
       icon: <FaRegUserCircle size={18} />,
       label: <span style={{ flex: 1 }}>Thông tin tài khoản</span>,
       onClick: () => {
@@ -152,15 +154,21 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
     try {
       setLoadingSpin(true);
       const res = await RemoveCartOnePorduct(ListCart._id, id, user._id);
-      if (res.data) {
+      console.log(res);
+
+      if (res && res.data) {
         setTimeout(() => {
           setLoadingSpin(false);
           CartListProductsUser();
-        }, 3000);
+          message.success("Đã xóa sản phẩm khỏi giỏ hàng!");
+        }, 1000); // Reduced timeout for better UX
+      } else {
+        throw new Error(res.data?.message || "Remove failed");
       }
     } catch (error) {
       setLoadingSpin(false);
       console.error("Error in handleRemoveCartProduct:", error);
+      message.error("Không thể xóa sản phẩm. Vui lòng thử lại!");
     }
   };
 
@@ -170,10 +178,11 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
       setOpen(false);
       const timer = setTimeout(() => {
         setLoadingCart(false);
-      }, 3000);
+      }, 1000);
       navigate("cart");
       return () => clearTimeout(timer);
     } catch (error) {
+      console.error("Error in handlePay:", error);
     } finally {
       setLoading(false);
     }
@@ -184,7 +193,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-    }, 2000);
+    }, 1000);
   };
 
   const FetchDataNocatifionsAPI = async () => {
@@ -193,7 +202,9 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
       if (res && res.data && res.data.EC === 0) {
         setDataNotifications(res.data.data);
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    }
   };
 
   useEffect(() => {
@@ -235,7 +246,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
         setShowHiden(false);
       }
     } catch (error) {
-      console.log(error);
+      console.error("Error updating notification:", error);
     }
   };
 
@@ -256,7 +267,9 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
         setData(res.data.data);
         setTotalPage(res.data.totalPages);
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error("Error searching products:", error);
+    }
   };
 
   useEffect(() => {
@@ -269,7 +282,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
     setOpenSearch(false);
     const keyword = keywordSearch.trim();
     if (!keyword) {
-      console.error("Keyword is empty");
+      message.error("Vui lòng nhập từ khóa tìm kiếm!");
       return;
     }
     navigate(`search?q=${keyword}`);
@@ -286,40 +299,94 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
   const handleMinus = (cartId, currentQuantity) => {
     if (currentQuantity > 1) {
       const newQuantity = currentQuantity - 1;
+      setInputValue((prev) => ({ ...prev, [cartId]: newQuantity }));
       debouncedUpdate(cartId, newQuantity);
     }
   };
 
   const handlePlus = (cartId, currentQuantity) => {
     const newQuantity = currentQuantity + 1;
-    debouncedUpdate(cartId, newQuantity);
-  };
-
-  const handleUpdateQuantity = async (cartId, newQuantity) => {
-    try {
-      setLoadingSpin(true);
-      const res = await UpdateCartQuantity(
-        ListCart._id,
-        cartId,
-        user._id,
-        newQuantity
-      );
-      if (res.data && res.data.EC === 0) {
-        CartListProductsUser();
-        setLoadingSpin(false);
-      } else {
-        throw new Error(res.data?.message || "Update failed");
-      }
-    } catch (error) {
-      setLoadingSpin(false);
-      console.error("Error updating quantity:", error);
+    const cartItem = ListCart.items.find((item) => item._id === cartId);
+    const maxQuantity = cartItem?.productId?.inventory || Infinity;
+    if (newQuantity > maxQuantity) {
+      message.warning(`Số lượng tối đa là ${maxQuantity}!`);
+      setInputValue((prev) => ({ ...prev, [cartId]: maxQuantity }));
+      debouncedUpdate(cartId, maxQuantity);
+    } else {
+      setInputValue((prev) => ({ ...prev, [cartId]: newQuantity }));
+      debouncedUpdate(cartId, newQuantity);
     }
   };
 
-  const debouncedUpdate = debounce(handleUpdateQuantity, 300, {
-    leading: false,
-    trailing: true,
-  });
+  const handleInputChange = (cartId, value) => {
+    if (value === "" || /^[0-9]*$/.test(value)) {
+      setInputValue((prev) => ({ ...prev, [cartId]: value }));
+    }
+
+    if (value === "") {
+      return;
+    }
+
+    const quantity = parseInt(value);
+    const cartItem = ListCart.items.find((item) => item._id === cartId);
+    const maxQuantity = cartItem?.productId?.inventory || Infinity;
+
+    if (quantity === 0) {
+      handleRemoveCartProduct(cartId);
+    } else if (quantity > maxQuantity) {
+      message.warning(`Số lượng tối đa là ${maxQuantity}!`);
+      setInputValue((prev) => ({ ...prev, [cartId]: maxQuantity }));
+      debouncedUpdate(cartId, maxQuantity);
+    } else {
+      const validQuantity = Math.max(1, quantity || 1);
+      debouncedUpdate(cartId, validQuantity);
+    }
+  };
+
+  const handleBlur = (cartId, value) => {
+    if (value === "" || isNaN(value)) {
+      const currentQuantity =
+        ListCart.items.find((item) => item._id === cartId)?.quantity || 1;
+      setInputValue((prev) => ({ ...prev, [cartId]: currentQuantity }));
+      debouncedUpdate(cartId, currentQuantity);
+    }
+  };
+
+  const handleUpdateQuantity = useCallback(
+    async (cartId, newQuantity) => {
+      try {
+        const quantityToUpdate =
+          newQuantity === "" || isNaN(newQuantity) ? 1 : newQuantity;
+        const res = await UpdateCartQuantity(
+          ListCart._id,
+          cartId,
+          user._id,
+          quantityToUpdate
+        );
+        if (res.data && res.data.EC === 0) {
+          CartListProductsUser();
+          setInputValue((prev) => ({ ...prev, [cartId]: quantityToUpdate }));
+        } else {
+          throw new Error(res.data?.message || "Update failed");
+        }
+      } catch (error) {
+        setLoadingSpin(false);
+        console.error("Error updating quantity:", error);
+        message.error("Không thể cập nhật số lượng. Vui lòng thử lại!");
+        setInputValue((prev) => ({
+          ...prev,
+          [cartId]:
+            ListCart.items.find((item) => item._id === cartId)?.quantity || 1,
+        }));
+      }
+    },
+    [ListCart, user._id, CartListProductsUser]
+  );
+
+  const debouncedUpdate = useCallback(
+    debounce(handleUpdateQuantity, 100, { leading: false, trailing: true }),
+    [handleUpdateQuantity]
+  );
 
   useEffect(() => {
     return () => {
@@ -327,16 +394,19 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
     };
   }, [debouncedUpdate]);
 
-  const debouncedFetchSearch = debounce(() => {
-    if (keywordSearch.trim()) {
-      FetchSearhProductsAPI();
-    }
-  }, 500);
+  const debouncedFetchSearch = useCallback(
+    debounce(() => {
+      if (keywordSearch.trim()) {
+        FetchSearhProductsAPI();
+      }
+    }, 500),
+    [keywordSearch]
+  );
 
   useEffect(() => {
     debouncedFetchSearch();
     return () => debouncedFetchSearch.cancel();
-  }, [keywordSearch]);
+  }, [debouncedFetchSearch]);
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -452,22 +522,17 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
 
         {/* Mobile Right Section */}
         <div className="flex md:hidden items-center space-x-3">
-          {/* Mobile Search Toggle */}
           <IoSearch
             size={24}
             className="cursor-pointer"
             onClick={toggleMobileSearch}
           />
-
-          {/* Mobile Cart */}
           <div className="relative cursor-pointer" onClick={showLoading}>
             <IoCartOutline size={24} />
             <span className="cart_items absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
               {ListCart && ListCart.items ? ListCart.items.length : 0}
             </span>
           </div>
-
-          {/* Mobile Menu Toggle */}
           <button onClick={toggleMobileMenu} className="cursor-pointer">
             {mobileMenuOpen ? (
               <IoCloseOutline size={28} />
@@ -521,7 +586,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
       {mobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-white border-t shadow-lg z-50">
           <div className="px-4 py-6">
-            {/* User Info */}
             {user ? (
               <div className="flex items-center space-x-3 mb-6 pb-4 border-b">
                 <img
@@ -545,10 +609,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
                 </Button>
               </div>
             )}
-
-            {/* Mobile Menu Items */}
             <div className="space-y-4">
-              {/* Notifications */}
               <div
                 className="flex items-center justify-between py-2 cursor-pointer"
                 onClick={() => {
@@ -566,10 +627,8 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
                     : 0}
                 </span>
               </div>
-
               {user && (
                 <>
-                  {/* Profile */}
                   <div
                     className="flex items-center space-x-3 py-2 cursor-pointer"
                     onClick={() => {
@@ -580,8 +639,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
                     <FaRegUserCircle size={20} />
                     <span>Thông tin tài khoản</span>
                   </div>
-
-                  {/* Orders */}
                   <div
                     className="flex items-center space-x-3 py-2 cursor-pointer"
                     onClick={() => {
@@ -592,8 +649,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
                     <FaRegListAlt size={20} />
                     <span>Đơn hàng của tôi</span>
                   </div>
-
-                  {/* Admin */}
                   {user?.role === "admin" && (
                     <div
                       className="flex items-center space-x-3 py-2 cursor-pointer"
@@ -606,8 +661,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
                       <span>Quản trị viên</span>
                     </div>
                   )}
-
-                  {/* Wishlist */}
                   <div
                     className="flex items-center space-x-3 py-2 cursor-pointer"
                     onClick={() => {
@@ -618,8 +671,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
                     <MdOutlineVolunteerActivism size={20} />
                     <span>Danh sách yêu thích</span>
                   </div>
-
-                  {/* Logout */}
                   <div
                     className="flex items-center space-x-3 py-2 cursor-pointer text-red-600"
                     onClick={() => {
@@ -659,7 +710,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
         className="relative cart_products_item"
         width={window.innerWidth < 768 ? "95%" : 600}
       >
-        {/* Cart Header - Hidden on mobile */}
         <div className="item_list_cart_products hidden sm:grid">
           <span>Hình ảnh</span>
           <span>Sản phẩm</span>
@@ -677,7 +727,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
                 className="item_list_cart_total flex flex-col sm:flex-row items-start sm:items-center py-4 border-b"
                 key={cart._id}
               >
-                {/* Product Image */}
                 <div className="w-full sm:w-auto mb-2 sm:mb-0 flex justify-center sm:justify-start">
                   <img
                     src={imageUrl}
@@ -685,8 +734,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
                     className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded"
                   />
                 </div>
-
-                {/* Product Info */}
                 <div className="flex-1 px-0 sm:px-4 mb-2 sm:mb-0">
                   <h4 className="font-medium text-sm sm:text-base mb-1 line-clamp-2">
                     {cart.productId?.name || "Unknown Product"}
@@ -706,8 +753,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
                     />
                   </div>
                 </div>
-
-                {/* Quantity Controls */}
                 <div className="w-full sm:w-auto flex justify-center mb-2 sm:mb-0">
                   <div className="flex items-center border border-gray-400 rounded-lg overflow-hidden">
                     <button
@@ -719,10 +764,18 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
                     </button>
                     <input
                       type="number"
-                      className="w-12 h-8 text-center text-lg font-semibold text-gray-900 bg-transparent border-x border-gray-300 outline-none appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      value={cart.quantity}
-                      min={1}
-                      readOnly
+                      className="w-12 h-8 text-center text-lg font-semibold text-gray-900 bg-transparent border-x border-gray-300 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      value={
+                        inputValue[cart._id] !== undefined
+                          ? inputValue[cart._id]
+                          : cart.quantity
+                      }
+                      min={0}
+                      placeholder="1"
+                      onChange={(e) =>
+                        handleInputChange(cart._id, e.target.value)
+                      }
+                      onBlur={(e) => handleBlur(cart._id, e.target.value)}
                     />
                     <button
                       className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-lg font-bold"
@@ -733,8 +786,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
                     </button>
                   </div>
                 </div>
-
-                {/* Total Price */}
                 <div className="w-full sm:w-auto text-center sm:text-right">
                   <span className="font-semibold text-base text-green-600">
                     {formatPrice(cart.totalItemPrice)}
@@ -793,9 +844,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
       >
         <Button
           type="primary"
-          style={{
-            marginBottom: 16,
-          }}
+          style={{ marginBottom: 16 }}
           onClick={handleShowNocations}
           className="w-full sm:w-auto"
         >

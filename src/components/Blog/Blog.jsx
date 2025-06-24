@@ -196,8 +196,8 @@ const Blog = () => {
                       <h3 className="text-2xl font-bold mb-4 hover:text-green-400 transition-colors cursor-pointer">
                         {featuredPost.title}
                       </h3>
-                      <p className="text-gray-300 mb-4 leading-relaxed">
-                        {featuredPost.excerpt}
+                      <p className="text-gray-300 mb-4 leading-relaxed line-clamp-2">
+                        {featuredPost.content}
                       </p>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm text-gray-400">

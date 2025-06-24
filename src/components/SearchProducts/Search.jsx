@@ -123,7 +123,7 @@ const Search = ({
                       <div
                         className="bg-white rounded-xl p-3 cursor-pointer transition-all hover:shadow-md hover:translate-y-[-4px]"
                         key={index}
-                        onClick={() => navigate(`/product/${product._id}`)}
+                        onClick={() => navigate(`/product/${product.slug}`)}
                       >
                         <div className="aspect-[3/4] overflow-hidden rounded-lg mb-3">
                           <img
