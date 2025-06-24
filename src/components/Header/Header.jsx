@@ -358,9 +358,9 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
         const quantityToUpdate =
           newQuantity === "" || isNaN(newQuantity) ? 1 : newQuantity;
         const res = await UpdateCartQuantity(
-          ListCart._id,
+          ListCart?._id,
           cartId,
-          user._id,
+          user?._id,
           quantityToUpdate
         );
         if (res.data && res.data.EC === 0) {
@@ -380,7 +380,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
         }));
       }
     },
-    [ListCart, user._id, CartListProductsUser]
+    [ListCart, user?._id, CartListProductsUser]
   );
 
   const debouncedUpdate = useCallback(
