@@ -1,5 +1,9 @@
 import "./ChatSp.css";
-import { CloseOutlined } from "@ant-design/icons";
+import {
+  CloseOutlined,
+  PictureOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 import { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
 import {
@@ -11,7 +15,7 @@ import {
 } from "../../service/Message";
 import { useSelector } from "react-redux";
 
-const socket = io("https://fashionstoreshopecommertbe.onrender.com", {
+const socket = io("http://localhost:9000", {
   withCredentials: true,
   reconnection: true,
   reconnectionAttempts: 5,
@@ -26,12 +30,15 @@ const ChatSp = () => {
   const { user } = useSelector((state) => state.auth);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  const [selectedImages, setSelectedImages] = useState([]);
   const [MessFriends, setMessFriends] = useState([]);
   const [data, SetData] = useState([]);
   const textareaRef = useRef(null);
   const messagesContainerRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const [senderId, setSenderId] = useState("");
+
   const adjustTextareaHeight = () => {
     const textarea = textareaRef.current;
     if (textarea) {
@@ -51,15 +58,55 @@ const ChatSp = () => {
     adjustTextareaHeight();
   }, [newMessage]);
 
+  // Xử lý chọn ảnh
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files);
+    const imageFiles = files.filter((file) => file.type.startsWith("image/"));
+
+    if (imageFiles.length > 0) {
+      const imagePromises = imageFiles.map((file) => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            resolve({
+              file: file,
+              preview: e.target.result,
+              id: Date.now() + Math.random(),
+            });
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+
+      Promise.all(imagePromises).then((images) => {
+        setSelectedImages((prev) => [...prev, ...images]);
+      });
+    }
+
+    // Reset input
+    e.target.value = "";
+  };
+
+  // Xóa ảnh đã chọn
+  const removeImage = (imageId) => {
+    setSelectedImages((prev) => prev.filter((img) => img.id !== imageId));
+  };
+
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() && selectedImages.length === 0) return;
 
     try {
       // Gửi tin nhắn cho server
       const sentTime = new Date().toISOString(); // Lấy thời gian hiện tại
 
-      await sendMessageAdmin(user?._id, senderId, newMessage, null, sentTime); // Truyền sentTime
+      await sendMessageAdmin(
+        user?._id,
+        senderId,
+        newMessage,
+        selectedImages,
+        sentTime
+      ); // Truyền selectedImages
 
       // Thêm tin nhắn vào state ngay lập tức mà không cần phải reload
       const newMsg = {
@@ -67,11 +114,13 @@ const ChatSp = () => {
         sender: user?._id,
         recipient: senderId,
         content: newMessage,
+        images: selectedImages,
         sentAt: sentTime,
       };
       setMessages((prevMessages) => [...prevMessages, newMsg]);
 
       setNewMessage("");
+      setSelectedImages([]);
       scrollToBottom();
       getListSenderId();
     } catch (error) {
@@ -292,7 +341,40 @@ const ChatSp = () => {
 
                         <span>{message?.sender?.name}</span>
                       </div>
-                      <p className="whitespace-pre-wrap">{message.content}</p>
+
+                      {/* Hiển thị text */}
+                      {message.content && (
+                        <p className="whitespace-pre-wrap mt-2">
+                          {message.content}
+                        </p>
+                      )}
+
+                      {/* Hiển thị ảnh */}
+                      {message.images && message.images.length > 0 && (
+                        <div className="mt-2 grid grid-cols-2 gap-2">
+                          {message.images.map((imageUrl, imgIndex) => (
+                            <img
+                              key={imgIndex}
+                              src={
+                                typeof imageUrl === "string"
+                                  ? imageUrl
+                                  : imageUrl
+                              }
+                              alt={`Message image ${imgIndex + 1}`}
+                              className="w-20 h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() =>
+                                window.open(
+                                  typeof imageUrl === "string"
+                                    ? imageUrl
+                                    : imageUrl,
+                                  "_blank"
+                                )
+                              }
+                            />
+                          ))}
+                        </div>
+                      )}
+
                       <span className="text-xs opacity-75 mt-1 block">
                         {message.sentAt &&
                           new Date(message.sentAt).toLocaleTimeString()}
@@ -303,6 +385,30 @@ const ChatSp = () => {
             </div>
 
             <div className="p-4 bg-white border-t">
+              {/* Hiển thị ảnh đã chọn */}
+              {selectedImages.length > 0 && (
+                <div className="mb-4 p-2 bg-gray-50 rounded-lg">
+                  <div className="flex flex-wrap gap-2">
+                    {selectedImages.map((image) => (
+                      <div key={image.id} className="relative">
+                        <img
+                          src={image.preview}
+                          alt="Preview"
+                          className="w-16 h-16 object-cover rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(image.id)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                        >
+                          <DeleteOutlined />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <form
                 onSubmit={handleSend}
                 className="relative flex items-end space-x-2"
@@ -319,10 +425,30 @@ const ChatSp = () => {
                     style={{ lineHeight: "20px" }}
                   />
                 </div>
+
+                {/* Nút chọn ảnh */}
+                <div className="flex-shrink-0 self-center">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageSelect}
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-10 w-10 bg-gray-500 text-white rounded-full hover:bg-gray-600 focus:outline-none flex items-center justify-center"
+                  >
+                    <PictureOutlined />
+                  </button>
+                </div>
+
                 <div className="flex-shrink-0 self-center">
                   <button
                     type="submit"
-                    disabled={!newMessage.trim()}
+                    disabled={!newMessage.trim() && selectedImages.length === 0}
                     className="h-10 px-6 bg-blue-500 text-white rounded-full hover:bg-blue-600 focus:outline-none disabled:opacity-50"
                   >
                     Gửi

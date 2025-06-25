@@ -25,12 +25,15 @@ const getMessagesList = async (userId) => {
 };
 
 //  Gửi tin nhắn từ khách hàng đến admin
-const sendMessageCutomer = async (sender, content, image, isAdminChat) => {
+const sendMessageCutomer = async (sender, content, images, isAdminChat) => {
   const formData = new FormData();
   formData.append("sender", sender); // Người gửi
   formData.append("content", content); // Nội dung tin nhắn
-  if (image) {
-    formData.append("image", image); // Nếu có hình ảnh thì gửi cùng
+
+  if (images) {
+    images.forEach((image) => {
+      formData.append(`images`, image.file);
+    });
   }
   formData.append("isAdminChat", isAdminChat); // Đánh dấu đây là tin nhắn từ admin hay khách hàng
 
@@ -58,15 +61,17 @@ const sendMessageAdmin = async (
   sender,
   recipient,
   content,
-  image,
+  images,
   isAdminChat
 ) => {
   const formData = new FormData();
   formData.append("sender", sender);
   formData.append("recipient", recipient); // Người gửi
   formData.append("content", content); // Nội dung tin nhắn
-  if (image) {
-    formData.append("image", image); // Nếu có hình ảnh thì gửi cùng
+  if (images) {
+    images.forEach((image) => {
+      formData.append(`images`, image.file);
+    });
   }
   formData.append("isAdminChat", isAdminChat); // Đánh dấu đây là tin nhắn từ admin hay khách hàng
 
