@@ -1,6 +1,5 @@
 import { FcGoogle } from "react-icons/fc";
-import { Button, notification, Spin, Input } from "antd";
-import { LoadingOutlined } from "@ant-design/icons";
+import { Button, notification, Input } from "antd";
 import { useDispatch } from "react-redux";
 import { useEffect, useRef, useState } from "react";
 import { LoginAuth, SendverifyOTP, verifyOTP } from "../../service/Auth";
@@ -9,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import ForgetPassword from "../ForgetPassword/ForgetPassword";
 
 import FacebookLogin from "../FacebookLogin/FacebookLogin";
-import "./login.css";
+import "./Login.css";
 
 const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
