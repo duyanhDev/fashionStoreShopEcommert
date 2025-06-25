@@ -35,7 +35,7 @@ const Blog = () => {
   const fetchApiBlog = async () => {
     try {
       const res = await getAllBlog();
-      console.log(res);
+
       if (res && res.data && res.data.EC === 0) {
         setBlogPosts(res.data.data);
       }
@@ -230,7 +230,7 @@ const Blog = () => {
                 <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
                   {otherPosts.map((post) => (
                     <article
-                      key={post.id}
+                      key={post._id}
                       className="bg-gray-900 rounded-xl overflow-hidden hover:transform hover:scale-105 transition-all duration-300 group"
                     >
                       <div className="relative">
@@ -275,7 +275,7 @@ const Blog = () => {
                 <div className="space-y-6">
                   {otherPosts.map((post) => (
                     <article
-                      key={post.id}
+                      key={post._id}
                       className="bg-gray-900 rounded-xl overflow-hidden hover:bg-gray-800 transition-colors group"
                     >
                       <div className="md:flex">

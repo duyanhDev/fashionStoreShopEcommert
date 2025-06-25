@@ -306,7 +306,7 @@ export default function Clothing({ ListProducts }) {
   }, []);
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="clothing_main_bg bg-gray-50 min-h-screen">
       {contextHolder}
       <section className="py-8">
         <div className="max-w-full md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px]  lg:px-8">

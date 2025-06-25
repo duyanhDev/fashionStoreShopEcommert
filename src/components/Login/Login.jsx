@@ -7,8 +7,9 @@ import { LoginAuth, SendverifyOTP, verifyOTP } from "../../service/Auth";
 import { login } from "../../redux/actions/Auth";
 import { useNavigate } from "react-router-dom";
 import ForgetPassword from "../ForgetPassword/ForgetPassword";
-import Register from "../Register/Register";
+
 import FacebookLogin from "../FacebookLogin/FacebookLogin";
+import "./login.css";
 
 const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -97,8 +98,7 @@ const LoginForm = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href =
-      "https://fashionstoreshopecommertbe.onrender.com/auth/google";
+    window.location.href = "http://localhost:9000/auth/google";
   };
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -195,8 +195,7 @@ const LoginForm = () => {
       {isLoading && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-8 shadow-2xl">
-            <Spin indicator={<LoadingOutlined spin />} size="large" />
-            <p className="mt-4 text-gray-600 text-center">Đang đăng nhập...</p>
+            <div class="loader"></div>
           </div>
         </div>
       )}

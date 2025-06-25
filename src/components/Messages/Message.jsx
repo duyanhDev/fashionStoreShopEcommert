@@ -9,7 +9,7 @@ import io from "socket.io-client";
 import { getMessages, sendMessageCutomer } from "../../service/Message";
 import { useSelector } from "react-redux";
 
-const socket = io("http://localhost:9000", {
+const socket = io("https://fashionstoreshopecommertbe.onrender.com", {
   withCredentials: true,
   reconnection: true,
   reconnectionAttempts: 5,

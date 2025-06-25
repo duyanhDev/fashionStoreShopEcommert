@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { BsChatDots } from "react-icons/bs";
 import {
-  MessageCircle,
   Bot,
   Phone,
   Instagram,
@@ -8,11 +8,9 @@ import {
   ArrowUp,
   X,
   Plus,
-  Sparkles,
 } from "lucide-react";
 import "./App.css";
 import Header from "./components/Header/Header";
-import { getListProductsAPI } from "./service/ApiProduct";
 
 // import required modules
 
@@ -22,10 +20,12 @@ import { useSelector } from "react-redux";
 import { CartListProduct } from "./service/Cart";
 import Footer from "./components/Footer/Footer";
 import Message from "./components/Messages/Message";
+import { getMessagesList, UpdateIsReadAPI } from "./service/Message";
+import { getListProductsAPI } from "./service/ApiProduct";
 
 function App() {
   const { user } = useSelector((state) => state.auth);
-
+  const [unread, setUnread] = useState([]);
   const [isVisible, setIsVisible] = useState(false);
   const [ListProducts, setListProducts] = useState([]);
   const [ListCart, setListCard] = useState([]);
@@ -113,6 +113,8 @@ function App() {
   const handleChatClick = () => {
     if (user?.role === "customer") {
       setOpen((prev) => !prev);
+
+      handelUpdateIsReadMess();
     }
     setIsMenuOpen(false);
   };
@@ -120,6 +122,37 @@ function App() {
   const handleAIClick = () => {
     Navigate("/ChatAi");
     setIsMenuOpen(false);
+  };
+
+  const fetchAPIMessasge = async () => {
+    try {
+      const res = await getMessagesList(user?._id);
+      console.log(res);
+
+      if (res && res.EC === 0) {
+        setUnread(res?.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAPIMessasge();
+  }, [user?._id]);
+
+  const unreadMessages =
+    unread && unread.length > 0 && unread.filter((item) => !item.isRead);
+
+  const handelUpdateIsReadMess = async () => {
+    try {
+      const res = await UpdateIsReadAPI("673017dde4526bd79cc61fa6", user._id);
+
+      if (res) {
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const menuItems = [
@@ -134,7 +167,20 @@ function App() {
     ...(user?.role === "customer"
       ? [
           {
-            icon: <MessageCircle className="w-5 h-5" />,
+            icon: (
+              <div className="relative">
+                <BsChatDots className="text-white text-xl" />
+                {unreadMessages && unreadMessages.length > 0 ? (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                    {unreadMessages.length}
+                  </span>
+                ) : (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                    {0}
+                  </span>
+                )}
+              </div>
+            ),
             label: "Chat Support",
             onClick: handleChatClick,
             color:
@@ -507,7 +553,7 @@ function App() {
           {menuItems.map((item, index) => (
             <div
               key={index}
-              className={`mb-4 transform transition-all duration-500 ${
+              className={`mb-4 transform transition-all duration-100 ${
                 isMenuOpen
                   ? "translate-x-0 opacity-100"
                   : "translate-x-8 opacity-0"

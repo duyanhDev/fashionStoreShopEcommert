@@ -171,52 +171,52 @@ const SliderComponent = () => {
         </div>
       </Swiper>
 
-      <style jsx global>{`
-        .custom-bullet {
-          width: 12px !important;
-          height: 12px !important;
-          background: rgba(255, 255, 255, 0.5) !important;
-          border-radius: 50% !important;
-          transition: all 0.3s ease !important;
-          margin: 0 6px !important;
-        }
+      <style>{`
+  .custom-bullet {
+    width: 12px !important;
+    height: 12px !important;
+    background: rgba(255, 255, 255, 0.5) !important;
+    border-radius: 50% !important;
+    transition: all 0.3s ease !important;
+    margin: 0 6px !important;
+  }
 
-        .custom-bullet-active {
-          background: white !important;
-          transform: scale(1.2) !important;
-          box-shadow: 0 0 20px rgba(255, 255, 255, 0.5) !important;
-        }
+  .custom-bullet-active {
+    background: white !important;
+    transform: scale(1.2) !important;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.5) !important;
+  }
 
-        .swiper-pagination {
-          bottom: 24px !important;
-          left: 50% !important;
-          transform: translateX(-50%) !important;
-          width: auto !important;
-        }
+  .swiper-pagination {
+    bottom: 24px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: auto !important;
+  }
 
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 
-        .animate-fade-in {
-          animation: fade-in 0.8s ease-out;
-        }
+  .animate-fade-in {
+    animation: fade-in 0.8s ease-out;
+  }
 
-        .animate-fade-in-delay {
-          animation: fade-in 0.8s ease-out 0.2s both;
-        }
+  .animate-fade-in-delay {
+    animation: fade-in 0.8s ease-out 0.2s both;
+  }
 
-        .animate-fade-in-delay-2 {
-          animation: fade-in 0.8s ease-out 0.4s both;
-        }
-      `}</style>
+  .animate-fade-in-delay-2 {
+    animation: fade-in 0.8s ease-out 0.4s both;
+  }
+`}</style>
     </div>
   );
 };

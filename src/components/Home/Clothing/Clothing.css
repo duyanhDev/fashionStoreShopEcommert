@@ -81,7 +81,7 @@
     font-size: 1.25rem !important;
   }
 
-  .grid {
+  .clothing_main_bg .grid {
     grid-template-columns: repeat(2, 1fr); /* 2 cột trên điện thoại */
     gap: 10px; /* Khoảng cách nhỏ hơn để tiết kiệm không gian */
   }
@@ -93,14 +93,14 @@
     height: 150px;
   }
 
-  .grid {
+  .product-card .grid {
     gap: 12px;
   }
 }
 
 /* Tablet */
 @media (min-width: 641px) and (max-width: 1024px) {
-  .grid {
+  .product-card .grid {
     grid-template-columns: repeat(3, 1fr); /* 3 cột trên tablet */
     gap: 16px;
   }
@@ -141,7 +141,7 @@
     max-width: 1280px;
   }
 
-  .grid {
+  .clothing_main_bg .grid {
     grid-template-columns: repeat(4, 1fr); /* 5 cột trên PC */
     gap: 24px;
   }

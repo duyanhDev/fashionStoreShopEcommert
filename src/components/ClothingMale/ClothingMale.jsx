@@ -853,10 +853,9 @@ const ClothingMale = () => {
         open={filterDrawerOpen}
         width={320}
         className="clothing-male-drawer"
-        bodyStyle={{ padding: "20px" }}
-        headerStyle={{
-          borderBottom: "1px solid #e5e7eb",
-          paddingBottom: "16px",
+        styles={{
+          header: { borderBottom: "1px solid #e5e7eb" },
+          body: { padding: "20px" },
         }}
       >
         <FilterContent />
