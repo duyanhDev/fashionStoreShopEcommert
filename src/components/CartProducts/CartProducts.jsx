@@ -12,6 +12,7 @@ import moment from "moment";
 
 const CartProducts = ({}) => {
   const { ListCart, user, CartListProductsUser } = useOutletContext();
+  console.log(user);
 
   const [loadingSpin, setLoadingSpin] = useState(false);
   const [api, contextHolder] = notification.useNotification();
@@ -24,9 +25,9 @@ const CartProducts = ({}) => {
   const [WarnDistrict, setSelectedWarnDistrict] = useState("");
   const [priceObj, setPriceObj] = useState({});
   const [Products, setProducts] = useState([]);
-  const [Name, setName] = useState("");
-  const [number, setNumber] = useState("");
-  const [email, setEmail] = useState("");
+  const [Name, setName] = useState(user?.name || "");
+  const [number, setNumber] = useState(Number(user?.phone) || "");
+  const [email, setEmail] = useState(user?.email || "");
   const [city, setCity] = useState("");
   const [districtName, setDistrictName] = useState("");
   const [wardName, setWardName] = useState("");
@@ -39,6 +40,7 @@ const CartProducts = ({}) => {
   const [discountValue, setDiscountValue] = useState(0);
   const [selectedVouCher, setSelectedVoucher] = useState(null);
   const [checkedItems, setCheckedItems] = useState([]);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const [ghnDistrictId, setGhnDistrictId] = useState("");
   const [ghnWardCode, setGhnWardCode] = useState("");
@@ -47,8 +49,9 @@ const CartProducts = ({}) => {
   const formatPrice = (price) => {
     const numericPrice =
       typeof price === "string"
-        ? parseFloat(price.replace(/[^\d,.-]/g, "").replace(",", "."))
+        ? parseInt(price.replace(/[^\d]/g, ""), 10)
         : price;
+    if (!numericPrice) return "0đ";
     return numericPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
   };
 
@@ -120,6 +123,52 @@ const CartProducts = ({}) => {
     WarnData();
   }, [selectedDistrict]);
 
+  useEffect(() => {
+    if (
+      ListCart &&
+      ListCart.items &&
+      ListCart.items.length > 0 &&
+      !isInitialized
+    ) {
+      // Tự động chọn tất cả sản phẩm
+      const newCheckedItems = [];
+      const newPriceObj = {};
+      const newProductId = [];
+      const newProducts = [];
+
+      ListCart.items.forEach((item) => {
+        const { productId, name, size, quantity, color, totalItemPrice } = item;
+        const id = productId._id;
+        const imageUrl = productId.variants[0]?.images[0]?.url;
+        const numericPrice =
+          typeof totalItemPrice === "string"
+            ? parseInt(totalItemPrice.replace(/[^\d]/g, ""), 10)
+            : totalItemPrice;
+        const uniqueKey = `${id}-${size}-${color}`;
+
+        newCheckedItems.push(uniqueKey);
+        newPriceObj[uniqueKey] = numericPrice;
+        if (!newProductId.includes(id)) newProductId.push(id);
+        newProducts.push({
+          id,
+          name: productId.name,
+          quantity,
+          size,
+          color,
+          price: numericPrice,
+          imageUrl,
+        });
+      });
+
+      setCartId(ListCart._id);
+      setCheckedItems(newCheckedItems);
+      setPriceObj(newPriceObj);
+      setProductId(newProductId);
+      setProducts(newProducts);
+      setIsInitialized(true); // Đánh dấu đã khởi tạo
+    }
+  }, [ListCart, isInitialized]);
+
   const handleProvinceChange = (value, name) => {
     SetId(value);
     setDistrict([]);
@@ -159,7 +208,6 @@ const CartProducts = ({}) => {
           totalItemPrice: formatPrice(item.totalItemPrice),
         }))
       : [];
-
   const handleSelectAll = () => {
     const allSelected = checkedItems.length === data?.length;
     if (allSelected) {
@@ -167,9 +215,8 @@ const CartProducts = ({}) => {
       setPriceObj({});
       setProductId([]);
       setCartId("");
-      setProducts([]); // Đã đúng, giữ nguyên
+      setProducts([]);
     } else {
-      // Gom dữ liệu trước, rồi set 1 lần
       const newCheckedItems = [];
       const newPriceObj = {};
       const newProductId = [];
@@ -181,9 +228,7 @@ const CartProducts = ({}) => {
         const imageUrl = images.props.src;
         const numericPrice =
           typeof totalItemPrice === "string"
-            ? parseFloat(
-                totalItemPrice.replace(/[^\d,.-]/g, "").replace(",", ".")
-              )
+            ? parseInt(totalItemPrice.replace(/[^\d]/g, ""), 10)
             : totalItemPrice;
         const uniqueKey = `${id}-${size}-${color}`;
 
@@ -208,18 +253,6 @@ const CartProducts = ({}) => {
       setProducts(newProducts);
     }
   };
-
-  useEffect(() => {
-    // Lọc Products chỉ giữ lại những item có uniqueKey trong checkedItems
-    setProducts((prevProducts) => {
-      return prevProducts.filter((product) => {
-        const uniqueKey = `${product.id}-${product.size}-${product.color}`;
-        return checkedItems.includes(uniqueKey);
-      });
-    });
-  }, [checkedItems]);
-
-  // Và đơn giản hóa hàm handleCheck
   const handleCheck = (
     id,
     name,
@@ -228,49 +261,38 @@ const CartProducts = ({}) => {
     color,
     price,
     images,
-    itemID,
-    productId
+    itemID
   ) => {
     const numericPrice =
       typeof price === "string"
-        ? parseFloat(price.replace(/[^\d,.-]/g, "").replace(",", "."))
+        ? parseInt(price.replace(/[^\d]/g, ""), 10)
         : price;
     const imageUrl = images.props.src;
     const uniqueKey = `${id}-${size}-${color}`;
 
     setCartId(itemID);
 
-    // Cập nhật hoặc thêm vào products (useEffect sẽ lo việc xóa)
-    setProducts((prevState) => {
-      const existingProductIndex = prevState.findIndex(
-        (p) => p.id === id && p.size === size && p.color === color
-      );
-
-      if (existingProductIndex !== -1) {
-        // Cập nhật nếu đã tồn tại
-        return prevState.map((p, index) =>
-          index === existingProductIndex
-            ? {
-                ...p,
-                name,
-                size,
-                quantity,
-                color,
-                price: numericPrice,
-                imageUrl,
-              }
-            : p
+    setCheckedItems((prev) => {
+      const isChecked = prev.includes(uniqueKey);
+      if (isChecked) {
+        // Bỏ chọn: Xóa sản phẩm khỏi Products
+        setProducts((prevProducts) =>
+          prevProducts.filter((p) => {
+            const productKey = `${p.id}-${p.size}-${p.color}`;
+            return productKey !== uniqueKey;
+          })
         );
+        return prev.filter((item) => item !== uniqueKey);
       } else {
-        // Thêm mới nếu chưa tồn tại
-        return [
-          ...prevState,
+        // Chọn: Thêm sản phẩm vào Products
+        setProducts((prevProducts) => [
+          ...prevProducts,
           { id, name, quantity, size, color, price: numericPrice, imageUrl },
-        ];
+        ]);
+        return [...prev, uniqueKey];
       }
     });
 
-    // Cập nhật priceObj
     setPriceObj((prev) => {
       const newPriceObj = { ...prev };
       if (newPriceObj[uniqueKey]) {
@@ -280,15 +302,9 @@ const CartProducts = ({}) => {
       }
       return newPriceObj;
     });
-
-    // Cập nhật checkedItems
-    setCheckedItems((prev) => {
-      const isChecked = prev.includes(uniqueKey);
-      return isChecked
-        ? prev.filter((item) => item !== uniqueKey)
-        : [...prev, uniqueKey];
-    });
   };
+
+  console.log(Products);
 
   const handleVoucherChange = (discountValue, voucherId, content) => {
     if (selectedVouCher === voucherId) {
@@ -310,7 +326,7 @@ const CartProducts = ({}) => {
   );
   const discountAmount =
     discountValue > 0 ? (discountValue / 100) * totalCheckedPrice : 0;
-  const finalPrice = totalCheckedPrice - discountAmount;
+  const finalPrice = Math.round(totalCheckedPrice - discountAmount);
 
   // Mobile columns - simplified
   const mobileColumns = [
@@ -405,12 +421,23 @@ const CartProducts = ({}) => {
   ];
 
   const handleOrder = async () => {
+    if (Products.length === 0) {
+      notification.error({
+        message: "Lỗi đặt hàng",
+        description: "Vui lòng chọn ít nhất một sản phẩm để đặt hàng.",
+      });
+      return;
+    }
     try {
       setLoadingSpin(true);
       const formattedItems = Products.map((item) => ({
         ...item,
         productId: item.id,
       }));
+
+      const selectedProductIds = [...new Set(Products.map((p) => p.id))];
+      console.log(formattedItems);
+
       if (
         !Name ||
         !email ||
@@ -496,7 +523,7 @@ const CartProducts = ({}) => {
           value,
           email,
           CartId,
-          productId,
+          selectedProductIds,
           discountValue,
           idDiscount,
           ghnResponse.data.data.order_code
