@@ -124,7 +124,9 @@
   max-height: 70vh;
   overflow-y: auto;
 }
-
+.cart_products_item .ant-modal-footer {
+  display: none;
+}
 .item_list_cart_products {
   display: none;
   grid-template-columns: 80px 1fr 100px 80px;

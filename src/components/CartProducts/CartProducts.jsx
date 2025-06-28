@@ -156,7 +156,7 @@ const CartProducts = ({}) => {
           quantity: item.quantity,
           size: item.size,
           price: formatPrice(item.price),
-          totalItemPrice: item.totalItemPrice + "đ",
+          totalItemPrice: formatPrice(item.totalItemPrice),
         }))
       : [];
 
@@ -167,7 +167,14 @@ const CartProducts = ({}) => {
       setPriceObj({});
       setProductId([]);
       setCartId("");
+      setProducts([]); // Đã đúng, giữ nguyên
     } else {
+      // Gom dữ liệu trước, rồi set 1 lần
+      const newCheckedItems = [];
+      const newPriceObj = {};
+      const newProductId = [];
+      const newProducts = [];
+
       data.forEach((product) => {
         const { id, name, size, quantity, color, totalItemPrice, images } =
           product;
@@ -180,38 +187,39 @@ const CartProducts = ({}) => {
             : totalItemPrice;
         const uniqueKey = `${id}-${size}-${color}`;
 
-        setCartId(ListCart._id);
-        setProductId((prev) => [...new Set([...prev, id])]);
-        setProducts((prevState) => {
-          const existingProductIndex = prevState.findIndex(
-            (p) => p.id === id && p.size === size && p.color === color
-          );
-          if (existingProductIndex !== -1) {
-            return prevState.map((p, index) =>
-              index === existingProductIndex
-                ? {
-                    ...p,
-                    name,
-                    size,
-                    quantity,
-                    color,
-                    price: numericPrice,
-                    imageUrl,
-                  }
-                : p
-            );
-          }
-          return [
-            ...prevState,
-            { id, name, quantity, size, color, price: numericPrice, imageUrl },
-          ];
+        newCheckedItems.push(uniqueKey);
+        newPriceObj[uniqueKey] = numericPrice;
+        if (!newProductId.includes(id)) newProductId.push(id);
+        newProducts.push({
+          id,
+          name,
+          quantity,
+          size,
+          color,
+          price: numericPrice,
+          imageUrl,
         });
-        setPriceObj((prev) => ({ ...prev, [uniqueKey]: numericPrice }));
-        setCheckedItems((prev) => [...new Set([...prev, uniqueKey])]);
       });
+
+      setCartId(ListCart._id);
+      setCheckedItems(newCheckedItems);
+      setPriceObj(newPriceObj);
+      setProductId(newProductId);
+      setProducts(newProducts);
     }
   };
 
+  useEffect(() => {
+    // Lọc Products chỉ giữ lại những item có uniqueKey trong checkedItems
+    setProducts((prevProducts) => {
+      return prevProducts.filter((product) => {
+        const uniqueKey = `${product.id}-${product.size}-${product.color}`;
+        return checkedItems.includes(uniqueKey);
+      });
+    });
+  }, [checkedItems]);
+
+  // Và đơn giản hóa hàm handleCheck
   const handleCheck = (
     id,
     name,
@@ -230,17 +238,16 @@ const CartProducts = ({}) => {
     const imageUrl = images.props.src;
     const uniqueKey = `${id}-${size}-${color}`;
 
-    setProductId((prev) =>
-      prev.includes(productId)
-        ? prev.filter((item) => item !== productId)
-        : [...prev, productId]
-    );
     setCartId(itemID);
+
+    // Cập nhật hoặc thêm vào products (useEffect sẽ lo việc xóa)
     setProducts((prevState) => {
       const existingProductIndex = prevState.findIndex(
         (p) => p.id === id && p.size === size && p.color === color
       );
+
       if (existingProductIndex !== -1) {
+        // Cập nhật nếu đã tồn tại
         return prevState.map((p, index) =>
           index === existingProductIndex
             ? {
@@ -254,12 +261,16 @@ const CartProducts = ({}) => {
               }
             : p
         );
+      } else {
+        // Thêm mới nếu chưa tồn tại
+        return [
+          ...prevState,
+          { id, name, quantity, size, color, price: numericPrice, imageUrl },
+        ];
       }
-      return [
-        ...prevState,
-        { id, name, quantity, size, color, price: numericPrice, imageUrl },
-      ];
     });
+
+    // Cập nhật priceObj
     setPriceObj((prev) => {
       const newPriceObj = { ...prev };
       if (newPriceObj[uniqueKey]) {
@@ -269,11 +280,14 @@ const CartProducts = ({}) => {
       }
       return newPriceObj;
     });
-    setCheckedItems((prev) =>
-      prev.includes(uniqueKey)
+
+    // Cập nhật checkedItems
+    setCheckedItems((prev) => {
+      const isChecked = prev.includes(uniqueKey);
+      return isChecked
         ? prev.filter((item) => item !== uniqueKey)
-        : [...prev, uniqueKey]
-    );
+        : [...prev, uniqueKey];
+    });
   };
 
   const handleVoucherChange = (discountValue, voucherId, content) => {
