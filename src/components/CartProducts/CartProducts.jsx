@@ -41,6 +41,7 @@ const CartProducts = ({}) => {
   const [selectedVouCher, setSelectedVoucher] = useState(null);
   const [checkedItems, setCheckedItems] = useState([]);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [idItems, setidItems] = useState([]);
 
   const [ghnDistrictId, setGhnDistrictId] = useState("");
   const [ghnWardCode, setGhnWardCode] = useState("");
@@ -134,11 +135,15 @@ const CartProducts = ({}) => {
       const newCheckedItems = [];
       const newPriceObj = {};
       const newProductId = [];
+      const newItemsId = [];
       const newProducts = [];
 
       ListCart.items.forEach((item) => {
-        const { productId, name, size, quantity, color, totalItemPrice } = item;
+        const { productId, name, size, quantity, color, totalItemPrice, _id } =
+          item;
         const id = productId._id;
+        console.log("check id items", _id);
+
         const imageUrl = productId.variants[0]?.images[0]?.url;
         const numericPrice =
           typeof totalItemPrice === "string"
@@ -149,6 +154,7 @@ const CartProducts = ({}) => {
         newCheckedItems.push(uniqueKey);
         newPriceObj[uniqueKey] = numericPrice;
         if (!newProductId.includes(id)) newProductId.push(id);
+        if (!newItemsId.includes(_id)) newItemsId.push(_id);
         newProducts.push({
           id,
           name: productId.name,
@@ -157,6 +163,7 @@ const CartProducts = ({}) => {
           color,
           price: numericPrice,
           imageUrl,
+          _id,
         });
       });
 
@@ -164,6 +171,7 @@ const CartProducts = ({}) => {
       setCheckedItems(newCheckedItems);
       setPriceObj(newPriceObj);
       setProductId(newProductId);
+      setidItems(newItemsId);
       setProducts(newProducts);
       setIsInitialized(true); // Đánh dấu đã khởi tạo
     }
@@ -206,25 +214,28 @@ const CartProducts = ({}) => {
           size: item.size,
           price: formatPrice(item.price),
           totalItemPrice: formatPrice(item.totalItemPrice),
+          _id: item._id,
         }))
       : [];
   const handleSelectAll = () => {
     const allSelected = checkedItems.length === data?.length;
+
     if (allSelected) {
+      // Bỏ chọn tất cả
       setCheckedItems([]);
       setPriceObj({});
       setProductId([]);
-      setCartId("");
       setProducts([]);
     } else {
+      // Chọn tất cả
       const newCheckedItems = [];
       const newPriceObj = {};
-      const newProductId = [];
       const newProducts = [];
 
       data.forEach((product) => {
-        const { id, name, size, quantity, color, totalItemPrice, images } =
+        const { id, name, size, quantity, color, totalItemPrice, images, _id } =
           product;
+
         const imageUrl = images.props.src;
         const numericPrice =
           typeof totalItemPrice === "string"
@@ -234,7 +245,6 @@ const CartProducts = ({}) => {
 
         newCheckedItems.push(uniqueKey);
         newPriceObj[uniqueKey] = numericPrice;
-        if (!newProductId.includes(id)) newProductId.push(id);
         newProducts.push({
           id,
           name,
@@ -243,16 +253,23 @@ const CartProducts = ({}) => {
           color,
           price: numericPrice,
           imageUrl,
+          _id,
         });
       });
 
+      // Tính lại productId từ danh sách sản phẩm đã chọn
+      const updatedProductId = [...new Set(newProducts.map((p) => p.id))];
+      const updatedItemCartId = [...new Set(newProducts.map((p) => p._id))];
+      console.log(updatedItemCartId);
       setCartId(ListCart._id);
       setCheckedItems(newCheckedItems);
       setPriceObj(newPriceObj);
-      setProductId(newProductId);
       setProducts(newProducts);
+      setProductId(updatedProductId);
+      setidItems(updatedItemCartId);
     }
   };
+
   const handleCheck = (
     id,
     name,
@@ -261,7 +278,8 @@ const CartProducts = ({}) => {
     color,
     price,
     images,
-    itemID
+    itemID,
+    _id
   ) => {
     const numericPrice =
       typeof price === "string"
@@ -274,23 +292,40 @@ const CartProducts = ({}) => {
 
     setCheckedItems((prev) => {
       const isChecked = prev.includes(uniqueKey);
-      if (isChecked) {
-        // Bỏ chọn: Xóa sản phẩm khỏi Products
-        setProducts((prevProducts) =>
-          prevProducts.filter((p) => {
-            const productKey = `${p.id}-${p.size}-${p.color}`;
-            return productKey !== uniqueKey;
-          })
-        );
-        return prev.filter((item) => item !== uniqueKey);
-      } else {
-        // Chọn: Thêm sản phẩm vào Products
-        setProducts((prevProducts) => [
-          ...prevProducts,
-          { id, name, quantity, size, color, price: numericPrice, imageUrl },
-        ]);
-        return [...prev, uniqueKey];
-      }
+
+      setProducts((prevProducts) => {
+        const updatedProducts = isChecked
+          ? prevProducts.filter(
+              (p) => `${p.id}-${p.size}-${p.color}` !== uniqueKey
+            )
+          : [
+              ...prevProducts,
+              {
+                id,
+                name,
+                quantity,
+                size,
+                color,
+                price: numericPrice,
+                imageUrl,
+                _id,
+              },
+            ];
+
+        const updatedProductId = [...new Set(updatedProducts.map((p) => p.id))];
+        const updatedItemCartId = [
+          ...new Set(updatedProducts.map((p) => p._id)),
+        ];
+
+        setProductId(updatedProductId);
+        setidItems(updatedItemCartId);
+
+        return updatedProducts;
+      });
+
+      return isChecked
+        ? prev.filter((item) => item !== uniqueKey)
+        : [...prev, uniqueKey];
     });
 
     setPriceObj((prev) => {
@@ -303,8 +338,6 @@ const CartProducts = ({}) => {
       return newPriceObj;
     });
   };
-
-  console.log(Products);
 
   const handleVoucherChange = (discountValue, voucherId, content) => {
     if (selectedVouCher === voucherId) {
@@ -351,7 +384,7 @@ const CartProducts = ({}) => {
                 record.totalItemPrice,
                 record.images,
                 ListCart._id,
-                record.id
+                record._id
               )
             }
             className="mt-1"
@@ -430,13 +463,21 @@ const CartProducts = ({}) => {
     }
     try {
       setLoadingSpin(true);
+
       const formattedItems = Products.map((item) => ({
         ...item,
         productId: item.id,
       }));
 
-      const selectedProductIds = [...new Set(Products.map((p) => p.id))];
-      console.log(formattedItems);
+      const allProductIdsInCart = [...new Set(data.map((item) => item.id))];
+
+      const filteredProductIds = allProductIdsInCart.filter((id) => {
+        const hasSelected = Products.some((p) => p.id === id);
+        return hasSelected;
+      });
+
+      console.log("Products gửi GHN:", formattedItems);
+      console.log("ID sản phẩm cần gửi backend:", filteredProductIds);
 
       if (
         !Name ||
@@ -523,10 +564,11 @@ const CartProducts = ({}) => {
           value,
           email,
           CartId,
-          selectedProductIds,
+          filteredProductIds,
           discountValue,
           idDiscount,
-          ghnResponse.data.data.order_code
+          ghnResponse.data.data.order_code,
+          idItems
         );
 
         if (res && res.data.EC === 0) {
