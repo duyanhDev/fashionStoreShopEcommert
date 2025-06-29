@@ -97,7 +97,8 @@ const LoginForm = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:9000/auth/google";
+    window.location.href =
+      "https://fashionstoreshopecommertbe.onrender.com/auth/google";
   };
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);

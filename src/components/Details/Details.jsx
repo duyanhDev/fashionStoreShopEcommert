@@ -50,8 +50,9 @@ const Details = () => {
   const [review, setReivew] = useState("");
   const { user } = useSelector((state) => state.auth);
   const [sumProducts, setSumProducts] = useState(0);
-  const [quantityProduct, SetquantityProduct] = useState([]);
-
+  const [quantityProduct, SetquantityProduct] = useState(0);
+  const [count, setCount] = useState(1);
+  const [activeThumbIndex, setActiveThumbIndex] = useState(0);
   const itemsPerPage = 5;
   const [currentPage, setCurrentPage] = useState(0);
 
@@ -70,10 +71,7 @@ const Details = () => {
     setCurrentPage(selected);
   };
 
-  const onChange = (value) => {};
-  const [count, setCount] = useState(1);
-
-  const handleIncrment = (value) => {
+  const handleIncrment = () => {
     setCount(count + 1);
   };
 
@@ -135,14 +133,14 @@ const Details = () => {
 
   const total = pricediscount ? count * pricediscount : count * price;
 
-  const handleSize = (item) => {
+  const handleSize = (item, quantity) => {
     setSelectedSize(item);
     setCheckSelectedSize(true);
     SetSizeCart(item);
+    SetquantityProduct(quantity);
   };
 
   // Thêm state mới
-  const [activeThumbIndex, setActiveThumbIndex] = useState(0);
 
   // Tạo danh sách tất cả ảnh từ tất cả variants
   const allImages = variants.reduce((acc, variant) => {
@@ -233,17 +231,36 @@ const Details = () => {
       return;
     }
 
-    if (!sizeCart || !colorCart) {
+    if (!color) {
       api.open({
         message: "Lỗi",
-        description:
-          "Vui lòng chọn kích thước và màu sắc trước khi thêm vào giỏ hàng.",
+        description: "Vui lòng chọn màu khi thêm vào giỏ hàng.",
         duration: 3,
         type: "warning",
       });
       return;
     }
 
+    if (!sizeCart) {
+      api.open({
+        message: "Lỗi",
+        description: "Vui lòng chọn kích thước  khi thêm vào giỏ hàng.",
+        duration: 3,
+        type: "warning",
+      });
+      return;
+    }
+
+    if (quantityProduct < count) {
+      api.open({
+        message: "Lỗi",
+        description:
+          "Xin lỗi, số lượng bạn chọn vượt quá hàng có sẵn. Vui lòng điều chỉnh số lượng.",
+        duration: 3,
+        type: "warning",
+      });
+      return;
+    }
     try {
       const res = await AddCartAPI(
         user._id,
@@ -363,23 +380,53 @@ const Details = () => {
       return;
     }
 
-    if (!sizeCart || !colorCart) {
+    if (!color) {
       api.open({
         message: "Lỗi",
-        description:
-          "Vui lòng chọn kích thước và màu sắc trước khi thêm vào giỏ hàng.",
+        description: "Vui lòng chọn màu khi thêm vào giỏ hàng.",
         duration: 3,
         type: "warning",
       });
       return;
     }
+
+    if (!sizeCart) {
+      api.open({
+        message: "Lỗi",
+        description: "Vui lòng chọn kích thước  khi thêm vào giỏ hàng.",
+        duration: 3,
+        type: "warning",
+      });
+      return;
+    }
+
+    if (quantityProduct < count) {
+      api.open({
+        message: "Lỗi",
+        description:
+          "Xin lỗi, số lượng bạn chọn vượt quá hàng có sẵn. Vui lòng điều chỉnh số lượng.",
+        duration: 3,
+        type: "warning",
+      });
+      return;
+    }
+
     try {
       handleAddCart();
       CartListProductsUser();
       setTimeout(() => {
         navigagte(`/cart`);
       }, 2000);
-    } catch (error) {}
+    } catch (error) {
+      console.error(error);
+      api.open({
+        message: "Lỗi",
+        description:
+          "Đã xảy ra lỗi khi thêm sản phẩm vào giỏ hàng. Vui lòng thử lại.",
+        duration: 3,
+        type: "error",
+      });
+    }
   };
 
   return (
@@ -609,7 +656,7 @@ const Details = () => {
                     ?.sizes.map((item, index) => (
                       <button
                         key={index}
-                        onClick={() => handleSize(item.size)}
+                        onClick={() => handleSize(item.size, item.quantity)}
                         disabled={item.quantity === 0}
                         className={`size-button ${
                           sizeCart === item.size ? "selected" : ""
