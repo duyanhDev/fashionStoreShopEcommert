@@ -80,6 +80,14 @@ const ProductCart = ({
     }
   };
 
+  const handleChangeCount = (e) => {
+    const value = parseInt(e.target.value, 10);
+    if (!isNaN(value) && value > 0) {
+      setCount(value);
+    } else if (e.target.value === "") {
+      setCount(""); // Cho phép xóa để nhập lại
+    }
+  };
   const handleOnClickSize = (size) => {
     setSize((prev) => (prev === size ? "" : size));
   };
@@ -167,6 +175,7 @@ const ProductCart = ({
         setModalCartOpen(false);
         setColor(getDefaultColor(listItems));
         setSelectedImage(0);
+        setCount(1);
       }}
       footer={null}
       width={1200}
@@ -307,7 +316,13 @@ const ProductCart = ({
               <button className="px-3 py-1" onClick={minusCount}>
                 -
               </button>
-              <span className="px-4">{count}</span>
+              <input
+                type="number"
+                className="w-full text-center outline-none"
+                value={count}
+                onChange={(e) => handleChangeCount(e)}
+                min={1} // hoặc giá trị tối thiểu bạn muốn
+              />
               <button className="px-3 py-1" onClick={plusCount}>
                 +
               </button>

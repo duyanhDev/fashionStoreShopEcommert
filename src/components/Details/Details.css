@@ -256,7 +256,16 @@
 .Details .doisi_detail__main {
   border-left: 1px solid #ccc;
 }
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
 
+input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
 /* Media query for smaller screens (max-width: 768px) */
 @media screen and (max-width: 768px) {
   .Details_main {

@@ -10,7 +10,7 @@ import "swiper/css/thumbs";
 import { FreeMode, Navigation, Thumbs } from "swiper/modules";
 import { Rate, Button, Flex, notification, Image, Avatar } from "antd";
 import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
-import { useOutletContext, useParams } from "react-router-dom";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import {
   ListOneProductAPI,
   ListSlugProductAPI,
@@ -55,7 +55,7 @@ const Details = () => {
   const itemsPerPage = 5;
   const [currentPage, setCurrentPage] = useState(0);
 
-  console.log(param);
+  const navigagte = useNavigate();
 
   const pageCount = Math.ceil(feedback.length / itemsPerPage);
   const offset = currentPage * itemsPerPage;
@@ -222,7 +222,7 @@ const Details = () => {
 
   const priceShift = discount ? pricediscount : price;
 
-  const handleAddProduct = async () => {
+  const handleAddCart = async () => {
     if (!user) {
       api.open({
         message: "Yêu cầu đăng nhập",
@@ -351,6 +351,36 @@ const Details = () => {
       console.error("Error in handleThumbNext:", error);
     }
   }, [thumbsSwiper]);
+
+  const handleAddProduct = async () => {
+    if (!user) {
+      api.open({
+        message: "Yêu cầu đăng nhập",
+        description: "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.",
+        duration: 3,
+        type: "warning",
+      });
+      return;
+    }
+
+    if (!sizeCart || !colorCart) {
+      api.open({
+        message: "Lỗi",
+        description:
+          "Vui lòng chọn kích thước và màu sắc trước khi thêm vào giỏ hàng.",
+        duration: 3,
+        type: "warning",
+      });
+      return;
+    }
+    try {
+      handleAddCart();
+      CartListProductsUser();
+      setTimeout(() => {
+        navigagte(`/cart`);
+      }, 2000);
+    } catch (error) {}
+  };
 
   return (
     <div className="Details ">
@@ -601,75 +631,120 @@ const Details = () => {
             </div>
           </div>
 
-          <div className="">
-            <div className="p-4">
-              <div className="flex items-center gap-1">
-                <h4 className="text-[#b3b3b3] font-normal text-sm">
-                  {`${
-                    TotalStock > 0
+          <div className="bg-white rounded-lg shadow-sm">
+            <div className="p-4 space-y-4">
+              {/* Product availability info */}
+              <div className="space-y-1">
+                <div className="flex items-center">
+                  <h4 className="text-gray-500 font-normal text-sm">
+                    {TotalStock > 0
                       ? `${TotalStock} sản phẩm có sẵn`
-                      : "Đã bán hết"
-                  } `}
-                </h4>
-              </div>
-
-              <div className="flex items-center gap-1">
-                <h4 className="text-[#b3b3b3] font-normal text-sm">
-                  {sumProducts} sản phẩm đã bán
-                </h4>
-              </div>
-
-              <div className=" flex items-center gap-1 -mt-2">
-                <div className="flex items-center m-3 number-input-group ">
-                  <Button
-                    className=" w-10 h-10  border-none outline-none"
-                    style={{ background: "none" }}
-                    onClick={() => handleDecrements()}
-                  >
-                    <MinusOutlined />
-                  </Button>
-                  <input
-                    type="number"
-                    min={1}
-                    max={TotalStock}
-                    value={count}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value, 10);
-                      if (!isNaN(value) && value >= 1 && value <= TotalStock) {
-                        setCount(value);
-                      }
-                    }}
-                  />
-
-                  <Button
-                    className="w-10 h-10 border-none outline-none "
-                    style={{ background: "none", outline: "none" }}
-                    onClick={() => handleIncrment()}
-                  >
-                    <PlusOutlined className="mr-6" />
-                  </Button>
+                      : "Đã bán hết"}
+                  </h4>
                 </div>
-                {TotalStock > 0 && (
-                  <div className="w-3/4">
-                    <Flex
-                      vertical
-                      gap="small"
-                      style={{
-                        width: "100%",
-                      }}
-                    >
+
+                <div className="flex items-center">
+                  <h4 className="text-gray-500 font-normal text-sm">
+                    {sumProducts} sản phẩm đã bán
+                  </h4>
+                </div>
+              </div>
+
+              {/* Quantity selector and action buttons */}
+              {TotalStock > 0 && (
+                <div className="space-y-4">
+                  {/* Desktop layout: Horizontal */}
+                  <div className="block md:flex items-center gap-x-4">
+                    {/* Quantity selector */}
+                    <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden w-[140px]">
+                      <Button
+                        className="w-10 h-10 border-none flex items-center justify-center hover:bg-gray-50"
+                        style={{ background: "transparent" }}
+                        onClick={handleDecrements}
+                        disabled={count <= 1}
+                      >
+                        <MinusOutlined className="text-gray-600" />
+                      </Button>
+
+                      <input
+                        type="number"
+                        min={1}
+                        max={TotalStock}
+                        value={count}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value, 10);
+                          if (
+                            !isNaN(value) &&
+                            value >= 1 &&
+                            value <= TotalStock
+                          ) {
+                            setCount(value);
+                          } else if (e.target.value === "") {
+                            setCount("");
+                          }
+                        }}
+                        onBlur={() => {
+                          if (count === "" || isNaN(count)) setCount(1);
+                        }}
+                        className="w-12 h-10 text-center border-none outline-none focus:ring-0 border-x border-gray-300 text-base"
+                        style={{
+                          appearance: "textfield",
+                          MozAppearance: "textfield",
+                        }}
+                      />
+
+                      <Button
+                        className="w-10 h-10 border-none flex items-center justify-center hover:bg-gray-50"
+                        style={{ background: "transparent" }}
+                        onClick={handleIncrment}
+                        disabled={count >= TotalStock}
+                      >
+                        <PlusOutlined className="text-gray-600" />
+                      </Button>
+                    </div>
+
+                    {/* Action buttons - Desktop */}
+                    <div className="flex flex-1 gap-3 sm:mt-4 md:mt-0">
                       <Button
                         type="primary"
-                        block
-                        style={{ backgroundColor: "black", color: "white" }}
+                        size="large"
+                        className="flex-1 font-medium"
+                        style={{
+                          backgroundColor: "#000",
+                          borderColor: "#000",
+                          height: "40px",
+                        }}
                         onClick={handleAddProduct}
+                      >
+                        Mua ngay
+                      </Button>
+
+                      <Button
+                        type="primary"
+                        size="large"
+                        className="flex-1 font-medium"
+                        style={{
+                          backgroundColor: "#000",
+                          borderColor: "#000",
+                          height: "40px",
+                        }}
+                        onClick={handleAddCart}
                       >
                         Thêm vào giỏ hàng
                       </Button>
-                    </Flex>
+                    </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+
+              {/* Out of stock message */}
+              {TotalStock <= 0 && (
+                <div className="text-center py-4">
+                  <p className="text-red-500 font-medium">
+                    Sản phẩm hiện đã hết hàng
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -799,44 +874,41 @@ const Details = () => {
                   </div>
                 );
               })}
-
-          {feedback && feedback.length > 0 && (
-            <ReactPaginate
-              previousLabel={
-                <svg
-                  viewBox="64 64 896 896"
-                  focusable="false"
-                  data-icon="left"
-                  width="1em"
-                  height="1em"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path d="M724 218.3V141c0-6.7-7.7-10.4-12.9-6.3L260.3 486.8a31.86 31.86 0 000 50.3l450.8 352.1c5.3 4.1 12.9.4 12.9-6.3v-77.3c0-4.9-2.3-9.6-6.1-12.6l-360-281 360-281.1c3.8-3 6.1-7.7 6.1-12.6z"></path>
-                </svg>
-              }
-              nextLabel={
-                <svg
-                  viewBox="64 64 896 896"
-                  focusable="false"
-                  data-icon="right"
-                  width="16px"
-                  height="16px"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path d="M765.7 486.8L314.9 134.7A7.97 7.97 0 00302 141v77.3c0 4.9 2.3 9.6 6.1 12.6l360 281.1-360 281.1c-3.9 3-6.1 7.7-6.1 12.6V883c0 6.7 7.7 10.4 12.9 6.3l450.8-352.1a31.96 31.96 0 000-50.4z"></path>
-                </svg>
-              }
-              breakLabel={"..."}
-              pageCount={pageCount}
-              marginPagesDisplayed={2}
-              pageRangeDisplayed={3}
-              onPageChange={handlePageClick}
-              containerClassName={"pagination"}
-              activeClassName={"active"}
-            />
-          )}
+          <ReactPaginate
+            previousLabel={
+              <svg
+                viewBox="64 64 896 896"
+                focusable="false"
+                data-icon="left"
+                width="1em"
+                height="1em"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M724 218.3V141c0-6.7-7.7-10.4-12.9-6.3L260.3 486.8a31.86 31.86 0 000 50.3l450.8 352.1c5.3 4.1 12.9.4 12.9-6.3v-77.3c0-4.9-2.3-9.6-6.1-12.6l-360-281 360-281.1c3.8-3 6.1-7.7 6.1-12.6z"></path>
+              </svg>
+            }
+            nextLabel={
+              <svg
+                viewBox="64 64 896 896"
+                focusable="false"
+                data-icon="right"
+                width="16px"
+                height="16px"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M765.7 486.8L314.9 134.7A7.97 7.97 0 00302 141v77.3c0 4.9 2.3 9.6 6.1 12.6l360 281.1-360 281.1c-3.9 3-6.1 7.7-6.1 12.6V883c0 6.7 7.7 10.4 12.9 6.3l450.8-352.1a31.96 31.96 0 000-50.4z"></path>
+              </svg>
+            }
+            breakLabel={"..."}
+            pageCount={pageCount}
+            marginPagesDisplayed={2}
+            pageRangeDisplayed={3}
+            onPageChange={handlePageClick}
+            containerClassName={"pagination"}
+            activeClassName={"active"}
+          />
         </div>
       </div>
     </div>
