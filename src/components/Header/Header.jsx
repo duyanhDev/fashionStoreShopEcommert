@@ -15,6 +15,8 @@ import { useEffect, useState, useCallback } from "react";
 import { RemoveCartOnePorduct, UpdateCartQuantity } from "../../service/Cart";
 import ClipLoader from "react-spinners/ClipLoader";
 import {
+  AllReadNotifications,
+  DeleteAllNotificationsAPI,
   FetcDataNocatifions,
   UpdateDataNocatifions,
 } from "../../service/ApiNocatifions";
@@ -154,7 +156,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
     try {
       setLoadingSpin(true);
       const res = await RemoveCartOnePorduct(ListCart._id, id, user._id);
-      console.log(res);
 
       if (res && res.data) {
         setTimeout(() => {
@@ -212,6 +213,44 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
       FetchDataNocatifionsAPI();
     }
   }, [user]);
+
+  const handleReadsNocations = async () => {
+    setShowHiden(true);
+    setLoading(true);
+    try {
+      const res = await AllReadNotifications(user._id);
+
+      if (res && res.data && res.data.EC === 0) {
+        setTimeout(() => {
+          setLoading(false);
+        }, 2000);
+        FetchDataNocatifionsAPI();
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteNocations = async () => {
+    setShowHiden(true);
+    setLoading(true);
+    try {
+      const res = await DeleteAllNotificationsAPI(user._id);
+      console.log("DeleteAllNotificationsAPI response:", res);
+      if (res && res.data && res.data.EC === 0) {
+        setTimeout(() => {
+          setLoading(false);
+        }, 2000);
+        FetchDataNocatifionsAPI();
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   function formatTimeAgo(dateString) {
     const date = new Date(dateString);
@@ -842,33 +881,55 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
         onClose={() => setShowHiden(false)}
         width={window.innerWidth < 768 ? "90%" : 400}
       >
-        <Button
-          type="primary"
-          style={{ marginBottom: 16 }}
-          onClick={handleShowNocations}
-          className="w-full sm:w-auto"
-        >
-          Reload
-        </Button>
-        {unreadNotifications && unreadNotifications.length > 0 ? (
-          unreadNotifications.map((item) => (
-            <div key={item._id}>
-              <div
-                className="border-b-2 p-3 cursor-pointer hover:bg-gray-50 rounded"
-                onClick={() => handleBtnNocafition(item._id, item.orderId)}
-              >
-                <p className="text-sm sm:text-base mb-2">{item.message}</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs sm:text-sm text-gray-500">
-                    {formatTimeAgo(item.createdAt)}
-                  </span>
-                  {item.read === false && (
-                    <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
-                  )}
+        <div className="flex justify-between gap-2">
+          <Button
+            type="primary"
+            style={{ marginBottom: 16 }}
+            onClick={handleShowNocations}
+            className="w-full sm:w-auto"
+          >
+            Reload
+          </Button>
+          <Button
+            color="cyan"
+            variant="solid"
+            style={{ marginBottom: 16 }}
+            onClick={handleReadsNocations}
+            className="w-full sm:w-auto"
+          >
+            Đọc tất cả
+          </Button>
+          <Button
+            color="default"
+            variant="solid"
+            style={{ marginBottom: 16 }}
+            onClick={handleDeleteNocations}
+            className="w-full sm:w-auto"
+          >
+            Xóa tất cả
+          </Button>
+        </div>
+        {DataNotifications && DataNotifications.length > 0 ? (
+          DataNotifications.filter((item) => item.isAdmin === false).map(
+            (item) => (
+              <div key={item._id}>
+                <div
+                  className="border-b-2 p-3 cursor-pointer hover:bg-gray-50 rounded"
+                  onClick={() => handleBtnNocafition(item._id, item.orderId)}
+                >
+                  <p className="text-sm sm:text-base mb-2">{item.message}</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs sm:text-sm text-gray-500">
+                      {formatTimeAgo(item.createdAt)}
+                    </span>
+                    {item.read === false && (
+                      <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            )
+          )
         ) : (
           <p className="text-center text-gray-500 py-8">
             Hiện tại không có thông báo nào

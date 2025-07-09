@@ -8,7 +8,6 @@ import Category from "../components/Category/Category";
 import ClothingMale from "../components/ClothingMale/ClothingMale";
 import Details from "../components/Details/Details";
 import EditCustom from "../components/EditCustom/EditCustom";
-import ForgetPassword from "../components/ForgetPassword/ForgetPassword";
 import Home from "../components/Home/Home";
 import DeliveryMap from "../components/Map/Map";
 
@@ -30,8 +29,8 @@ import FavoritesList from "../components/FavoritesList/FavoritesList";
 import ProductReviewAdmin from "../components/ProductReviewAdmin/ProductReviewAdmin";
 import LoginForm from "../components/Login/Login";
 import RegisterForm from "../components/Register/Register";
-import GeminiBlogGenerator from "../components/GeminiBlogGenerator/GeminiBlogGenerator";
 import AdminPostCreator from "../components/AdminPostCreator/AdminPostCreator";
+import AccountAdmin from "../components/AccountAdmin/AccountAdmin";
 
 export const RouterLayout = [
   {
@@ -122,6 +121,10 @@ export const RouterAdmin = [
       {
         path: "usercustom",
         element: <UsersCustom />,
+      },
+      {
+        path: "account",
+        element: <AccountAdmin />,
       },
       {
         path: "usercustom/:id",

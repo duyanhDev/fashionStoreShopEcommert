@@ -320,10 +320,8 @@ const Profile = () => {
     console.log(key);
   };
 
-  console.log(selectedImage);
-
   const FetchDataProvince = async () => {
-    const url = "https://esgoo.net/api-tinhthanh/1/0.htm";
+    const url = "https://vietnamlabs.com/api/vietnamprovince";
 
     const res = await axios.get(url);
 
@@ -333,19 +331,19 @@ const Profile = () => {
     }
   };
 
-  const FeachDataDistrict = async () => {
-    const url = `https://esgoo.net/api-tinhthanh/2/${SeletectIdProvine}.htm`;
+  // const FeachDataDistrict = async () => {
+  //   const url = `https://esgoo.net/api-tinhthanh/2/${SeletectIdProvine}.htm`;
 
-    const res = await axios.get(url);
+  //   const res = await axios.get(url);
 
-    if (res && res.data && res.data.data) {
-      const data = res.data.data;
-      SetDistrictData(data);
-    }
-  };
+  //   if (res && res.data && res.data.data) {
+  //     const data = res.data.data;
+  //     SetDistrictData(data);
+  //   }
+  // };
 
   const FeachDataWarn = async () => {
-    const url = `https://esgoo.net/api-tinhthanh/3/${SeletectIdDistrict}.htm`;
+    const url = `https://vietnamlabs.com/api/vietnamprovince?province=${city}`;
     const res = await axios.get(url);
 
     if (res && res.data && res.data.data) {
@@ -354,22 +352,10 @@ const Profile = () => {
     }
   };
 
-  useEffect(() => {
-    FetchDataProvince();
-  }, []);
-
-  useEffect(() => {
-    FeachDataDistrict();
-  }, [SeletectIdProvine]);
-
-  useEffect(() => {
-    FeachDataWarn();
-  }, [SeletectIdDistrict]);
-
   const handleOnChangeProvine = (value, name) => {
-    const selected = ProvineData.find((item) => item.id === value);
+    const selected = ProvineData.find((item) => item.province === value);
     SetSeletectIdProvine(value);
-    setCity(selected?.name || "");
+    setCity(selected?.province || "");
   };
 
   const handleOnChangeDistrict = (value, name) => {
@@ -379,10 +365,36 @@ const Profile = () => {
   };
 
   const handleOnChangeWarm = (value, name) => {
-    const selected = WarmData.find((item) => item.id === value);
+    // Tìm tỉnh hiện tại được chọn
+    const selectedProvince = ProvineData.find(
+      (province) => province.province === SeletectIdProvine
+    );
+
+    if (!selectedProvince) {
+      console.warn("Không tìm thấy tỉnh:", SeletectIdProvine);
+      return;
+    }
+
+    // Tìm ward trong tỉnh đã chọn
+    const selectedWard = selectedProvince.wards.find(
+      (ward) => ward.name === value
+    );
+
     SetSeletectIdWarm(value);
-    setward(selected?.name || "");
+    setward(selectedWard?.name || "");
   };
+
+  useEffect(() => {
+    FetchDataProvince();
+  }, []);
+
+  // useEffect(() => {
+  //   FeachDataDistrict();
+  // }, [SeletectIdProvine]);
+
+  useEffect(() => {
+    FeachDataWarn();
+  }, [city]);
 
   const items = [
     {
@@ -491,14 +503,14 @@ const Profile = () => {
                 {ProvineData &&
                   ProvineData?.map((provine) => {
                     return (
-                      <Option key={provine.id} value={provine.id}>
-                        {provine.name}
+                      <Option key={provine.province} value={provine.province}>
+                        {provine.province}
                       </Option>
                     );
                   })}
               </Select>
             </div>
-
+            {/* 
             <div className="profile-form-item">
               <label>Quận/Huyện</label>
               <Select
@@ -516,7 +528,7 @@ const Profile = () => {
                     );
                   })}
               </Select>
-            </div>
+            </div> */}
 
             <div className="profile-form-item">
               <label>Phường/Xã</label>
@@ -526,14 +538,16 @@ const Profile = () => {
                 value={ward}
                 onChange={handleOnChangeWarm}
               >
-                {WarmData &&
-                  WarmData?.map((ward) => {
-                    return (
-                      <Option key={ward.id} value={ward.id}>
+                {ProvineData &&
+                  ProvineData.filter(
+                    (province) => province.province === SeletectIdProvine
+                  ).flatMap((province) =>
+                    province.wards.map((ward) => (
+                      <Option key={ward.name} value={ward.name}>
                         {ward.name}
                       </Option>
-                    );
-                  })}
+                    ))
+                  )}
               </Select>
             </div>
           </div>

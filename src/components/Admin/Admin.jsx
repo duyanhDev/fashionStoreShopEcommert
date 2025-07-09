@@ -21,6 +21,11 @@ const menuItems = [
     label: "Tài khoản khách hàng",
     to: "/admin/usercustom",
   },
+  {
+    icon: <UserOutlined />,
+    label: "Tài khoản Admin",
+    to: "/admin/account",
+  },
   { icon: <FiHome />, label: "Sản phẩm", to: "/admin/products" },
   { icon: <FaOpencart />, label: "Danh mục", to: "category" },
   { icon: <FaSquarePollVertical />, label: "Báo cáo", to: "/reports" },

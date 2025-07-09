@@ -1,5 +1,3 @@
-"use client";
-
 import "./Details.css";
 import { useEffect, useState, useCallback } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -12,7 +10,6 @@ import { Rate, Button, Flex, notification, Image, Avatar } from "antd";
 import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import {
-  ListOneProductAPI,
   ListSlugProductAPI,
   toggleLikeRatingAPI,
 } from "../../service/ApiProduct";
@@ -826,7 +823,13 @@ const Details = () => {
                       {item && (
                         <img
                           className="w-10 h-10 rounded-full"
-                          src={item ? item.userId.avatar : <Avatar>U</Avatar>}
+                          src={
+                            item && item.userId.avatar ? (
+                              item.userId.avatar
+                            ) : (
+                              <Avatar>U</Avatar>
+                            )
+                          }
                           alt="avatar lỗi"
                         />
                       )}
