@@ -127,7 +127,6 @@ function App() {
   const fetchAPIMessasge = async () => {
     try {
       const res = await getMessagesList(user?._id);
-      console.log(res);
 
       if (res && res.EC === 0) {
         setUnread(res?.data);
