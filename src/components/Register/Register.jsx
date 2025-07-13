@@ -70,21 +70,22 @@ const RegisterForm = () => {
       setPreviewUrl(imageUrl);
     }
   };
-
   const HandleRegister = async () => {
-    // Kiểm tra xem các trường đã được nhập chưa
     if (!username || !email || !password || !confirmPassword) {
       message.warning("Vui lòng nhập đầy đủ thông tin!");
       return;
     }
 
-    // Kiểm tra định dạng email
+    if (password.length < 6) {
+      message.warning("Mật khẩu phải có ít nhất 6 ký tự!");
+      return;
+    }
+
     if (!validateEmail(email)) {
       message.warning("Email không hợp lệ!");
       return;
     }
 
-    // Kiểm tra mật khẩu có khớp không
     if (password !== confirmPassword) {
       message.warning("Mật khẩu không khớp!");
       return;
@@ -99,13 +100,30 @@ const RegisterForm = () => {
         false
       );
 
-      console.log(res);
-      if (res && res.data && res.data.EC === 0) {
+      if (res?.data?.EC === 0) {
+        setEmail("");
+        setUsername("");
+        setPassword("");
+        setConfirmPassword("");
+        setSelectedImage(null);
+        setPreviewUrl(null);
+        SetImageUpLoad("");
         message.success("Đăng ký thành công!");
+
         // Navigate to login or dashboard
       }
     } catch (error) {
-      message.error("Đăng ký thất bại! Vui lòng thử lại.");
+      // Truy cập vào lỗi trả về từ backend (nếu có)
+      const errorMessage =
+        error.response?.data?.EM || "Đăng ký thất bại! Vui lòng thử lại.";
+
+      // Trường hợp email đã tồn tại
+      if (error.response?.data?.EC === 1) {
+        message.warning(errorMessage);
+      } else {
+        message.error(errorMessage);
+      }
+
       console.error(error);
     }
   };

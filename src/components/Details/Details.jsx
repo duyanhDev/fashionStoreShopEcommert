@@ -1,3 +1,5 @@
+"use client";
+
 import "./Details.css";
 import { useEffect, useState, useCallback } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -10,6 +12,7 @@ import { Rate, Button, Flex, notification, Image, Avatar } from "antd";
 import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import {
+  ListOneProductAPI,
   ListSlugProductAPI,
   toggleLikeRatingAPI,
 } from "../../service/ApiProduct";
@@ -269,12 +272,19 @@ const Details = () => {
       );
 
       if (res && res.data && res.data.cart) {
+        console.log("varients:", variants);
+        console.log(colorCart.toLowerCase());
+
         api.open({
           message: "Đã thêm vào giỏ hàng",
           description: (
             <div className="flex gap-2 p-2 ">
               <img
-                src={variants[0]?.images[0]?.url || "/placeholder.svg"}
+                src={
+                  variants.find(
+                    (item) => item.color === colorCart.toLowerCase()
+                  )?.images[0]?.url || "/placeholder.svg"
+                }
                 className="img_cart"
                 alt="lỗi"
               />
@@ -695,7 +705,7 @@ const Details = () => {
               </div>
 
               {/* Quantity selector and action buttons */}
-              {TotalStock > 0 && (
+              {quantityProduct > 0 && (
                 <div className="space-y-4">
                   {/* Desktop layout: Horizontal */}
                   <div className="block md:flex items-center gap-x-4">
@@ -713,14 +723,14 @@ const Details = () => {
                       <input
                         type="number"
                         min={1}
-                        max={TotalStock}
+                        max={quantityProduct}
                         value={count}
                         onChange={(e) => {
                           const value = parseInt(e.target.value, 10);
                           if (
                             !isNaN(value) &&
                             value >= 1 &&
-                            value <= TotalStock
+                            value <= quantityProduct
                           ) {
                             setCount(value);
                           } else if (e.target.value === "") {
@@ -741,7 +751,7 @@ const Details = () => {
                         className="w-10 h-10 border-none flex items-center justify-center hover:bg-gray-50"
                         style={{ background: "transparent" }}
                         onClick={handleIncrment}
-                        disabled={count >= TotalStock}
+                        disabled={count >= quantityProduct}
                       >
                         <PlusOutlined className="text-gray-600" />
                       </Button>

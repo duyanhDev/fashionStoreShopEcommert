@@ -158,6 +158,19 @@ const Create = () => {
   }, []);
 
   const handleCreate = async () => {
+    if (
+      !name ||
+      !gender ||
+      !description ||
+      !categoryId ||
+      !price ||
+      image.length === 0 ||
+      variantsInput.length === 0
+    ) {
+      messageApi.error("Vui lòng điền đầy đủ thông tin bắt buộc");
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append("name", name);
@@ -174,13 +187,12 @@ const Create = () => {
       formData.append("variantsInput", JSON.stringify(variantsInput));
 
       const res = await createProductAPI(formData);
+
       if (res) {
         messageApi.success("Tạo sản phẩm thành công");
         navigate("/admin");
       }
-    } catch (error) {
-      console.error(error);
-    }
+    } catch (error) {}
   };
 
   return (

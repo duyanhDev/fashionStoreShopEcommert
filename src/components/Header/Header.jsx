@@ -758,9 +758,13 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
 
         {ListCart?.items?.length > 0 ? (
           ListCart.items.map((cart) => {
+            console.log("cart:", cart);
+
             const imageUrl =
-              cart?.productId?.variants?.[0]?.images?.[0]?.url ||
-              "https://via.placeholder.com/100";
+              cart.productId?.variants.find(
+                (product) => product.color === cart.color
+              )?.images[0]?.url || "";
+
             return (
               <div
                 className="item_list_cart_total flex flex-col sm:flex-row items-start sm:items-center py-4 border-b"

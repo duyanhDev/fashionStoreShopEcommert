@@ -5,6 +5,7 @@ import chatbotData from "./../chatbot-data.json";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
+import { set } from "nprogress";
 
 // Function để làm sạch format response
 const cleanResponseFormat = (text) => {
@@ -28,6 +29,7 @@ const cleanResponseFormat = (text) => {
 
 const BotChatAI = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -73,6 +75,12 @@ const BotChatAI = () => {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    setTimeout(() => {
+      const container = messagesEndRef.current?.parentNode?.parentNode;
+      if (container) {
+        container.scrollTop -= 100;
+      }
+    }, 300); // delay để scrollIntoView xong mới scroll lên
   };
 
   const UserAvatar = () => (
@@ -209,6 +217,7 @@ const BotChatAI = () => {
     setMessages((prev) => [...prev, newUserMessage]);
     setInputMessage("");
     setIsLoading(true);
+    setIsTyping(false);
 
     const lowerCaseMessage = messageToSend.trim().toLowerCase();
     const checkKeywords = (keywords) =>
@@ -453,6 +462,7 @@ Vui lòng thử lại với một trong những chủ đề trên!`,
                   : ""
               }`}
               style={{ animationDelay: `${index * 100}ms` }}
+              ref={messagesEndRef}
             >
               {message.sender === "bot" ? <BotAvatar /> : <UserAvatar />}
 
@@ -557,7 +567,6 @@ Vui lòng thử lại với một trong những chủ đề trên!`,
               </div>
             </div>
           )}
-
           <div ref={messagesEndRef} />
         </div>
       </div>
@@ -566,21 +575,24 @@ Vui lòng thử lại với một trong những chủ đề trên!`,
       <div className="bg-white/90 backdrop-blur-sm border-t border-gray-200/50 shadow-lg">
         {/* Suggestion Buttons */}
         <div className="max-w-4xl mx-auto px-6 py-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {suggestionButtons.map((button) => (
-              <button
-                key={button.id}
-                onClick={() => handleSuggestionClick(button)}
-                className={`group relative overflow-hidden bg-gradient-to-r ${button.gradient} text-white border-0 hover:shadow-lg hover:scale-105 transition-all duration-300 p-4 rounded-xl h-auto flex flex-col items-center space-y-2`}
-                disabled={isLoading}
-              >
-                <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <span className="text-2xl relative z-10">{button.icon}</span>
-                <div className="text-center relative z-10">
-                  <div className="font-medium text-sm">{button.text}</div>
-                </div>
-              </button>
-            ))}
+          <div className="grid grid-cols-4 md:grid-cols-4 lg:md:grid-cols gap-3">
+            {isTyping &&
+              suggestionButtons.map((button) => (
+                <button
+                  key={button.id}
+                  onClick={() => handleSuggestionClick(button)}
+                  className={`group relative overflow-hidden bg-gradient-to-r ${button.gradient} text-white border-0 hover:shadow-lg hover:scale-105 transition-all duration-300 p-4 rounded-xl h-auto flex flex-col items-center space-y-2`}
+                  disabled={isLoading}
+                >
+                  <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <span className="text-2xl relative z-10">{button.icon}</span>
+                  <div className="text-center relative z-10">
+                    <div className="hidden md:block font-medium text-sm">
+                      {button.text}
+                    </div>
+                  </div>
+                </button>
+              ))}
           </div>
         </div>
 
@@ -589,7 +601,10 @@ Vui lòng thử lại với một trong những chủ đề trên!`,
           <div className="relative bg-white rounded-2xl shadow-lg border border-gray-200/50 overflow-hidden">
             <textarea
               value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
+              onChange={(e) => {
+                setInputMessage(e.target.value);
+                setIsTyping(true);
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();

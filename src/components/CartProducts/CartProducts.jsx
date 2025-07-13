@@ -144,7 +144,12 @@ const CartProducts = ({}) => {
         const id = productId._id;
         console.log("check id items", _id);
 
-        const imageUrl = productId.variants[0]?.images[0]?.url;
+        const imageUrl =
+          productId.variants.find((product) => product.color === color)
+            ?.images[0]?.url || "";
+
+        console.log("imageUrl", imageUrl);
+
         const numericPrice =
           typeof totalItemPrice === "string"
             ? parseInt(totalItemPrice.replace(/[^\d]/g, ""), 10)
@@ -203,7 +208,13 @@ const CartProducts = ({}) => {
           id: item.productId._id,
           images: (
             <img
-              src={item.productId.variants[0]?.images[0]?.url}
+              src={
+                item.color
+                  ? item.productId.variants.find(
+                      (variant) => variant.color === item.color
+                    )?.images[0]?.url
+                  : item.productId.variants[0].images[0].url
+              }
               alt="Product"
               className="w-12 h-12 md:w-16 md:h-16 object-cover rounded"
             />
