@@ -115,6 +115,8 @@ const Products = () => {
                   đen: "bg-black border-gray-200",
                   vàng: "bg-yellow-400 border-gray-200",
                   trắng: "bg-white border-gray-300",
+                  be: "bg-[#f5f5dc] border-gray-200",
+                  xanh: "bg-blue-500 border-gray-200",
                 };
                 return colorStyles[color.color] ? (
                   <div

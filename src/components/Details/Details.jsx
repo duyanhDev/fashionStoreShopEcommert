@@ -41,7 +41,7 @@ const Details = () => {
   const { CartListProductsUser } = useOutletContext();
   const [checked, setChecked] = useState(false);
   const param = useParams();
-  const [SelectedColor, setSelectedColor] = useState("đen");
+  const [SelectedColor, setSelectedColor] = useState("");
   const [SelectedSize, setSelectedSize] = useState("");
   const [CheckSelectedSize, setCheckSelectedSize] = useState(false);
   const [feedback, setFeedBack] = useState([]);
@@ -115,6 +115,8 @@ const Details = () => {
         setImage(ImagesUrl || []);
         setColor(Color || []);
         setSize(SizeMap || []);
+        SetcolorCart(res.data.data.variants[0]?.color || "");
+        setSelectedColor(res.data.data.variants[0]?.color || "");
       }
     } catch (error) {
       console.log(error);
@@ -273,7 +275,6 @@ const Details = () => {
 
       if (res && res.data && res.data.cart) {
         console.log("varients:", variants);
-        console.log(colorCart.toLowerCase());
 
         api.open({
           message: "Đã thêm vào giỏ hàng",

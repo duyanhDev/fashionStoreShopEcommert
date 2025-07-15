@@ -201,6 +201,7 @@ const CartProducts = ({}) => {
     setValue(e.target.value);
   };
 
+  console.log("setidItems", idItems);
   const data =
     ListCart && ListCart.items && ListCart.items.length > 0
       ? ListCart.items.map((item, index) => ({
@@ -292,6 +293,8 @@ const CartProducts = ({}) => {
     itemID,
     _id
   ) => {
+    console.log("handleCheck called with:", _id);
+
     const numericPrice =
       typeof price === "string"
         ? parseInt(price.replace(/[^\d]/g, ""), 10)
@@ -305,24 +308,31 @@ const CartProducts = ({}) => {
       const isChecked = prev.includes(uniqueKey);
 
       setProducts((prevProducts) => {
-        const updatedProducts = isChecked
-          ? prevProducts.filter(
-              (p) => `${p.id}-${p.size}-${p.color}` !== uniqueKey
-            )
-          : [
-              ...prevProducts,
-              {
-                id,
-                name,
-                quantity,
-                size,
-                color,
-                price: numericPrice,
-                imageUrl,
-                _id,
-              },
-            ];
+        let updatedProducts;
 
+        if (isChecked) {
+          // Bỏ chọn → loại bỏ khỏi danh sách
+          updatedProducts = prevProducts.filter(
+            (p) => `${p.id}-${p.size}-${p.color}` !== uniqueKey
+          );
+        } else {
+          // Chọn mới → thêm vào danh sách
+          updatedProducts = [
+            ...prevProducts,
+            {
+              id,
+              name,
+              quantity,
+              size,
+              color,
+              price: numericPrice,
+              imageUrl,
+              _id,
+            },
+          ];
+        }
+
+        // Cập nhật danh sách productId và itemId để gửi backend
         const updatedProductId = [...new Set(updatedProducts.map((p) => p.id))];
         const updatedItemCartId = [
           ...new Set(updatedProducts.map((p) => p._id)),
@@ -456,7 +466,7 @@ const CartProducts = ({}) => {
               record.totalItemPrice,
               record.images,
               ListCart._id,
-              record.id
+              record._id
             )
           }
         />
@@ -877,12 +887,17 @@ const CartProducts = ({}) => {
             </div>
 
             {/* Vouchers */}
-            <div className="voucher-section mb-6">
-              <h3 className="text-lg font-semibold mb-3">Mã giảm giá</h3>
-              <div className="voucher-container">
-                {voucher &&
-                  voucher.length > 0 &&
-                  voucher.map((voucher, index) => (
+            <div className="voucher-container">
+              {voucher &&
+                voucher.length > 0 &&
+                voucher.map((voucher, index) => {
+                  const isUsed = voucher.appliedUsers.some(
+                    (u) => u.user === user._id
+                  );
+
+                  if (isUsed) return null;
+
+                  return (
                     <label
                       key={index + 1}
                       className="voucher-item"
@@ -909,6 +924,7 @@ const CartProducts = ({}) => {
                           </span>
                         </div>
                       </div>
+
                       <input
                         type="radio"
                         name="voucher"
@@ -924,8 +940,8 @@ const CartProducts = ({}) => {
                         }
                       />
                     </label>
-                  ))}
-              </div>
+                  );
+                })}
             </div>
 
             {/* Price Summary */}
@@ -966,7 +982,7 @@ const CartProducts = ({}) => {
                       : formatPrice(0)}
                   </span>
                   <i className="block text-red-500 text-xs mt-1">
-                    (Đã giảm 961.000đ trên giá gốc)
+                    (Đã giảm {formatMoney(discountAmount)}) trên giá gốc)
                   </i>
                 </div>
               </div>

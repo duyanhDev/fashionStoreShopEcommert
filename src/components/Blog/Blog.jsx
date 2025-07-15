@@ -29,9 +29,9 @@ const Blog = () => {
     { id: "lifestyle", name: "Lifestyle", count: 1 },
   ];
 
-  const featuredPost = blogPosts.find((post) => post.featured);
+  const featuredPost = blogPosts.find((post) => post.regex);
   const otherPosts = blogPosts.filter((post) => !post.featured);
-
+  console.log(featuredPost);
   const fetchApiBlog = async () => {
     try {
       const res = await getAllBlog();
@@ -186,7 +186,7 @@ const Blog = () => {
                     <div className="md:w-1/2 p-8">
                       <div className="flex items-center gap-4 mb-4">
                         <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm">
-                          {featuredPost.category}
+                          {featuredPost.regex}
                         </span>
                         <span className="text-gray-400 text-sm flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
@@ -241,7 +241,7 @@ const Blog = () => {
                         />
                         <div className="absolute top-4 left-4">
                           <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm">
-                            {post.category}
+                            {post.regex}
                           </span>
                         </div>
                       </div>

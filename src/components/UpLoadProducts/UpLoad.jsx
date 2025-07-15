@@ -140,9 +140,11 @@ const UpLoad = () => {
           setSold(product.sold || 0);
           setCostPrice(product.costPrice || 0);
 
-          const sizes = product.size || [];
-          setSize(sizes.map((s) => String(s)));
-          setColor(product.color || []);
+          setColor(product.variants.map((item) => item.color) || []);
+          const sizes = product.variants.map((item) => item.sizes) || [];
+
+          const flatSizes = sizes.flat().map((item) => String(item.size));
+          setSize(flatSizes || []);
 
           // Set current variants để hiển thị
           setCurrentVariants(product.variants || []);
@@ -387,14 +389,12 @@ const UpLoad = () => {
               </Row>
 
               <div>
-                <Typography.Title level={5}>
-                  Hướng dẫn chăm sóc
-                </Typography.Title>
+                <Typography.Title level={5}>Thể loại</Typography.Title>
                 <Input
                   maxLength={200}
                   value={care}
                   onChange={(e) => setCare(e.target.value)}
-                  placeholder="Nhập hướng dẫn chăm sóc"
+                  placeholder="Thể loại"
                 />
               </div>
 
