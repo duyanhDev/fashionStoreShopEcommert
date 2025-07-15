@@ -7,7 +7,7 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import { createOrder } from "../../service/Oder";
 import { SmileOutlined } from "@ant-design/icons";
 import ClipLoader from "react-spinners/ClipLoader";
-import { getVoucherAPI } from "../../service/APIVoucher,js";
+import { getVoucherAPI } from "../../service/APIVoucher.js";
 import moment from "moment";
 
 const CartProducts = ({}) => {

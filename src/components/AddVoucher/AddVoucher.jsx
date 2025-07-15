@@ -14,7 +14,7 @@ import {
 } from "antd";
 import { useState } from "react";
 import moment from "moment";
-import { createVoucherAPI } from "../../service/APIVoucher,js";
+import { createVoucherAPI } from "../../service/APIVoucher.js";
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;

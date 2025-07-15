@@ -1,7 +1,7 @@
 import { Button, Flex, Table } from "antd";
 import { EyeOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
-import { getVoucherAPI } from "../../service/APIVoucher,js";
+import { getVoucherAPI } from "../../service/APIVoucher.js";
 import moment from "moment";
 import { createStyles } from "antd-style";
 import { useNavigate } from "react-router-dom";
