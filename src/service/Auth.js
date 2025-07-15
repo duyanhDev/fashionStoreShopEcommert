@@ -28,6 +28,7 @@ const update_profileUser = async (
   height,
   weight,
   role,
+  permissions,
   avatar
 ) => {
   const data = new FormData();
@@ -44,6 +45,7 @@ const update_profileUser = async (
   data.append("height", height);
   data.append("weight", weight);
   data.append("role", role);
+  data.append("permissions", permissions);
   // Ensure avatar is either a file or null before appending
   if (avatar) {
     // If avatar is a file, append it

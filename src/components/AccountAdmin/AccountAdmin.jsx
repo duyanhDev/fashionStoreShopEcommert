@@ -6,7 +6,7 @@ import { EyeOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 
-const socket = io("https://fashionstoreshopecommertbe.onrender.com"); // URL server của bạn
+const socket = io("http://localhost:9000"); // URL server của bạn
 const AccountAdmin = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -54,6 +54,7 @@ const AccountAdmin = () => {
     { title: "Tên khách hàng", dataIndex: "name" },
     { title: "Avatar", dataIndex: "avatar" },
     { title: "Giới tính", dataIndex: "gender" },
+    { title: "Quyền hạn", dataIndex: "role" },
     { title: "Số tiền đã mua sắm", dataIndex: "totalPrice" },
     {
       title: "Hành động",
@@ -104,7 +105,9 @@ const AccountAdmin = () => {
   };
 
   const dataUserCustom =
-    data && data.length > 0 && data.filter((users) => users.role === "admin");
+    data &&
+    data.length > 0 &&
+    data.filter((users) => users.role === "admin" || users.role === "staff");
 
   const dataSource =
     dataUserCustom &&
@@ -124,6 +127,7 @@ const AccountAdmin = () => {
         ),
         id: user._id,
         gender: user.gender,
+        role: user.role,
         totalPrice: formatPrice(user.totalPrice),
       };
     });

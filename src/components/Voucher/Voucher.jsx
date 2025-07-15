@@ -5,6 +5,7 @@ import { getVoucherAPI } from "../../service/APIVoucher.js";
 import moment from "moment";
 import { createStyles } from "antd-style";
 import { useNavigate } from "react-router-dom";
+import UpdateVoucherModal from "../UpdateVoucherModal/UpdateVoucherModal.jsx";
 const useStyle = createStyles(({ css, token }) => {
   const { antCls } = token;
   return {
@@ -29,6 +30,8 @@ const Voucher = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState([]);
 
+  const [updateModalVisible, setUpdateModalVisible] = useState(false);
+  const [selectedVoucher, setSelectedVoucher] = useState(null);
   const navigate = useNavigate();
 
   const start = () => {
@@ -51,7 +54,6 @@ const Voucher = () => {
   const fetchApiVoucher = async () => {
     try {
       let res = await getVoucherAPI();
-      console.log(res);
 
       if (res.data && res.data.EC === 0) {
         setData(res.data.data);
@@ -63,21 +65,44 @@ const Voucher = () => {
   useEffect(() => {
     fetchApiVoucher();
   }, []);
+
+  const formaDtPrice = (price) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(price);
+  };
+
+  const handleEditVoucher = (voucher) => {
+    setSelectedVoucher(voucher);
+    setUpdateModalVisible(true);
+  };
+
+  const handleUpdateSuccess = () => {
+    fetchApiVoucher(); // Refresh data after successful update
+  };
+
+  const handleUpdateCancel = () => {
+    setUpdateModalVisible(false);
+    setSelectedVoucher(null);
+  };
   const dataSource =
     data.length > 0 &&
     data.map((voucher, i) => ({
+      key: voucher._id || i,
       id: i + 1,
       code: voucher.code,
       discountType: voucher.discountType,
       discountValue: voucher.discountValue,
-      minOrderValue: voucher.minOrderValue,
-
+      minOrderValue: formaDtPrice(voucher.minOrderValue),
       startDate: moment(voucher.startDate).format("DD-MM-YYYY"),
       endDate: moment(voucher.endDate).format("DD-MM-YYYY"),
       usageLimit: voucher.usageLimit,
       usedCount: voucher.usedCount,
+      appliedUsers: voucher.appliedUsers.length,
       status: voucher.status === true ? "Hiệu lực" : "Không hiệu lực",
       userGroup: voucher.userGroup,
+      originalData: voucher, // Store original data for editing
     }));
   const columns = [
     {
@@ -126,7 +151,7 @@ const Voucher = () => {
       dataIndex: "user",
     },
     {
-      title: "appliedUsers",
+      title: "Số lượng khách hàng đã áp dụng",
       dataIndex: "appliedUsers",
     },
     {
@@ -138,18 +163,18 @@ const Voucher = () => {
       key: "operation",
       fixed: "right",
       width: 100,
-      render: () => (
+      render: (_, record) => (
         <Flex gap="small" justify="center" className="min-w-[110px]">
           <Button
             size="small"
             icon={<EyeOutlined />}
-            onClick={() => handleViewNavigate(product._id)}
+            onClick={() => handleViewNavigate(record._id)}
             className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600 border-none rounded-full shadow-md transition-all duration-300 px-3 py-1"
           />
           <Button
             size="small"
             icon={<EditOutlined />}
-            onClick={() => handleNavigate(product._id)}
+            onClick={() => handleEditVoucher(record.originalData)}
             className="bg-gradient-to-r from-teal-500 to-emerald-500 text-white hover:from-teal-600 hover:to-emerald-600 border-none rounded-full shadow-md transition-all duration-300 px-3 py-1"
           />
           <Button
@@ -161,6 +186,7 @@ const Voucher = () => {
       ),
     },
   ];
+
   return (
     <div className="w-full">
       <Flex gap="middle" vertical>
@@ -193,6 +219,12 @@ const Voucher = () => {
           //   }}
         />
       </Flex>
+      <UpdateVoucherModal
+        visible={updateModalVisible}
+        onCancel={handleUpdateCancel}
+        onSuccess={handleUpdateSuccess}
+        voucherData={selectedVoucher}
+      />
     </div>
   );
 };

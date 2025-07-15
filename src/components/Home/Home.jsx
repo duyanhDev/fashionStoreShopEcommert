@@ -363,6 +363,7 @@ const Home = () => {
                   src={item.img || "/placeholder.svg"}
                   alt={item.title}
                   loading="lazy"
+                  className="m-auto"
                 />
                 <span>
                   <span>{item.title}</span>

@@ -32,6 +32,7 @@ const EditCustom = () => {
     role: "customer",
     avatar: "",
     dateOfBirth: "",
+    permissions: "",
   });
 
   const { id } = useParams();
@@ -64,6 +65,7 @@ const EditCustom = () => {
           dateOfBirth: data.dateOfBirth || "",
           ward: data.address.ward || "",
           role: data.role || "customer",
+          permissions: data.permissions || "",
           avatar: data.avatar || "",
         });
 
@@ -197,6 +199,7 @@ const EditCustom = () => {
         formData.height,
         formData.weight,
         formData.role,
+        formData.permissions,
         selectedImage
       );
 
@@ -365,6 +368,20 @@ const EditCustom = () => {
                 >
                   <Option value="admin">Quản trị viên</Option>
                   <Option value="customer">Người dùng</Option>
+                  <Option value="staff">Nhân viên</Option>
+                </Select>
+              </Form.Item>
+
+              <Form.Item label="Quyền">
+                <Select
+                  placeholder="Chọn quyền"
+                  value={formData.permissions}
+                  onChange={handleChange("permissions")}
+                >
+                  <Option value="order_approval">Nhân viên đơn hàng</Option>
+                  <Option value="customer_support">
+                    Nhân viên tư vấn hỗ trợ
+                  </Option>
                 </Select>
               </Form.Item>
 

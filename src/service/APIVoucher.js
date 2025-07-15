@@ -1,4 +1,4 @@
-import axios from "./../untils/axios";
+import axios from "../untils/axios";
 
 const getVoucherAPI = async () => {
   return await axios.get("api/v1/voucher");

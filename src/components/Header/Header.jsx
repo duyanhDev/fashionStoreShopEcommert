@@ -688,18 +688,19 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
                     <FaRegListAlt size={20} />
                     <span>Đơn hàng của tôi</span>
                   </div>
-                  {user?.role === "admin" && (
-                    <div
-                      className="flex items-center space-x-3 py-2 cursor-pointer"
-                      onClick={() => {
-                        navigate("/admin");
-                        setMobileMenuOpen(false);
-                      }}
-                    >
-                      <RiAdminLine size={20} />
-                      <span>Quản trị viên</span>
-                    </div>
-                  )}
+                  {user?.role === "admin" ||
+                    (user?.permissions === "order_approval" && (
+                      <div
+                        className="flex items-center space-x-3 py-2 cursor-pointer"
+                        onClick={() => {
+                          navigate("/admin");
+                          setMobileMenuOpen(false);
+                        }}
+                      >
+                        <RiAdminLine size={20} />
+                        <span>Quản trị viên</span>
+                      </div>
+                    ))}
                   <div
                     className="flex items-center space-x-3 py-2 cursor-pointer"
                     onClick={() => {
