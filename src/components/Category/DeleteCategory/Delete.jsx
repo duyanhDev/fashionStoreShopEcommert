@@ -1,5 +1,6 @@
 import { Input, Modal, Typography, notification } from "antd";
 import { DeleteOneCategoryAPI } from "../../../service/ApiCategory";
+import { useSelector } from "react-redux";
 
 const Delete = ({
   isModalOpen,
@@ -9,7 +10,16 @@ const Delete = ({
   FetchApiCategory,
 }) => {
   const [api, contextHolder] = notification.useNotification();
+  const { user } = useSelector((state) => state.auth);
   const handleOk = async () => {
+    if (user.role !== "admin") {
+      api.error({
+        message: "Notification",
+        description: "Bạn không có quyền xóa danh mục sản phẩm này",
+        placement: "topRight",
+      });
+      return;
+    }
     try {
       const res = await DeleteOneCategoryAPI(isCategory);
       if (res && res.data && res.data.EC === 0) {

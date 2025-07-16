@@ -40,7 +40,7 @@ import {
   UpDateOrderProductAPI,
   updateShipping,
   UpDateCompleted,
-  updateShippingCancelled,
+  updateShippingCancelledAdmin,
   filterOrdersByStatus,
 } from "../../service/Oder";
 import { useEffect, useState } from "react";
@@ -529,7 +529,7 @@ const OrderAdmin = () => {
   // Cancel an order
   const handleCancelOrder = async (id, orderStatus) => {
     try {
-      const response = await updateShippingCancelled(id, orderStatus);
+      const response = await updateShippingCancelledAdmin(id, orderStatus);
       if (response && response.data && response.data.EC === 0) {
         api.success({
           message: "Đơn hàng đã bị hủy",

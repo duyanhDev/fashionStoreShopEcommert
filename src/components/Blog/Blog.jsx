@@ -31,7 +31,7 @@ const Blog = () => {
 
   const featuredPost = blogPosts.find((post) => post.regex);
   const otherPosts = blogPosts.filter((post) => !post.featured);
-  console.log(featuredPost);
+
   const fetchApiBlog = async () => {
     try {
       const res = await getAllBlog();

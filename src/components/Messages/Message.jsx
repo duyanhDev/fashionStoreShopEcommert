@@ -49,8 +49,6 @@ const Message = ({ open, setOpen }) => {
     adjustTextareaHeight();
   }, [newMessage]);
 
-  console.log(user._id);
-
   // Xử lý chọn ảnh
   const handleImageSelect = (e) => {
     const files = Array.from(e.target.files);

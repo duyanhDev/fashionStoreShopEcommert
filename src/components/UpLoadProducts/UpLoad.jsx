@@ -25,6 +25,7 @@ import "react-quill/dist/quill.snow.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { ListOneProductAPI, UpdateProductAPI } from "../../service/ApiProduct";
 import { ListCategoryAPI } from "../../service/ApiCategory";
+import { useSelector } from "react-redux";
 
 const UpLoad = () => {
   const [name, setName] = useState("");
@@ -44,6 +45,7 @@ const UpLoad = () => {
   const [costPrice, setCostPrice] = useState("");
   const [fileList, setFileList] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
+  const { user } = useSelector((state) => state.auth);
 
   // Thêm state mới cho việc quản lý variants
   const [currentVariants, setCurrentVariants] = useState([]);
@@ -286,6 +288,10 @@ const UpLoad = () => {
   };
 
   const hanldeUpdateProducts = async () => {
+    if (user.role !== "admin") {
+      messageApi.error("Bạn không có quyền cập nhật sản phẩm này");
+      return;
+    }
     try {
       // Validation
       if (!name.trim()) {

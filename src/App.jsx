@@ -520,7 +520,12 @@ function App() {
               <Link to="category/female">Nữ</Link>
             </li>
             <li>
-              <Link target="_top">Phụ kiện</Link>
+              <Link
+                to="category/unisex?Category=Phụ+Kiện&currentPage=1"
+                target="_top"
+              >
+                Phụ kiện
+              </Link>
             </li>
             <li className="name_product_app">
               <Link target="_top">Thương hiệu</Link>

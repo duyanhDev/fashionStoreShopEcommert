@@ -1,5 +1,6 @@
 import { Button, Modal, Typography, Input, message } from "antd";
 import { AddCategoryAPI } from "../../../service/ApiCategory";
+import { useSelector } from "react-redux";
 
 const AddCategory = ({
   open,
@@ -12,8 +13,12 @@ const AddCategory = ({
   FetchApiCategory,
 }) => {
   const [messageApi, contextHolder] = message.useMessage();
-
+  const { user } = useSelector((state) => state.auth);
   const handleOk = async () => {
+    if (user.role !== "admin") {
+      messageApi.error("Bạn không có quyền thêm danh mục sản phẩm này");
+      return;
+    }
     try {
       const res = await AddCategoryAPI(name, description);
       if (res) {

@@ -12,7 +12,6 @@ import moment from "moment";
 
 const CartProducts = ({}) => {
   const { ListCart, user, CartListProductsUser } = useOutletContext();
-  console.log(user);
 
   const [loadingSpin, setLoadingSpin] = useState(false);
   const [api, contextHolder] = notification.useNotification();
@@ -142,13 +141,10 @@ const CartProducts = ({}) => {
         const { productId, name, size, quantity, color, totalItemPrice, _id } =
           item;
         const id = productId._id;
-        console.log("check id items", _id);
 
         const imageUrl =
           productId.variants.find((product) => product.color === color)
             ?.images[0]?.url || "";
-
-        console.log("imageUrl", imageUrl);
 
         const numericPrice =
           typeof totalItemPrice === "string"
@@ -201,7 +197,6 @@ const CartProducts = ({}) => {
     setValue(e.target.value);
   };
 
-  console.log("setidItems", idItems);
   const data =
     ListCart && ListCart.items && ListCart.items.length > 0
       ? ListCart.items.map((item, index) => ({
@@ -272,7 +267,7 @@ const CartProducts = ({}) => {
       // Tính lại productId từ danh sách sản phẩm đã chọn
       const updatedProductId = [...new Set(newProducts.map((p) => p.id))];
       const updatedItemCartId = [...new Set(newProducts.map((p) => p._id))];
-      console.log(updatedItemCartId);
+
       setCartId(ListCart._id);
       setCheckedItems(newCheckedItems);
       setPriceObj(newPriceObj);
@@ -293,8 +288,6 @@ const CartProducts = ({}) => {
     itemID,
     _id
   ) => {
-    console.log("handleCheck called with:", _id);
-
     const numericPrice =
       typeof price === "string"
         ? parseInt(price.replace(/[^\d]/g, ""), 10)
@@ -496,9 +489,6 @@ const CartProducts = ({}) => {
         const hasSelected = Products.some((p) => p.id === id);
         return hasSelected;
       });
-
-      console.log("Products gửi GHN:", formattedItems);
-      console.log("ID sản phẩm cần gửi backend:", filteredProductIds);
 
       if (
         !Name ||

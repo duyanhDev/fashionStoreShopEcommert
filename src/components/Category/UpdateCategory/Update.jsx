@@ -4,12 +4,13 @@ import {
   ListOneCategoryAPI,
   UpdateOneCatogryAPI,
 } from "../../../service/ApiCategory";
+import { useSelector } from "react-redux";
 
 const Update = ({ isModalOpen, setIsModel, isCategory, FetchApiCategory }) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [api, contextHolder] = notification.useNotification();
-
+  const { user } = useSelector((state) => state.auth);
   useEffect(() => {
     const fetchCategory = async () => {
       try {
@@ -44,6 +45,14 @@ const Update = ({ isModalOpen, setIsModel, isCategory, FetchApiCategory }) => {
   }, [isModalOpen, name, description]);
 
   const handleOk = async () => {
+    if (user.role !== "admin") {
+      api.error({
+        message: "Notification",
+        description: "Bạn không có cập nhật danh mục sản phẩm này",
+        placement: "topRight",
+      });
+      return;
+    }
     try {
       const res = await UpdateOneCatogryAPI(isCategory, name, description);
       if (res && res.data.EC === 0) {

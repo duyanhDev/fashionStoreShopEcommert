@@ -192,8 +192,6 @@ const PersonalInfoForm = ({ id }) => {
 const Profile = () => {
   const { user } = useSelector((state) => state.auth);
 
-  console.log(user);
-
   const id = user._id;
 
   const [points, setPoints] = useState(0);

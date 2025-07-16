@@ -33,6 +33,7 @@ import {
 import { ListCategoryAPI } from "../../service/ApiCategory";
 import { createProductAPI } from "../../service/ApiProduct";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const { Title, Text } = Typography;
 
@@ -49,6 +50,7 @@ const Create = () => {
   const [care, setCare] = useState("");
   const [categoryId, setCategoryId] = useState();
   const [messageApi, contextHolder] = message.useMessage();
+  const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
 
   const [image, setImageFiles] = useState([]);
@@ -158,6 +160,10 @@ const Create = () => {
   }, []);
 
   const handleCreate = async () => {
+    if (user.role !== "admin") {
+      message.error("Bạn không có quyền thêm sản phẩm mới");
+      return;
+    }
     if (
       !name ||
       !gender ||

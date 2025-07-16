@@ -5,14 +5,16 @@ import Search from "antd/es/input/Search";
 import { EyeOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
-const socket = io("https://fashionstoreshopecommertbe.onrender.com"); // URL server của bạn
+const socket = io("https://fashionstoreshopecommertbe.onrender.com/"); // URL server của bạn
 const UsersCustom = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState([]);
   const [originalData, setOriginalData] = useState([]); // Dữ liệu gốc
   const [api, contextHolder] = notification.useNotification();
+  const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
 
   const formatPrice = (price) => {
@@ -82,6 +84,14 @@ const UsersCustom = () => {
   };
 
   const handleDelete = async (record) => {
+    if (user.role !== "admin") {
+      api["error"]({
+        message: "Xóa tài khoản",
+        description: "Bạn không có quyền xóa tài khoản này",
+      });
+      return;
+    }
+
     try {
       const res = await DeleteUserAPI(record.id);
 

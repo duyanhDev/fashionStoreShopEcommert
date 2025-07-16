@@ -13,8 +13,9 @@ import { UploadOutlined, SaveOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
-import { get_profile_user, update_profileUser } from "../../service/Auth";
+import { get_profile_user, update_profileAdmin } from "../../service/Auth";
 import moment from "moment";
+import { useSelector } from "react-redux";
 
 const { Option } = Select;
 
@@ -37,6 +38,7 @@ const EditCustom = () => {
 
   const { id } = useParams();
   const formattedDate = moment(formData.dateOfBirth).format("DD-MM-YYYY");
+  const { user } = useSelector((state) => state.auth);
 
   const [ProvineData, SetProvineData] = useState([]);
   const [SeletectIdProvine, SetSeletectIdProvine] = useState("");
@@ -183,11 +185,13 @@ const EditCustom = () => {
     }));
   };
 
-  console.log(formData.avatar);
-
   const handleUpdateUser = async () => {
+    if (user.role !== "admin") {
+      message.error("Bạn không có quyền chỉnh sửa thông tin này");
+      return;
+    }
     try {
-      const res = await update_profileUser(
+      const res = await update_profileAdmin(
         id,
         formData.customerName,
         formData.city,

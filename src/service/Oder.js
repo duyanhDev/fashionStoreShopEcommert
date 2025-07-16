@@ -68,8 +68,17 @@ const createOrder = async (
 // giao hàng
 
 const updateShipping = async (id) => {
+  const token = localStorage.getItem("token");
   try {
-    const response = await axios.post("api/v1/check-orderShipping", { id: id });
+    const response = await axios.post(
+      "api/v1/check-orderShipping",
+      { id: id },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
     return response.data; // Trả về dữ liệu từ API nếu thành công
   } catch (error) {
@@ -87,10 +96,19 @@ const updateShipping = async (id) => {
 
 // hoàn thành
 const UpDateCompleted = async (id, totalPrice) => {
-  return await axios.post("api/v1/check-orderCompleted", {
-    id: id,
-    totalPrice: totalPrice,
-  });
+  const token = localStorage.getItem("token");
+  return await axios.post(
+    "api/v1/check-orderCompleted",
+    {
+      id: id,
+      totalPrice: totalPrice,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 };
 const ListAllSumProduct = async () => {
   return await axios.get("api/v1/get-quantity-all");
@@ -103,11 +121,21 @@ const ListOderProductsAll = async () => {
 
 // xác nhận đơn hàng
 const UpDateOrderProductAPI = async (id) => {
-  return await axios.put(`api/v1/order/${id}`);
+  const token = localStorage.getItem("token");
+  return await axios.put(`api/v1/order/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 };
 
 const OrderStatusOneProduct = async (id) => {
-  return await axios.get(`api/v1/get-order-one/${id}`);
+  const token = localStorage.getItem("token");
+  return await axios.get(`api/v1/get-order-one/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 };
 
 const updateShippingCancelled = async (id, orderStatus) => {
@@ -115,6 +143,28 @@ const updateShippingCancelled = async (id, orderStatus) => {
     return await axios.put(`api/v1/update-order/${id}`, {
       orderStatus,
     });
+  } catch (error) {
+    console.log(
+      "Error updating shipping status:",
+      error.response?.data || error.message
+    );
+  }
+};
+
+const updateShippingCancelledAdmin = async (id, orderStatus) => {
+  const token = localStorage.getItem("token");
+  try {
+    return await axios.put(
+      `api/v1/update-order-admin/${id}`,
+      {
+        orderStatus,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
   } catch (error) {
     console.log(
       "Error updating shipping status:",
@@ -142,5 +192,6 @@ export {
   updateShipping,
   UpDateCompleted,
   updateShippingCancelled,
+  updateShippingCancelledAdmin,
   filterOrdersByStatus,
 };

@@ -76,7 +76,7 @@ const sendMessageAdmin = async (
   formData.append("isAdminChat", isAdminChat); // Đánh dấu đây là tin nhắn từ admin hay khách hàng
 
   // If isAdminChat is false, do not append recipient
-
+  const token = localStorage.getItem("token");
   try {
     const response = await axios.post(
       "api/v1/admin/send", // Đường dẫn API của bạn
@@ -84,6 +84,7 @@ const sendMessageAdmin = async (
       {
         headers: {
           "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
         },
       }
     );
