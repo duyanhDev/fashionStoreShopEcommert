@@ -122,11 +122,15 @@ const ListOderProductsAll = async () => {
 // xác nhận đơn hàng
 const UpDateOrderProductAPI = async (id) => {
   const token = localStorage.getItem("token");
-  return await axios.put(`api/v1/order/${id}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  return await axios.put(
+    `api/v1/order/${id}`,
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 };
 
 const OrderStatusOneProduct = async (id) => {
