@@ -5,10 +5,19 @@ const ListCategoryAPI = async () => {
 };
 
 const AddCategoryAPI = async (name, description) => {
-  return await axios.post("api/v1/category", {
-    name,
-    description,
-  });
+  const token = localStorage.getItem("token");
+  return await axios.post(
+    "api/v1/category",
+    {
+      name,
+      description,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 };
 
 const ListOneCategoryAPI = async (id) => {
@@ -16,14 +25,28 @@ const ListOneCategoryAPI = async (id) => {
 };
 
 const UpdateOneCatogryAPI = async (id, name, description) => {
-  return await axios.put(`api/v1/category/${id}`, {
-    name,
-    description,
-  });
+  const token = localStorage.getItem("token");
+  return await axios.put(
+    `api/v1/category/${id}`,
+    {
+      name,
+      description,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 };
 
 const DeleteOneCategoryAPI = async (id) => {
-  return await axios.delete(`api/v1/category/${id}`);
+  const token = localStorage.getItem("token");
+  return await axios.delete(`api/v1/category/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 };
 const CategoryProductsGender = async (
   gender,

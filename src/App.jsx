@@ -36,6 +36,8 @@ function App() {
   const hideFooter = location.pathname === "/cart";
   const { pathname } = useLocation();
 
+  console.log(localStorage.getItem("token"));
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" }); // scroll mượt
   }, [pathname]);

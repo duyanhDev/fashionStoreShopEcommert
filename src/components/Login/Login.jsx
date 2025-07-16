@@ -64,8 +64,8 @@ const LoginForm = () => {
       setIsLoading(true);
       if (res && res.data.EC === 0) {
         setTimeout(async () => {
-          dispatch(login(res.data.data.token, res.data.data.user));
           localStorage.setItem("token", res.data.data.token);
+          dispatch(login(res.data.data.token, res.data.data.user));
           setIsLoading(false);
           navigate("/");
         }, 5000);
