@@ -40,7 +40,7 @@ const ClothingMale = () => {
   const [productname, setProductname] = useState("");
   const [discount, setDiscount] = useState(0);
 
-  const desc = ["terrible", "bad", "normal", "good", "wonderful"];
+  // const desc = ["terrible", "bad", "normal", "good", "wonderful"];
 
   const [ratings, setRatings] = useState({});
   const [WishList, setWishList] = useState([]);
@@ -159,8 +159,10 @@ const ClothingMale = () => {
     navigate(`${location.pathname}?${newParams.toString()}`);
   };
 
-  const formatPrice = (price) =>
-    price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
+  const formatPrice = (price) => {
+    if (price === null || price === undefined || isNaN(price)) return "0đ";
+    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
+  };
 
   const marks = { 0: "0", 500000: "500K", 1000000: "1M" };
 

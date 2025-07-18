@@ -759,7 +759,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
 
         {ListCart?.items?.length > 0 ? (
           ListCart.items.map((cart) => {
-            console.log("cart:", cart);
+          
 
             const imageUrl =
               cart.productId?.variants.find(

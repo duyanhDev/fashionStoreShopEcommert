@@ -1,5 +1,20 @@
-import { Table, Button, Tag, Image, Flex, Typography, Tooltip } from "antd";
-import { EyeOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import {
+  Table,
+  Button,
+  Tag,
+  Image,
+  Flex,
+  Typography,
+  Tooltip,
+  Upload,
+  message,
+} from "antd";
+import {
+  EyeOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
 import { getListProductsAPI } from "../../service/ApiProduct";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -215,7 +230,25 @@ const Products = () => {
       setSelectedRowKeys(allProductKeys);
     }
   };
-
+  const props = {
+    name: "execl", // key này phải giống bên backend đọc
+    accept: ".xlsx,.xls", // chỉ nhận file Excel
+    action: "http://localhost:9000/api/v1/products/excel",
+    headers: {
+      authorization: "authorization-text",
+    },
+    onChange(info) {
+      if (info.file.status !== "uploading") {
+        console.log(info.file, info.fileList);
+      }
+      if (info.file.status === "done") {
+        message.success(`${info.file.name} file uploaded successfully`);
+        fetchData(); // Refresh data after upload
+      } else if (info.file.status === "error") {
+        message.error(`${info.file.name} file upload failed.`);
+      }
+    },
+  };
   return (
     <div className="w-full bg-gradient-to-br from-gray-50 to-indigo-50 min-h-screen">
       <div className="max-w-[1400px] mx-auto bg-white rounded-2xl shadow-2xl p-6 border border-gray-100">
@@ -225,6 +258,14 @@ const Products = () => {
             Danh sách sản phẩm
           </Text>
           <Flex gap="middle" wrap="wrap">
+            <Upload {...props}>
+              <Button
+                className="h-10 px-6 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-semibold rounded-full shadow-lg transition-all duration-300 transform hover:scale-105"
+                icon={<UploadOutlined />}
+              >
+                Tải file excel
+              </Button>
+            </Upload>
             <Button
               type="primary"
               onClick={() => navigate("/admin/addproduct")}

@@ -38,3 +38,8 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #16a34a;
 }
+
+span.ant-input-affix-wrapper.css-dev-only-do-not-override-apn68.ant-input-outlined.ant-input-password.h-12.rounded-xl.border-2.border-gray-200.hover\:border-gray-300.focus\:border-green-500 {
+  display: flex;
+  align-items: center;
+}

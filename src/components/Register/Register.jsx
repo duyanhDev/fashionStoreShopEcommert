@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Input from "antd/es/input/Input";
-import { Button, message } from "antd";
-import { RegisterUser } from "../../service/Auth";
+import { Button, message, notification } from "antd";
+import { RegisterUser, SendverifyOTP, verifyOTP } from "../../service/Auth";
 import "./register-styles.css";
 const RegisterForm = () => {
   const [email, setEmail] = useState("");
@@ -13,9 +13,31 @@ const RegisterForm = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [hiddenOTP, setHiddenOTP] = useState(false);
+  const [timer, setTimer] = useState(0);
+  const [isDisabled, setIsDisabled] = useState(false);
+  const [buttonText, setButtonText] = useState("Send Code");
+
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const inputRefs = useRef([]);
+
+  const [api, contextHolder] = notification.useNotification();
 
   const validateEmail = (email) => {
     return /\S+@\S+\.\S+/.test(email);
+  };
+
+  const validatePassword = (password) => {
+    const startsWithUppercase = /^[A-Z]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    if (!startsWithUppercase) {
+      return "Mật khẩu phải bắt đầu bằng chữ in hoa.";
+    }
+    if (!hasSpecialChar) {
+      return "Mật khẩu phải chứa ít nhất một ký tự đặc biệt.";
+    }
+    return null;
   };
 
   const handlePasswordChange = (e) => {
@@ -91,26 +113,28 @@ const RegisterForm = () => {
       return;
     }
 
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      message.warning(passwordError);
+      return;
+    }
+
     try {
-      const res = await RegisterUser(
-        username,
-        email,
-        password,
-        selectedImage,
-        false
-      );
-
-      if (res?.data?.EC === 0) {
-        setEmail("");
-        setUsername("");
-        setPassword("");
-        setConfirmPassword("");
-        setSelectedImage(null);
-        setPreviewUrl(null);
-        SetImageUpLoad("");
-        message.success("Đăng ký thành công!");
-
-        // Navigate to login or dashboard
+      const otpResponse = await SendverifyOTP(email);
+      if (otpResponse && otpResponse.status === 200) {
+        setHiddenOTP(true);
+        setIsDisabled(true);
+        setTimer(300);
+        setButtonText("Resend Code");
+        api.success({
+          message: "Mã OTP đã được gửi",
+          description: "Vui lòng kiểm tra email để nhận mã OTP",
+        });
+      } else {
+        api.error({
+          message: "Lỗi gửi OTP",
+          description: "Không thể gửi OTP, vui lòng thử lại!",
+        });
       }
     } catch (error) {
       // Truy cập vào lỗi trả về từ backend (nếu có)
@@ -123,14 +147,99 @@ const RegisterForm = () => {
       } else {
         message.error(errorMessage);
       }
-
-      console.error(error);
     }
   };
 
+  const handleChange = (index, event) => {
+    const value = event.target.value;
+    if (isNaN(value)) return;
+
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+
+    if (value && index < 5) {
+      inputRefs.current[index + 1].focus();
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const onVerify = otp.join("");
+      const res = await verifyOTP(
+        email,
+        onVerify,
+        username,
+        password,
+        selectedImage,
+        false
+      );
+
+      console.log(res);
+
+      if (res?.data?.EC === 0) {
+        setEmail("");
+        setUsername("");
+        setPassword("");
+        setConfirmPassword("");
+        setSelectedImage(null);
+        setPreviewUrl(null);
+        SetImageUpLoad("");
+        api.success({
+          message: "Đăng ký thành công",
+          description: "Bạn đã đăng ký thành công tài khoản!",
+        });
+
+        setHiddenOTP(false);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleSendcode = async () => {
+    try {
+      const otpResponse = await SendverifyOTP(email);
+      if (otpResponse && otpResponse.status === 200) {
+        setIsDisabled(true);
+        setTimer(300);
+        setButtonText("Resend Code");
+        api.success({
+          message: "Mã OTP đã được gửi",
+          description: "Vui lòng kiểm tra email để nhận mã OTP",
+        });
+      } else {
+        api.error({
+          message: "Lỗi gửi OTP",
+          description: "Không thể gửi OTP, vui lòng thử lại!",
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    if (timer > 0) {
+      const interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    } else {
+      setIsDisabled(false);
+      setButtonText("Resend Code");
+    }
+  }, [timer]);
+
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
+  };
   return (
     <div className="register min-h-screen mt-32 bg-gradient-to-br from-gray-900 via-gray-800 to-green-900 flex items-center justify-center p-4">
       {/* Main Layout */}
+      {contextHolder}
       <div className="w-full max-w-2xl mx-auto">
         <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden backdrop-blur-sm bg-white/95">
           <div className="p-8">
@@ -186,7 +295,7 @@ const RegisterForm = () => {
                   >
                     Mật khẩu*
                   </label>
-                  <Input
+                  <Input.Password
                     id="password"
                     type="password"
                     placeholder="Nhập mật khẩu"
@@ -204,7 +313,7 @@ const RegisterForm = () => {
                   >
                     Nhập lại mật khẩu*
                   </label>
-                  <Input
+                  <Input.Password
                     id="confirmPassword"
                     type="password"
                     placeholder="Nhập lại mật khẩu"
@@ -364,6 +473,83 @@ const RegisterForm = () => {
           </div>
         </div>
       </div>
+
+      {/* OTP Modal */}
+      {hiddenOTP && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md relative">
+            <button
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+              onClick={() => setHiddenOTP(false)}
+            >
+              ×
+            </button>
+
+            <div className="p-8">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg
+                    className="w-8 h-8 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  Nhập mã OTP
+                </h3>
+                <p className="text-gray-600">
+                  Chúng tôi đã gửi mã xác nhận đến email của bạn
+                </p>
+              </div>
+
+              <div className="flex justify-center gap-3 mb-6">
+                {otp.map((value, index) => (
+                  <input
+                    key={index}
+                    ref={(el) => (inputRefs.current[index] = el)}
+                    type="text"
+                    maxLength="1"
+                    value={value}
+                    onChange={(e) => handleChange(index, e)}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    className="w-12 h-12 text-center text-xl font-bold border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                  />
+                ))}
+              </div>
+
+              <button
+                className="w-full h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 mb-4"
+                onClick={handleSubmit}
+              >
+                Xác Nhận
+              </button>
+
+              <p className="text-center text-gray-600">
+                Chưa nhận được mã?{" "}
+                <button
+                  onClick={handleSendcode}
+                  disabled={isDisabled}
+                  className={`font-semibold transition-colors duration-200 ${
+                    isDisabled
+                      ? "text-gray-400 cursor-not-allowed"
+                      : "text-green-600 hover:text-green-700"
+                  }`}
+                >
+                  {isDisabled ? `Gửi lại sau ${formatTime(timer)}` : buttonText}
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
