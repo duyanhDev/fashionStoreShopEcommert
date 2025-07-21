@@ -210,6 +210,7 @@ const Profile = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [ImageUpLoad, SetImageUpLoad] = useState("");
+  const [permissions, setPermissions] = useState("");
 
   const [openResponsive, setOpenResponsive] = useState(false);
   const [password, setPassword] = useState("");
@@ -306,6 +307,7 @@ const Profile = () => {
         setWeight(res.data.data.weight || "");
         setPhone(res.data.data.phone || "");
         setImage(res.data.data.avatar || null);
+        setPermissions(res.data.data.permissions || "");
       }
     } catch (error) {}
   };
@@ -689,10 +691,12 @@ const Profile = () => {
         height,
         weight,
         user.role,
+        permissions,
+
         selectedImage
       );
       if (res) {
-        message.success("Profile updated successfully");
+        message.success("Bạn đã cập nhật thành công thông tin cá nhân");
         setOpenResponsive(false);
       }
     } catch (error) {

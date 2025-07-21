@@ -828,6 +828,8 @@ const Details = () => {
             [...currentFeedback]
               .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
               .map((item) => {
+                console.log(currentFeedback);
+
                 return (
                   <div className="comment_users" key={item._id}>
                     <div className="w-full m-4 flex items-center gap-3">
@@ -929,6 +931,41 @@ const Details = () => {
                               alt="lỗi"
                               key={index}
                             />
+                          );
+                        })}
+                    </div>
+
+                    <div>
+                      {item.replies &&
+                        item.replies.length > 0 &&
+                        item.replies.map((reply, index) => {
+                          return (
+                            <div key={index} className="reply_comment">
+                              <div className="w-full m-4 flex items-center gap-3">
+                                {reply && (
+                                  <img
+                                    className="w-10 h-10 rounded-full"
+                                    src={
+                                      "https://www.coolmate.me/images/logo-circle.svg"
+                                    }
+                                    alt="avatar lỗi"
+                                  />
+                                )}
+                                {reply && (
+                                  <p className="flex items-center text-neutral-900 font-bold">
+                                    Phản hồi từ Dosiin
+                                    <span className="ml-2 time_span">
+                                      {moment(reply.createdAt).format(
+                                        "DD-MM-YY"
+                                      )}
+                                    </span>
+                                  </p>
+                                )}
+                              </div>
+                              <div className="ml-5">
+                                <p className="font-bold">{reply.content}</p>
+                              </div>
+                            </div>
                           );
                         })}
                     </div>

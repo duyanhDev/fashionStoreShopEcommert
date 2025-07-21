@@ -256,6 +256,9 @@
 .Details .doisi_detail__main {
   border-left: 1px solid #ccc;
 }
+.reply_comment {
+  margin-left: 50px;
+}
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;

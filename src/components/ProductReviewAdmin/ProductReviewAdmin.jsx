@@ -13,8 +13,12 @@ import {
   FiPackage,
 } from "react-icons/fi";
 import { AiFillStar } from "react-icons/ai";
-import { getListProductsAPI } from "../../service/ApiProduct";
+import {
+  getListProductsAPI,
+  toggleLikeReplyAPI,
+} from "../../service/ApiProduct";
 import moment from "moment";
+import { useSelector } from "react-redux";
 
 const ProductReviewAdmin = () => {
   const [reviews, setReviews] = useState([]);
@@ -28,6 +32,7 @@ const ProductReviewAdmin = () => {
   const [productData, setProductData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5); // Default items per page
+  const { user } = useSelector((state) => state.auth);
 
   // Function to transform product ratings into review format
   const transformReviews = (products) => {
@@ -37,6 +42,7 @@ const ProductReviewAdmin = () => {
       (product.ratings || []).map((rating) => ({
         id: rating._id || `rating-${Math.random()}`, // Fallback ID
         productName: product.name || "Unknown Product",
+        productId: product.id || `product-${Math.random()}`, // Fallback ID
         productImage:
           product.variants?.[0]?.images?.[0]?.url || "/api/placeholder/60/60", // Fallback image
         customerName: rating.userId?.name || "Anonymous",
@@ -123,29 +129,44 @@ const ProductReviewAdmin = () => {
     setShowModal(true);
   };
 
-  const submitResponse = () => {
-    const updatedReviews = reviews.map((review) => {
-      if (review.id === selectedReview.id) {
-        return {
-          ...review,
-          adminResponse: responseText,
-          status: "responded",
-        };
+  const submitResponse = async (productId, id) => {
+    console.log("Submitting response for review:", productId, id, responseText);
+
+    try {
+      const res = await toggleLikeReplyAPI(
+        productId,
+        id,
+        user._id,
+        responseText
+      );
+
+      if (res && res.data && res.data.EC === 0) {
+        const updatedReviews = reviews.map((review) => {
+          if (review.id === selectedReview.id) {
+            return {
+              ...review,
+              adminResponse: responseText,
+              status: "responded",
+            };
+          }
+          return review;
+        });
+
+        // Sort updated reviews by date
+        const sortedReviews = updatedReviews.sort(
+          (a, b) => moment(b.date).valueOf() - moment(a.date).valueOf()
+        );
+
+        setReviews(sortedReviews);
+        setFilteredReviews(sortedReviews);
+        setShowModal(false);
+        setResponseText("");
+        setSelectedReview(null);
+        setCurrentPage(1); // Reset to first page after response
       }
-      return review;
-    });
-
-    // Sort updated reviews by date
-    const sortedReviews = updatedReviews.sort(
-      (a, b) => moment(b.date).valueOf() - moment(a.date).valueOf()
-    );
-
-    setReviews(sortedReviews);
-    setFilteredReviews(sortedReviews);
-    setShowModal(false);
-    setResponseText("");
-    setSelectedReview(null);
-    setCurrentPage(1); // Reset to first page after response
+    } catch (error) {
+      console.error("Error submitting response:", error);
+    }
   };
 
   const renderStars = (rating) => {
@@ -213,6 +234,8 @@ const ProductReviewAdmin = () => {
   };
 
   const stats = getStatusStats();
+
+  console.log(selectedReview);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -525,7 +548,12 @@ const ProductReviewAdmin = () => {
                 </button>
                 {selectedReview?.status !== "responded" && (
                   <button
-                    onClick={submitResponse}
+                    onClick={() =>
+                      submitResponse(
+                        selectedReview.productId,
+                        selectedReview.id
+                      )
+                    }
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                     disabled={!responseText.trim()}
                   >
