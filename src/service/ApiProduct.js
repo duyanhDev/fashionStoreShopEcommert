@@ -45,7 +45,8 @@ const UpdateProductAPI = async (
   size,
   color,
   images = [],
-  costPrice
+  costPrice,
+  view
 ) => {
   const formData = new FormData();
   formData.append("name", name);
@@ -64,6 +65,7 @@ const UpdateProductAPI = async (
     formData.append("images", file);
   });
   formData.append("costPrice", costPrice);
+  formData.append("view", view);
   const token = localStorage.getItem("token");
 
   try {
@@ -180,6 +182,10 @@ const feeckacksProductsAPI = async (ids, userId, rating, review, images) => {
   }
 };
 
+const updateViewProductAPI = async (slug) => {
+  return await axios.post(`api/v1/product/update-view/${slug}`);
+};
+
 export {
   createProductAPI,
   getListProductsAPI,
@@ -191,4 +197,5 @@ export {
   feeckacksProductsAPI,
   toggleLikeReplyAPI,
   ListSlugProductAPI,
+  updateViewProductAPI,
 };

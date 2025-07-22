@@ -274,8 +274,6 @@ const Details = () => {
       );
 
       if (res && res.data && res.data.cart) {
-        console.log("varients:", variants);
-
         api.open({
           message: "Đã thêm vào giỏ hàng",
           description: (
@@ -828,8 +826,6 @@ const Details = () => {
             [...currentFeedback]
               .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
               .map((item) => {
-                console.log(currentFeedback);
-
                 return (
                   <div className="comment_users" key={item._id}>
                     <div className="w-full m-4 flex items-center gap-3">

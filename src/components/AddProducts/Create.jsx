@@ -46,6 +46,7 @@ const Create = () => {
   const [price, setPrice] = useState("");
   const [costPrice, setCostPrice] = useState("");
   const [discount, setDisscount] = useState(0);
+  const [view, setView] = useState(0);
   const [brand, setBrand] = useState("");
   const [care, setCare] = useState("");
   const [categoryId, setCategoryId] = useState();
@@ -188,7 +189,7 @@ const Create = () => {
       formData.append("price", price);
       formData.append("discount", discount);
       formData.append("costPrice", costPrice);
-
+      formData.append("view", view);
       image.forEach((img) => formData.append("images", img));
       formData.append("variantsInput", JSON.stringify(variantsInput));
 
@@ -413,6 +414,27 @@ const Create = () => {
                     size="large"
                     style={{ width: "100%", borderRadius: "8px" }}
                     suffixIcon={<TagsOutlined style={{ color: "#667eea" }} />}
+                  />
+                </div>
+
+                <div>
+                  <Text
+                    strong
+                    style={{
+                      color: "#1a1a1a",
+                      marginBottom: "8px",
+                      display: "block",
+                    }}
+                  >
+                    Số lượt xem
+                  </Text>
+                  <InputNumber
+                    placeholder="0"
+                    value={view}
+                    onChange={(val) => setView(val)}
+                    size="large"
+                    style={{ width: "100%", borderRadius: "8px" }}
+                    min={0}
                   />
                 </div>
               </Space>

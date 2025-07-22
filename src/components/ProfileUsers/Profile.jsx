@@ -215,8 +215,8 @@ const Profile = () => {
   const [openResponsive, setOpenResponsive] = useState(false);
   const [password, setPassword] = useState("");
   const bac = 1000000;
-  const vang = 3000000;
-  const bachkim = 10000000;
+  const vang = 30000000;
+  const bachkim = 100000000;
 
   const inputDate = moment(dateBrith);
   const formattedDate = moment(dateBrith).format("DD-MM-YYYY");

@@ -40,8 +40,6 @@ const ClothingMale = () => {
   const [productname, setProductname] = useState("");
   const [discount, setDiscount] = useState(0);
 
-  // const desc = ["terrible", "bad", "normal", "good", "wonderful"];
-
   const [ratings, setRatings] = useState({});
   const [WishList, setWishList] = useState([]);
 
@@ -157,6 +155,7 @@ const ClothingMale = () => {
     const newParams = new URLSearchParams(location.search);
     newParams.set("currentPage", pageNumber);
     navigate(`${location.pathname}?${newParams.toString()}`);
+    // window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const formatPrice = (price) => {
@@ -514,16 +513,20 @@ const ClothingMale = () => {
       </div>
 
       {/* Clear Filters */}
-      {hidden && (
-        <Button
-          onClick={handleFilterProduct}
-          className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 border-none rounded-xl h-10"
-        >
-          Xóa tất cả bộ lọc
-        </Button>
-      )}
     </div>
   );
+
+  function formatNumberToShort(num) {
+    if (num >= 1_000_000_000) {
+      return (num / 1_000_000_000).toFixed(1).replace(".", ",") + "b";
+    } else if (num >= 1_000_000) {
+      return (num / 1_000_000).toFixed(1).replace(".", ",") + "m";
+    } else if (num >= 1_000) {
+      return (num / 1_000).toFixed(1).replace(".", ",") + "k";
+    } else {
+      return num.toString();
+    }
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -586,12 +589,23 @@ const ClothingMale = () => {
 
                 {/* Sort Controls */}
                 <div className="relative" ref={menuRef}>
-                  <Button
-                    onClick={() => setCheckFilter((prev) => !prev)}
-                    className="bg-green-500 hover:bg-green-600 text-white border-none rounded-xl px-6 h-10"
-                  >
-                    Sắp xếp theo
-                  </Button>
+                  <div className=" flex items-center gap-2">
+                    <Button
+                      onClick={() => setCheckFilter((prev) => !prev)}
+                      className="bg-green-500 hover:bg-green-600 text-white border-none rounded-xl px-6 h-10"
+                    >
+                      Sắp xếp theo
+                    </Button>
+
+                    {hidden && (
+                      <Button
+                        onClick={handleFilterProduct}
+                        className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 border-none rounded-xl h-10"
+                      >
+                        Xóa tất cả bộ lọc
+                      </Button>
+                    )}
+                  </div>
                   {checkFilter && (
                     <div className="absolute top-12 right-0 z-50 bg-white rounded-xl shadow-xl border border-gray-200 py-2 min-w-48">
                       <button
@@ -743,11 +757,13 @@ const ClothingMale = () => {
                           )}
                         </div>
                       </div>
-                      <Rate
-                        disabled
-                        value={ratings[product._id] || 4}
-                        className="text-yellow-400 text-sm"
-                      />
+                      <div className=" flex items-center justify-between">
+                        <span className="italic">
+                          {" "}
+                          {formatNumberToShort(product.view)} lượt xem
+                        </span>
+                        <span className="italic">Đã bán {product.sold}</span>
+                      </div>
                     </div>
                   </div>
                 ))

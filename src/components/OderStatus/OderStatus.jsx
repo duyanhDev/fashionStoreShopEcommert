@@ -248,8 +248,6 @@ const OderStatus = () => {
               {data.items &&
                 data.items.length > 0 &&
                 data.items.map((item) => {
-                  console.log(item);
-
                   return (
                     <div
                       className="flex justify-between mt-2 items-center border-b-2"

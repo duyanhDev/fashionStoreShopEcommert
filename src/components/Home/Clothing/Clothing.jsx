@@ -11,9 +11,9 @@ import {
   RemoveToWishListAPI,
 } from "../../../service/WishList";
 import { useSelector } from "react-redux";
+import { updateViewProductAPI } from "../../../service/ApiProduct";
 
 export default function Clothing({ ListProducts }) {
-  const desc = ["terrible", "bad", "normal", "good", "wonderful"];
   const [loading, setLoading] = useState(true);
   const [ratings, setRatings] = useState({});
   const navigate = useNavigate();
@@ -48,10 +48,6 @@ export default function Clothing({ ListProducts }) {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
   };
 
-  const handleRate = (id, value) => {
-    setRatings((prev) => ({ ...prev, [id]: value }));
-  };
-
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 1500);
     return () => clearTimeout(timer);
@@ -66,7 +62,13 @@ export default function Clothing({ ListProducts }) {
     </Card>
   );
 
-  const handleDetails = (slug) => navigate(`product/${slug}`);
+  const handleDetails = async (slug) => {
+    // Gọi API cập nhật lượt xem sản phẩm
+    const res = await updateViewProductAPI(slug);
+    if (res && res.data && res.data.EC === 0) {
+      navigate(`/product/${slug}`);
+    }
+  };
 
   const handelModelProductCart = (
     id,
@@ -143,6 +145,19 @@ export default function Clothing({ ListProducts }) {
   }, [user?._id]);
 
   const isProductInWishlist = WishList?.map((item) => item.product._id);
+
+  function formatNumberToShort(num) {
+    if (num >= 1_000_000_000) {
+      return (num / 1_000_000_000).toFixed(1).replace(".", ",") + "b";
+    } else if (num >= 1_000_000) {
+      return (num / 1_000_000).toFixed(1).replace(".", ",") + "m";
+    } else if (num >= 1_000) {
+      return (num / 1_000).toFixed(1).replace(".", ",") + "k";
+    } else {
+      return num.toString();
+    }
+  }
+
   const ProductCard = ({ product }) => (
     <div className="product-card rounded-xl overflow-hidden bg-white shadow-md hover:shadow-xl transition-all duration-300">
       <div className="relative">
@@ -249,14 +264,13 @@ export default function Clothing({ ListProducts }) {
             )}
           </div>
         </div>
-        <Flex className="mt-2">
-          <Rate
-            tooltips={desc}
-            onChange={(value) => handleRate(product._id, value)}
-            value={ratings[product._id] || 0}
-            className="text-yellow-400"
-          />
-        </Flex>
+        <div className="mt-2 flex items-center justify-between">
+          <span className="italic">
+            {" "}
+            {formatNumberToShort(product.view)} lượt xem
+          </span>
+          <span className="italic">Đã bán {product.sold}</span>
+        </div>
       </div>
     </div>
   );

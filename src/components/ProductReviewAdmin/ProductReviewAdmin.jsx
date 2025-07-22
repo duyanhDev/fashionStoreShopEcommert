@@ -130,8 +130,6 @@ const ProductReviewAdmin = () => {
   };
 
   const submitResponse = async (productId, id) => {
-    console.log("Submitting response for review:", productId, id, responseText);
-
     try {
       const res = await toggleLikeReplyAPI(
         productId,

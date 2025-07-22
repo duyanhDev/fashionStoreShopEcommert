@@ -239,7 +239,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
     setLoading(true);
     try {
       const res = await DeleteAllNotificationsAPI(user._id);
-      console.log("DeleteAllNotificationsAPI response:", res);
+
       if (res && res.data && res.data.EC === 0) {
         setTimeout(() => {
           setLoading(false);
@@ -759,8 +759,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
 
         {ListCart?.items?.length > 0 ? (
           ListCart.items.map((cart) => {
-          
-
             const imageUrl =
               cart.productId?.variants.find(
                 (product) => product.color === cart.color

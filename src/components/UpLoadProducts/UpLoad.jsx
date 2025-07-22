@@ -43,6 +43,7 @@ const UpLoad = () => {
   const [care, setCare] = useState("");
   const [brand, setBrand] = useState("");
   const [costPrice, setCostPrice] = useState("");
+  const [view, setView] = useState(0);
   const [fileList, setFileList] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
   const { user } = useSelector((state) => state.auth);
@@ -141,6 +142,7 @@ const UpLoad = () => {
           setStock(product.stock || "");
           setSold(product.sold || 0);
           setCostPrice(product.costPrice || 0);
+          setView(product.view || 0);
 
           setColor(product.variants.map((item) => item.color) || []);
           const sizes = product.variants.map((item) => item.sizes) || [];
@@ -324,7 +326,8 @@ const UpLoad = () => {
         size,
         color,
         image,
-        costPrice
+        costPrice,
+        view
       );
 
       if (res) {
@@ -401,6 +404,25 @@ const UpLoad = () => {
                   value={care}
                   onChange={(e) => setCare(e.target.value)}
                   placeholder="Thể loại"
+                />
+              </div>
+              <div>
+                <Typography.Title level={5}>
+                  Lượt xem
+                  <Typography.Text
+                    type="secondary"
+                    style={{ fontSize: 12, marginLeft: 8 }}
+                  >
+                    (Sẽ được cộng thêm vào số hiện có)
+                  </Typography.Text>
+                </Typography.Title>
+                <InputNumber
+                  style={{ width: "100%" }}
+                  min={0}
+                  max={100000000}
+                  value={view}
+                  onChange={(value) => setView(value)}
+                  placeholder="Nhập số lượng cần thêm"
                 />
               </div>
 
