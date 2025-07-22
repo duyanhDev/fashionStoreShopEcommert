@@ -517,6 +517,8 @@ const ClothingMale = () => {
   );
 
   function formatNumberToShort(num) {
+    if (typeof num !== "number" || isNaN(num)) return "0";
+
     if (num >= 1_000_000_000) {
       return (num / 1_000_000_000).toFixed(1).replace(".", ",") + "b";
     } else if (num >= 1_000_000) {

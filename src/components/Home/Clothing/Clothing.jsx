@@ -147,6 +147,8 @@ export default function Clothing({ ListProducts }) {
   const isProductInWishlist = WishList?.map((item) => item.product._id);
 
   function formatNumberToShort(num) {
+    if (typeof num !== "number" || isNaN(num)) return "0";
+
     if (num >= 1_000_000_000) {
       return (num / 1_000_000_000).toFixed(1).replace(".", ",") + "b";
     } else if (num >= 1_000_000) {
@@ -157,7 +159,6 @@ export default function Clothing({ ListProducts }) {
       return num.toString();
     }
   }
-
   const ProductCard = ({ product }) => (
     <div className="product-card rounded-xl overflow-hidden bg-white shadow-md hover:shadow-xl transition-all duration-300">
       <div className="relative">
