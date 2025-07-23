@@ -46,7 +46,9 @@ const UpdateProductAPI = async (
   color,
   images = [],
   costPrice,
-  view
+  view,
+  isAddStock,
+  supplierId
 ) => {
   const formData = new FormData();
   formData.append("name", name);
@@ -66,6 +68,8 @@ const UpdateProductAPI = async (
   });
   formData.append("costPrice", costPrice);
   formData.append("view", view);
+  formData.append("isAddStock", isAddStock ? true : false);
+  formData.append("supplierId", supplierId);
   const token = localStorage.getItem("token");
 
   try {

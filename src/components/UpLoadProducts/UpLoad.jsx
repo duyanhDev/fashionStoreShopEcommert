@@ -16,6 +16,7 @@ import {
   Tag,
   Table,
   Modal,
+  Switch,
 } from "antd";
 import { InfoCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import ImgCrop from "antd-img-crop";
@@ -26,6 +27,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ListOneProductAPI, UpdateProductAPI } from "../../service/ApiProduct";
 import { ListCategoryAPI } from "../../service/ApiCategory";
 import { useSelector } from "react-redux";
+import { FindAllSupplierAPI } from "../../service/Supplier";
 
 const UpLoad = () => {
   const [name, setName] = useState("");
@@ -47,6 +49,9 @@ const UpLoad = () => {
   const [fileList, setFileList] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
   const { user } = useSelector((state) => state.auth);
+  const [isAddStock, setIsAddStock] = useState(true); // Biến này để xác định có đang ở chế độ thêm tồn kho hay không
+  const [supplierId, setSupplierId] = useState("");
+  const [supplierName, setSupplierName] = useState([]);
 
   // Thêm state mới cho việc quản lý variants
   const [currentVariants, setCurrentVariants] = useState([]);
@@ -126,6 +131,24 @@ const UpLoad = () => {
   }, []);
 
   useEffect(() => {
+    const FetchAPISupplier = async () => {
+      try {
+        const res = await FindAllSupplierAPI();
+        if (res && res.data && res.data.EC === 0) {
+          const data = res.data.data.map((supplier) => ({
+            label: supplier.name,
+            value: supplier._id,
+          }));
+          setSupplierName(data);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    FetchAPISupplier();
+  }, []);
+
+  useEffect(() => {
     const CallApiListProduct = async () => {
       try {
         const res = await ListOneProductAPI(param.id);
@@ -137,13 +160,16 @@ const UpLoad = () => {
           setBrand(product.brand || "");
           setCare(product.care || "");
           setCategoryId(product.category?._id || null);
+
           setPrice(product.price || "");
           setDisscount(product.discount || 0);
           setStock(product.stock || "");
           setSold(product.sold || 0);
           setCostPrice(product.costPrice || 0);
           setView(product.view || 0);
-
+          if (product.supplierId) {
+            setSupplierId(product.supplierId._id || "");
+          }
           setColor(product.variants.map((item) => item.color) || []);
           const sizes = product.variants.map((item) => item.sizes) || [];
 
@@ -327,7 +353,9 @@ const UpLoad = () => {
         color,
         image,
         costPrice,
-        view
+        view,
+        isAddStock,
+        supplierId
       );
 
       if (res) {
@@ -353,6 +381,9 @@ const UpLoad = () => {
       console.log(error);
       messageApi.error("Có lỗi xảy ra khi cập nhật sản phẩm");
     }
+  };
+  const handleChangeSupper = (value) => {
+    setSupplierId(value);
   };
 
   return (
@@ -404,6 +435,19 @@ const UpLoad = () => {
                   value={care}
                   onChange={(e) => setCare(e.target.value)}
                   placeholder="Thể loại"
+                />
+              </div>
+
+              <div>
+                <Typography.Title level={5}>Nhà cung cấp</Typography.Title>
+                <Select
+                  allowClear
+                  style={{ width: "100%" }}
+                  placeholder="Chọn nhà cung cấp"
+                  value={supplierId}
+                  onChange={handleChangeSupper}
+                  options={supplierName}
+                  size="large"
                 />
               </div>
               <div>
@@ -537,6 +581,16 @@ const UpLoad = () => {
                   </Col>
                 </Row>
 
+                <div>
+                  <span> hệ thống sẽ cộng thêm số lượng (stock) vào kho</span>
+                  <div>
+                    <Switch
+                      defaultChecked
+                      onChange={() => setIsAddStock(!isAddStock)}
+                    />
+                  </div>
+                </div>
+
                 <Divider>Quản lý tồn kho</Divider>
 
                 {getStockUpdateMessage()}
@@ -554,7 +608,7 @@ const UpLoad = () => {
                   <InputNumber
                     style={{ width: "100%" }}
                     min={0}
-                    max={10000}
+                    max={10000000000000}
                     value={stock}
                     onChange={onChangeStock}
                     placeholder="Nhập số lượng cần thêm"

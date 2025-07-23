@@ -34,6 +34,7 @@ import { ListCategoryAPI } from "../../service/ApiCategory";
 import { createProductAPI } from "../../service/ApiProduct";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { FindAllSupplierAPI } from "../../service/Supplier";
 
 const { Title, Text } = Typography;
 
@@ -50,6 +51,8 @@ const Create = () => {
   const [brand, setBrand] = useState("");
   const [care, setCare] = useState("");
   const [categoryId, setCategoryId] = useState();
+  const [supplierId, setSupplierId] = useState("");
+  const [supplierName, setSupplierName] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
@@ -87,6 +90,10 @@ const Create = () => {
 
   const handleChange = (value) => {
     setCategoryId(value);
+  };
+
+  const handleChangeSupper = (value) => {
+    setSupplierId(value);
   };
 
   const onChange = (value) => {
@@ -160,6 +167,24 @@ const Create = () => {
     FetchCategory();
   }, []);
 
+  useEffect(() => {
+    const FetchAPISupplier = async () => {
+      try {
+        const res = await FindAllSupplierAPI();
+        if (res && res.data && res.data.EC === 0) {
+          const data = res.data.data.map((supplier) => ({
+            label: supplier.name,
+            value: supplier._id,
+          }));
+          setSupplierName(data);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    FetchAPISupplier();
+  }, []);
+
   const handleCreate = async () => {
     if (user.role !== "admin") {
       message.error("Bạn không có quyền thêm sản phẩm mới");
@@ -192,6 +217,7 @@ const Create = () => {
       formData.append("view", view);
       image.forEach((img) => formData.append("images", img));
       formData.append("variantsInput", JSON.stringify(variantsInput));
+      formData.append("supplierId", supplierId);
 
       const res = await createProductAPI(formData);
 
@@ -344,17 +370,59 @@ const Create = () => {
                       display: "block",
                     }}
                   >
-                    Hướng dẫn sử dụng / Chất liệu
+                    Thể Loại
                   </Text>
                   <Input
-                    placeholder="Nhập hướng dẫn sử dụng hoặc chất liệu"
+                    placeholder="Nhập thể loại"
                     value={care}
                     onChange={(e) => setCare(e.target.value)}
                     size="large"
                     style={{ borderRadius: "8px" }}
                   />
                 </div>
+                <div style={{ marginTop: "40px" }}>
+                  <Text
+                    strong
+                    style={{
+                      color: "#1a1a1a",
+                      marginBottom: "8px",
+                      display: "block",
+                    }}
+                  >
+                    Danh mục sản phẩm *
+                  </Text>
+                  <Select
+                    placeholder="Chọn danh mục"
+                    value={categoryId}
+                    onChange={handleChange}
+                    options={opitonCategory}
+                    size="large"
+                    style={{ width: "100%", borderRadius: "8px" }}
+                    suffixIcon={<TagsOutlined style={{ color: "#667eea" }} />}
+                  />
+                </div>
 
+                <div style={{ marginTop: "40px" }}>
+                  <Text
+                    strong
+                    style={{
+                      color: "#1a1a1a",
+                      marginBottom: "8px",
+                      display: "block",
+                    }}
+                  >
+                    Chọn nhà cung cấp *
+                  </Text>
+                  <Select
+                    placeholder="Chọn danh mục"
+                    value={supplierId}
+                    onChange={handleChangeSupper}
+                    options={supplierName}
+                    size="large"
+                    style={{ width: "100%", borderRadius: "8px" }}
+                    suffixIcon={<TagsOutlined style={{ color: "#667eea" }} />}
+                  />
+                </div>
                 <div>
                   <Text
                     strong
@@ -393,28 +461,6 @@ const Create = () => {
                       theme="snow"
                     />
                   </div>
-                </div>
-
-                <div style={{ marginTop: "40px" }}>
-                  <Text
-                    strong
-                    style={{
-                      color: "#1a1a1a",
-                      marginBottom: "8px",
-                      display: "block",
-                    }}
-                  >
-                    Danh mục sản phẩm *
-                  </Text>
-                  <Select
-                    placeholder="Chọn danh mục"
-                    value={categoryId}
-                    onChange={handleChange}
-                    options={opitonCategory}
-                    size="large"
-                    style={{ width: "100%", borderRadius: "8px" }}
-                    suffixIcon={<TagsOutlined style={{ color: "#667eea" }} />}
-                  />
                 </div>
 
                 <div>
