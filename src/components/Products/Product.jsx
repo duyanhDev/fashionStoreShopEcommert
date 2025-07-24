@@ -8,14 +8,19 @@ import {
   Tooltip,
   Upload,
   message,
+  Popconfirm,
 } from "antd";
 import {
   EyeOutlined,
   EditOutlined,
   DeleteOutlined,
   UploadOutlined,
+  QuestionCircleOutlined,
 } from "@ant-design/icons";
-import { getListProductsAPI } from "../../service/ApiProduct";
+import {
+  DeleteOneProductAPI,
+  getListProductsAPI,
+} from "../../service/ApiProduct";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -180,11 +185,19 @@ const Products = () => {
                 onClick={() => handleNavigate(product._id)}
                 className="bg-gradient-to-r from-teal-500 to-emerald-500 text-white hover:from-teal-600 hover:to-emerald-600 border-none rounded-full shadow-md transition-all duration-300 px-3 py-1"
               />
-              <Button
-                size="small"
-                icon={<DeleteOutlined />}
-                className="bg-gradient-to-r from-red-500 to-rose-500 text-white hover:from-red-600 hover:to-rose-600 border-none rounded-full shadow-md transition-all duration-300 px-3 py-1"
-              />
+
+              <Popconfirm
+                title="Bạn có muốn xóa sản phẩm này không?"
+                description={`Bạn có chắc chắn muốn sản phẩm này tên ${product.name} không?`}
+                icon={<QuestionCircleOutlined style={{ color: "red" }} />}
+                onConfirm={() => handleDeleteOneProuduct(product._id)}
+              >
+                <Button
+                  size="small"
+                  icon={<DeleteOutlined />}
+                  className="bg-gradient-to-r from-red-500 to-rose-500 text-white hover:from-red-600 hover:to-rose-600 border-none rounded-full shadow-md transition-all duration-300 px-3 py-1"
+                />
+              </Popconfirm>
             </Flex>
           ),
         }));
@@ -248,6 +261,21 @@ const Products = () => {
         message.error(`${info.file.name} file upload failed.`);
       }
     },
+  };
+
+  const handleDeleteOneProuduct = async (productId) => {
+    try {
+      const res = await DeleteOneProductAPI(productId);
+      if (res && res.data && res.data.EC === 0) {
+        message.success("Xóa sản phẩm thành công");
+        setDataProducts((prev) =>
+          prev.filter((product) => product.key !== productId)
+        );
+        setSelectedRowKeys((prev) => prev.filter((key) => key !== productId));
+      }
+    } catch (error) {
+      console.log("Xóa sản phẩm thất bại", error);
+    }
   };
   return (
     <div className="w-full bg-gradient-to-br from-gray-50 to-indigo-50 min-h-screen">

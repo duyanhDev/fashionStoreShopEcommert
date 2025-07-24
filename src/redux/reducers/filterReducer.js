@@ -15,6 +15,7 @@ const initialState = {
   care: "",
   setsize: "",
   color: "",
+  view: "",
   totalPages: 1,
   loading: false,
 };
@@ -50,6 +51,12 @@ export const filterReducer = (state = initialState, action) => {
       return {
         ...state,
         sortSold: action.payload,
+        currentPage: 1,
+      };
+    case FILTER_TYPES.SET_VIEW:
+      return {
+        ...state,
+        view: action.payload,
         currentPage: 1,
       };
 

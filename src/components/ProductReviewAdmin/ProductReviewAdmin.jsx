@@ -14,9 +14,13 @@ import {
 } from "react-icons/fi";
 import { AiFillStar } from "react-icons/ai";
 import {
+  DeleteRatingProductAPI,
   getListProductsAPI,
   toggleLikeReplyAPI,
 } from "../../service/ApiProduct";
+
+import { Popconfirm } from "antd";
+import { QuestionCircleOutlined } from "@ant-design/icons";
 import moment from "moment";
 import { useSelector } from "react-redux";
 
@@ -34,20 +38,21 @@ const ProductReviewAdmin = () => {
   const [itemsPerPage, setItemsPerPage] = useState(5); // Default items per page
   const { user } = useSelector((state) => state.auth);
 
-  // Function to transform product ratings into review format
   const transformReviews = (products) => {
+    console.log(products);
+
     if (!products || !Array.isArray(products)) return [];
 
     const transformed = products.flatMap((product) =>
       (product.ratings || []).map((rating) => ({
-        id: rating._id || `rating-${Math.random()}`, // Fallback ID
+        id: rating._id || `rating-${Math.random()}`,
         productName: product.name || "Unknown Product",
-        productId: product.id || `product-${Math.random()}`, // Fallback ID
+        productId: product.id || `product-${Math.random()}`,
         productImage:
-          product.variants?.[0]?.images?.[0]?.url || "/api/placeholder/60/60", // Fallback image
+          product.variants?.[0]?.images?.[0]?.url || "/api/placeholder/60/60",
         customerName: rating.userId?.name || "Anonymous",
-        customerEmail: rating.userId?.name
-          ? `${rating.userId.name.toLowerCase().replace(/\s/g, "")}@email.com`
+        customerEmail: rating.userId?.email
+          ? `${rating.userId.email.toLowerCase()}`
           : "anonymous@email.com", // Mock email
         rating: rating.rating || 0,
         comment: rating.review || "No comment",
@@ -129,7 +134,31 @@ const ProductReviewAdmin = () => {
     setShowModal(true);
   };
 
+  const handleDelteRating = async (productId, ratingId) => {
+    try {
+      const res = await DeleteRatingProductAPI(productId, ratingId);
+      if (res && res.data && res.data.EC === 0) {
+        const updatedReviews = reviews.filter(
+          (review) => review.id !== ratingId
+        );
+
+        // Sort updated reviews by date
+        const sortedReviews = updatedReviews.sort(
+          (a, b) => moment(b.date).valueOf() - moment(a.date).valueOf()
+        );
+
+        setReviews(sortedReviews);
+        setFilteredReviews(sortedReviews);
+        setCurrentPage(1); // Reset to first page after deletion
+      }
+    } catch (error) {
+      console.log("Error deleting rating:", error);
+    }
+  };
+
   const submitResponse = async (productId, id) => {
+    console.log("Submitting response for review:", productId, id, responseText);
+
     try {
       const res = await toggleLikeReplyAPI(
         productId,
@@ -435,7 +464,7 @@ const ProductReviewAdmin = () => {
                       {getStatusBadge(review.status)}
                     </td>
 
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap flex items-center gap-2">
                       <button
                         onClick={() => handleResponse(review)}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors"
@@ -444,6 +473,21 @@ const ProductReviewAdmin = () => {
                           ? "Xem phản hồi"
                           : "Phản hồi"}
                       </button>
+
+                      <Popconfirm
+                        title="Bạn có muốn xóa phản hồi này không?"
+                        description={`Bạn có chắc chắn muốn xóa phản hồi của sản phẩm "${review.productName}" không?`}
+                        icon={
+                          <QuestionCircleOutlined style={{ color: "red" }} />
+                        }
+                        onConfirm={() =>
+                          handleDelteRating(review.productId, review.id)
+                        }
+                      >
+                        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors">
+                          Xóa phản hồi
+                        </button>
+                      </Popconfirm>
                     </td>
                   </tr>
                 ))}

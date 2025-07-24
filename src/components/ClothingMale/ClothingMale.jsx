@@ -62,6 +62,7 @@ const ClothingMale = () => {
   const careParams = queryParams.get("care") || "";
   const sizeParams = queryParams.get("size")?.split(",").filter(Boolean) || [];
   const colorParms = queryParams.get("color") || "";
+  const viewParams = queryParams.get("view") || "";
   const savedSortPrice = queryParams.get("sortPrice") || "";
   const savedCategory = queryParams.get("Category") || "";
   const savedCurrentPage = Number.parseInt(queryParams.get("currentPage")) || 1;
@@ -88,6 +89,7 @@ const ClothingMale = () => {
       size: sizeParams,
       color: colorParms,
       currentPage: savedCurrentPage,
+      view: viewParams,
     };
   }, [
     param.gender,
@@ -102,6 +104,7 @@ const ClothingMale = () => {
     careParams,
     sizeParams,
     colorParms,
+    viewParams,
     savedCurrentPage,
   ]);
 
@@ -246,6 +249,15 @@ const ClothingMale = () => {
     setColor(value);
     const queryParams = new URLSearchParams(location.search);
     queryParams.set("color", color);
+    queryParams.set("currentPage", "1");
+    navigate(`${location.pathname}?${queryParams.toString()}`);
+    setHidden(true);
+    setCheckFilter(false);
+  };
+
+  const handleSortView = (value) => {
+    const queryParams = new URLSearchParams(location.search);
+    queryParams.set("view", value);
     queryParams.set("currentPage", "1");
     navigate(`${location.pathname}?${queryParams.toString()}`);
     setHidden(true);
@@ -517,8 +529,6 @@ const ClothingMale = () => {
   );
 
   function formatNumberToShort(num) {
-    if (typeof num !== "number" || isNaN(num)) return "0";
-
     if (num >= 1_000_000_000) {
       return (num / 1_000_000_000).toFixed(1).replace(".", ",") + "b";
     } else if (num >= 1_000_000) {
@@ -633,6 +643,13 @@ const ClothingMale = () => {
                         className="w-full px-4 py-2 text-left hover:bg-gray-50 text-gray-700"
                       >
                         Bán chạy nhất
+                      </button>
+
+                      <button
+                        onClick={() => handleSortView("asc")}
+                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-gray-700"
+                      >
+                        Lượt xem nhiều nhất
                       </button>
                     </div>
                   )}

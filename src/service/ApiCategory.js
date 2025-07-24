@@ -60,6 +60,7 @@ const CategoryProductsGender = async (
   care,
   size,
   color,
+  view,
   page
 ) => {
   return axios.get(`api/v1/categoryProductsFilter`, {
@@ -75,6 +76,7 @@ const CategoryProductsGender = async (
       care,
       size,
       color,
+      view,
       page,
     },
   });

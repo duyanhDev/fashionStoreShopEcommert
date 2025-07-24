@@ -86,6 +86,18 @@ const UpdateProductAPI = async (
   }
 };
 
+// delete Product
+const DeleteOneProductAPI = async (productId) => {
+  const token = localStorage.getItem("token");
+
+  return await axios.delete("/api/v1/delete-product", {
+    params: { productId },
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
 const PutFeedbackProductAPI = async (id, userId, rating, review) => {
   return await axios.post("api/v1/feedback", {
     id,
@@ -105,6 +117,17 @@ const toggleLikeReplyAPI = async (productId, ratingId, userId, content) => {
     ratingId,
     userId,
     content,
+  });
+};
+
+// xóa phản hồi
+
+const DeleteRatingProductAPI = async (productId, ratingId) => {
+  return await axios.delete("api/v1/delete-rating", {
+    params: {
+      productId: productId,
+      ratingId: ratingId,
+    },
   });
 };
 
@@ -202,4 +225,6 @@ export {
   toggleLikeReplyAPI,
   ListSlugProductAPI,
   updateViewProductAPI,
+  DeleteRatingProductAPI,
+  DeleteOneProductAPI,
 };

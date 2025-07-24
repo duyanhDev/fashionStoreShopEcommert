@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
 import { DeleteUserAPI, UserAuth } from "../../service/Auth";
-import { Avatar, Button, Flex, notification, Table } from "antd";
+import { Avatar, Button, Flex, notification, Popconfirm, Table } from "antd";
 import Search from "antd/es/input/Search";
-import { EyeOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import {
+  EyeOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  QuestionCircleOutlined,
+} from "@ant-design/icons";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -70,10 +75,14 @@ const UsersCustom = () => {
             style={{ fontSize: 18, cursor: "pointer" }}
             onClick={() => handleEdit(record)}
           />
-          <DeleteOutlined
-            style={{ fontSize: 18, cursor: "pointer" }}
-            onClick={() => handleDelete(record)}
-          />
+          <Popconfirm
+            title="Bạn có muốn xóa tài khoản này không?"
+            description={`Bạn có chắc chắn muốn xóa phản hồi của sản phẩm ${record.name} không?`}
+            icon={<QuestionCircleOutlined style={{ color: "red" }} />}
+            onConfirm={() => handleDelete(record)}
+          >
+            <DeleteOutlined style={{ fontSize: 18, cursor: "pointer" }} />
+          </Popconfirm>
         </Flex>
       ),
     },
