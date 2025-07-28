@@ -30,7 +30,11 @@ const menuItems = [
   { icon: <FaOpencart />, label: "Danh mục", to: "category" },
   { icon: <FaSquarePollVertical />, label: "Báo cáo", to: "/reports" },
   { icon: <RiBillLine />, label: "Đơn hàng", to: "order" },
-  { icon: <AiTwotoneAppstore />, label: "Manage Store", to: "/manage-store" },
+  {
+    icon: <AiTwotoneAppstore />,
+    label: "Quản lí nhà cung cấp",
+    to: "/admin/manage-store",
+  },
   {
     icon: <MessageOutlined />,
     label: "Trò chuyện",
@@ -77,14 +81,14 @@ const Admin = () => {
       {/* Sidebar */}
       <aside
         ref={sidebarRef}
-        className={`fixed top-0 left-0 h-full w-64 z-40 bg-white/90 backdrop-blur-md shadow-xl transition-transform transform ${
+        className={`fixed top-0 left-0 h-full w-64 z-40 overflow-scroll bg-white/90 backdrop-blur-md shadow-xl transition-transform transform ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0 md:static md:block`}
       >
         <div className="text-3xl font-bold text-blue-600 text-center py-6 border-b">
           <Link to="/">DOIIN</Link>
         </div>
-        <ul className="mt-6 space-y-2 px-4">
+        <ul className="mt-6 space-y-2 px-4  ">
           {menuItems.map((item) => (
             <li key={item.label}>
               <Link
@@ -107,21 +111,15 @@ const Admin = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="flex items-center justify-between bg-white shadow-md h-16 px-4 md:px-6">
-          <button onClick={toggleSidebar} className="text-2xl md:hidden">
+        <header className=" bg-white shadow-md h-16 px-4 md:px-6">
+          <button
+            onClick={toggleSidebar}
+            className="  h-full m-auto  items-center gap-5 text-2xl md:hidden"
+          >
             ☰
           </button>
 
-          <div className="relative hidden sm:block w-72">
-            <input
-              type="text"
-              placeholder="Tìm kiếm sản phẩm..."
-              className="w-full rounded-full bg-gray-100 px-10 py-2 border focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-            <SearchOutlined className="absolute left-3 top-2.5 text-gray-400 text-lg" />
-          </div>
-
-          <div className="flex items-center gap-5">
+          <div className="flex h-full m-auto  justify-end items-center gap-5">
             <IoMdNotificationsOutline size={28} className="text-gray-700" />
             <Avatar size={40} icon={<UserOutlined />} />
           </div>

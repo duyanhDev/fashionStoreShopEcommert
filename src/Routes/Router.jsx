@@ -34,6 +34,7 @@ import GeminiBlogGenerator from "../components/GeminiBlogGenerator/GeminiBlogGen
 import AdminPostCreator from "../components/AdminPostCreator/AdminPostCreator";
 import AccountAdmin from "../components/AccountAdmin/AccountAdmin";
 import AddVoucher from "../components/AddVoucher/AddVoucher";
+import ManageStore from "../components/ManageStore/ManageStore";
 
 export const RouterLayout = [
   {
@@ -140,6 +141,11 @@ export const RouterAdmin = [
       {
         path: "add-voucher",
         element: <AddVoucher />,
+      },
+
+      {
+        path: "manage-store",
+        element: <ManageStore />,
       },
     ],
   },
