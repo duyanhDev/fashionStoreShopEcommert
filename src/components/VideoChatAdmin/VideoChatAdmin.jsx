@@ -1,5 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Modal, Button, message } from "antd";
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { Modal, Button, message, Card, Badge } from "antd";
+import {
+  PhoneOutlined,
+  VideoCameraOutlined,
+  PhoneOffOutlined,
+} from "@ant-design/icons";
 import { io } from "socket.io-client";
 
 const socket = io("https://fashionstoreshopecommertbe.onrender.com");
@@ -9,76 +14,129 @@ const VideoChatAdmin = () => {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const peerRef = useRef(null);
-  const [incomingCall, setIncomingCall] = useState(null);
-  const [inCall, setInCall] = useState(false);
-  const [localStream, setLocalStream] = useState(null);
+  const localStreamRef = useRef(null);
   const iceBufferRef = useRef([]);
 
-  useEffect(() => {
-    socket.emit("register", { userId: adminId });
+  const [incomingCall, setIncomingCall] = useState(null);
+  const [inCall, setInCall] = useState(false);
+  const [connectionState, setConnectionState] = useState("new");
+  const [mediaEnabled, setMediaEnabled] = useState({
+    video: false,
+    audio: false,
+  });
 
-    socket.on("incoming-call", ({ from, offer }) => {
-      console.log("📞 Cuộc gọi đến từ:", from);
-      setIncomingCall({ from, offer });
-    });
+  // ICE servers configuration
+  const iceServers = [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+  ];
 
-    socket.on("ice-candidate", async ({ candidate }) => {
-      try {
-        if (peerRef.current) {
-          await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
-        } else {
-          console.warn("📥 Buffer ICE vì chưa tạo peerRef");
-          iceBufferRef.current.push(candidate);
-        }
-      } catch (err) {
-        console.error("❌ Failed to add ICE candidate:", err);
+  const createPeerConnection = useCallback(() => {
+    const peer = new RTCPeerConnection({ iceServers });
+
+    peer.onicecandidate = (event) => {
+      if (event.candidate && incomingCall) {
+        console.log("🧊 Sending ICE candidate to:", incomingCall.from);
+        socket.emit("ice-candidate", {
+          to: incomingCall.from,
+          candidate: event.candidate,
+        });
       }
-    });
-
-    return () => {
-      socket.off("incoming-call");
-      socket.off("ice-candidate");
     };
-  }, []);
+
+    peer.ontrack = (event) => {
+      console.log("📺 Received remote stream");
+      if (remoteVideoRef.current && event.streams[0]) {
+        remoteVideoRef.current.srcObject = event.streams[0];
+      }
+    };
+
+    peer.onconnectionstatechange = () => {
+      console.log("🔗 Connection state:", peer.connectionState);
+      setConnectionState(peer.connectionState);
+
+      if (peer.connectionState === "failed") {
+        message.error("Kết nối thất bại");
+        endCall();
+      }
+    };
+
+    peer.oniceconnectionstatechange = () => {
+      console.log("🧊 ICE connection state:", peer.iceConnectionState);
+    };
+
+    return peer;
+  }, [incomingCall]);
+
+  const enableMedia = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+
+      localStreamRef.current = stream;
+      setMediaEnabled({ video: true, audio: true });
+
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+      }
+
+      // Nếu đã có peer connection, thêm tracks
+      if (peerRef.current) {
+        stream.getTracks().forEach((track) => {
+          peerRef.current?.addTrack(track, stream);
+        });
+      }
+
+      message.success("🎥 Đã bật camera và microphone");
+      return stream;
+    } catch (err) {
+      console.error("❌ Không thể bật media:", err);
+      message.error("Không thể truy cập camera/microphone");
+      return null;
+    }
+  };
 
   const answerCall = async () => {
+    if (!incomingCall) return;
+
     try {
-      const peer = new RTCPeerConnection();
+      console.log("📞 Answering call from:", incomingCall.from);
+
+      const peer = createPeerConnection();
       peerRef.current = peer;
 
-      // Nếu admin đã bật cam/mic từ trước
-      if (localStream) {
-        localStream.getTracks().forEach((track) => {
-          peer.addTrack(track, localStream);
-        });
-        console.log("📷 Gửi stream từ admin");
+      // Bật media trước khi answer
+      const stream = await enableMedia();
+      if (!stream) {
+        message.error("Không thể bật camera/mic để trả lời cuộc gọi");
+        return;
       }
 
-      peer.onicecandidate = (e) => {
-        if (e.candidate) {
-          socket.emit("ice-candidate", {
-            to: incomingCall.from,
-            candidate: e.candidate,
-          });
-        }
-      };
+      // Thêm local stream tracks
+      stream.getTracks().forEach((track) => {
+        peer.addTrack(track, stream);
+      });
 
-      peer.ontrack = (e) => {
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = e.streams[0];
-        }
-      };
-
+      // Set remote description
       await peer.setRemoteDescription(
         new RTCSessionDescription(incomingCall.offer)
       );
-      const answer = await peer.createAnswer();
-      await peer.setLocalDescription(answer);
 
+      // Process buffered ICE candidates
       for (const candidate of iceBufferRef.current) {
-        await peer.addIceCandidate(new RTCIceCandidate(candidate));
+        try {
+          await peer.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (err) {
+          console.error("❌ Error adding buffered ICE candidate:", err);
+        }
       }
       iceBufferRef.current = [];
+
+      // Create and send answer
+      const answer = await peer.createAnswer();
+      await peer.setLocalDescription(answer);
 
       socket.emit("answer-call", {
         to: incomingCall.from,
@@ -94,26 +152,168 @@ const VideoChatAdmin = () => {
     }
   };
 
-  const enableCameraMic = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
-      setLocalStream(stream);
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-      }
-      message.success("🎥 Đã bật camera/microphone");
-    } catch (err) {
-      console.error("❌ Không thể bật camera/mic:", err);
-      message.error("Không thể truy cập camera/microphone");
+  const endCall = () => {
+    if (peerRef.current) {
+      peerRef.current.close();
+      peerRef.current = null;
     }
+
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((track) => track.stop());
+      localStreamRef.current = null;
+    }
+
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = null;
+    }
+
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = null;
+    }
+
+    setInCall(false);
+    setMediaEnabled({ video: false, audio: false });
+    setConnectionState("new");
+    iceBufferRef.current = [];
+    message.info("Cuộc gọi đã kết thúc");
   };
 
+  useEffect(() => {
+    console.log("🔌 Admin connecting to socket...");
+    socket.emit("register", { userId: adminId });
+
+    socket.on("incoming-call", ({ from, offer }) => {
+      console.log("📞 Incoming call from:", from);
+      setIncomingCall({ from, offer });
+    });
+
+    socket.on("ice-candidate", async ({ candidate }) => {
+      console.log("🧊 Received ICE candidate");
+      try {
+        if (peerRef.current && peerRef.current.remoteDescription) {
+          await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+        } else {
+          console.log("📥 Buffering ICE candidate");
+          iceBufferRef.current.push(candidate);
+        }
+      } catch (err) {
+        console.error("❌ Failed to add ICE candidate:", err);
+      }
+    });
+
+    socket.on("call-ended", () => {
+      console.log("📞 Call ended by user");
+      endCall();
+    });
+
+    return () => {
+      socket.off("incoming-call");
+      socket.off("ice-candidate");
+      socket.off("call-ended");
+      endCall();
+    };
+  }, []);
+
   return (
-    <div style={{ padding: 24 }}>
-      <h2>📡 Admin Nhận Cuộc Gọi</h2>
+    <div style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto" }}>
+      <Card title="📡 Admin Video Chat" style={{ marginBottom: "16px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+            marginBottom: "16px",
+          }}
+        >
+          <Badge
+            status={
+              connectionState === "connected"
+                ? "success"
+                : connectionState === "connecting"
+                ? "processing"
+                : "default"
+            }
+            text={`Trạng thái: ${connectionState}`}
+          />
+          {mediaEnabled.video && <Badge status="success" text="Camera" />}
+          {mediaEnabled.audio && <Badge status="success" text="Microphone" />}
+        </div>
+
+        {!inCall && !incomingCall && (
+          <div style={{ textAlign: "center", padding: "32px 0" }}>
+            <PhoneOutlined
+              style={{
+                fontSize: "48px",
+                color: "#d9d9d9",
+                marginBottom: "16px",
+              }}
+            />
+            <p style={{ color: "#666" }}>Đang chờ cuộc gọi từ người dùng...</p>
+          </div>
+        )}
+
+        {inCall && (
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+                gap: "16px",
+              }}
+            >
+              <div style={{ textAlign: "center" }}>
+                <h3 style={{ marginBottom: "8px", fontWeight: "500" }}>
+                  Camera của bạn
+                </h3>
+                <video
+                  ref={localVideoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  style={{
+                    width: "100%",
+                    maxWidth: "400px",
+                    border: "1px solid #d9d9d9",
+                    borderRadius: "8px",
+                    backgroundColor: "black",
+                  }}
+                />
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <h3 style={{ marginBottom: "8px", fontWeight: "500" }}>
+                  Camera người dùng
+                </h3>
+                <video
+                  ref={remoteVideoRef}
+                  autoPlay
+                  playsInline
+                  style={{
+                    width: "100%",
+                    maxWidth: "400px",
+                    border: "1px solid #d9d9d9",
+                    borderRadius: "8px",
+                    backgroundColor: "black",
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ textAlign: "center" }}>
+              <Button
+                type="primary"
+                danger
+                icon={<PhoneOffOutlined />}
+                onClick={endCall}
+                size="large"
+              >
+                Kết thúc cuộc gọi
+              </Button>
+            </div>
+          </div>
+        )}
+      </Card>
 
       <Modal
         open={!!incomingCall}
@@ -123,33 +323,21 @@ const VideoChatAdmin = () => {
         cancelText="Từ chối"
         title="📲 Có cuộc gọi đến"
         centered
+        okButtonProps={{ icon: <PhoneOutlined />, size: "large" }}
+        cancelButtonProps={{ size: "large" }}
       >
-        <p>Người gọi: {incomingCall?.from}</p>
-      </Modal>
-
-      {inCall && (
-        <div style={{ display: "flex", marginTop: 24 }}>
-          <div style={{ textAlign: "center" }}>
-            <video
-              ref={localVideoRef}
-              autoPlay
-              muted
-              playsInline
-              style={{ width: "300px", border: "1px solid #ccc" }}
-            />
-            <Button style={{ marginTop: 8 }} onClick={enableCameraMic}>
-              Bật Camera/Mic
-            </Button>
-          </div>
-
-          <video
-            ref={remoteVideoRef}
-            autoPlay
-            playsInline
-            style={{ width: "300px", marginLeft: 20, border: "1px solid #ccc" }}
+        <div style={{ textAlign: "center", padding: "16px 0" }}>
+          <VideoCameraOutlined
+            style={{ fontSize: "48px", color: "#1890ff", marginBottom: "16px" }}
           />
+          <p style={{ fontSize: "16px" }}>
+            Người gọi: <strong>{incomingCall?.from}</strong>
+          </p>
+          <p style={{ color: "#666" }}>
+            Bạn có muốn trả lời cuộc gọi video không?
+          </p>
         </div>
-      )}
+      </Modal>
     </div>
   );
 };
