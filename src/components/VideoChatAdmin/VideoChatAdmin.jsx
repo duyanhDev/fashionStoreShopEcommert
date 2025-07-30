@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Modal, Button, message, Card, Badge } from "antd";
 import {
@@ -41,6 +43,11 @@ const VideoChatAdmin = () => {
     { urls: "stun:stun2.l.google.com:19302" },
     { urls: "stun:stun3.l.google.com:19302" },
     { urls: "stun:stun4.l.google.com:19302" },
+    {
+      urls: "turn:openrelay.metered.ca:80",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
   ];
 
   const cleanupPeerConnection = useCallback(() => {
@@ -72,7 +79,10 @@ const VideoChatAdmin = () => {
       );
       cleanupPeerConnection();
 
-      const peer = new RTCPeerConnection({ iceServers });
+      const peer = new RTCPeerConnection({
+        iceServers,
+        iceCandidatePoolSize: 10,
+      });
 
       peer.onicecandidate = (event) => {
         if (
@@ -89,45 +99,90 @@ const VideoChatAdmin = () => {
       };
 
       peer.ontrack = (event) => {
-        console.log(
-          "📺 Admin: Received remote stream from user - Tracks:",
-          event.streams[0]?.getTracks().map((t) => `${t.kind}:${t.enabled}`)
-        );
+        console.log("📺 Admin: Received remote stream from user");
+        console.log("📺 Admin: Stream details:", {
+          streamId: event.streams[0]?.id,
+          tracks: event.streams[0]?.getTracks().map((t) => ({
+            kind: t.kind,
+            enabled: t.enabled,
+            readyState: t.readyState,
+            muted: t.muted,
+          })),
+        });
+
         if (remoteVideoRef.current && event.streams[0]) {
           remoteVideoRef.current.srcObject = event.streams[0];
 
-          // Đảm bảo video không bị mute
+          // Đảm bảo remote video KHÔNG bị mute để nghe audio
           remoteVideoRef.current.muted = false;
           remoteVideoRef.current.volume = 1.0;
 
-          remoteVideoRef.current
-            .play()
-            .then(() => {
-              console.log("✅ Admin: Remote video playing successfully");
-              // Check if audio tracks are enabled
-              const audioTracks = event.streams[0].getAudioTracks();
-              audioTracks.forEach((track) => {
-                console.log(
-                  `🔊 Audio track: ${track.kind}, enabled: ${track.enabled}, muted: ${track.muted}`
+          // Set autoplay attributes
+          remoteVideoRef.current.autoplay = true;
+          remoteVideoRef.current.playsInline = true;
+
+          // Force play
+          const playPromise = remoteVideoRef.current.play();
+
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                console.log("✅ Admin: Remote video playing successfully");
+
+                // Verify audio tracks
+                const audioTracks = event.streams[0].getAudioTracks();
+                const videoTracks = event.streams[0].getVideoTracks();
+
+                console.log("🔊 Admin: Audio tracks:", audioTracks.length);
+                console.log("📹 Admin: Video tracks:", videoTracks.length);
+
+                audioTracks.forEach((track, index) => {
+                  console.log(`🔊 Admin: Audio track ${index}:`, {
+                    enabled: track.enabled,
+                    muted: track.muted,
+                    readyState: track.readyState,
+                  });
+                });
+
+                videoTracks.forEach((track, index) => {
+                  console.log(`📹 Admin: Video track ${index}:`, {
+                    enabled: track.enabled,
+                    muted: track.muted,
+                    readyState: track.readyState,
+                  });
+                });
+              })
+              .catch((playError) => {
+                console.error(
+                  "❌ Admin: Error playing remote video:",
+                  playError
                 );
+
+                // Try with user interaction
+                const playWithInteraction = () => {
+                  remoteVideoRef.current.muted = true;
+                  remoteVideoRef.current
+                    .play()
+                    .then(() => {
+                      console.log(
+                        "✅ Admin: Remote video playing (initially muted)"
+                      );
+                      setTimeout(() => {
+                        if (remoteVideoRef.current) {
+                          remoteVideoRef.current.muted = false;
+                          console.log("🔊 Admin: Unmuted remote video");
+                        }
+                      }, 1000);
+                    })
+                    .catch((e) =>
+                      console.error("❌ Admin: Still can't play:", e)
+                    );
+                };
+
+                // Try to play muted first
+                playWithInteraction();
               });
-            })
-            .catch((playError) => {
-              console.error("❌ Admin: Error playing remote video:", playError);
-              // Try to play with muted first, then unmute
-              remoteVideoRef.current.muted = true;
-              remoteVideoRef.current
-                .play()
-                .then(() => {
-                  console.log("✅ Admin: Remote video playing (muted)");
-                  // Try to unmute after a delay
-                  setTimeout(() => {
-                    remoteVideoRef.current.muted = false;
-                    console.log("🔊 Admin: Unmuted remote video");
-                  }, 1000);
-                })
-                .catch((e) => console.error("❌ Admin: Still can't play:", e));
-            });
+          }
         }
       };
 
@@ -153,29 +208,29 @@ const VideoChatAdmin = () => {
           console.log("🔄 Admin: ICE connection failed, attempting restart...");
           peer.restartIce();
         } else if (peer.iceConnectionState === "disconnected") {
-          console.log(
-            "⚠️ Admin: ICE disconnected, gathering new candidates..."
-          );
-          peer.restartIce();
+          console.log("⚠️ Admin: ICE disconnected, attempting restart...");
+          setTimeout(() => {
+            if (peer.iceConnectionState === "disconnected") {
+              peer.restartIce();
+            }
+          }, 2000);
         }
       };
 
-      // Connection recovery logic
       peer.onicegatheringstatechange = () => {
         console.log("🧊 Admin: ICE gathering state:", peer.iceGatheringState);
-        if (peer.iceGatheringState === "gathering") {
-          console.log("🔄 Admin: Gathering ICE candidates...");
-        } else if (peer.iceGatheringState === "complete") {
-          console.log("✅ Admin: ICE gathering complete");
-        }
+      };
+
+      peer.onsignalingstatechange = () => {
+        console.log("📡 Admin: Signaling state:", peer.signalingState);
       };
 
       return peer;
     },
-    [cleanupPeerConnection]
+    [cleanupPeerConnection, endCall]
   );
 
-  const enableMedia = async () => {
+  const enableMedia = useCallback(async () => {
     try {
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach((track) => {
@@ -196,6 +251,7 @@ const VideoChatAdmin = () => {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
+          sampleRate: 44100,
         },
       });
 
@@ -204,7 +260,7 @@ const VideoChatAdmin = () => {
 
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
-        localVideoRef.current.muted = true; // Local video should be muted
+        localVideoRef.current.muted = true; // Local video should always be muted
         try {
           await localVideoRef.current.play();
           console.log("✅ Admin: Local video playing");
@@ -215,7 +271,7 @@ const VideoChatAdmin = () => {
 
       console.log(
         "✅ Admin: Media enabled successfully - Tracks:",
-        stream.getTracks().map((t) => `${t.kind}:${t.enabled}`)
+        stream.getTracks().map((t) => `${t.kind}:${t.enabled}:${t.readyState}`)
       );
       return stream;
     } catch (err) {
@@ -223,16 +279,16 @@ const VideoChatAdmin = () => {
       message.error(`Không thể truy cập camera/microphone: ${err.message}`);
       return null;
     }
-  };
+  }, []);
 
-  const addTracksToConnection = (peer, stream) => {
+  const addTracksToConnection = useCallback((peer, stream) => {
     if (!peer || peer.signalingState === "closed") {
       console.error("❌ Admin: Cannot add tracks: peer connection is closed");
       return false;
     }
 
     try {
-      // Remove existing senders
+      // Remove existing senders first
       const senders = peer.getSenders();
       senders.forEach((sender) => {
         if (sender.track) {
@@ -247,61 +303,63 @@ const VideoChatAdmin = () => {
           "➕ Admin: Adding track:",
           track.kind,
           "enabled:",
-          track.enabled
+          track.enabled,
+          "readyState:",
+          track.readyState
         );
         peer.addTrack(track, stream);
       });
 
+      console.log("✅ Admin: All tracks added successfully");
       return true;
     } catch (err) {
       console.error("❌ Admin: Error adding tracks:", err);
       return false;
     }
-  };
+  }, []);
 
-  const answerCall = async () => {
+  const answerCall = useCallback(async () => {
     if (
       !incomingCall ||
       isAnsweringRef.current ||
       !socketRef.current?.connected
     ) {
-      console.log(
-        "⚠️ Admin: Cannot answer call - already answering, no incoming call, or socket disconnected"
-      );
+      console.log("⚠️ Admin: Cannot answer call - conditions not met");
       return;
     }
 
     isAnsweringRef.current = true;
 
-    let peer;
     try {
       console.log("📞 Admin: Answering call from:", incomingCall.from);
 
-      // Enable media first
+      // 1. Enable media FIRST
       const stream = await enableMedia();
       if (!stream) {
         throw new Error("Failed to enable media");
       }
 
-      // Create peer connection
-      peer = createPeerConnection(incomingCall.from);
+      // 2. Create peer connection
+      const peer = createPeerConnection(incomingCall.from);
       if (!peer) {
         throw new Error("Failed to create peer connection");
       }
 
       peerRef.current = peer;
 
-      // Add tracks to connection
+      // 3. Add local tracks to peer connection
       const tracksAdded = addTracksToConnection(peer, stream);
       if (!tracksAdded) {
         throw new Error("Failed to add tracks to connection");
       }
 
+      // 4. Set remote description (the offer from user)
       console.log("📝 Admin: Setting remote description...");
       await peer.setRemoteDescription(
         new RTCSessionDescription(incomingCall.offer)
       );
 
+      // 5. Process any buffered ICE candidates
       console.log(
         "🧊 Admin: Processing buffered ICE candidates:",
         iceBufferRef.current.length
@@ -318,13 +376,19 @@ const VideoChatAdmin = () => {
       }
       iceBufferRef.current = [];
 
+      // 6. Create and send answer
       console.log("📤 Admin: Creating answer...");
-      const answer = await peer.createAnswer();
+      const answer = await peer.createAnswer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true,
+      });
+
       await peer.setLocalDescription(answer);
 
+      // 7. Send answer to user
       socketRef.current.emit("answer-call", {
         to: incomingCall.from,
-        answer,
+        answer: peer.localDescription, // Use the complete local description
       });
 
       setIncomingCall(null);
@@ -337,18 +401,14 @@ const VideoChatAdmin = () => {
       setIncomingCall(null);
     } finally {
       isAnsweringRef.current = false;
-      if (peer && peer.connectionState !== "connected") {
-        setTimeout(() => {
-          if (peer && peer.connectionState !== "connected") {
-            console.warn(
-              "⚠️ Admin: Peer connection still not connected, closing..."
-            );
-            cleanupPeerConnection();
-          }
-        }, 5000);
-      }
     }
-  };
+  }, [
+    incomingCall,
+    enableMedia,
+    createPeerConnection,
+    addTracksToConnection,
+    cleanupPeerConnection,
+  ]);
 
   const endCall = useCallback(() => {
     if (cleanupRef.current) return;
@@ -381,14 +441,14 @@ const VideoChatAdmin = () => {
     message.info("Cuộc gọi đã kết thúc");
   }, [cleanupPeerConnection]);
 
-  const rejectCall = () => {
+  const rejectCall = useCallback(() => {
     console.log("📞 Admin: Rejecting call from:", incomingCall?.from);
     if (incomingCall && socketRef.current?.connected) {
       socketRef.current.emit("reject-call", { to: incomingCall.from });
     }
     setIncomingCall(null);
     message.info("Đã từ chối cuộc gọi");
-  };
+  }, [incomingCall]);
 
   // Initialize socket connection
   useEffect(() => {
@@ -428,6 +488,10 @@ const VideoChatAdmin = () => {
 
     const handleIncomingCall = ({ from, offer }) => {
       console.log("📞 Admin: Incoming call from:", from);
+      console.log("📞 Admin: Offer details:", {
+        type: offer.type,
+        sdpLength: offer.sdp?.length,
+      });
 
       if (!socket.connected) {
         console.log("⚠️ Admin: Socket not connected, cannot receive call");
@@ -511,52 +575,7 @@ const VideoChatAdmin = () => {
       setSocketConnected(false);
       isInitializedRef.current = false;
     };
-  }, []);
-
-  // Network quality monitoring
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (peerRef.current && peerRef.current.getStats) {
-        peerRef.current.getStats().then((stats) => {
-          let uplink = 10;
-          let downlink = 10;
-
-          stats.forEach((report) => {
-            if (report.type === "outbound-rtp" && report.kind === "video") {
-              uplink = Math.max(
-                0,
-                Math.min(10, Math.round(report.bytesSent / 1000))
-              );
-            } else if (
-              report.type === "inbound-rtp" &&
-              report.kind === "video"
-            ) {
-              downlink = Math.max(
-                0,
-                Math.min(10, Math.round(report.bytesReceived / 1000))
-              );
-            }
-          });
-
-          if (
-            uplink !== networkQualityRef.current.uplink ||
-            downlink !== networkQualityRef.current.downlink
-          ) {
-            networkQualityRef.current = { uplink, downlink };
-            setNetworkQuality({ uplink, downlink });
-            console.log(
-              "📶 Admin: Network quality - Uplink:",
-              uplink,
-              "Downlink:",
-              downlink
-            );
-          }
-        });
-      }
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, []);
+  }, [endCall]);
 
   return (
     <div style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto" }}>
@@ -667,7 +686,7 @@ const VideoChatAdmin = () => {
                 <video
                   ref={localVideoRef}
                   autoPlay
-                  muted={true} // Local video should always be muted
+                  muted={true}
                   playsInline
                   controls={false}
                   style={{
@@ -690,7 +709,7 @@ const VideoChatAdmin = () => {
                 <video
                   ref={remoteVideoRef}
                   autoPlay
-                  muted={false} // Remote video should NOT be muted to hear audio
+                  muted={false} // QUAN TRỌNG: Không mute để nghe audio
                   playsInline
                   controls={false}
                   style={{
@@ -712,6 +731,12 @@ const VideoChatAdmin = () => {
                       remoteVideoRef.current.volume = 1.0;
                       console.log("🔊 Admin: Set remote video volume to 1.0");
                     }
+                  }}
+                  onCanPlay={() => {
+                    console.log("🎬 Admin: Remote video can play");
+                  }}
+                  onPlaying={() => {
+                    console.log("🎬 Admin: Remote video is playing");
                   }}
                 />
               </div>

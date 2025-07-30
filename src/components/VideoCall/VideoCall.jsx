@@ -30,7 +30,6 @@ const VideoChatUser = ({ userId }) => {
     audio: false,
   });
   const [socketConnected, setSocketConnected] = useState(false);
-  const [networkQuality, setNetworkQuality] = useState("unknown");
 
   // ICE servers configuration
   const iceServers = [
@@ -120,153 +119,6 @@ const VideoChatUser = ({ userId }) => {
     isCallingRef.current = false;
   }, []);
 
-  const createPeerConnection = useCallback(() => {
-    console.log("🔗 User: Creating new peer connection...");
-    cleanupPeerConnection();
-
-    const peer = new RTCPeerConnection({
-      iceServers,
-      iceCandidatePoolSize: 10,
-      iceTransportPolicy: "all",
-    });
-
-    let connectionRetryCount = 0;
-    const maxRetries = 3;
-
-    peer.onicecandidate = (event) => {
-      if (
-        event.candidate &&
-        peer.signalingState !== "closed" &&
-        socketRef.current?.connected
-      ) {
-        console.log("🧊 User: Sending ICE candidate to admin");
-        socketRef.current.emit("ice-candidate", {
-          to: adminId,
-          candidate: event.candidate,
-        });
-      }
-    };
-
-    peer.ontrack = (event) => {
-      console.log(
-        "📺 User: Received remote stream from admin - Tracks:",
-        event.streams[0]?.getTracks().map((t) => `${t.kind}:${t.enabled}`)
-      );
-      if (remoteVideoRef.current && event.streams[0]) {
-        remoteVideoRef.current.srcObject = event.streams[0];
-        remoteVideoRef.current.muted = false;
-        remoteVideoRef.current.volume = 1.0;
-
-        remoteVideoRef.current
-          .play()
-          .then(() => {
-            console.log("✅ User: Remote video playing successfully");
-            const audioTracks = event.streams[0].getAudioTracks();
-            audioTracks.forEach((track) => {
-              console.log(
-                `🔊 User: Audio track: ${track.kind}, enabled: ${track.enabled}, muted: ${track.muted}`
-              );
-            });
-          })
-          .catch((playError) => {
-            console.error("❌ User: Error playing remote video:", playError);
-            remoteVideoRef.current.muted = true;
-            remoteVideoRef.current
-              .play()
-              .then(() => {
-                console.log("✅ User: Remote video playing (muted)");
-                setTimeout(() => {
-                  if (remoteVideoRef.current) {
-                    remoteVideoRef.current.muted = false;
-                    console.log("🔊 User: Unmuted remote video");
-                  }
-                }, 1000);
-              })
-              .catch((e) => console.error("❌ User: Still can't play:", e));
-          });
-      }
-    };
-
-    peer.onconnectionstatechange = () => {
-      console.log("🔗 User: Connection state:", peer.connectionState);
-      setConnectionState(peer.connectionState);
-
-      if (peer.connectionState === "connected") {
-        setCalling(false);
-        setInCall(true);
-        connectionRetryCount = 0;
-        message.success("✅ Đã kết nối với admin");
-      } else if (peer.connectionState === "failed") {
-        console.log(
-          `❌ User: Connection failed (attempt ${
-            connectionRetryCount + 1
-          }/${maxRetries})`
-        );
-
-        if (connectionRetryCount < maxRetries) {
-          connectionRetryCount++;
-          console.log("🔄 User: Attempting to restart ICE...");
-          peer.restartIce();
-          message.warning(
-            `Đang thử kết nối lại... (${connectionRetryCount}/${maxRetries})`
-          );
-
-          setTimeout(() => {
-            if (peer.connectionState === "failed") {
-              console.log("🔄 User: ICE restart timeout, trying again...");
-              peer.restartIce();
-            }
-          }, 3000);
-        } else {
-          message.error("❌ Không thể kết nối sau nhiều lần thử");
-          setTimeout(() => endCall(), 2000);
-        }
-      } else if (peer.connectionState === "disconnected") {
-        console.log(
-          "⚠️ User: Connection disconnected, attempting reconnection..."
-        );
-        message.warning("Mất kết nối, đang thử kết nối lại...");
-
-        setTimeout(() => {
-          if (peer.connectionState === "disconnected") {
-            peer.restartIce();
-          }
-        }, 1000);
-      }
-    };
-
-    peer.oniceconnectionstatechange = () => {
-      console.log("🧊 User: ICE connection state:", peer.iceConnectionState);
-
-      if (peer.iceConnectionState === "failed") {
-        console.log("🔄 User: ICE connection failed, attempting restart...");
-        peer.restartIce();
-      } else if (peer.iceConnectionState === "disconnected") {
-        console.log("⚠️ User: ICE disconnected, will attempt restart...");
-        setTimeout(() => {
-          if (peer.iceConnectionState === "disconnected") {
-            console.log("🔄 User: ICE still disconnected, restarting...");
-            peer.restartIce();
-          }
-        }, 2000);
-      } else if (peer.iceConnectionState === "connected") {
-        console.log("✅ User: ICE connection established");
-      } else if (peer.iceConnectionState === "completed") {
-        console.log("🎉 User: ICE connection completed");
-      }
-    };
-
-    peer.onicegatheringstatechange = () => {
-      console.log("🧊 User: ICE gathering state:", peer.iceGatheringState);
-    };
-
-    peer.onsignalingstatechange = () => {
-      console.log("📡 User: Signaling state:", peer.signalingState);
-    };
-
-    return peer;
-  }, [cleanupPeerConnection, endCall]);
-
   const enableMedia = useCallback(
     async (options = { video: false, audio: false }) => {
       try {
@@ -282,6 +134,7 @@ const VideoChatUser = ({ userId }) => {
             echoCancellation: true,
             noiseSuppression: true,
             autoGainControl: true,
+            sampleRate: 44100,
           };
 
         console.log("🎥 User: Requesting media access:", constraints);
@@ -290,6 +143,7 @@ const VideoChatUser = ({ userId }) => {
         );
 
         if (localStreamRef.current) {
+          // Replace existing tracks
           newStream.getTracks().forEach((newTrack) => {
             const existingTrack = localStreamRef.current
               .getTracks()
@@ -339,7 +193,7 @@ const VideoChatUser = ({ userId }) => {
           "✅ User: Media enabled - Tracks:",
           localStreamRef.current
             .getTracks()
-            .map((t) => `${t.kind}:${t.enabled}`)
+            .map((t) => `${t.kind}:${t.enabled}:${t.readyState}`)
         );
         return localStreamRef.current;
       } catch (err) {
@@ -356,6 +210,121 @@ const VideoChatUser = ({ userId }) => {
     []
   );
 
+  const createPeerConnection = useCallback(() => {
+    console.log("🔗 User: Creating new peer connection...");
+    cleanupPeerConnection();
+
+    const peer = new RTCPeerConnection({
+      iceServers,
+      iceCandidatePoolSize: 10,
+      iceTransportPolicy: "all",
+    });
+
+    peer.onicecandidate = (event) => {
+      if (
+        event.candidate &&
+        peer.signalingState !== "closed" &&
+        socketRef.current?.connected
+      ) {
+        console.log("🧊 User: Sending ICE candidate to admin");
+        socketRef.current.emit("ice-candidate", {
+          to: adminId,
+          candidate: event.candidate,
+        });
+      }
+    };
+
+    peer.ontrack = (event) => {
+      console.log("📺 User: Received remote stream from admin");
+      console.log("📺 User: Stream details:", {
+        streamId: event.streams[0]?.id,
+        tracks: event.streams[0]?.getTracks().map((t) => ({
+          kind: t.kind,
+          enabled: t.enabled,
+          readyState: t.readyState,
+          muted: t.muted,
+        })),
+      });
+
+      if (remoteVideoRef.current && event.streams[0]) {
+        remoteVideoRef.current.srcObject = event.streams[0];
+        remoteVideoRef.current.muted = false;
+        remoteVideoRef.current.volume = 1.0;
+
+        remoteVideoRef.current
+          .play()
+          .then(() => {
+            console.log("✅ User: Remote video playing successfully");
+            const audioTracks = event.streams[0].getAudioTracks();
+            audioTracks.forEach((track) => {
+              console.log(
+                `🔊 User: Audio track: ${track.kind}, enabled: ${track.enabled}, muted: ${track.muted}`
+              );
+            });
+          })
+          .catch((playError) => {
+            console.error("❌ User: Error playing remote video:", playError);
+            remoteVideoRef.current.muted = true;
+            remoteVideoRef.current
+              .play()
+              .then(() => {
+                console.log("✅ User: Remote video playing (muted)");
+                setTimeout(() => {
+                  if (remoteVideoRef.current) {
+                    remoteVideoRef.current.muted = false;
+                    console.log("🔊 User: Unmuted remote video");
+                  }
+                }, 1000);
+              })
+              .catch((e) => console.error("❌ User: Still can't play:", e));
+          });
+      }
+    };
+
+    peer.onconnectionstatechange = () => {
+      console.log("🔗 User: Connection state:", peer.connectionState);
+      setConnectionState(peer.connectionState);
+
+      if (peer.connectionState === "connected") {
+        setCalling(false);
+        setInCall(true);
+        message.success("✅ Đã kết nối với admin");
+      } else if (peer.connectionState === "failed") {
+        message.error("❌ Kết nối thất bại");
+        setTimeout(() => endCall(), 2000);
+      } else if (peer.connectionState === "disconnected") {
+        console.log(
+          "⚠️ User: Connection disconnected, attempting reconnection..."
+        );
+        message.warning("Mất kết nối, đang thử kết nối lại...");
+        setTimeout(() => {
+          if (peer.connectionState === "disconnected") {
+            peer.restartIce();
+          }
+        }, 1000);
+      }
+    };
+
+    peer.oniceconnectionstatechange = () => {
+      console.log("🧊 User: ICE connection state:", peer.iceConnectionState);
+
+      if (peer.iceConnectionState === "failed") {
+        console.log("🔄 User: ICE connection failed, attempting restart...");
+        peer.restartIce();
+      } else if (peer.iceConnectionState === "disconnected") {
+        console.log("⚠️ User: ICE disconnected, will attempt restart...");
+        setTimeout(() => {
+          if (peer.iceConnectionState === "disconnected") {
+            console.log("🔄 User: ICE still disconnected, restarting...");
+            peer.restartIce();
+          }
+        }, 2000);
+      }
+    };
+
+    return peer;
+  }, [cleanupPeerConnection, endCall]);
+
   const addTracksToConnection = useCallback((peer, stream) => {
     if (!peer || peer.signalingState === "closed") {
       console.error("❌ User: Cannot add tracks: peer connection is closed");
@@ -363,6 +332,7 @@ const VideoChatUser = ({ userId }) => {
     }
 
     try {
+      // Remove existing senders
       const senders = peer.getSenders();
       senders.forEach((sender) => {
         if (sender.track) {
@@ -371,16 +341,20 @@ const VideoChatUser = ({ userId }) => {
         }
       });
 
+      // Add all tracks from stream
       stream.getTracks().forEach((track) => {
         console.log(
           "➕ User: Adding track:",
           track.kind,
           "enabled:",
-          track.enabled
+          track.enabled,
+          "readyState:",
+          track.readyState
         );
         peer.addTrack(track, stream);
       });
 
+      console.log("✅ User: All tracks added successfully");
       return true;
     } catch (err) {
       console.error("❌ User: Error adding tracks:", err);
@@ -415,6 +389,7 @@ const VideoChatUser = ({ userId }) => {
 
       peerRef.current = peer;
 
+      // QUAN TRỌNG: Add tracks TRƯỚC KHI tạo offer
       const tracksAdded = addTracksToConnection(peer, localStreamRef.current);
       if (!tracksAdded) {
         throw new Error("Failed to add tracks to connection");
@@ -425,8 +400,10 @@ const VideoChatUser = ({ userId }) => {
         offerToReceiveAudio: true,
         offerToReceiveVideo: true,
       });
+
       await peer.setLocalDescription(offer);
 
+      // Wait for ICE gathering to complete or timeout
       console.log("⏳ User: Waiting for ICE gathering...");
       await new Promise((resolve) => {
         if (peer.iceGatheringState === "complete") {
@@ -439,14 +416,21 @@ const VideoChatUser = ({ userId }) => {
             }
           };
           peer.addEventListener("icegatheringstatechange", checkState);
-          setTimeout(resolve, 5000);
+          setTimeout(resolve, 5000); // Timeout after 5 seconds
         }
       });
 
       console.log("📤 User: Sending offer to admin...");
+      console.log("📤 User: Offer details:", {
+        type: peer.localDescription.type,
+        sdpLength: peer.localDescription.sdp?.length,
+        hasAudio: peer.localDescription.sdp?.includes("m=audio"),
+        hasVideo: peer.localDescription.sdp?.includes("m=video"),
+      });
+
       socketRef.current.emit("call-user", {
         to: adminId,
-        offer: peer.localDescription,
+        offer: peer.localDescription, // Use complete local description
       });
 
       message.info("📞 Đang gọi đến admin...");
@@ -466,47 +450,6 @@ const VideoChatUser = ({ userId }) => {
     addTracksToConnection,
     cleanupPeerConnection,
   ]);
-
-  const monitorConnectionQuality = useCallback(() => {
-    if (!peerRef.current) return;
-
-    const peer = peerRef.current;
-
-    const checkStats = async () => {
-      try {
-        const stats = await peer.getStats();
-        let inboundRTP = null;
-
-        stats.forEach((report) => {
-          if (report.type === "inbound-rtp" && report.kind === "video") {
-            inboundRTP = report;
-          }
-        });
-
-        if (inboundRTP) {
-          const packetsLost = inboundRTP.packetsLost || 0;
-          const packetsReceived = inboundRTP.packetsReceived || 0;
-          const lossRate =
-            packetsReceived > 0 ? (packetsLost / packetsReceived) * 100 : 0;
-
-          if (lossRate < 2) {
-            setNetworkQuality("good");
-          } else if (lossRate < 5) {
-            setNetworkQuality("fair");
-          } else {
-            setNetworkQuality("poor");
-          }
-
-          console.log(`📊 User: Network quality: ${lossRate.toFixed(2)}% loss`);
-        }
-      } catch (error) {
-        console.error("❌ User: Error getting stats:", error);
-      }
-    };
-
-    const interval = setInterval(checkStats, 5000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Main useEffect
   useEffect(() => {
@@ -547,6 +490,11 @@ const VideoChatUser = ({ userId }) => {
 
     const handleCallAnswered = async ({ answer }) => {
       console.log("✅ User: Call answered by admin");
+      console.log("✅ User: Answer details:", {
+        type: answer.type,
+        sdpLength: answer.sdp?.length,
+      });
+
       if (peerRef.current && peerRef.current.signalingState !== "closed") {
         try {
           await peerRef.current.setRemoteDescription(
@@ -631,13 +579,6 @@ const VideoChatUser = ({ userId }) => {
     }
   }, [userId]);
 
-  useEffect(() => {
-    if (inCall && peerRef.current) {
-      const cleanup = monitorConnectionQuality();
-      return cleanup;
-    }
-  }, [inCall, monitorConnectionQuality]);
-
   if (!userId) {
     return (
       <div style={{ padding: "24px", textAlign: "center" }}>
@@ -680,20 +621,6 @@ const VideoChatUser = ({ userId }) => {
           />
           {mediaEnabled.video && <Badge status="success" text="Camera" />}
           {mediaEnabled.audio && <Badge status="success" text="Microphone" />}
-          {inCall && (
-            <Badge
-              status={
-                networkQuality === "good"
-                  ? "success"
-                  : networkQuality === "fair"
-                  ? "warning"
-                  : networkQuality === "poor"
-                  ? "error"
-                  : "default"
-              }
-              text={`Network: ${networkQuality}`}
-            />
-          )}
         </div>
 
         {!socketConnected && (
