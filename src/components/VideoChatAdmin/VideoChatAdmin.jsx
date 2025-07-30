@@ -201,6 +201,7 @@ const VideoChatAdmin = () => {
     []
   );
 
+  // Sửa lại logic createPeerConnection để phù hợp với vai trò Admin (callee)
   const createPeerConnection = useCallback(() => {
     console.log("🔗 Admin: Creating new peer connection...");
     cleanupPeerConnection();
@@ -353,6 +354,7 @@ const VideoChatAdmin = () => {
     }
   }, []);
 
+  // Sửa lại answerCall để đúng logic của callee
   const answerCall = useCallback(async () => {
     if (
       !incomingCall ||
@@ -385,17 +387,19 @@ const VideoChatAdmin = () => {
 
       peerRef.current = peer;
 
-      // QUAN TRỌNG: Add tracks TRƯỚC KHI set remote description
+      // QUAN TRỌNG: Set remote description TRƯỚC (offer từ user)
+      console.log("📝 Admin: Setting remote description (offer from user)...");
+      await peer.setRemoteDescription(
+        new RTCSessionDescription(incomingCall.offer)
+      );
+
+      // Add local tracks AFTER setting remote description
       const tracksAdded = addTracksToConnection(peer, localStreamRef.current);
       if (!tracksAdded) {
         throw new Error("Failed to add tracks to connection");
       }
 
-      console.log("📝 Admin: Setting remote description...");
-      await peer.setRemoteDescription(
-        new RTCSessionDescription(incomingCall.offer)
-      );
-
+      // Create answer (không phải offer)
       console.log("📤 Admin: Creating answer...");
       const answer = await peer.createAnswer({
         offerToReceiveAudio: true,
@@ -404,7 +408,7 @@ const VideoChatAdmin = () => {
 
       await peer.setLocalDescription(answer);
 
-      // Wait for ICE gathering to complete or timeout
+      // Wait for ICE gathering
       console.log("⏳ Admin: Waiting for ICE gathering...");
       await new Promise((resolve) => {
         if (peer.iceGatheringState === "complete") {
@@ -417,21 +421,15 @@ const VideoChatAdmin = () => {
             }
           };
           peer.addEventListener("icegatheringstatechange", checkState);
-          setTimeout(resolve, 5000); // Timeout after 5 seconds
+          setTimeout(resolve, 5000);
         }
       });
 
+      // Send answer back to user
       console.log("📤 Admin: Sending answer to user...");
-      console.log("📤 Admin: Answer details:", {
-        type: peer.localDescription.type,
-        sdpLength: peer.localDescription.sdp?.length,
-        hasAudio: peer.localDescription.sdp?.includes("m=audio"),
-        hasVideo: peer.localDescription.sdp?.includes("m=video"),
-      });
-
       socketRef.current.emit("answer-call", {
         to: incomingCall.from,
-        answer: peer.localDescription, // Use complete local description
+        answer: peer.localDescription,
       });
 
       setIncomingCall(null);
@@ -500,6 +498,7 @@ const VideoChatAdmin = () => {
       setSocketConnected(false);
     };
 
+    // Sửa lại handleIncomingCall trong useEffect
     const handleIncomingCall = ({ from, offer }) => {
       console.log("📞 Admin: Incoming call from:", from);
       console.log("📞 Admin: Offer details:", {
