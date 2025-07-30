@@ -1,9 +1,11 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+"use client";
+
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Modal, Button, message, Card, Badge } from "antd";
 import {
   PhoneOutlined,
   VideoCameraOutlined,
-  PhoneOffOutlined,
+  CloseOutlined,
 } from "@ant-design/icons";
 import { io } from "socket.io-client";
 
@@ -304,7 +306,7 @@ const VideoChatAdmin = () => {
               <Button
                 type="primary"
                 danger
-                icon={<PhoneOffOutlined />}
+                icon={<CloseOutlined />}
                 onClick={endCall}
                 size="large"
               >

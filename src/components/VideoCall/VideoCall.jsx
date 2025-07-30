@@ -1,10 +1,12 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+"use client";
+
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Button, message, Card, Space, Badge } from "antd";
 import {
   PhoneOutlined,
   VideoCameraOutlined,
   AudioOutlined,
-  PhoneOffOutlined,
+  CloseOutlined,
 } from "@ant-design/icons";
 import { io } from "socket.io-client";
 
@@ -373,7 +375,7 @@ const VideoChatUser = ({ userId }) => {
                 <Button
                   type="primary"
                   danger
-                  icon={<PhoneOffOutlined />}
+                  icon={<CloseOutlined />}
                   onClick={endCall}
                   size="large"
                 >
