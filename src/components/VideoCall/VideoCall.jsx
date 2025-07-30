@@ -31,11 +31,27 @@ const VideoChatUser = ({ userId }) => {
   });
   const [socketConnected, setSocketConnected] = useState(false);
 
-  // ICE servers configuration
+  // Thêm state cho network quality
+  const [networkQuality, setNetworkQuality] = useState("unknown");
+
+  // ICE servers configuration - Improved with more servers
   const iceServers = [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
     { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:stun3.l.google.com:19302" },
+    { urls: "stun:stun4.l.google.com:19302" },
+    // Thêm TURN servers cho NAT traversal tốt hơn
+    {
+      urls: "turn:openrelay.metered.ca:80",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
+    {
+      urls: "turn:openrelay.metered.ca:443",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
   ];
 
   const cleanupPeerConnection = useCallback(() => {
@@ -62,7 +78,15 @@ const VideoChatUser = ({ userId }) => {
     console.log("🔗 User: Creating new peer connection...");
     cleanupPeerConnection();
 
-    const peer = new RTCPeerConnection({ iceServers });
+    const peer = new RTCPeerConnection({
+      iceServers,
+      iceCandidatePoolSize: 10, // Tăng pool size
+      iceTransportPolicy: "all", // Allow both STUN and TURN
+    });
+
+    // Thêm connection recovery logic
+    let connectionRetryCount = 0;
+    const maxRetries = 3;
 
     peer.onicecandidate = (event) => {
       if (
@@ -85,8 +109,6 @@ const VideoChatUser = ({ userId }) => {
       );
       if (remoteVideoRef.current && event.streams[0]) {
         remoteVideoRef.current.srcObject = event.streams[0];
-
-        // Đảm bảo video không bị mute để nghe được tiếng
         remoteVideoRef.current.muted = false;
         remoteVideoRef.current.volume = 1.0;
 
@@ -94,7 +116,6 @@ const VideoChatUser = ({ userId }) => {
           .play()
           .then(() => {
             console.log("✅ User: Remote video playing successfully");
-            // Check audio tracks
             const audioTracks = event.streams[0].getAudioTracks();
             audioTracks.forEach((track) => {
               console.log(
@@ -104,13 +125,11 @@ const VideoChatUser = ({ userId }) => {
           })
           .catch((playError) => {
             console.error("❌ User: Error playing remote video:", playError);
-            // Try to play with muted first, then unmute
             remoteVideoRef.current.muted = true;
             remoteVideoRef.current
               .play()
               .then(() => {
                 console.log("✅ User: Remote video playing (muted)");
-                // Try to unmute after a delay
                 setTimeout(() => {
                   remoteVideoRef.current.muted = false;
                   console.log("🔊 User: Unmuted remote video");
@@ -128,26 +147,87 @@ const VideoChatUser = ({ userId }) => {
       if (peer.connectionState === "connected") {
         setCalling(false);
         setInCall(true);
+        connectionRetryCount = 0; // Reset retry count on success
         message.success("✅ Đã kết nối với admin");
-      } else if (
-        peer.connectionState === "failed" ||
-        peer.connectionState === "disconnected"
-      ) {
-        message.error("❌ Kết nối thất bại");
-        setTimeout(() => endCall(), 1000);
+      } else if (peer.connectionState === "failed") {
+        console.log(
+          `❌ User: Connection failed (attempt ${
+            connectionRetryCount + 1
+          }/${maxRetries})`
+        );
+
+        if (connectionRetryCount < maxRetries) {
+          connectionRetryCount++;
+          console.log("🔄 User: Attempting to restart ICE...");
+
+          // Restart ICE connection
+          peer.restartIce();
+
+          // Show retry message
+          message.warning(
+            `Đang thử kết nối lại... (${connectionRetryCount}/${maxRetries})`
+          );
+
+          // Set a timeout for retry
+          setTimeout(() => {
+            if (peer.connectionState === "failed") {
+              console.log("🔄 User: ICE restart timeout, trying again...");
+              peer.restartIce();
+            }
+          }, 3000);
+        } else {
+          message.error("❌ Không thể kết nối sau nhiều lần thử");
+          setTimeout(() => endCall(), 2000);
+        }
+      } else if (peer.connectionState === "disconnected") {
+        console.log(
+          "⚠️ User: Connection disconnected, attempting reconnection..."
+        );
+        message.warning("Mất kết nối, đang thử kết nối lại...");
+
+        // Try to restart ICE on disconnection
+        setTimeout(() => {
+          if (peer.connectionState === "disconnected") {
+            peer.restartIce();
+          }
+        }, 1000);
       }
     };
 
     peer.oniceconnectionstatechange = () => {
       console.log("🧊 User: ICE connection state:", peer.iceConnectionState);
+
       if (peer.iceConnectionState === "failed") {
         console.log("🔄 User: ICE connection failed, attempting restart...");
         peer.restartIce();
+      } else if (peer.iceConnectionState === "disconnected") {
+        console.log("⚠️ User: ICE disconnected, will attempt restart...");
+        // Wait a bit before restarting to see if it recovers
+        setTimeout(() => {
+          if (peer.iceConnectionState === "disconnected") {
+            console.log("🔄 User: ICE still disconnected, restarting...");
+            peer.restartIce();
+          }
+        }, 2000);
+      } else if (peer.iceConnectionState === "connected") {
+        console.log("✅ User: ICE connection established");
+      } else if (peer.iceConnectionState === "completed") {
+        console.log("🎉 User: ICE connection completed");
       }
     };
 
+    // Add gathering state change handler
+    peer.onicegatheringstatechange = () => {
+      console.log("🧊 User: ICE gathering state:", peer.iceGatheringState);
+    };
+
+    // Add signaling state change handler
+    peer.onsignalingstatechange = () => {
+      console.log("📡 User: Signaling state:", peer.signalingState);
+    };
+
     return peer;
-  }, [cleanupPeerConnection]);
+  }, [cleanupPeerConnection, endCall]);
 
   const enableMedia = async (options = { video: false, audio: false }) => {
     try {
@@ -194,7 +274,7 @@ const VideoChatUser = ({ userId }) => {
         localStreamRef.current = newStream;
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = newStream;
-          localVideoRef.current.muted = true; // Local video should be muted
+          localVideoRef.current.muted = true; // Local video should always be muted
           try {
             await localVideoRef.current.play();
             console.log("✅ User: Local video playing");
@@ -296,12 +376,35 @@ const VideoChatUser = ({ userId }) => {
       }
 
       console.log("📤 User: Creating offer...");
-      const offer = await peer.createOffer();
+      const offer = await peer.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true,
+      });
       await peer.setLocalDescription(offer);
 
+      // Wait a bit for ICE gathering
+      console.log("⏳ User: Waiting for ICE gathering...");
+      await new Promise((resolve) => {
+        if (peer.iceGatheringState === "complete") {
+          resolve();
+        } else {
+          const checkState = () => {
+            if (peer.iceGatheringState === "complete") {
+              peer.removeEventListener("icegatheringstatechange", checkState);
+              resolve();
+            }
+          };
+          peer.addEventListener("icegatheringstatechange", checkState);
+
+          // Timeout after 5 seconds
+          setTimeout(resolve, 5000);
+        }
+      });
+
+      console.log("📤 User: Sending offer to admin...");
       socketRef.current.emit("call-user", {
         to: adminId,
-        offer,
+        offer: peer.localDescription, // Use the complete description
       });
 
       message.info("📞 Đang gọi đến admin...");
@@ -350,6 +453,52 @@ const VideoChatUser = ({ userId }) => {
 
     message.info("Cuộc gọi đã kết thúc");
   }, [inCall, calling, cleanupPeerConnection]);
+
+  // Thêm function để monitor connection quality
+  const monitorConnectionQuality = useCallback(() => {
+    if (!peerRef.current) return;
+
+    const peer = peerRef.current;
+
+    const checkStats = async () => {
+      try {
+        const stats = await peer.getStats();
+        let inboundRTP = null;
+        let outboundRTP = null;
+
+        stats.forEach((report) => {
+          if (report.type === "inbound-rtp" && report.kind === "video") {
+            inboundRTP = report;
+          }
+          if (report.type === "outbound-rtp" && report.kind === "video") {
+            outboundRTP = report;
+          }
+        });
+
+        if (inboundRTP) {
+          const packetsLost = inboundRTP.packetsLost || 0;
+          const packetsReceived = inboundRTP.packetsReceived || 0;
+          const lossRate =
+            packetsReceived > 0 ? (packetsLost / packetsReceived) * 100 : 0;
+
+          if (lossRate < 2) {
+            setNetworkQuality("good");
+          } else if (lossRate < 5) {
+            setNetworkQuality("fair");
+          } else {
+            setNetworkQuality("poor");
+          }
+
+          console.log(`📊 User: Network quality: ${lossRate.toFixed(2)}% loss`);
+        }
+      } catch (error) {
+        console.error("❌ User: Error getting stats:", error);
+      }
+    };
+
+    const interval = setInterval(checkStats, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Main useEffect
   useEffect(() => {
@@ -476,6 +625,13 @@ const VideoChatUser = ({ userId }) => {
     }
   }, [userId]);
 
+  useEffect(() => {
+    if (inCall && peerRef.current) {
+      const cleanup = monitorConnectionQuality();
+      return cleanup;
+    }
+  }, [inCall, monitorConnectionQuality]);
+
   if (!userId) {
     return (
       <div style={{ padding: "24px", textAlign: "center" }}>
@@ -518,6 +674,21 @@ const VideoChatUser = ({ userId }) => {
           />
           {mediaEnabled.video && <Badge status="success" text="Camera" />}
           {mediaEnabled.audio && <Badge status="success" text="Microphone" />}
+          {/* Thêm network quality indicator */}
+          {inCall && (
+            <Badge
+              status={
+                networkQuality === "good"
+                  ? "success"
+                  : networkQuality === "fair"
+                  ? "warning"
+                  : networkQuality === "poor"
+                  ? "error"
+                  : "default"
+              }
+              text={`Network: ${networkQuality}`}
+            />
+          )}
         </div>
 
         {!socketConnected && (

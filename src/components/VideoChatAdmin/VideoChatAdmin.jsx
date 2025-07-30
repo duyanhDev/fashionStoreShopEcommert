@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Modal, Button, message, Card, Badge } from "antd";
 import {
@@ -19,6 +21,7 @@ const VideoChatAdmin = () => {
   const socketRef = useRef(null);
   const isInitializedRef = useRef(false);
   const cleanupRef = useRef(false);
+  const networkQualityRef = useRef({ uplink: 10, downlink: 10 });
 
   const [incomingCall, setIncomingCall] = useState(null);
   const [inCall, setInCall] = useState(false);
@@ -28,12 +31,18 @@ const VideoChatAdmin = () => {
     audio: false,
   });
   const [socketConnected, setSocketConnected] = useState(false);
+  const [networkQuality, setNetworkQuality] = useState({
+    uplink: 10,
+    downlink: 10,
+  });
 
   // ICE servers configuration
   const iceServers = [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
     { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:stun3.l.google.com:19302" },
+    { urls: "stun:stun4.l.google.com:19302" },
   ];
 
   const cleanupPeerConnection = useCallback(() => {
@@ -145,6 +154,21 @@ const VideoChatAdmin = () => {
         if (peer.iceConnectionState === "failed") {
           console.log("🔄 Admin: ICE connection failed, attempting restart...");
           peer.restartIce();
+        } else if (peer.iceConnectionState === "disconnected") {
+          console.log(
+            "⚠️ Admin: ICE disconnected, gathering new candidates..."
+          );
+          peer.restartIce();
+        }
+      };
+
+      // Connection recovery logic
+      peer.onicegatheringstatechange = () => {
+        console.log("🧊 Admin: ICE gathering state:", peer.iceGatheringState);
+        if (peer.iceGatheringState === "gathering") {
+          console.log("🔄 Admin: Gathering ICE candidates...");
+        } else if (peer.iceGatheringState === "complete") {
+          console.log("✅ Admin: ICE gathering complete");
         }
       };
 
@@ -251,6 +275,7 @@ const VideoChatAdmin = () => {
 
     isAnsweringRef.current = true;
 
+    let peer;
     try {
       console.log("📞 Admin: Answering call from:", incomingCall.from);
 
@@ -261,7 +286,7 @@ const VideoChatAdmin = () => {
       }
 
       // Create peer connection
-      const peer = createPeerConnection(incomingCall.from);
+      peer = createPeerConnection(incomingCall.from);
       if (!peer) {
         throw new Error("Failed to create peer connection");
       }
@@ -314,6 +339,16 @@ const VideoChatAdmin = () => {
       setIncomingCall(null);
     } finally {
       isAnsweringRef.current = false;
+      if (peer && peer.connectionState !== "connected") {
+        setTimeout(() => {
+          if (peer && peer.connectionState !== "connected") {
+            console.warn(
+              "⚠️ Admin: Peer connection still not connected, closing..."
+            );
+            cleanupPeerConnection();
+          }
+        }, 5000);
+      }
     }
   };
 
@@ -480,6 +515,51 @@ const VideoChatAdmin = () => {
     };
   }, []);
 
+  // Network quality monitoring
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (peerRef.current && peerRef.current.getStats) {
+        peerRef.current.getStats().then((stats) => {
+          let uplink = 10;
+          let downlink = 10;
+
+          stats.forEach((report) => {
+            if (report.type === "outbound-rtp" && report.kind === "video") {
+              uplink = Math.max(
+                0,
+                Math.min(10, Math.round(report.bytesSent / 1000))
+              );
+            } else if (
+              report.type === "inbound-rtp" &&
+              report.kind === "video"
+            ) {
+              downlink = Math.max(
+                0,
+                Math.min(10, Math.round(report.bytesReceived / 1000))
+              );
+            }
+          });
+
+          if (
+            uplink !== networkQualityRef.current.uplink ||
+            downlink !== networkQualityRef.current.downlink
+          ) {
+            networkQualityRef.current = { uplink, downlink };
+            setNetworkQuality({ uplink, downlink });
+            console.log(
+              "📶 Admin: Network quality - Uplink:",
+              uplink,
+              "Downlink:",
+              downlink
+            );
+          }
+        });
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto" }}>
       <Card title="📡 Admin Video Chat" style={{ marginBottom: "16px" }}>
@@ -509,6 +589,26 @@ const VideoChatAdmin = () => {
           />
           {mediaEnabled.video && <Badge status="success" text="Camera" />}
           {mediaEnabled.audio && <Badge status="success" text="Microphone" />}
+          <Badge
+            status={
+              networkQuality.uplink > 7
+                ? "success"
+                : networkQuality.uplink > 4
+                ? "warning"
+                : "error"
+            }
+            text={`Uplink: ${networkQuality.uplink}/10`}
+          />
+          <Badge
+            status={
+              networkQuality.downlink > 7
+                ? "success"
+                : networkQuality.downlink > 4
+                ? "warning"
+                : "error"
+            }
+            text={`Downlink: ${networkQuality.downlink}/10`}
+          />
         </div>
 
         {!socketConnected && (
