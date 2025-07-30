@@ -9,7 +9,20 @@ import {
 } from "@ant-design/icons";
 import { io } from "socket.io-client";
 
-const socket = io("https://fashionstoreshopecommertbe.onrender.com");
+// Tạo socket connection singleton để tránh multiple connections
+let socketInstance = null;
+const getSocket = () => {
+  if (!socketInstance) {
+    socketInstance = io("https://fashionstoreshopecommertbe.onrender.com", {
+      autoConnect: false, // Không tự động connect
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
+  }
+  return socketInstance;
+};
+
 const adminId = "673017dde4526bd79cc61fa6";
 
 const VideoChatAdmin = () => {
@@ -18,7 +31,9 @@ const VideoChatAdmin = () => {
   const peerRef = useRef(null);
   const localStreamRef = useRef(null);
   const iceBufferRef = useRef([]);
-  const isAnsweringRef = useRef(false); // Prevent multiple answer attempts
+  const isAnsweringRef = useRef(false);
+  const isInitializedRef = useRef(false); // Prevent multiple initializations
+  const socketRef = useRef(null);
 
   const [incomingCall, setIncomingCall] = useState(null);
   const [inCall, setInCall] = useState(false);
@@ -27,6 +42,7 @@ const VideoChatAdmin = () => {
     video: false,
     audio: false,
   });
+  const [socketConnected, setSocketConnected] = useState(false);
 
   // ICE servers configuration
   const iceServers = [
@@ -66,9 +82,14 @@ const VideoChatAdmin = () => {
     const peer = new RTCPeerConnection({ iceServers });
 
     peer.onicecandidate = (event) => {
-      if (event.candidate && incomingCall && peer.signalingState !== "closed") {
+      if (
+        event.candidate &&
+        incomingCall &&
+        peer.signalingState !== "closed" &&
+        socketRef.current?.connected
+      ) {
         console.log("🧊 Sending ICE candidate to:", incomingCall.from);
-        socket.emit("ice-candidate", {
+        socketRef.current.emit("ice-candidate", {
           to: incomingCall.from,
           candidate: event.candidate,
         });
@@ -93,7 +114,7 @@ const VideoChatAdmin = () => {
         peer.connectionState === "disconnected"
       ) {
         message.error("❌ Kết nối thất bại");
-        setTimeout(() => endCall(), 1000); // Delay to show message
+        setTimeout(() => endCall(), 1000);
       }
     };
 
@@ -171,8 +192,14 @@ const VideoChatAdmin = () => {
   };
 
   const answerCall = async () => {
-    if (!incomingCall || isAnsweringRef.current) {
-      console.log("⚠️ Already answering or no incoming call");
+    if (
+      !incomingCall ||
+      isAnsweringRef.current ||
+      !socketRef.current?.connected
+    ) {
+      console.log(
+        "⚠️ Cannot answer call - already answering, no incoming call, or socket disconnected"
+      );
       return;
     }
 
@@ -228,7 +255,7 @@ const VideoChatAdmin = () => {
       const answer = await peer.createAnswer();
       await peer.setLocalDescription(answer);
 
-      socket.emit("answer-call", {
+      socketRef.current.emit("answer-call", {
         to: incomingCall.from,
         answer,
       });
@@ -281,18 +308,39 @@ const VideoChatAdmin = () => {
 
   const rejectCall = () => {
     console.log("📞 Rejecting call from:", incomingCall?.from);
-    if (incomingCall) {
-      socket.emit("reject-call", { to: incomingCall.from });
+    if (incomingCall && socketRef.current?.connected) {
+      socketRef.current.emit("reject-call", { to: incomingCall.from });
     }
     setIncomingCall(null);
     message.info("Đã từ chối cuộc gọi");
   };
 
+  // Initialize socket connection
   useEffect(() => {
-    console.log("🔌 Admin connecting to socket...");
-    socket.emit("register", { userId: adminId });
+    if (isInitializedRef.current) {
+      console.log("⚠️ Already initialized, skipping...");
+      return;
+    }
 
-    socket.on("incoming-call", ({ from, offer }) => {
+    console.log("🔌 Initializing Admin socket connection...");
+    isInitializedRef.current = true;
+
+    const socket = getSocket();
+    socketRef.current = socket;
+
+    // Socket event handlers
+    const handleConnect = () => {
+      console.log("✅ Socket connected");
+      setSocketConnected(true);
+      socket.emit("register", { userId: adminId });
+    };
+
+    const handleDisconnect = () => {
+      console.log("❌ Socket disconnected");
+      setSocketConnected(false);
+    };
+
+    const handleIncomingCall = ({ from, offer }) => {
       console.log("📞 Incoming call from:", from);
 
       // If already in a call or answering, reject
@@ -309,9 +357,9 @@ const VideoChatAdmin = () => {
       }
 
       setIncomingCall({ from, offer });
-    });
+    };
 
-    socket.on("ice-candidate", async ({ candidate }) => {
+    const handleIceCandidate = async ({ candidate }) => {
       console.log("🧊 Received ICE candidate");
       try {
         if (
@@ -327,28 +375,55 @@ const VideoChatAdmin = () => {
       } catch (err) {
         console.error("❌ Failed to add ICE candidate:", err);
       }
-    });
+    };
 
-    socket.on("call-ended", () => {
+    const handleCallEnded = () => {
       console.log("📞 Call ended by user");
       endCall();
-    });
+    };
 
-    socket.on("call-rejected", () => {
+    const handleCallRejected = () => {
       console.log("📞 Call was rejected");
       message.info("Cuộc gọi đã bị từ chối");
-    });
+    };
 
-    // Cleanup on unmount
+    // Add event listeners
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("incoming-call", handleIncomingCall);
+    socket.on("ice-candidate", handleIceCandidate);
+    socket.on("call-ended", handleCallEnded);
+    socket.on("call-rejected", handleCallRejected);
+
+    // Connect socket
+    if (!socket.connected) {
+      socket.connect();
+    } else {
+      handleConnect();
+    }
+
+    // Cleanup function
     return () => {
       console.log("🧹 Component unmounting, cleaning up...");
-      socket.off("incoming-call");
-      socket.off("ice-candidate");
-      socket.off("call-ended");
-      socket.off("call-rejected");
+
+      // Remove event listeners
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("incoming-call", handleIncomingCall);
+      socket.off("ice-candidate", handleIceCandidate);
+      socket.off("call-ended", handleCallEnded);
+      socket.off("call-rejected", handleCallRejected);
+
+      // End call and cleanup
       endCall();
+
+      // Reset initialization flag
+      isInitializedRef.current = false;
+
+      // Don't disconnect socket here to allow reuse
+      // socket.disconnect()
     };
-  }, [inCall, endCall]);
+  }, []); // Empty dependency array to run only once
 
   return (
     <div style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto" }}>
@@ -362,6 +437,10 @@ const VideoChatAdmin = () => {
           }}
         >
           <Badge
+            status={socketConnected ? "success" : "error"}
+            text={`Socket: ${socketConnected ? "Connected" : "Disconnected"}`}
+          />
+          <Badge
             status={
               connectionState === "connected"
                 ? "success"
@@ -371,7 +450,7 @@ const VideoChatAdmin = () => {
                 ? "error"
                 : "default"
             }
-            text={`Trạng thái: ${connectionState}`}
+            text={`WebRTC: ${connectionState}`}
           />
           {mediaEnabled.video && <Badge status="success" text="Camera" />}
           {mediaEnabled.audio && <Badge status="success" text="Microphone" />}
@@ -389,6 +468,14 @@ const VideoChatAdmin = () => {
             <p style={{ color: "#666" }}>Đang chờ cuộc gọi từ người dùng...</p>
             <p style={{ color: "#999", fontSize: "12px" }}>
               Admin ID: {adminId}
+            </p>
+            <p
+              style={{
+                color: socketConnected ? "#52c41a" : "#ff4d4f",
+                fontSize: "12px",
+              }}
+            >
+              Socket: {socketConnected ? "Đã kết nối" : "Chưa kết nối"}
             </p>
           </div>
         )}
@@ -476,6 +563,7 @@ const VideoChatAdmin = () => {
           size: "large",
           style: { backgroundColor: "#52c41a", borderColor: "#52c41a" },
           loading: isAnsweringRef.current,
+          disabled: !socketConnected,
         }}
         cancelButtonProps={{ size: "large" }}
       >
