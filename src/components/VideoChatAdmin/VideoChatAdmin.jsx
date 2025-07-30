@@ -97,9 +97,27 @@ const VideoChatAdmin = () => {
     };
 
     peer.ontrack = (event) => {
-      console.log("📺 Received remote stream");
+      console.log(
+        "📺 Received remote stream - Tracks:",
+        event.streams[0]?.getTracks().map((t) => t.kind)
+      );
       if (remoteVideoRef.current && event.streams[0]) {
         remoteVideoRef.current.srcObject = event.streams[0];
+
+        // Force play remote video
+        remoteVideoRef.current
+          .play()
+          .then(() => {
+            console.log("✅ Remote video playing");
+          })
+          .catch((playError) => {
+            console.error("❌ Error playing remote video:", playError);
+            // Try to play with user interaction
+            remoteVideoRef.current.muted = true;
+            remoteVideoRef.current
+              .play()
+              .catch((e) => console.error("❌ Still can't play:", e));
+          });
       }
     };
 
@@ -142,18 +160,36 @@ const VideoChatAdmin = () => {
 
       console.log("🎥 Requesting media access...");
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 },
-        audio: { echoCancellation: true, noiseSuppression: true },
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: "user",
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
       });
 
       localStreamRef.current = stream;
       setMediaEnabled({ video: true, audio: true });
 
+      // Set video source và force play
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
+        try {
+          await localVideoRef.current.play();
+          console.log("✅ Local video playing");
+        } catch (playError) {
+          console.error("❌ Error playing local video:", playError);
+        }
       }
 
-      console.log("✅ Media enabled successfully");
+      console.log(
+        "✅ Media enabled successfully - Tracks:",
+        stream.getTracks().map((t) => t.kind)
+      );
       return stream;
     } catch (err) {
       console.error("❌ Không thể bật media:", err);
@@ -425,6 +461,28 @@ const VideoChatAdmin = () => {
     };
   }, []); // Empty dependency array to run only once
 
+  // Thêm useEffect này sau useEffect chính
+  useEffect(() => {
+    // Setup video elements
+    if (localVideoRef.current) {
+      localVideoRef.current.onloadedmetadata = () => {
+        console.log("📹 Local video metadata loaded");
+      };
+      localVideoRef.current.onplay = () => {
+        console.log("▶️ Local video started playing");
+      };
+    }
+
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.onloadedmetadata = () => {
+        console.log("📹 Remote video metadata loaded");
+      };
+      remoteVideoRef.current.onplay = () => {
+        console.log("▶️ Remote video started playing");
+      };
+    }
+  }, []);
+
   return (
     <div style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto" }}>
       <Card title="📡 Admin Video Chat" style={{ marginBottom: "16px" }}>
@@ -500,15 +558,18 @@ const VideoChatAdmin = () => {
                   autoPlay
                   muted
                   playsInline
+                  controls={false}
                   style={{
                     width: "100%",
                     maxWidth: "400px",
                     height: "300px",
                     border: "1px solid #d9d9d9",
                     borderRadius: "8px",
-                    backgroundColor: "black",
+                    backgroundColor: "#000",
                     objectFit: "cover",
+                    display: "block", // Ensure video is displayed
                   }}
+                  onError={(e) => console.error("Local video error:", e)}
                 />
               </div>
               <div style={{ textAlign: "center" }}>
@@ -519,15 +580,18 @@ const VideoChatAdmin = () => {
                   ref={remoteVideoRef}
                   autoPlay
                   playsInline
+                  controls={false}
                   style={{
                     width: "100%",
                     maxWidth: "400px",
                     height: "300px",
                     border: "1px solid #d9d9d9",
                     borderRadius: "8px",
-                    backgroundColor: "black",
+                    backgroundColor: "#000",
                     objectFit: "cover",
+                    display: "block", // Ensure video is displayed
                   }}
+                  onError={(e) => console.error("Remote video error:", e)}
                 />
               </div>
             </div>

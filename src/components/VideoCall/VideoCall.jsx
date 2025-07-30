@@ -74,9 +74,27 @@ const VideoChatUser = ({ userId }) => {
     };
 
     peer.ontrack = (event) => {
-      console.log("📺 Received remote stream from admin");
+      console.log(
+        "📺 Received remote stream from admin - Tracks:",
+        event.streams[0]?.getTracks().map((t) => t.kind)
+      );
       if (remoteVideoRef.current && event.streams[0]) {
         remoteVideoRef.current.srcObject = event.streams[0];
+
+        // Force play remote video
+        remoteVideoRef.current
+          .play()
+          .then(() => {
+            console.log("✅ Remote video playing");
+          })
+          .catch((playError) => {
+            console.error("❌ Error playing remote video:", playError);
+            // Try to play with muted
+            remoteVideoRef.current.muted = true;
+            remoteVideoRef.current
+              .play()
+              .catch((e) => console.error("❌ Still can't play:", e));
+          });
       }
     };
 
@@ -111,9 +129,18 @@ const VideoChatUser = ({ userId }) => {
   const enableMedia = async (options = { video: false, audio: false }) => {
     try {
       const constraints = {};
-      if (options.video) constraints.video = { width: 640, height: 480 };
+      if (options.video)
+        constraints.video = {
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: "user",
+        };
       if (options.audio)
-        constraints.audio = { echoCancellation: true, noiseSuppression: true };
+        constraints.audio = {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        };
 
       console.log("🎥 Requesting media access:", constraints);
       const newStream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -135,12 +162,24 @@ const VideoChatUser = ({ userId }) => {
         // Update video element
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = localStreamRef.current;
+          try {
+            await localVideoRef.current.play();
+            console.log("✅ Local video playing");
+          } catch (playError) {
+            console.error("❌ Error playing local video:", playError);
+          }
         }
       } else {
         // Create new stream
         localStreamRef.current = newStream;
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = newStream;
+          try {
+            await localVideoRef.current.play();
+            console.log("✅ Local video playing");
+          } catch (playError) {
+            console.error("❌ Error playing local video:", playError);
+          }
         }
       }
 
@@ -154,6 +193,10 @@ const VideoChatUser = ({ userId }) => {
       if (options.audio) mediaType.push("microphone");
 
       message.success(`🎥 Đã bật ${mediaType.join(" và ")}`);
+      console.log(
+        "✅ Media enabled - Tracks:",
+        localStreamRef.current.getTracks().map((t) => t.kind)
+      );
       return localStreamRef.current;
     } catch (err) {
       console.error("❌ Không thể bật media:", err);
@@ -345,6 +388,27 @@ const VideoChatUser = ({ userId }) => {
       endCall();
     };
   }, [userId, endCall]);
+
+  useEffect(() => {
+    if (localVideoRef.current) {
+      localVideoRef.current.style.width = "100%";
+      localVideoRef.current.style.maxWidth = "400px";
+      localVideoRef.current.style.height = "300px";
+      localVideoRef.current.style.border = "1px solid #d9d9d9";
+      localVideoRef.current.style.borderRadius = "8px";
+      localVideoRef.current.style.backgroundColor = "black";
+      localVideoRef.current.style.objectFit = "cover";
+    }
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.style.width = "100%";
+      remoteVideoRef.current.style.maxWidth = "400px";
+      remoteVideoRef.current.style.height = "300px";
+      remoteVideoRef.current.style.border = "1px solid #d9d9d9";
+      remoteVideoRef.current.style.borderRadius = "8px";
+      remoteVideoRef.current.style.backgroundColor = "black";
+      remoteVideoRef.current.style.objectFit = "cover";
+    }
+  }, []);
 
   // Nếu không có userId, hiển thị thông báo
   if (!userId) {
