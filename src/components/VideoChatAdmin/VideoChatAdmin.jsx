@@ -9,20 +9,6 @@ import {
 } from "@ant-design/icons";
 import { io } from "socket.io-client";
 
-// Tạo socket connection singleton để tránh multiple connections
-let socketInstance = null;
-const getSocket = () => {
-  if (!socketInstance) {
-    socketInstance = io("https://fashionstoreshopecommertbe.onrender.com", {
-      autoConnect: false, // Không tự động connect
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
-  }
-  return socketInstance;
-};
-
 const adminId = "673017dde4526bd79cc61fa6";
 
 const VideoChatAdmin = () => {
@@ -32,7 +18,6 @@ const VideoChatAdmin = () => {
   const localStreamRef = useRef(null);
   const iceBufferRef = useRef([]);
   const isAnsweringRef = useRef(false);
-  const isInitializedRef = useRef(false); // Prevent multiple initializations
   const socketRef = useRef(null);
 
   const [incomingCall, setIncomingCall] = useState(null);
@@ -55,28 +40,23 @@ const VideoChatAdmin = () => {
     console.log("🧹 Cleaning up peer connection...");
 
     if (peerRef.current) {
-      // Remove all event listeners
       peerRef.current.onicecandidate = null;
       peerRef.current.ontrack = null;
       peerRef.current.onconnectionstatechange = null;
       peerRef.current.oniceconnectionstatechange = null;
 
-      // Close the connection
       if (peerRef.current.signalingState !== "closed") {
         peerRef.current.close();
       }
       peerRef.current = null;
     }
 
-    // Clear ICE buffer
     iceBufferRef.current = [];
     isAnsweringRef.current = false;
   }, []);
 
   const createPeerConnection = useCallback(() => {
     console.log("🔗 Creating new peer connection...");
-
-    // Cleanup existing connection first
     cleanupPeerConnection();
 
     const peer = new RTCPeerConnection({ iceServers });
@@ -103,16 +83,11 @@ const VideoChatAdmin = () => {
       );
       if (remoteVideoRef.current && event.streams[0]) {
         remoteVideoRef.current.srcObject = event.streams[0];
-
-        // Force play remote video
         remoteVideoRef.current
           .play()
-          .then(() => {
-            console.log("✅ Remote video playing");
-          })
+          .then(() => console.log("✅ Remote video playing"))
           .catch((playError) => {
             console.error("❌ Error playing remote video:", playError);
-            // Try to play with user interaction
             remoteVideoRef.current.muted = true;
             remoteVideoRef.current
               .play()
@@ -149,7 +124,6 @@ const VideoChatAdmin = () => {
 
   const enableMedia = async () => {
     try {
-      // Dừng stream cũ nếu có
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach((track) => {
           track.stop();
@@ -175,7 +149,6 @@ const VideoChatAdmin = () => {
       localStreamRef.current = stream;
       setMediaEnabled({ video: true, audio: true });
 
-      // Set video source và force play
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
         try {
@@ -205,7 +178,6 @@ const VideoChatAdmin = () => {
     }
 
     try {
-      // Remove existing senders
       const senders = peer.getSenders();
       senders.forEach((sender) => {
         if (sender.track) {
@@ -214,7 +186,6 @@ const VideoChatAdmin = () => {
         }
       });
 
-      // Add new tracks
       stream.getTracks().forEach((track) => {
         console.log("➕ Adding track:", track.kind);
         peer.addTrack(track, stream);
@@ -244,7 +215,6 @@ const VideoChatAdmin = () => {
     try {
       console.log("📞 Answering call from:", incomingCall.from);
 
-      // Create new peer connection
       const peer = createPeerConnection();
       if (!peer) {
         throw new Error("Failed to create peer connection");
@@ -252,25 +222,21 @@ const VideoChatAdmin = () => {
 
       peerRef.current = peer;
 
-      // Enable media first
       const stream = await enableMedia();
       if (!stream) {
         throw new Error("Failed to enable media");
       }
 
-      // Add tracks to connection
       const tracksAdded = addTracksToConnection(peer, stream);
       if (!tracksAdded) {
         throw new Error("Failed to add tracks to connection");
       }
 
-      // Set remote description
       console.log("📝 Setting remote description...");
       await peer.setRemoteDescription(
         new RTCSessionDescription(incomingCall.offer)
       );
 
-      // Process buffered ICE candidates
       console.log(
         "🧊 Processing buffered ICE candidates:",
         iceBufferRef.current.length
@@ -286,7 +252,6 @@ const VideoChatAdmin = () => {
       }
       iceBufferRef.current = [];
 
-      // Create and send answer
       console.log("📤 Creating answer...");
       const answer = await peer.createAnswer();
       await peer.setLocalDescription(answer);
@@ -312,7 +277,6 @@ const VideoChatAdmin = () => {
   const endCall = useCallback(() => {
     console.log("📞 Ending call...");
 
-    // Stop all media tracks
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((track) => {
         track.stop();
@@ -321,7 +285,6 @@ const VideoChatAdmin = () => {
       localStreamRef.current = null;
     }
 
-    // Clear video elements
     if (localVideoRef.current) {
       localVideoRef.current.srcObject = null;
     }
@@ -330,10 +293,8 @@ const VideoChatAdmin = () => {
       remoteVideoRef.current.srcObject = null;
     }
 
-    // Cleanup peer connection
     cleanupPeerConnection();
 
-    // Reset states
     setInCall(false);
     setIncomingCall(null);
     setMediaEnabled({ video: false, audio: false });
@@ -351,33 +312,45 @@ const VideoChatAdmin = () => {
     message.info("Đã từ chối cuộc gọi");
   };
 
-  // Initialize socket connection
+  // Initialize socket connection - chỉ chạy một lần
   useEffect(() => {
-    if (isInitializedRef.current) {
-      console.log("⚠️ Already initialized, skipping...");
-      return;
-    }
-
     console.log("🔌 Initializing Admin socket connection...");
-    isInitializedRef.current = true;
 
-    const socket = getSocket();
+    // Tạo socket connection mới cho mỗi component instance
+    const socket = io("https://fashionstoreshopecommertbe.onrender.com", {
+      forceNew: true, // Force tạo connection mới
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
+
     socketRef.current = socket;
 
     // Socket event handlers
     const handleConnect = () => {
-      console.log("✅ Socket connected");
+      console.log("✅ Admin Socket connected:", socket.id);
       setSocketConnected(true);
       socket.emit("register", { userId: adminId });
     };
 
-    const handleDisconnect = () => {
-      console.log("❌ Socket disconnected");
+    const handleDisconnect = (reason) => {
+      console.log("❌ Admin Socket disconnected:", reason);
+      setSocketConnected(false);
+    };
+
+    const handleConnectError = (error) => {
+      console.error("❌ Socket connection error:", error);
       setSocketConnected(false);
     };
 
     const handleIncomingCall = ({ from, offer }) => {
       console.log("📞 Incoming call from:", from);
+
+      // Kiểm tra socket connection
+      if (!socket.connected) {
+        console.log("⚠️ Socket not connected, cannot receive call");
+        return;
+      }
 
       // If already in a call or answering, reject
       if (inCall || isAnsweringRef.current) {
@@ -426,25 +399,20 @@ const VideoChatAdmin = () => {
     // Add event listeners
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
+    socket.on("connect_error", handleConnectError);
     socket.on("incoming-call", handleIncomingCall);
     socket.on("ice-candidate", handleIceCandidate);
     socket.on("call-ended", handleCallEnded);
     socket.on("call-rejected", handleCallRejected);
 
-    // Connect socket
-    if (!socket.connected) {
-      socket.connect();
-    } else {
-      handleConnect();
-    }
-
     // Cleanup function
     return () => {
-      console.log("🧹 Component unmounting, cleaning up...");
+      console.log("🧹 Admin component unmounting, cleaning up...");
 
       // Remove event listeners
       socket.off("connect", handleConnect);
       socket.off("disconnect", handleDisconnect);
+      socket.off("connect_error", handleConnectError);
       socket.off("incoming-call", handleIncomingCall);
       socket.off("ice-candidate", handleIceCandidate);
       socket.off("call-ended", handleCallEnded);
@@ -453,35 +421,15 @@ const VideoChatAdmin = () => {
       // End call and cleanup
       endCall();
 
-      // Reset initialization flag
-      isInitializedRef.current = false;
+      // Disconnect socket
+      if (socket.connected) {
+        socket.disconnect();
+      }
 
-      // Don't disconnect socket here to allow reuse
-      // socket.disconnect()
+      socketRef.current = null;
+      setSocketConnected(false);
     };
-  }, []); // Empty dependency array to run only once
-
-  // Thêm useEffect này sau useEffect chính
-  useEffect(() => {
-    // Setup video elements
-    if (localVideoRef.current) {
-      localVideoRef.current.onloadedmetadata = () => {
-        console.log("📹 Local video metadata loaded");
-      };
-      localVideoRef.current.onplay = () => {
-        console.log("▶️ Local video started playing");
-      };
-    }
-
-    if (remoteVideoRef.current) {
-      remoteVideoRef.current.onloadedmetadata = () => {
-        console.log("📹 Remote video metadata loaded");
-      };
-      remoteVideoRef.current.onplay = () => {
-        console.log("▶️ Remote video started playing");
-      };
-    }
-  }, []);
+  }, []); // Empty dependency array
 
   return (
     <div style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto" }}>
@@ -513,6 +461,22 @@ const VideoChatAdmin = () => {
           {mediaEnabled.video && <Badge status="success" text="Camera" />}
           {mediaEnabled.audio && <Badge status="success" text="Microphone" />}
         </div>
+
+        {!socketConnected && (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "16px",
+              backgroundColor: "#fff2f0",
+              borderRadius: "8px",
+              marginBottom: "16px",
+            }}
+          >
+            <p style={{ color: "#ff4d4f", margin: 0 }}>
+              ⚠️ Mất kết nối với server. Đang thử kết nối lại...
+            </p>
+          </div>
+        )}
 
         {!inCall && !incomingCall && (
           <div style={{ textAlign: "center", padding: "32px 0" }}>
@@ -567,7 +531,7 @@ const VideoChatAdmin = () => {
                     borderRadius: "8px",
                     backgroundColor: "#000",
                     objectFit: "cover",
-                    display: "block", // Ensure video is displayed
+                    display: "block",
                   }}
                   onError={(e) => console.error("Local video error:", e)}
                 />
@@ -589,7 +553,7 @@ const VideoChatAdmin = () => {
                     borderRadius: "8px",
                     backgroundColor: "#000",
                     objectFit: "cover",
-                    display: "block", // Ensure video is displayed
+                    display: "block",
                   }}
                   onError={(e) => console.error("Remote video error:", e)}
                 />

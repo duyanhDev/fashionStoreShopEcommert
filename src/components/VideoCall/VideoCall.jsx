@@ -10,7 +10,6 @@ import {
 } from "@ant-design/icons";
 import { io } from "socket.io-client";
 
-const socket = io("https://fashionstoreshopecommertbe.onrender.com");
 const adminId = "673017dde4526bd79cc61fa6";
 
 const VideoChatUser = ({ userId }) => {
@@ -18,7 +17,8 @@ const VideoChatUser = ({ userId }) => {
   const remoteVideoRef = useRef(null);
   const peerRef = useRef(null);
   const localStreamRef = useRef(null);
-  const isCallingRef = useRef(false); // Prevent multiple call attempts
+  const isCallingRef = useRef(false);
+  const socketRef = useRef(null);
 
   const [inCall, setInCall] = useState(false);
   const [calling, setCalling] = useState(false);
@@ -27,6 +27,7 @@ const VideoChatUser = ({ userId }) => {
     video: false,
     audio: false,
   });
+  const [socketConnected, setSocketConnected] = useState(false);
 
   // ICE servers configuration
   const iceServers = [
@@ -39,13 +40,11 @@ const VideoChatUser = ({ userId }) => {
     console.log("🧹 Cleaning up peer connection...");
 
     if (peerRef.current) {
-      // Remove all event listeners
       peerRef.current.onicecandidate = null;
       peerRef.current.ontrack = null;
       peerRef.current.onconnectionstatechange = null;
       peerRef.current.oniceconnectionstatechange = null;
 
-      // Close the connection
       if (peerRef.current.signalingState !== "closed") {
         peerRef.current.close();
       }
@@ -57,16 +56,18 @@ const VideoChatUser = ({ userId }) => {
 
   const createPeerConnection = useCallback(() => {
     console.log("🔗 Creating new peer connection...");
-
-    // Cleanup existing connection first
     cleanupPeerConnection();
 
     const peer = new RTCPeerConnection({ iceServers });
 
     peer.onicecandidate = (event) => {
-      if (event.candidate && peer.signalingState !== "closed") {
+      if (
+        event.candidate &&
+        peer.signalingState !== "closed" &&
+        socketRef.current?.connected
+      ) {
         console.log("🧊 Sending ICE candidate to admin");
-        socket.emit("ice-candidate", {
+        socketRef.current.emit("ice-candidate", {
           to: adminId,
           candidate: event.candidate,
         });
@@ -80,16 +81,11 @@ const VideoChatUser = ({ userId }) => {
       );
       if (remoteVideoRef.current && event.streams[0]) {
         remoteVideoRef.current.srcObject = event.streams[0];
-
-        // Force play remote video
         remoteVideoRef.current
           .play()
-          .then(() => {
-            console.log("✅ Remote video playing");
-          })
+          .then(() => console.log("✅ Remote video playing"))
           .catch((playError) => {
             console.error("❌ Error playing remote video:", playError);
-            // Try to play with muted
             remoteVideoRef.current.muted = true;
             remoteVideoRef.current
               .play()
@@ -145,9 +141,7 @@ const VideoChatUser = ({ userId }) => {
       console.log("🎥 Requesting media access:", constraints);
       const newStream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      // Handle existing stream
       if (localStreamRef.current) {
-        // Stop old tracks of the same type
         newStream.getTracks().forEach((newTrack) => {
           const existingTrack = localStreamRef.current
             .getTracks()
@@ -159,7 +153,6 @@ const VideoChatUser = ({ userId }) => {
           localStreamRef.current.addTrack(newTrack);
         });
 
-        // Update video element
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = localStreamRef.current;
           try {
@@ -170,7 +163,6 @@ const VideoChatUser = ({ userId }) => {
           }
         }
       } else {
-        // Create new stream
         localStreamRef.current = newStream;
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = newStream;
@@ -217,7 +209,6 @@ const VideoChatUser = ({ userId }) => {
     }
 
     try {
-      // Remove existing senders
       const senders = peer.getSenders();
       senders.forEach((sender) => {
         if (sender.track) {
@@ -226,7 +217,6 @@ const VideoChatUser = ({ userId }) => {
         }
       });
 
-      // Add new tracks
       stream.getTracks().forEach((track) => {
         console.log("➕ Adding track:", track.kind);
         peer.addTrack(track, stream);
@@ -248,8 +238,8 @@ const VideoChatUser = ({ userId }) => {
       return;
     }
 
-    if (isCallingRef.current) {
-      console.log("⚠️ Already calling");
+    if (isCallingRef.current || !socketRef.current?.connected) {
+      console.log("⚠️ Already calling or socket not connected");
       return;
     }
 
@@ -266,19 +256,16 @@ const VideoChatUser = ({ userId }) => {
 
       peerRef.current = peer;
 
-      // Add tracks to connection
       const tracksAdded = addTracksToConnection(peer, localStreamRef.current);
       if (!tracksAdded) {
         throw new Error("Failed to add tracks to connection");
       }
 
-      // Create offer
       console.log("📤 Creating offer...");
       const offer = await peer.createOffer();
       await peer.setLocalDescription(offer);
 
-      // Send call request
-      socket.emit("call-user", {
+      socketRef.current.emit("call-user", {
         to: adminId,
         offer,
       });
@@ -298,7 +285,6 @@ const VideoChatUser = ({ userId }) => {
   const endCall = useCallback(() => {
     console.log("📞 Ending call...");
 
-    // Stop all media tracks
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((track) => {
         track.stop();
@@ -307,7 +293,6 @@ const VideoChatUser = ({ userId }) => {
       localStreamRef.current = null;
     }
 
-    // Clear video elements
     if (localVideoRef.current) {
       localVideoRef.current.srcObject = null;
     }
@@ -316,15 +301,12 @@ const VideoChatUser = ({ userId }) => {
       remoteVideoRef.current.srcObject = null;
     }
 
-    // Emit end call if we were in a call
-    if (inCall || calling) {
-      socket.emit("end-call", { to: adminId });
+    if ((inCall || calling) && socketRef.current?.connected) {
+      socketRef.current.emit("end-call", { to: adminId });
     }
 
-    // Cleanup peer connection
     cleanupPeerConnection();
 
-    // Reset states
     setInCall(false);
     setCalling(false);
     setMediaEnabled({ video: false, audio: false });
@@ -337,9 +319,34 @@ const VideoChatUser = ({ userId }) => {
     if (!userId) return;
 
     console.log("🔌 User connecting to socket with ID:", userId);
-    socket.emit("register", { userId });
 
-    socket.on("call-answered", async ({ answer }) => {
+    // Tạo socket connection mới
+    const socket = io("https://fashionstoreshopecommertbe.onrender.com", {
+      forceNew: true, // Force tạo connection mới
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
+
+    socketRef.current = socket;
+
+    const handleConnect = () => {
+      console.log("✅ User Socket connected:", socket.id);
+      setSocketConnected(true);
+      socket.emit("register", { userId });
+    };
+
+    const handleDisconnect = (reason) => {
+      console.log("❌ User Socket disconnected:", reason);
+      setSocketConnected(false);
+    };
+
+    const handleConnectError = (error) => {
+      console.error("❌ Socket connection error:", error);
+      setSocketConnected(false);
+    };
+
+    const handleCallAnswered = async ({ answer }) => {
       console.log("✅ Call answered by admin");
       if (peerRef.current && peerRef.current.signalingState !== "closed") {
         try {
@@ -350,9 +357,9 @@ const VideoChatUser = ({ userId }) => {
           console.error("❌ Error setting remote description:", err);
         }
       }
-    });
+    };
 
-    socket.on("ice-candidate", async ({ candidate }) => {
+    const handleIceCandidate = async ({ candidate }) => {
       console.log("🧊 Received ICE candidate from admin");
       try {
         if (
@@ -365,52 +372,54 @@ const VideoChatUser = ({ userId }) => {
       } catch (err) {
         console.error("❌ Failed to add ICE candidate:", err);
       }
-    });
+    };
 
-    socket.on("call-ended", () => {
+    const handleCallEnded = () => {
       console.log("📞 Call ended by admin");
       endCall();
-    });
+    };
 
-    socket.on("call-rejected", () => {
+    const handleCallRejected = () => {
       console.log("📞 Call was rejected by admin");
       setCalling(false);
       cleanupPeerConnection();
       message.error("Admin đã từ chối cuộc gọi");
-    });
+    };
+
+    // Add event listeners
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("connect_error", handleConnectError);
+    socket.on("call-answered", handleCallAnswered);
+    socket.on("ice-candidate", handleIceCandidate);
+    socket.on("call-ended", handleCallEnded);
+    socket.on("call-rejected", handleCallRejected);
 
     return () => {
-      console.log("🧹 Component unmounting, cleaning up...");
-      socket.off("call-answered");
-      socket.off("ice-candidate");
-      socket.off("call-ended");
-      socket.off("call-rejected");
+      console.log("🧹 User component unmounting, cleaning up...");
+
+      // Remove event listeners
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("connect_error", handleConnectError);
+      socket.off("call-answered", handleCallAnswered);
+      socket.off("ice-candidate", handleIceCandidate);
+      socket.off("call-ended", handleCallEnded);
+      socket.off("call-rejected", handleCallRejected);
+
+      // End call and cleanup
       endCall();
+
+      // Disconnect socket
+      if (socket.connected) {
+        socket.disconnect();
+      }
+
+      socketRef.current = null;
+      setSocketConnected(false);
     };
   }, [userId, endCall]);
 
-  useEffect(() => {
-    if (localVideoRef.current) {
-      localVideoRef.current.style.width = "100%";
-      localVideoRef.current.style.maxWidth = "400px";
-      localVideoRef.current.style.height = "300px";
-      localVideoRef.current.style.border = "1px solid #d9d9d9";
-      localVideoRef.current.style.borderRadius = "8px";
-      localVideoRef.current.style.backgroundColor = "black";
-      localVideoRef.current.style.objectFit = "cover";
-    }
-    if (remoteVideoRef.current) {
-      remoteVideoRef.current.style.width = "100%";
-      remoteVideoRef.current.style.maxWidth = "400px";
-      remoteVideoRef.current.style.height = "300px";
-      remoteVideoRef.current.style.border = "1px solid #d9d9d9";
-      remoteVideoRef.current.style.borderRadius = "8px";
-      remoteVideoRef.current.style.backgroundColor = "black";
-      remoteVideoRef.current.style.objectFit = "cover";
-    }
-  }, []);
-
-  // Nếu không có userId, hiển thị thông báo
   if (!userId) {
     return (
       <div style={{ padding: "24px", textAlign: "center" }}>
@@ -436,6 +445,10 @@ const VideoChatUser = ({ userId }) => {
           }}
         >
           <Badge
+            status={socketConnected ? "success" : "error"}
+            text={`Socket: ${socketConnected ? "Connected" : "Disconnected"}`}
+          />
+          <Badge
             status={
               connectionState === "connected"
                 ? "success"
@@ -445,11 +458,27 @@ const VideoChatUser = ({ userId }) => {
                 ? "error"
                 : "default"
             }
-            text={`Trạng thái: ${connectionState}`}
+            text={`WebRTC: ${connectionState}`}
           />
           {mediaEnabled.video && <Badge status="success" text="Camera" />}
           {mediaEnabled.audio && <Badge status="success" text="Microphone" />}
         </div>
+
+        {!socketConnected && (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "16px",
+              backgroundColor: "#fff2f0",
+              borderRadius: "8px",
+              marginBottom: "16px",
+            }}
+          >
+            <p style={{ color: "#ff4d4f", margin: 0 }}>
+              ⚠️ Mất kết nối với server. Đang thử kết nối lại...
+            </p>
+          </div>
+        )}
 
         {!inCall && !calling && (
           <div
@@ -501,7 +530,10 @@ const VideoChatUser = ({ userId }) => {
                 size="large"
                 icon={<PhoneOutlined />}
                 onClick={startCall}
-                disabled={!mediaEnabled.video && !mediaEnabled.audio}
+                disabled={
+                  (!mediaEnabled.video && !mediaEnabled.audio) ||
+                  !socketConnected
+                }
                 loading={isCallingRef.current}
                 style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
               >
