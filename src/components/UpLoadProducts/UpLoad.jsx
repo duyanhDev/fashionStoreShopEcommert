@@ -546,7 +546,7 @@ const UpLoad = () => {
                     <InputNumber
                       style={{ width: "100%" }}
                       min={1}
-                      max={https://fashionstoreshopecommertbe.onrender.com"0000}
+                      max={9000000}
                       value={price}
                       onChange={onChangePrice}
                       formatter={(value) =>
