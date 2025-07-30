@@ -26,6 +26,7 @@ const socket = io("https://fashionstoreshopecommertbe.onrender.com", {
 //   reconnection: true,
 //   reconnectionAttempts: 5,
 // });
+
 const ChatSp = () => {
   const { user } = useSelector((state) => state.auth);
   const [messages, setMessages] = useState([]);
@@ -36,8 +37,27 @@ const ChatSp = () => {
   const textareaRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const fileInputRef = useRef(null);
-
   const [senderId, setSenderId] = useState("");
+  const [isMobileView, setIsMobileView] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Responsive handler
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobileView(mobile);
+      if (mobile) {
+        setShowSidebar(false);
+      } else {
+        setShowSidebar(true);
+      }
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const adjustTextareaHeight = () => {
     const textarea = textareaRef.current;
@@ -194,6 +214,7 @@ const ChatSp = () => {
 
   const handleChangeSetId = (id) => {
     setSenderId(id);
+    if (isMobileView) setShowSidebar(false);
   };
 
   const onChangeIsread = async () => {
@@ -222,239 +243,455 @@ const ChatSp = () => {
     fetchgetMessList();
   }, [user._id]);
 
+  // Format time helper
+  const formatTime = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+
+    if (diffInMinutes < 1) return "Vừa xong";
+    if (diffInMinutes < 60) return `${diffInMinutes} phút`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)} giờ`;
+    return date.toLocaleDateString("vi-VN");
+  };
+
+  // Filter conversations
+  const filteredFriends = MessFriends.filter(
+    (item, index, self) =>
+      item.recipient?._id &&
+      item.recipient?._id !== user._id &&
+      item.recipient.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      index === self.findIndex((t) => t.recipient?._id === item.recipient?._id)
+  );
+
+  // Get current conversation
+  const currentConversation = data.find(
+    (item) => item.sender?._id === senderId && item.sender?._id !== user._id
+  );
+
   return (
-    <div className="chat_container ">
-      <div className="flex justify-between m-6 main_chat">
-        <div className="w-1/5 main_chat-users">
-          <h1 className="text_main-h1 text-center">Tất cả</h1>
-          {MessFriends &&
-            MessFriends.length > 0 &&
-            MessFriends.filter(
-              (item, index, self) =>
-                item.recipient?._id &&
-                item.recipient?._id !== user._id && // Lọc bỏ cuộc trò chuyện với chính mình
-                index ===
-                  self.findIndex(
-                    (t) => t.recipient?._id === item.recipient?._id
-                  )
-            ).map((item) => (
-              <div
-                key={item.recipient._id}
-                className="mt-5 cursor-pointer"
-                onClick={onChangeIsread}
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
+      {/* Sidebar */}
+      <div
+        className={`${showSidebar ? (isMobileView ? "w-full" : "w-80") : "w-0"} 
+        ${isMobileView ? "absolute inset-0 z-50" : "relative"} 
+        bg-white border-r border-gray-200 flex flex-col transition-all duration-300 overflow-hidden shadow-lg`}
+      >
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-purple-600">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold text-white">Hỗ trợ khách hàng</h1>
+            {isMobileView && (
+              <button
+                onClick={() => setShowSidebar(false)}
+                className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
               >
-                <div
-                  className="flex justify-center gap-3 items-center"
-                  onClick={() => handleChangeSetId(item.recipient._id)}
-                >
+                <CloseOutlined className="text-lg" />
+              </button>
+            )}
+          </div>
+
+          {/* Search */}
+          <div className="mt-3 relative">
+            <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+              <svg
+                className="w-4 h-4 text-white/70"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Tìm kiếm cuộc trò chuyện..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-white/20 text-white placeholder-white/70 rounded-lg border border-white/30 focus:outline-none focus:bg-white/30 transition-colors"
+            />
+          </div>
+        </div>
+
+        {/* Conversations List */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="mt-3">
+            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+              Cuộc trò chuyện
+            </h2>
+          </div>
+
+          {filteredFriends.map((item) => (
+            <div
+              key={item.recipient._id}
+              className={`mx-3 mb-2 rounded-xl cursor-pointer transition-all duration-200 hover:bg-gray-50 
+                ${
+                  senderId === item.recipient._id
+                    ? "bg-blue-50 border border-blue-200 shadow-sm"
+                    : ""
+                }`}
+              onClick={() => {
+                handleChangeSetId(item.recipient._id);
+                onChangeIsread();
+              }}
+            >
+              <div className="flex items-center p-3">
+                <div className="relative">
                   <img
                     src={item.recipient.avatar}
-                    className="w-12 h-12 rounded-full"
+                    className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
                     alt="avatar"
                   />
-                  <div className="w-32">
-                    <span>{item.recipient.name}</span>
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                </div>
+
+                <div className="ml-3 flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900 truncate">
+                      {item.recipient.name}
+                    </h3>
+                    <span className="text-xs text-gray-500">
+                      {formatTime(item.sentAt)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between mt-1">
                     <p
-                      className={`${
-                        item.isRead ? "text-blue-400" : "text-black font-bold"
+                      className={`text-sm truncate ${
+                        item.isRead
+                          ? "text-gray-500"
+                          : "text-gray-900 font-semibold"
                       }`}
                     >
                       {item.messageSender?._id === user?._id
                         ? `Bạn: ${item.content}`
                         : item.content}
                     </p>
+                    {!item.isRead && (
+                      <div className="ml-2 w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Chat Header */}
+        <div className="bg-white border-b border-gray-200 px-4 py-3 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              {isMobileView && (
+                <button
+                  onClick={() => setShowSidebar(true)}
+                  className="mr-3 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
+                  </svg>
+                </button>
+              )}
+
+              {currentConversation && (
+                <div className="flex items-center">
+                  <div className="relative">
+                    <img
+                      src={currentConversation.sender.avatar}
+                      alt={currentConversation.sender.name}
+                      className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+                    />
+                    <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                  </div>
+                  <div className="ml-3">
+                    <h2 className="font-semibold text-gray-900">
+                      {currentConversation.sender.name}
+                    </h2>
+                    <p className="text-sm text-green-500 font-medium">
+                      Đang hoạt động
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <svg
+                  className="w-5 h-5 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                  />
+                </svg>
+              </button>
+              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <svg
+                  className="w-5 h-5 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
+                </svg>
+              </button>
+              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <svg
+                  className="w-5 h-5 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div
+          ref={messagesContainerRef}
+          className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50 to-white"
+        >
+          {Array.isArray(messages) &&
+            messages.map((message, index) => (
+              <div
+                key={message?._id || index}
+                className={`flex ${
+                  message.sender?._id === user?._id
+                    ? "justify-end"
+                    : "justify-start"
+                }`}
+              >
+                <div
+                  className={`flex items-end space-x-2 max-w-xs lg:max-w-md ${
+                    message.sender?._id === user?._id
+                      ? "flex-row-reverse space-x-reverse"
+                      : ""
+                  }`}
+                >
+                  <img
+                    className="w-8 h-8 rounded-full object-cover flex-shrink-0 border-2 border-white shadow-sm"
+                    src={
+                      message?.sender?.avatar ||
+                      "https://via.placeholder.com/40"
+                    }
+                    alt="Avatar"
+                  />
+
+                  <div
+                    className={`relative px-4 py-3 rounded-2xl shadow-sm ${
+                      message.sender?._id === user?._id
+                        ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-br-md"
+                        : "bg-white text-gray-800 border border-gray-200 rounded-bl-md"
+                    }`}
+                  >
+                    <div
+                      className={`text-xs font-medium mb-1 ${
+                        message.sender?._id === user?._id
+                          ? "text-blue-100"
+                          : "text-gray-500"
+                      }`}
+                    >
+                      {message?.sender?.name}
+                    </div>
+
+                    {/* Hiển thị text */}
+                    {message.content && (
+                      <p className="whitespace-pre-wrap leading-relaxed">
+                        {message.content}
+                      </p>
+                    )}
+
+                    {/* Hiển thị ảnh */}
+                    {message.images && message.images.length > 0 && (
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        {message.images.map((imageUrl, imgIndex) => (
+                          <img
+                            key={imgIndex}
+                            src={
+                              typeof imageUrl === "string" ? imageUrl : imageUrl
+                            }
+                            alt={`Message image ${imgIndex + 1}`}
+                            className="w-20 h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity border border-white/20"
+                            onClick={() =>
+                              window.open(
+                                typeof imageUrl === "string"
+                                  ? imageUrl
+                                  : imageUrl,
+                                "_blank"
+                              )
+                            }
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    <div
+                      className={`flex items-center justify-between mt-2 ${
+                        message.sender?._id === user?._id
+                          ? "text-blue-100"
+                          : "text-gray-500"
+                      }`}
+                    >
+                      <span className="text-xs">
+                        {message.sentAt && formatTime(message.sentAt)}
+                      </span>
+                      {message.sender?._id === user?._id && (
+                        <div className="ml-2">
+                          <svg
+                            className="w-3 h-3"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             ))}
         </div>
 
-        <div className="w-4/5">
-          <div className="flex flex-col mess_users-cl mt-4">
-            <div className="text-white flex justify-between items-center">
-              <h1 className="text-xl font-bold text-black">
-                {data
-                  .filter(
-                    (item, index, self) =>
-                      item.sender?._id && // Kiểm tra item.recipient và item.recipient._id
-                      index ===
-                        self.findIndex((t) => t.sender?._id === senderId)
-                  )
-                  .map(
-                    (item) =>
-                      item.sender?._id !== user._id && (
-                        <div
-                          key={item.sender._id}
-                          className="mt-5 cursor-pointer"
-                        >
-                          <div
-                            className="flex justify-center gap-3 items-center "
-                            onClick={() => handleChangeSetId(item.sender._id)}
-                          >
-                            <img
-                              src={item.sender.avatar}
-                              className="w-12 h-12 rounded-full "
-                              alt="avatar"
-                            />
-                            <div>
-                              <span>{item.sender.name}</span>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                  )}
-              </h1>
-              <h1 className="text-xl font-bold text-black">
-                <CloseOutlined />
-              </h1>
-            </div>
-
-            <div
-              ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto p-4 space-y-4"
-            >
-              {Array.isArray(messages) &&
-                messages.map((message, index) => (
-                  <div
-                    key={message?._id || index}
-                    className={`flex ${
-                      message.sender?._id === user?._id
-                        ? "justify-end"
-                        : "justify-start"
-                    }`}
-                  >
-                    <div
-                      className={`max-w-xs px-4 py-2 rounded-lg ${
-                        message.sender?._id === user?._id
-                          ? "bg-blue-500 text-white rounded-br-none"
-                          : "bg-white text-gray-800 rounded-bl-none"
-                      }`}
+        {/* Message Input */}
+        <div className="p-4 bg-white border-t border-gray-200">
+          {/* Hiển thị ảnh đã chọn */}
+          {selectedImages.length > 0 && (
+            <div className="mb-4 p-3 bg-gray-50 rounded-xl">
+              <div className="flex flex-wrap gap-2">
+                {selectedImages.map((image) => (
+                  <div key={image.id} className="relative">
+                    <img
+                      src={image.preview}
+                      alt="Preview"
+                      className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(image.id)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors shadow-lg"
                     >
-                      <div className="flex  items-center gap-1">
-                        <img
-                          className="w-12 h-12 rounded-full"
-                          src={
-                            message?.sender?.avatar || "default-avatar-url.jpg"
-                          } // URL ảnh mặc định nếu không có avatar
-                          alt="Avatar"
-                        />
-
-                        <span>{message?.sender?.name}</span>
-                      </div>
-
-                      {/* Hiển thị text */}
-                      {message.content && (
-                        <p className="whitespace-pre-wrap mt-2">
-                          {message.content}
-                        </p>
-                      )}
-
-                      {/* Hiển thị ảnh */}
-                      {message.images && message.images.length > 0 && (
-                        <div className="mt-2 grid grid-cols-2 gap-2">
-                          {message.images.map((imageUrl, imgIndex) => (
-                            <img
-                              key={imgIndex}
-                              src={
-                                typeof imageUrl === "string"
-                                  ? imageUrl
-                                  : imageUrl
-                              }
-                              alt={`Message image ${imgIndex + 1}`}
-                              className="w-20 h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
-                              onClick={() =>
-                                window.open(
-                                  typeof imageUrl === "string"
-                                    ? imageUrl
-                                    : imageUrl,
-                                  "_blank"
-                                )
-                              }
-                            />
-                          ))}
-                        </div>
-                      )}
-
-                      <span className="text-xs opacity-75 mt-1 block">
-                        {message.sentAt &&
-                          new Date(message.sentAt).toLocaleTimeString()}
-                      </span>
-                    </div>
+                      <DeleteOutlined />
+                    </button>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-end space-x-3">
+            <div className="flex-1 relative">
+              <textarea
+                onClick={onChangeIsread}
+                ref={textareaRef}
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Nhập tin nhắn..."
+                className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none max-h-32 transition-all"
+                style={{ minHeight: "48px", lineHeight: "20px" }}
+              />
+
+              <div className="absolute right-3 bottom-3">
+                <button
+                  type="button"
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </button>
+              </div>
             </div>
 
-            <div className="p-4 bg-white border-t">
-              {/* Hiển thị ảnh đã chọn */}
-              {selectedImages.length > 0 && (
-                <div className="mb-4 p-2 bg-gray-50 rounded-lg">
-                  <div className="flex flex-wrap gap-2">
-                    {selectedImages.map((image) => (
-                      <div key={image.id} className="relative">
-                        <img
-                          src={image.preview}
-                          alt="Preview"
-                          className="w-16 h-16 object-cover rounded-lg"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(image.id)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                        >
-                          <DeleteOutlined />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <form
-                onSubmit={handleSend}
-                className="relative flex items-end space-x-2"
+            <div className="flex items-center space-x-2">
+              {/* Nút chọn ảnh */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageSelect}
+                accept="image/*"
+                multiple
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="p-3 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <div className="flex-1 relative">
-                  <textarea
-                    onClick={onChangeIsread}
-                    ref={textareaRef}
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Nhập tin nhắn..."
-                    className="w-full px-4 py-2 border rounded-full focus:outline-none focus:border-blue-500 resize-none min-h-[40px] max-h-[150px] overflow-y-auto"
-                    style={{ lineHeight: "20px" }}
-                  />
-                </div>
+                <PictureOutlined className="text-lg" />
+              </button>
 
-                {/* Nút chọn ảnh */}
-                <div className="flex-shrink-0 self-center">
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleImageSelect}
-                    accept="image/*"
-                    multiple
-                    className="hidden"
+              <button
+                type="button"
+                onClick={handleSend}
+                disabled={!newMessage.trim() && selectedImages.length === 0}
+                className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
                   />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="h-10 w-10 bg-gray-500 text-white rounded-full hover:bg-gray-600 focus:outline-none flex items-center justify-center"
-                  >
-                    <PictureOutlined />
-                  </button>
-                </div>
-
-                <div className="flex-shrink-0 self-center">
-                  <button
-                    type="submit"
-                    disabled={!newMessage.trim() && selectedImages.length === 0}
-                    className="h-10 px-6 bg-blue-500 text-white rounded-full hover:bg-blue-600 focus:outline-none disabled:opacity-50"
-                  >
-                    Gửi
-                  </button>
-                </div>
-              </form>
+                </svg>
+              </button>
             </div>
           </div>
         </div>

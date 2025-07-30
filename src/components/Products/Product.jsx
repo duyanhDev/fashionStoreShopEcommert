@@ -246,7 +246,8 @@ const Products = () => {
   const props = {
     name: "execl", // key này phải giống bên backend đọc
     accept: ".xlsx,.xls", // chỉ nhận file Excel
-    action: "http://localhost:9000/api/v1/products/excel",
+    action:
+      "https://fashionstoreshopecommertbe.onrender.com/api/v1/products/excel",
     headers: {
       authorization: "authorization-text",
     },

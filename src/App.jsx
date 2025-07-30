@@ -22,6 +22,8 @@ import Footer from "./components/Footer/Footer";
 import Message from "./components/Messages/Message";
 import { getMessagesList, UpdateIsReadAPI } from "./service/Message";
 import { getListProductsAPI } from "./service/ApiProduct";
+import VideoChatAdmin from "./components/VideoChatAdmin/VideoChatAdmin";
+import VideoChatUser from "./components/VideoCall/VideoCall";
 
 function App() {
   const { user } = useSelector((state) => state.auth);
@@ -36,6 +38,7 @@ function App() {
   const hideFooter = location.pathname === "/cart";
   const { pathname } = useLocation();
 
+  const isAdmin = user?.role === "admin";
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" }); // scroll mượt
   }, [pathname]);
@@ -634,6 +637,10 @@ function App() {
       )}
 
       {!hideFooter && <Footer />}
+
+      <div>
+        {isAdmin ? <VideoChatAdmin /> : <VideoChatUser userId={user?._id} />}
+      </div>
     </div>
   );
 }

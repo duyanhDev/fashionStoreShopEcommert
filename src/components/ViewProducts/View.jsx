@@ -478,7 +478,7 @@ const View = () => {
                     <InputNumber
                       style={{ width: "100%" }}
                       min={1}
-                      max={90000000}
+                      max={https://fashionstoreshopecommertbe.onrender.com"0000}
                       value={price}
                       onChange={onChangePrice}
                       formatter={(value) =>
