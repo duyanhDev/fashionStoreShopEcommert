@@ -92,7 +92,11 @@ const VideoChatAdmin = () => {
       remoteVideoRef.current.srcObject = null;
     }
 
-    if (inCall && socketRef.current?.connected && incomingCall) {
+    if (
+      (inCall || incomingCall) &&
+      socketRef.current?.connected &&
+      incomingCall
+    ) {
       socketRef.current.emit("end-call", { to: incomingCall.from });
     }
 
@@ -197,123 +201,120 @@ const VideoChatAdmin = () => {
     []
   );
 
-  const createPeerConnection = useCallback(
-    (callerUserId) => {
-      console.log(
-        "🔗 Admin: Creating new peer connection for caller:",
-        callerUserId
-      );
-      cleanupPeerConnection();
+  const createPeerConnection = useCallback(() => {
+    console.log("🔗 Admin: Creating new peer connection...");
+    cleanupPeerConnection();
 
-      const peer = new RTCPeerConnection({
-        iceServers,
-        iceCandidatePoolSize: 10,
-        iceTransportPolicy: "all",
+    const peer = new RTCPeerConnection({
+      iceServers,
+      iceCandidatePoolSize: 10,
+      iceTransportPolicy: "all",
+    });
+
+    peer.onicecandidate = (event) => {
+      if (
+        event.candidate &&
+        peer.signalingState !== "closed" &&
+        socketRef.current?.connected &&
+        incomingCall
+      ) {
+        console.log("🧊 Admin: Sending ICE candidate to user");
+        socketRef.current.emit("ice-candidate", {
+          to: incomingCall.from,
+          candidate: event.candidate,
+        });
+      }
+    };
+
+    peer.ontrack = (event) => {
+      console.log("📺 Admin: Received remote stream from user");
+      console.log("📺 Admin: Stream details:", {
+        streamId: event.streams[0]?.id,
+        tracks: event.streams[0]?.getTracks().map((t) => ({
+          kind: t.kind,
+          enabled: t.enabled,
+          readyState: t.readyState,
+          muted: t.muted,
+        })),
       });
 
-      peer.onicecandidate = (event) => {
-        if (
-          event.candidate &&
-          peer.signalingState !== "closed" &&
-          socketRef.current?.connected
-        ) {
-          console.log("🧊 Admin: Sending ICE candidate to:", callerUserId);
-          socketRef.current.emit("ice-candidate", {
-            to: callerUserId,
-            candidate: event.candidate,
-          });
-        }
-      };
+      if (remoteVideoRef.current && event.streams[0]) {
+        remoteVideoRef.current.srcObject = event.streams[0];
+        remoteVideoRef.current.muted = false;
+        remoteVideoRef.current.volume = 1.0;
 
-      peer.ontrack = (event) => {
-        console.log("📺 Admin: Received remote stream from user");
-        console.log("📺 Admin: Stream details:", {
-          streamId: event.streams[0]?.id,
-          tracks: event.streams[0]?.getTracks().map((t) => ({
-            kind: t.kind,
-            enabled: t.enabled,
-            readyState: t.readyState,
-            muted: t.muted,
-          })),
-        });
-
-        if (remoteVideoRef.current && event.streams[0]) {
-          remoteVideoRef.current.srcObject = event.streams[0];
-          remoteVideoRef.current.muted = false; // QUAN TRỌNG: Không mute để nghe audio
-          remoteVideoRef.current.volume = 1.0;
-
-          remoteVideoRef.current
-            .play()
-            .then(() => {
-              console.log("✅ Admin: Remote video playing successfully");
-              const audioTracks = event.streams[0].getAudioTracks();
-              const videoTracks = event.streams[0].getVideoTracks();
-              console.log(`🔊 Admin: Audio tracks: ${audioTracks.length}`);
-              console.log(`📹 Admin: Video tracks: ${videoTracks.length}`);
-            })
-            .catch((playError) => {
-              console.error("❌ Admin: Error playing remote video:", playError);
-              remoteVideoRef.current.muted = true;
-              remoteVideoRef.current
-                .play()
-                .then(() => {
-                  console.log("✅ Admin: Remote video playing (muted)");
-                  setTimeout(() => {
-                    if (remoteVideoRef.current) {
-                      remoteVideoRef.current.muted = false;
-                      console.log("🔊 Admin: Unmuted remote video");
-                    }
-                  }, 1000);
-                })
-                .catch((e) => console.error("❌ Admin: Still can't play:", e));
+        remoteVideoRef.current
+          .play()
+          .then(() => {
+            console.log("✅ Admin: Remote video playing successfully");
+            const audioTracks = event.streams[0].getAudioTracks();
+            audioTracks.forEach((track) => {
+              console.log(
+                `🔊 Admin: Audio track: ${track.kind}, enabled: ${track.enabled}, muted: ${track.muted}`
+              );
             });
-        }
-      };
+          })
+          .catch((playError) => {
+            console.error("❌ Admin: Error playing remote video:", playError);
+            remoteVideoRef.current.muted = true;
+            remoteVideoRef.current
+              .play()
+              .then(() => {
+                console.log("✅ Admin: Remote video playing (muted)");
+                setTimeout(() => {
+                  if (remoteVideoRef.current) {
+                    remoteVideoRef.current.muted = false;
+                    console.log("🔊 Admin: Unmuted remote video");
+                  }
+                }, 1000);
+              })
+              .catch((e) => console.error("❌ Admin: Still can't play:", e));
+          });
+      }
+    };
 
-      peer.onconnectionstatechange = () => {
-        console.log("🔗 Admin: Connection state:", peer.connectionState);
-        setConnectionState(peer.connectionState);
+    peer.onconnectionstatechange = () => {
+      console.log("🔗 Admin: Connection state:", peer.connectionState);
+      setConnectionState(peer.connectionState);
 
-        if (peer.connectionState === "connected") {
-          setInCall(true);
-          message.success("✅ Đã kết nối với user thành công!");
-        } else if (peer.connectionState === "failed") {
-          message.error("❌ Kết nối thất bại");
-          setTimeout(() => endCall(), 2000);
-        } else if (peer.connectionState === "disconnected") {
-          console.log(
-            "⚠️ Admin: Connection disconnected, attempting reconnection..."
-          );
-          message.warning("Mất kết nối, đang thử kết nối lại...");
-          setTimeout(() => {
-            if (peer.connectionState === "disconnected") {
-              peer.restartIce();
-            }
-          }, 1000);
-        }
-      };
+      if (peer.connectionState === "connected") {
+        setInCall(true);
+        message.success("✅ Đã kết nối với user");
+      } else if (peer.connectionState === "failed") {
+        message.error("❌ Kết nối thất bại");
+        setTimeout(() => endCall(), 2000);
+      } else if (peer.connectionState === "disconnected") {
+        console.log(
+          "⚠️ Admin: Connection disconnected, attempting reconnection..."
+        );
+        message.warning("Mất kết nối, đang thử kết nối lại...");
+        setTimeout(() => {
+          if (peer.connectionState === "disconnected") {
+            peer.restartIce();
+          }
+        }, 1000);
+      }
+    };
 
-      peer.oniceconnectionstatechange = () => {
-        console.log("🧊 Admin: ICE connection state:", peer.iceConnectionState);
+    peer.oniceconnectionstatechange = () => {
+      console.log("🧊 Admin: ICE connection state:", peer.iceConnectionState);
 
-        if (peer.iceConnectionState === "failed") {
-          console.log("🔄 Admin: ICE connection failed, attempting restart...");
-          peer.restartIce();
-        } else if (peer.iceConnectionState === "disconnected") {
-          console.log("⚠️ Admin: ICE disconnected, will attempt restart...");
-          setTimeout(() => {
-            if (peer.iceConnectionState === "disconnected") {
-              console.log("🔄 Admin: ICE still disconnected, restarting...");
-              peer.restartIce();
-            }
-          }, 2000);
-        }
-      };
+      if (peer.iceConnectionState === "failed") {
+        console.log("🔄 Admin: ICE connection failed, attempting restart...");
+        peer.restartIce();
+      } else if (peer.iceConnectionState === "disconnected") {
+        console.log("⚠️ Admin: ICE disconnected, will attempt restart...");
+        setTimeout(() => {
+          if (peer.iceConnectionState === "disconnected") {
+            console.log("🔄 Admin: ICE still disconnected, restarting...");
+            peer.restartIce();
+          }
+        }, 2000);
+      }
+    };
 
-      return peer;
-    },
-    [cleanupPeerConnection, endCall]
-  );
+    return peer;
+  }, [cleanupPeerConnection, endCall, incomingCall]);
 
   const addTracksToConnection = useCallback((peer, stream) => {
     if (!peer || peer.signalingState === "closed") {
@@ -362,7 +363,6 @@ const VideoChatAdmin = () => {
       return;
     }
 
-    // Kiểm tra xem đã bật media chưa
     if (
       !localStreamRef.current ||
       (!mediaEnabled.video && !mediaEnabled.audio)
@@ -378,27 +378,24 @@ const VideoChatAdmin = () => {
     try {
       console.log("📞 Admin: Answering call from:", incomingCall.from);
 
-      // Create peer connection
-      const peer = createPeerConnection(incomingCall.from);
+      const peer = createPeerConnection();
       if (!peer) {
         throw new Error("Failed to create peer connection");
       }
 
       peerRef.current = peer;
 
-      // Add local tracks to peer connection TRƯỚC KHI set remote description
+      // QUAN TRỌNG: Add tracks TRƯỚC KHI set remote description
       const tracksAdded = addTracksToConnection(peer, localStreamRef.current);
       if (!tracksAdded) {
         throw new Error("Failed to add tracks to connection");
       }
 
-      // Set remote description (the offer from user)
       console.log("📝 Admin: Setting remote description...");
       await peer.setRemoteDescription(
         new RTCSessionDescription(incomingCall.offer)
       );
 
-      // Create and send answer
       console.log("📤 Admin: Creating answer...");
       const answer = await peer.createAnswer({
         offerToReceiveAudio: true,
@@ -424,7 +421,6 @@ const VideoChatAdmin = () => {
         }
       });
 
-      // Send answer to user
       console.log("📤 Admin: Sending answer to user...");
       console.log("📤 Admin: Answer details:", {
         type: peer.localDescription.type,
@@ -467,14 +463,14 @@ const VideoChatAdmin = () => {
     message.info("Đã từ chối cuộc gọi");
   }, [incomingCall]);
 
-  // Initialize socket connection
+  // Main useEffect
   useEffect(() => {
     if (isInitializedRef.current) {
       console.log("⚠️ Admin: Already initialized, skipping...");
       return;
     }
 
-    console.log("🔌 Admin: Initializing socket connection...");
+    console.log("🔌 Admin: Connecting to socket...");
     isInitializedRef.current = true;
     cleanupRef.current = false;
 
@@ -483,6 +479,7 @@ const VideoChatAdmin = () => {
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
+      timeout: 20000,
     });
 
     socketRef.current = socket;
@@ -530,7 +527,7 @@ const VideoChatAdmin = () => {
     };
 
     const handleIceCandidate = async ({ candidate }) => {
-      console.log("🧊 Admin: Received ICE candidate");
+      console.log("🧊 Admin: Received ICE candidate from user");
       try {
         if (
           peerRef.current &&
@@ -555,7 +552,6 @@ const VideoChatAdmin = () => {
       message.info("Cuộc gọi đã bị từ chối");
     };
 
-    // Add event listeners
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
     socket.on("connect_error", handleConnectError);
@@ -564,7 +560,6 @@ const VideoChatAdmin = () => {
     socket.on("call-ended", handleCallEnded);
     socket.on("call-rejected", handleCallRejected);
 
-    // Cleanup function
     return () => {
       if (cleanupRef.current) return;
 
@@ -589,11 +584,14 @@ const VideoChatAdmin = () => {
       setSocketConnected(false);
       isInitializedRef.current = false;
     };
-  }, [endCall]);
+  }, [endCall, inCall, incomingCall, cleanupPeerConnection]);
 
   return (
     <div style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto" }}>
-      <Card title="📡 Admin Video Chat" style={{ marginBottom: "16px" }}>
+      <Card
+        title={`📡 Admin Video Chat - ID: ${adminId}`}
+        style={{ marginBottom: "16px" }}
+      >
         <div
           style={{
             display: "flex",
@@ -693,9 +691,6 @@ const VideoChatAdmin = () => {
               <p style={{ color: "#666" }}>
                 Đang chờ cuộc gọi từ người dùng...
               </p>
-              <p style={{ color: "#999", fontSize: "12px" }}>
-                Admin ID: {adminId}
-              </p>
               <p
                 style={{
                   color: socketConnected ? "#52c41a" : "#ff4d4f",
@@ -739,18 +734,15 @@ const VideoChatAdmin = () => {
                   autoPlay
                   muted={true}
                   playsInline
-                  controls={false}
                   style={{
                     width: "100%",
                     maxWidth: "400px",
                     height: "300px",
                     border: "1px solid #d9d9d9",
                     borderRadius: "8px",
-                    backgroundColor: "#000",
+                    backgroundColor: "black",
                     objectFit: "cover",
-                    display: "block",
                   }}
-                  onError={(e) => console.error("Admin: Local video error:", e)}
                 />
               </div>
               <div style={{ textAlign: "center" }}>
@@ -760,22 +752,17 @@ const VideoChatAdmin = () => {
                 <video
                   ref={remoteVideoRef}
                   autoPlay
-                  muted={false} // QUAN TRỌNG: Không mute để nghe audio
+                  muted={false}
                   playsInline
-                  controls={false}
                   style={{
                     width: "100%",
                     maxWidth: "400px",
                     height: "300px",
                     border: "1px solid #d9d9d9",
                     borderRadius: "8px",
-                    backgroundColor: "#000",
+                    backgroundColor: "black",
                     objectFit: "cover",
-                    display: "block",
                   }}
-                  onError={(e) =>
-                    console.error("Admin: Remote video error:", e)
-                  }
                   onLoadedMetadata={() => {
                     console.log("🎬 Admin: Remote video metadata loaded");
                     if (remoteVideoRef.current) {
