@@ -1,3 +1,5 @@
+"use client";
+
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { BsChatDots } from "react-icons/bs";
 import {
@@ -11,11 +13,8 @@ import {
 } from "lucide-react";
 import "./App.css";
 import Header from "./components/Header/Header";
-
 // import required modules
-
-import { useEffect } from "react";
-import { useState } from "react";
+import { useEffect, useState, useMemo, useCallback, memo } from "react";
 import { useSelector } from "react-redux";
 import { CartListProduct } from "./service/Cart";
 import Footer from "./components/Footer/Footer";
@@ -24,6 +23,13 @@ import { getMessagesList, UpdateIsReadAPI } from "./service/Message";
 import { getListProductsAPI } from "./service/ApiProduct";
 import VideoChatAdmin from "./components/VideoChatAdmin/VideoChatAdmin";
 import VideoChatUser from "./components/VideoCall/VideoCall";
+
+// Memoize các components con để tránh re-render
+const MemoizedHeader = memo(Header);
+const MemoizedFooter = memo(Footer);
+const MemoizedMessage = memo(Message);
+const MemoizedVideoChatAdmin = memo(VideoChatAdmin);
+const MemoizedVideoChatUser = memo(VideoChatUser);
 
 function App() {
   const { user } = useSelector((state) => state.auth);
@@ -35,63 +41,66 @@ function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const Navigate = useNavigate();
   const location = useLocation();
-  const hideFooter = location.pathname === "/cart";
-  const { pathname } = useLocation();
 
-  const isAdmin = user?.role === "admin";
+  // Memoize các giá trị computed
+  const hideFooter = useMemo(
+    () => location.pathname === "/cart",
+    [location.pathname]
+  );
+  const { pathname } = useLocation();
+  const isAdmin = useMemo(() => user?.role === "admin", [user?.role]);
+
+  // Memoize scroll to top effect
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" }); // scroll mượt
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, [pathname]);
 
-  const ListProducsData = async () => {
+  // Memoize API calls với useCallback
+  const ListProducsData = useCallback(async () => {
     try {
-      let res = await getListProductsAPI();
-
+      const res = await getListProductsAPI();
       if (res && res.data.EC === 0) {
         setListProducts(res.data.data);
       }
     } catch (error) {
       console.log(error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     ListProducsData();
-  }, []);
+  }, [ListProducsData]);
 
-  const CartListProductsUser = async () => {
+  const CartListProductsUser = useCallback(async () => {
     if (!user?._id) {
-      // Handle the case where user._id is not available
-      setError("User is not authenticated");
+      console.log("User is not authenticated");
       return;
     }
-
     try {
       const res = await CartListProduct(user._id);
       if (res && res.data && res.data.EC === 0) {
         setListCard(res.data.data);
       } else {
-        setError("Failed to fetch cart products");
+        console.log("Failed to fetch cart products");
       }
     } catch (error) {
       console.log(error);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     if (user && user._id) {
       CartListProductsUser();
     }
-  }, [user?._id]);
+  }, [user, CartListProductsUser]);
 
+  // Memoize scroll visibility effect
   useEffect(() => {
     const navHeader = document.querySelector(".nav_header");
-
     const handleScroll = () => {
       if (navHeader) {
         const navHeight = navHeader.offsetHeight;
         const scrolled = window.scrollY;
-
         setIsVisible(scrolled > navHeight);
       }
     };
@@ -100,143 +109,176 @@ function App() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const scrollToTop = () => {
+  // Memoize event handlers với useCallback
+  const scrollToTop = useCallback(() => {
     window.scrollTo({
       top: 0,
       behavior: "smooth",
     });
-  };
+  }, []);
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
+  const toggleMenu = useCallback(() => {
+    setIsMenuOpen((prev) => !prev);
+  }, []);
 
-  // tự động logout
-
-  const handleChatClick = () => {
+  const handleChatClick = useCallback(() => {
     if (user?.role === "customer") {
       setOpen((prev) => !prev);
-
       handelUpdateIsReadMess();
     }
     setIsMenuOpen(false);
-  };
+  }, [user?.role]);
 
-  const handleAIClick = () => {
+  const handleAIClick = useCallback(() => {
     Navigate("/ChatAi");
     setIsMenuOpen(false);
-  };
+  }, [Navigate]);
 
-  const fetchAPIMessasge = async () => {
+  const fetchAPIMessasge = useCallback(async () => {
+    if (!user?._id) return;
     try {
-      const res = await getMessagesList(user?._id);
-
+      const res = await getMessagesList(user._id);
       if (res && res.EC === 0) {
         setUnread(res?.data);
       }
     } catch (error) {
       console.log(error);
     }
-  };
+  }, [user?._id]);
 
   useEffect(() => {
     fetchAPIMessasge();
-  }, [user?._id]);
+  }, [fetchAPIMessasge]);
 
-  const unreadMessages =
-    unread && unread.length > 0 && unread.filter((item) => !item.isRead);
-
-  const handelUpdateIsReadMess = async () => {
+  const handelUpdateIsReadMess = useCallback(async () => {
+    if (!user?._id) return;
     try {
       const res = await UpdateIsReadAPI("673017dde4526bd79cc61fa6", user._id);
-
       if (res) {
+        // Handle success
       }
     } catch (error) {
       console.log(error);
     }
-  };
+  }, [user?._id]);
 
-  const menuItems = [
-    {
-      icon: <Bot className="w-5 h-5" />,
-      label: "AI Assistant",
-      onClick: handleAIClick,
-      color:
-        "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700",
-      glow: "shadow-green-500/30",
-    },
-    ...(user?.role === "customer"
-      ? [
-          {
-            icon: (
-              <div className="relative">
-                <BsChatDots className="text-white text-xl" />
-                {unreadMessages && unreadMessages.length > 0 ? (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                    {unreadMessages.length}
-                  </span>
-                ) : (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                    {0}
-                  </span>
-                )}
-              </div>
-            ),
-            label: "Chat Support",
-            onClick: handleChatClick,
-            color:
-              "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700",
-            glow: "shadow-emerald-500/30",
-          },
-        ]
-      : []),
-    {
-      icon: <Phone className="w-5 h-5" />,
-      label: "Zalo",
-      onClick: () => {
-        window.open("https://zalo.me/0123456789", "_blank"); // Thay số Zalo thật
-        setIsMenuOpen(false);
+  // Memoize unread messages calculation
+  const unreadMessages = useMemo(() => {
+    return unread && unread.length > 0 && unread.filter((item) => !item.isRead);
+  }, [unread]);
+
+  // Memoize menu items để tránh re-create mỗi lần render
+  const menuItems = useMemo(() => {
+    const baseItems = [
+      {
+        icon: <Bot className="w-5 h-5" />,
+        label: "AI Assistant",
+        onClick: handleAIClick,
+        color:
+          "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700",
+        glow: "shadow-green-500/30",
       },
-      color:
-        "bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700",
-      glow: "shadow-teal-500/30",
-    },
-    {
-      icon: <Instagram className="w-5 h-5" />,
-      label: "Instagram",
-      onClick: () => {
-        window.open("https://instagram.com/your_instagram", "_blank"); // Thay Instagram thật
-        setIsMenuOpen(false);
+    ];
+
+    const customerItems =
+      user?.role === "customer"
+        ? [
+            {
+              icon: (
+                <div className="relative">
+                  <BsChatDots className="text-white text-xl" />
+                  {unreadMessages && unreadMessages.length > 0 ? (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                      {unreadMessages.length}
+                    </span>
+                  ) : (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                      {0}
+                    </span>
+                  )}
+                </div>
+              ),
+              label: "Chat Support",
+              onClick: handleChatClick,
+              color:
+                "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700",
+              glow: "shadow-emerald-500/30",
+            },
+          ]
+        : [];
+
+    const socialItems = [
+      {
+        icon: <Phone className="w-5 h-5" />,
+        label: "Zalo",
+        onClick: () => {
+          window.open("https://zalo.me/0123456789", "_blank");
+          setIsMenuOpen(false);
+        },
+        color:
+          "bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700",
+        glow: "shadow-teal-500/30",
       },
-      color:
-        "bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600",
-      glow: "shadow-green-500/30",
-    },
-    {
-      icon: <Facebook className="w-5 h-5" />,
-      label: "Facebook",
-      onClick: () => {
-        window.open("https://facebook.com/your_facebook", "_blank"); // Thay Facebook thật
-        setIsMenuOpen(false);
+      {
+        icon: <Instagram className="w-5 h-5" />,
+        label: "Instagram",
+        onClick: () => {
+          window.open("https://instagram.com/your_instagram", "_blank");
+          setIsMenuOpen(false);
+        },
+        color:
+          "bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600",
+        glow: "shadow-green-500/30",
       },
-      color:
-        "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700",
-      glow: "shadow-emerald-600/30",
-    },
-  ];
+      {
+        icon: <Facebook className="w-5 h-5" />,
+        label: "Facebook",
+        onClick: () => {
+          window.open("https://facebook.com/your_facebook", "_blank");
+          setIsMenuOpen(false);
+        },
+        color:
+          "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700",
+        glow: "shadow-emerald-600/30",
+      },
+    ];
+
+    return [...baseItems, ...customerItems, ...socialItems];
+  }, [handleAIClick, handleChatClick, unreadMessages, user?.role]);
+
+  // Memoize outlet context để tránh re-create object
+  const outletContext = useMemo(
+    () => ({
+      ListProducts,
+      CartListProductsUser,
+      ListCart,
+      user,
+    }),
+    [ListProducts, CartListProductsUser, ListCart, user]
+  );
+
+  // Memoize video chat component
+  const VideoChat = useMemo(() => {
+    if (!user?._id) return null;
+
+    return isAdmin ? (
+      <MemoizedVideoChatAdmin />
+    ) : (
+      <MemoizedVideoChatUser userId={user._id} />
+    );
+  }, [isAdmin, user?._id]);
 
   return (
     <div className="container_nav">
       <div className="nav_header">
-        <Header
+        <MemoizedHeader
           user={user}
           ListCart={ListCart}
           CartListProductsUser={CartListProductsUser}
         />
         <div className="nav_menu flex justify-center items-center gap-3">
           <ul className="flex gap-10 lg:mt-3">
-            {/* product_hover */}
+            {/* Navigation items - memoized để tránh re-render */}
             <li className="">
               <Link to="/category/unisex" className="">
                 Sản phẩm
@@ -379,7 +421,6 @@ function App() {
                 </div>
               </div>
             </li>
-
             <li className="">
               <Link to={"category/male"}>Nam</Link>
               <div className="absolute mt-3 w-full hover_item m-auto flex  ">
@@ -544,10 +585,9 @@ function App() {
       </div>
 
       <div className="content">
-        <Outlet
-          context={{ ListProducts, CartListProductsUser, ListCart, user }}
-        />
+        <Outlet context={outletContext} />
       </div>
+
       <div className="fixed right-6 bottom-6 z-50">
         {/* Menu Items */}
         <div
@@ -577,7 +617,6 @@ function App() {
                   {item.label}
                   <div className="absolute right-0 top-1/2 transform translate-x-full -translate-y-1/2 w-0 h-0 border-l-4 border-l-gray-900/90 border-t-4 border-t-transparent border-b-4 border-b-transparent"></div>
                 </div>
-
                 {/* Button */}
                 <button
                   onClick={item.onClick}
@@ -600,10 +639,8 @@ function App() {
         >
           {/* Animated background */}
           <div className="absolute inset-0 bg-gradient-to-r from-teal-600 via-emerald-600 to-green-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
           {/* Ripple effect */}
           <div className="absolute inset-0 bg-white/20 rounded-2xl scale-0 group-active:scale-100 transition-transform duration-300"></div>
-
           <div className="relative z-10 transition-transform duration-300">
             {isMenuOpen ? (
               <X className="w-7 h-7" />
@@ -632,15 +669,14 @@ function App() {
 
       {open && (
         <div className="fixed bottom-0 right-0 message_users">
-          <Message open={open} setOpen={setOpen} />
+          <MemoizedMessage open={open} setOpen={setOpen} />
         </div>
       )}
 
-      {!hideFooter && <Footer />}
+      {!hideFooter && <MemoizedFooter />}
 
-      <div>
-        {isAdmin ? <VideoChatAdmin /> : <VideoChatUser userId={user?._id} />}
-      </div>
+      {/* Video Chat Component - Memoized và chỉ render khi cần */}
+      <div style={{ display: user?._id ? "block" : "none" }}>{VideoChat}</div>
     </div>
   );
 }
