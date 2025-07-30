@@ -19,6 +19,8 @@ const VideoChatAdmin = () => {
   const iceBufferRef = useRef([]);
   const isAnsweringRef = useRef(false);
   const socketRef = useRef(null);
+  const isInitializedRef = useRef(false);
+  const cleanupRef = useRef(false);
 
   const [incomingCall, setIncomingCall] = useState(null);
   const [inCall, setInCall] = useState(false);
@@ -37,6 +39,8 @@ const VideoChatAdmin = () => {
   ];
 
   const cleanupPeerConnection = useCallback(() => {
+    if (cleanupRef.current) return;
+
     console.log("🧹 Cleaning up peer connection...");
 
     if (peerRef.current) {
@@ -275,6 +279,8 @@ const VideoChatAdmin = () => {
   };
 
   const endCall = useCallback(() => {
+    if (cleanupRef.current) return;
+
     console.log("📞 Ending call...");
 
     if (localStreamRef.current) {
@@ -314,11 +320,18 @@ const VideoChatAdmin = () => {
 
   // Initialize socket connection - chỉ chạy một lần
   useEffect(() => {
+    if (isInitializedRef.current) {
+      console.log("⚠️ Already initialized, skipping...");
+      return;
+    }
+
     console.log("🔌 Initializing Admin socket connection...");
+    isInitializedRef.current = true;
+    cleanupRef.current = false;
 
     // Tạo socket connection mới cho mỗi component instance
     const socket = io("https://fashionstoreshopecommertbe.onrender.com", {
-      forceNew: true, // Force tạo connection mới
+      forceNew: false,
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
@@ -407,7 +420,10 @@ const VideoChatAdmin = () => {
 
     // Cleanup function
     return () => {
+      if (cleanupRef.current) return;
+
       console.log("🧹 Admin component unmounting, cleaning up...");
+      cleanupRef.current = true;
 
       // Remove event listeners
       socket.off("connect", handleConnect);
@@ -428,6 +444,7 @@ const VideoChatAdmin = () => {
 
       socketRef.current = null;
       setSocketConnected(false);
+      isInitializedRef.current = false;
     };
   }, []); // Empty dependency array
 

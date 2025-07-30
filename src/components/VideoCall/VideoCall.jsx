@@ -19,6 +19,9 @@ const VideoChatUser = ({ userId }) => {
   const localStreamRef = useRef(null);
   const isCallingRef = useRef(false);
   const socketRef = useRef(null);
+  const isInitializedRef = useRef(false);
+  const cleanupRef = useRef(false);
+  const heartbeatRef = useRef(null);
 
   const [inCall, setInCall] = useState(false);
   const [calling, setCalling] = useState(false);
@@ -36,7 +39,27 @@ const VideoChatUser = ({ userId }) => {
     { urls: "stun:stun2.l.google.com:19302" },
   ];
 
+  // Heartbeat to maintain connection
+  const startHeartbeat = useCallback(() => {
+    if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+
+    heartbeatRef.current = setInterval(() => {
+      if (socketRef.current?.connected) {
+        socketRef.current.emit("ping");
+      }
+    }, 30000); // Every 30 seconds
+  }, []);
+
+  const stopHeartbeat = useCallback(() => {
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current);
+      heartbeatRef.current = null;
+    }
+  }, []);
+
   const cleanupPeerConnection = useCallback(() => {
+    if (cleanupRef.current) return;
+
     console.log("🧹 Cleaning up peer connection...");
 
     if (peerRef.current) {
@@ -283,6 +306,8 @@ const VideoChatUser = ({ userId }) => {
   };
 
   const endCall = useCallback(() => {
+    if (cleanupRef.current) return;
+
     console.log("📞 Ending call...");
 
     if (localStreamRef.current) {
@@ -315,17 +340,24 @@ const VideoChatUser = ({ userId }) => {
     message.info("Cuộc gọi đã kết thúc");
   }, [inCall, calling, cleanupPeerConnection]);
 
+  // Main useEffect - chỉ chạy một lần
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || isInitializedRef.current) {
+      console.log("⚠️ Already initialized or no userId, skipping...");
+      return;
+    }
 
     console.log("🔌 User connecting to socket with ID:", userId);
+    isInitializedRef.current = true;
+    cleanupRef.current = false;
 
     // Tạo socket connection mới
     const socket = io("https://fashionstoreshopecommertbe.onrender.com", {
-      forceNew: true, // Force tạo connection mới
+      forceNew: false,
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
+      timeout: 20000,
     });
 
     socketRef.current = socket;
@@ -334,16 +366,36 @@ const VideoChatUser = ({ userId }) => {
       console.log("✅ User Socket connected:", socket.id);
       setSocketConnected(true);
       socket.emit("register", { userId });
+      startHeartbeat();
     };
 
     const handleDisconnect = (reason) => {
       console.log("❌ User Socket disconnected:", reason);
       setSocketConnected(false);
+      stopHeartbeat();
     };
 
     const handleConnectError = (error) => {
       console.error("❌ Socket connection error:", error);
       setSocketConnected(false);
+    };
+
+    const handleRegistered = ({ userId: registeredUserId, socketId }) => {
+      console.log("✅ Registration confirmed:", registeredUserId, socketId);
+    };
+
+    const handleUserOffline = ({ userId: offlineUserId }) => {
+      if (offlineUserId === adminId) {
+        message.warning("Admin đã offline");
+      }
+    };
+
+    const handleUserBusy = ({ userId: busyUserId }) => {
+      if (busyUserId === adminId) {
+        message.warning("Admin đang bận");
+        setCalling(false);
+        cleanupPeerConnection();
+      }
     };
 
     const handleCallAnswered = async ({ answer }) => {
@@ -374,8 +426,13 @@ const VideoChatUser = ({ userId }) => {
       }
     };
 
-    const handleCallEnded = () => {
-      console.log("📞 Call ended by admin");
+    const handleCallEnded = ({ reason }) => {
+      console.log("📞 Call ended by admin, reason:", reason);
+      if (reason === "disconnect") {
+        message.info("Admin đã ngắt kết nối");
+      } else if (reason === "timeout") {
+        message.info("Cuộc gọi đã hết thời gian");
+      }
       endCall();
     };
 
@@ -386,26 +443,46 @@ const VideoChatUser = ({ userId }) => {
       message.error("Admin đã từ chối cuộc gọi");
     };
 
+    const handlePong = () => {
+      // Heartbeat response
+      console.log("💓 Heartbeat response received");
+    };
+
     // Add event listeners
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
     socket.on("connect_error", handleConnectError);
+    socket.on("registered", handleRegistered);
+    socket.on("user-offline", handleUserOffline);
+    socket.on("user-busy", handleUserBusy);
     socket.on("call-answered", handleCallAnswered);
     socket.on("ice-candidate", handleIceCandidate);
     socket.on("call-ended", handleCallEnded);
     socket.on("call-rejected", handleCallRejected);
+    socket.on("pong", handlePong);
 
+    // Cleanup function
     return () => {
+      if (cleanupRef.current) return;
+
       console.log("🧹 User component unmounting, cleaning up...");
+      cleanupRef.current = true;
+
+      // Stop heartbeat
+      stopHeartbeat();
 
       // Remove event listeners
       socket.off("connect", handleConnect);
       socket.off("disconnect", handleDisconnect);
       socket.off("connect_error", handleConnectError);
+      socket.off("registered", handleRegistered);
+      socket.off("user-offline", handleUserOffline);
+      socket.off("user-busy", handleUserBusy);
       socket.off("call-answered", handleCallAnswered);
       socket.off("ice-candidate", handleIceCandidate);
       socket.off("call-ended", handleCallEnded);
       socket.off("call-rejected", handleCallRejected);
+      socket.off("pong", handlePong);
 
       // End call and cleanup
       endCall();
@@ -417,8 +494,17 @@ const VideoChatUser = ({ userId }) => {
 
       socketRef.current = null;
       setSocketConnected(false);
+      isInitializedRef.current = false;
     };
-  }, [userId, endCall]);
+  }, []); // Empty dependency array - chỉ chạy một lần
+
+  // Separate useEffect để handle userId changes
+  useEffect(() => {
+    if (socketRef.current?.connected && userId) {
+      console.log("🔄 Updating user registration with new userId:", userId);
+      socketRef.current.emit("register", { userId });
+    }
+  }, [userId]);
 
   if (!userId) {
     return (
