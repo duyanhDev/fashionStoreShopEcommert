@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Button, message, Card, Space, Badge } from "antd";
 import {
@@ -16,6 +18,7 @@ const VideoChatUser = ({ userId }) => {
   const remoteVideoRef = useRef(null);
   const peerRef = useRef(null);
   const localStreamRef = useRef(null);
+  const isCallingRef = useRef(false); // Prevent multiple call attempts
 
   const [inCall, setInCall] = useState(false);
   const [calling, setCalling] = useState(false);
@@ -29,13 +32,39 @@ const VideoChatUser = ({ userId }) => {
   const iceServers = [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:19302" },
   ];
 
+  const cleanupPeerConnection = useCallback(() => {
+    console.log("🧹 Cleaning up peer connection...");
+
+    if (peerRef.current) {
+      // Remove all event listeners
+      peerRef.current.onicecandidate = null;
+      peerRef.current.ontrack = null;
+      peerRef.current.onconnectionstatechange = null;
+      peerRef.current.oniceconnectionstatechange = null;
+
+      // Close the connection
+      if (peerRef.current.signalingState !== "closed") {
+        peerRef.current.close();
+      }
+      peerRef.current = null;
+    }
+
+    isCallingRef.current = false;
+  }, []);
+
   const createPeerConnection = useCallback(() => {
+    console.log("🔗 Creating new peer connection...");
+
+    // Cleanup existing connection first
+    cleanupPeerConnection();
+
     const peer = new RTCPeerConnection({ iceServers });
 
     peer.onicecandidate = (event) => {
-      if (event.candidate) {
+      if (event.candidate && peer.signalingState !== "closed") {
         console.log("🧊 Sending ICE candidate to admin");
         socket.emit("ice-candidate", {
           to: adminId,
@@ -59,47 +88,56 @@ const VideoChatUser = ({ userId }) => {
         setCalling(false);
         setInCall(true);
         message.success("✅ Đã kết nối với admin");
-      } else if (peer.connectionState === "failed") {
-        message.error("Kết nối thất bại");
-        endCall();
+      } else if (
+        peer.connectionState === "failed" ||
+        peer.connectionState === "disconnected"
+      ) {
+        message.error("❌ Kết nối thất bại");
+        setTimeout(() => endCall(), 1000);
+      }
+    };
+
+    peer.oniceconnectionstatechange = () => {
+      console.log("🧊 ICE connection state:", peer.iceConnectionState);
+      if (peer.iceConnectionState === "failed") {
+        console.log("🔄 ICE connection failed, attempting restart...");
+        peer.restartIce();
       }
     };
 
     return peer;
-  }, []);
+  }, [cleanupPeerConnection]);
 
   const enableMedia = async (options = { video: false, audio: false }) => {
     try {
       const constraints = {};
-      if (options.video) constraints.video = true;
-      if (options.audio) constraints.audio = true;
+      if (options.video) constraints.video = { width: 640, height: 480 };
+      if (options.audio)
+        constraints.audio = { echoCancellation: true, noiseSuppression: true };
 
+      console.log("🎥 Requesting media access:", constraints);
       const newStream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      // Nếu đã có stream, thêm tracks mới vào
+      // Handle existing stream
       if (localStreamRef.current) {
-        // Thêm tracks mới vào stream hiện tại
-        newStream.getTracks().forEach((track) => {
-          // Kiểm tra xem track loại này đã tồn tại chưa
+        // Stop old tracks of the same type
+        newStream.getTracks().forEach((newTrack) => {
           const existingTrack = localStreamRef.current
             .getTracks()
-            .find((t) => t.kind === track.kind);
-          if (!existingTrack) {
-            localStreamRef.current.addTrack(track);
-          } else {
-            // Thay thế track cũ
+            .find((t) => t.kind === newTrack.kind);
+          if (existingTrack) {
             existingTrack.stop();
             localStreamRef.current.removeTrack(existingTrack);
-            localStreamRef.current.addTrack(track);
           }
+          localStreamRef.current.addTrack(newTrack);
         });
 
-        // Cập nhật video element
+        // Update video element
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = localStreamRef.current;
         }
       } else {
-        // Tạo stream mới
+        // Create new stream
         localStreamRef.current = newStream;
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = newStream;
@@ -122,25 +160,40 @@ const VideoChatUser = ({ userId }) => {
       const mediaType = [];
       if (options.video) mediaType.push("camera");
       if (options.audio) mediaType.push("microphone");
-      message.error(`Không thể truy cập ${mediaType.join(" và ")}`);
+      message.error(
+        `Không thể truy cập ${mediaType.join(" và ")}: ${err.message}`
+      );
       return null;
     }
   };
 
   const addTracksToConnection = (peer, stream) => {
-    // Xóa tất cả senders cũ trước
-    const senders = peer.getSenders();
-    senders.forEach((sender) => {
-      if (sender.track) {
-        peer.removeTrack(sender);
-      }
-    });
+    if (!peer || peer.signalingState === "closed") {
+      console.error("❌ Cannot add tracks: peer connection is closed");
+      return false;
+    }
 
-    // Thêm tracks mới
-    stream.getTracks().forEach((track) => {
-      console.log("➕ Adding track:", track.kind);
-      peer.addTrack(track, stream);
-    });
+    try {
+      // Remove existing senders
+      const senders = peer.getSenders();
+      senders.forEach((sender) => {
+        if (sender.track) {
+          console.log("🗑️ Removing existing sender:", sender.track.kind);
+          peer.removeTrack(sender);
+        }
+      });
+
+      // Add new tracks
+      stream.getTracks().forEach((track) => {
+        console.log("➕ Adding track:", track.kind);
+        peer.addTrack(track, stream);
+      });
+
+      return true;
+    } catch (err) {
+      console.error("❌ Error adding tracks:", err);
+      return false;
+    }
   };
 
   const startCall = async () => {
@@ -152,17 +205,32 @@ const VideoChatUser = ({ userId }) => {
       return;
     }
 
+    if (isCallingRef.current) {
+      console.log("⚠️ Already calling");
+      return;
+    }
+
+    isCallingRef.current = true;
+
     try {
       console.log("📞 Starting call to admin...");
       setCalling(true);
 
       const peer = createPeerConnection();
+      if (!peer) {
+        throw new Error("Failed to create peer connection");
+      }
+
       peerRef.current = peer;
 
-      // Add local stream tracks một cách an toàn
-      addTracksToConnection(peer, localStreamRef.current);
+      // Add tracks to connection
+      const tracksAdded = addTracksToConnection(peer, localStreamRef.current);
+      if (!tracksAdded) {
+        throw new Error("Failed to add tracks to connection");
+      }
 
       // Create offer
+      console.log("📤 Creating offer...");
       const offer = await peer.createOffer();
       await peer.setLocalDescription(offer);
 
@@ -173,23 +241,21 @@ const VideoChatUser = ({ userId }) => {
       });
 
       message.info("📞 Đang gọi đến admin...");
+      console.log("✅ Call initiated successfully");
     } catch (err) {
       console.error("❌ Lỗi khi bắt đầu cuộc gọi:", err);
-      message.error("Không thể bắt đầu cuộc gọi.");
+      message.error(`Không thể bắt đầu cuộc gọi: ${err.message}`);
       setCalling(false);
+      cleanupPeerConnection();
+    } finally {
+      isCallingRef.current = false;
     }
   };
 
-  const endCall = () => {
+  const endCall = useCallback(() => {
     console.log("📞 Ending call...");
 
-    // Đóng peer connection
-    if (peerRef.current) {
-      peerRef.current.close();
-      peerRef.current = null;
-    }
-
-    // Dừng tất cả media tracks
+    // Stop all media tracks
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((track) => {
         track.stop();
@@ -207,10 +273,13 @@ const VideoChatUser = ({ userId }) => {
       remoteVideoRef.current.srcObject = null;
     }
 
-    // Emit end call nếu đang trong cuộc gọi
+    // Emit end call if we were in a call
     if (inCall || calling) {
       socket.emit("end-call", { to: adminId });
     }
+
+    // Cleanup peer connection
+    cleanupPeerConnection();
 
     // Reset states
     setInCall(false);
@@ -219,7 +288,7 @@ const VideoChatUser = ({ userId }) => {
     setConnectionState("new");
 
     message.info("Cuộc gọi đã kết thúc");
-  };
+  }, [inCall, calling, cleanupPeerConnection]);
 
   useEffect(() => {
     if (!userId) return;
@@ -229,7 +298,7 @@ const VideoChatUser = ({ userId }) => {
 
     socket.on("call-answered", async ({ answer }) => {
       console.log("✅ Call answered by admin");
-      if (peerRef.current) {
+      if (peerRef.current && peerRef.current.signalingState !== "closed") {
         try {
           await peerRef.current.setRemoteDescription(
             new RTCSessionDescription(answer)
@@ -243,7 +312,11 @@ const VideoChatUser = ({ userId }) => {
     socket.on("ice-candidate", async ({ candidate }) => {
       console.log("🧊 Received ICE candidate from admin");
       try {
-        if (peerRef.current && candidate) {
+        if (
+          peerRef.current &&
+          candidate &&
+          peerRef.current.signalingState !== "closed"
+        ) {
           await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
         }
       } catch (err) {
@@ -259,17 +332,19 @@ const VideoChatUser = ({ userId }) => {
     socket.on("call-rejected", () => {
       console.log("📞 Call was rejected by admin");
       setCalling(false);
+      cleanupPeerConnection();
       message.error("Admin đã từ chối cuộc gọi");
     });
 
     return () => {
+      console.log("🧹 Component unmounting, cleaning up...");
       socket.off("call-answered");
       socket.off("ice-candidate");
       socket.off("call-ended");
       socket.off("call-rejected");
       endCall();
     };
-  }, [userId, createPeerConnection]);
+  }, [userId, endCall]);
 
   // Nếu không có userId, hiển thị thông báo
   if (!userId) {
@@ -302,6 +377,8 @@ const VideoChatUser = ({ userId }) => {
                 ? "success"
                 : connectionState === "connecting"
                 ? "processing"
+                : connectionState === "failed"
+                ? "error"
                 : "default"
             }
             text={`Trạng thái: ${connectionState}`}
@@ -361,6 +438,7 @@ const VideoChatUser = ({ userId }) => {
                 icon={<PhoneOutlined />}
                 onClick={startCall}
                 disabled={!mediaEnabled.video && !mediaEnabled.audio}
+                loading={isCallingRef.current}
                 style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
               >
                 Gọi Admin

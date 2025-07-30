@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Modal, Button, message, Card, Badge } from "antd";
 import {
@@ -16,6 +18,7 @@ const VideoChatAdmin = () => {
   const peerRef = useRef(null);
   const localStreamRef = useRef(null);
   const iceBufferRef = useRef([]);
+  const isAnsweringRef = useRef(false); // Prevent multiple answer attempts
 
   const [incomingCall, setIncomingCall] = useState(null);
   const [inCall, setInCall] = useState(false);
@@ -29,13 +32,41 @@ const VideoChatAdmin = () => {
   const iceServers = [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:19302" },
   ];
 
+  const cleanupPeerConnection = useCallback(() => {
+    console.log("🧹 Cleaning up peer connection...");
+
+    if (peerRef.current) {
+      // Remove all event listeners
+      peerRef.current.onicecandidate = null;
+      peerRef.current.ontrack = null;
+      peerRef.current.onconnectionstatechange = null;
+      peerRef.current.oniceconnectionstatechange = null;
+
+      // Close the connection
+      if (peerRef.current.signalingState !== "closed") {
+        peerRef.current.close();
+      }
+      peerRef.current = null;
+    }
+
+    // Clear ICE buffer
+    iceBufferRef.current = [];
+    isAnsweringRef.current = false;
+  }, []);
+
   const createPeerConnection = useCallback(() => {
+    console.log("🔗 Creating new peer connection...");
+
+    // Cleanup existing connection first
+    cleanupPeerConnection();
+
     const peer = new RTCPeerConnection({ iceServers });
 
     peer.onicecandidate = (event) => {
-      if (event.candidate && incomingCall) {
+      if (event.candidate && incomingCall && peer.signalingState !== "closed") {
         console.log("🧊 Sending ICE candidate to:", incomingCall.from);
         socket.emit("ice-candidate", {
           to: incomingCall.from,
@@ -55,26 +86,43 @@ const VideoChatAdmin = () => {
       console.log("🔗 Connection state:", peer.connectionState);
       setConnectionState(peer.connectionState);
 
-      if (peer.connectionState === "failed") {
-        message.error("Kết nối thất bại");
-        endCall();
+      if (peer.connectionState === "connected") {
+        message.success("✅ Kết nối thành công!");
+      } else if (
+        peer.connectionState === "failed" ||
+        peer.connectionState === "disconnected"
+      ) {
+        message.error("❌ Kết nối thất bại");
+        setTimeout(() => endCall(), 1000); // Delay to show message
+      }
+    };
+
+    peer.oniceconnectionstatechange = () => {
+      console.log("🧊 ICE connection state:", peer.iceConnectionState);
+      if (peer.iceConnectionState === "failed") {
+        console.log("🔄 ICE connection failed, attempting restart...");
+        peer.restartIce();
       }
     };
 
     return peer;
-  }, [incomingCall]);
+  }, [incomingCall, cleanupPeerConnection]);
 
   const enableMedia = async () => {
     try {
       // Dừng stream cũ nếu có
       if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach((track) => track.stop());
+        localStreamRef.current.getTracks().forEach((track) => {
+          track.stop();
+          console.log("🛑 Stopped old track:", track.kind);
+        });
         localStreamRef.current = null;
       }
 
+      console.log("🎥 Requesting media access...");
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
+        video: { width: 640, height: 480 },
+        audio: { echoCancellation: true, noiseSuppression: true },
       });
 
       localStreamRef.current = stream;
@@ -84,60 +132,91 @@ const VideoChatAdmin = () => {
         localVideoRef.current.srcObject = stream;
       }
 
-      message.success("🎥 Đã bật camera và microphone");
+      console.log("✅ Media enabled successfully");
       return stream;
     } catch (err) {
       console.error("❌ Không thể bật media:", err);
-      message.error("Không thể truy cập camera/microphone");
+      message.error(`Không thể truy cập camera/microphone: ${err.message}`);
       return null;
     }
   };
 
   const addTracksToConnection = (peer, stream) => {
-    // Xóa tất cả senders cũ trước
-    const senders = peer.getSenders();
-    senders.forEach((sender) => {
-      if (sender.track) {
-        peer.removeTrack(sender);
-      }
-    });
+    if (!peer || peer.signalingState === "closed") {
+      console.error("❌ Cannot add tracks: peer connection is closed");
+      return false;
+    }
 
-    // Thêm tracks mới
-    stream.getTracks().forEach((track) => {
-      console.log("➕ Adding track:", track.kind);
-      peer.addTrack(track, stream);
-    });
+    try {
+      // Remove existing senders
+      const senders = peer.getSenders();
+      senders.forEach((sender) => {
+        if (sender.track) {
+          console.log("🗑️ Removing existing sender:", sender.track.kind);
+          peer.removeTrack(sender);
+        }
+      });
+
+      // Add new tracks
+      stream.getTracks().forEach((track) => {
+        console.log("➕ Adding track:", track.kind);
+        peer.addTrack(track, stream);
+      });
+
+      return true;
+    } catch (err) {
+      console.error("❌ Error adding tracks:", err);
+      return false;
+    }
   };
 
   const answerCall = async () => {
-    if (!incomingCall) return;
+    if (!incomingCall || isAnsweringRef.current) {
+      console.log("⚠️ Already answering or no incoming call");
+      return;
+    }
+
+    isAnsweringRef.current = true;
 
     try {
       console.log("📞 Answering call from:", incomingCall.from);
 
-      // Tạo peer connection mới
+      // Create new peer connection
       const peer = createPeerConnection();
-      peerRef.current = peer;
-
-      // Bật media trước khi answer
-      const stream = await enableMedia();
-      if (!stream) {
-        message.error("Không thể bật camera/mic để trả lời cuộc gọi");
-        return;
+      if (!peer) {
+        throw new Error("Failed to create peer connection");
       }
 
-      // Thêm local stream tracks một cách an toàn
-      addTracksToConnection(peer, stream);
+      peerRef.current = peer;
+
+      // Enable media first
+      const stream = await enableMedia();
+      if (!stream) {
+        throw new Error("Failed to enable media");
+      }
+
+      // Add tracks to connection
+      const tracksAdded = addTracksToConnection(peer, stream);
+      if (!tracksAdded) {
+        throw new Error("Failed to add tracks to connection");
+      }
 
       // Set remote description
+      console.log("📝 Setting remote description...");
       await peer.setRemoteDescription(
         new RTCSessionDescription(incomingCall.offer)
       );
 
       // Process buffered ICE candidates
+      console.log(
+        "🧊 Processing buffered ICE candidates:",
+        iceBufferRef.current.length
+      );
       for (const candidate of iceBufferRef.current) {
         try {
-          await peer.addIceCandidate(new RTCIceCandidate(candidate));
+          if (peer.signalingState !== "closed") {
+            await peer.addIceCandidate(new RTCIceCandidate(candidate));
+          }
         } catch (err) {
           console.error("❌ Error adding buffered ICE candidate:", err);
         }
@@ -145,6 +224,7 @@ const VideoChatAdmin = () => {
       iceBufferRef.current = [];
 
       // Create and send answer
+      console.log("📤 Creating answer...");
       const answer = await peer.createAnswer();
       await peer.setLocalDescription(answer);
 
@@ -155,23 +235,21 @@ const VideoChatAdmin = () => {
 
       setInCall(true);
       setIncomingCall(null);
-      message.success("✅ Đã kết nối với người dùng");
+      console.log("✅ Call answered successfully");
     } catch (err) {
       console.error("❌ Lỗi khi trả lời cuộc gọi:", err);
-      message.error("Lỗi khi thiết lập cuộc gọi");
+      message.error(`Lỗi khi thiết lập cuộc gọi: ${err.message}`);
+      cleanupPeerConnection();
+      setIncomingCall(null);
+    } finally {
+      isAnsweringRef.current = false;
     }
   };
 
-  const endCall = () => {
+  const endCall = useCallback(() => {
     console.log("📞 Ending call...");
 
-    // Đóng peer connection
-    if (peerRef.current) {
-      peerRef.current.close();
-      peerRef.current = null;
-    }
-
-    // Dừng tất cả media tracks
+    // Stop all media tracks
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((track) => {
         track.stop();
@@ -189,14 +267,17 @@ const VideoChatAdmin = () => {
       remoteVideoRef.current.srcObject = null;
     }
 
+    // Cleanup peer connection
+    cleanupPeerConnection();
+
     // Reset states
     setInCall(false);
+    setIncomingCall(null);
     setMediaEnabled({ video: false, audio: false });
     setConnectionState("new");
-    iceBufferRef.current = [];
 
     message.info("Cuộc gọi đã kết thúc");
-  };
+  }, [cleanupPeerConnection]);
 
   const rejectCall = () => {
     console.log("📞 Rejecting call from:", incomingCall?.from);
@@ -213,18 +294,31 @@ const VideoChatAdmin = () => {
 
     socket.on("incoming-call", ({ from, offer }) => {
       console.log("📞 Incoming call from:", from);
-      // Nếu đang trong cuộc gọi khác, từ chối
-      if (inCall) {
+
+      // If already in a call or answering, reject
+      if (inCall || isAnsweringRef.current) {
+        console.log("⚠️ Already in call, rejecting new call");
         socket.emit("reject-call", { to: from });
         return;
       }
+
+      // If there's already an incoming call, reject the old one
+      if (incomingCall) {
+        console.log("⚠️ Replacing existing incoming call");
+        socket.emit("reject-call", { to: incomingCall.from });
+      }
+
       setIncomingCall({ from, offer });
     });
 
     socket.on("ice-candidate", async ({ candidate }) => {
       console.log("🧊 Received ICE candidate");
       try {
-        if (peerRef.current && peerRef.current.remoteDescription) {
+        if (
+          peerRef.current &&
+          peerRef.current.remoteDescription &&
+          peerRef.current.signalingState !== "closed"
+        ) {
           await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
         } else {
           console.log("📥 Buffering ICE candidate");
@@ -245,14 +339,16 @@ const VideoChatAdmin = () => {
       message.info("Cuộc gọi đã bị từ chối");
     });
 
+    // Cleanup on unmount
     return () => {
+      console.log("🧹 Component unmounting, cleaning up...");
       socket.off("incoming-call");
       socket.off("ice-candidate");
       socket.off("call-ended");
       socket.off("call-rejected");
       endCall();
     };
-  }, [inCall, createPeerConnection]);
+  }, [inCall, endCall]);
 
   return (
     <div style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto" }}>
@@ -271,6 +367,8 @@ const VideoChatAdmin = () => {
                 ? "success"
                 : connectionState === "connecting"
                 ? "processing"
+                : connectionState === "failed"
+                ? "error"
                 : "default"
             }
             text={`Trạng thái: ${connectionState}`}
@@ -289,6 +387,9 @@ const VideoChatAdmin = () => {
               }}
             />
             <p style={{ color: "#666" }}>Đang chờ cuộc gọi từ người dùng...</p>
+            <p style={{ color: "#999", fontSize: "12px" }}>
+              Admin ID: {adminId}
+            </p>
           </div>
         )}
 
@@ -305,7 +406,7 @@ const VideoChatAdmin = () => {
             >
               <div style={{ textAlign: "center" }}>
                 <h3 style={{ marginBottom: "8px", fontWeight: "500" }}>
-                  Camera của bạn
+                  Camera của bạn (Admin)
                 </h3>
                 <video
                   ref={localVideoRef}
@@ -368,10 +469,13 @@ const VideoChatAdmin = () => {
         cancelText="Từ chối"
         title="📲 Có cuộc gọi đến"
         centered
+        closable={false}
+        maskClosable={false}
         okButtonProps={{
           icon: <PhoneOutlined />,
           size: "large",
           style: { backgroundColor: "#52c41a", borderColor: "#52c41a" },
+          loading: isAnsweringRef.current,
         }}
         cancelButtonProps={{ size: "large" }}
       >
