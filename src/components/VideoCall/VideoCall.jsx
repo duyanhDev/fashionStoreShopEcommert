@@ -30,18 +30,15 @@ const VideoChatUser = ({ userId }) => {
     audio: false,
   });
   const [socketConnected, setSocketConnected] = useState(false);
-
-  // Thêm state cho network quality
   const [networkQuality, setNetworkQuality] = useState("unknown");
 
-  // ICE servers configuration - Improved with more servers
+  // ICE servers configuration
   const iceServers = [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
     { urls: "stun:stun2.l.google.com:19302" },
     { urls: "stun:stun3.l.google.com:19302" },
     { urls: "stun:stun4.l.google.com:19302" },
-    // Thêm TURN servers cho NAT traversal tốt hơn
     {
       urls: "turn:openrelay.metered.ca:80",
       username: "openrelayproject",
@@ -53,6 +50,55 @@ const VideoChatUser = ({ userId }) => {
       credential: "openrelayproject",
     },
   ];
+
+  // Define endCall first to avoid hoisting issues
+  const endCall = useCallback(() => {
+    if (cleanupRef.current) return;
+
+    console.log("📞 User: Ending call...");
+
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((track) => {
+        track.stop();
+        console.log("🛑 User: Stopped track:", track.kind);
+      });
+      localStreamRef.current = null;
+    }
+
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = null;
+    }
+
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = null;
+    }
+
+    if ((inCall || calling) && socketRef.current?.connected) {
+      socketRef.current.emit("end-call", { to: adminId });
+    }
+
+    // Cleanup peer connection
+    if (peerRef.current) {
+      peerRef.current.onicecandidate = null;
+      peerRef.current.ontrack = null;
+      peerRef.current.onconnectionstatechange = null;
+      peerRef.current.oniceconnectionstatechange = null;
+
+      if (peerRef.current.signalingState !== "closed") {
+        peerRef.current.close();
+      }
+      peerRef.current = null;
+    }
+
+    isCallingRef.current = false;
+
+    setInCall(false);
+    setCalling(false);
+    setMediaEnabled({ video: false, audio: false });
+    setConnectionState("new");
+
+    message.info("Cuộc gọi đã kết thúc");
+  }, [inCall, calling]);
 
   const cleanupPeerConnection = useCallback(() => {
     if (cleanupRef.current) return;
@@ -80,11 +126,10 @@ const VideoChatUser = ({ userId }) => {
 
     const peer = new RTCPeerConnection({
       iceServers,
-      iceCandidatePoolSize: 10, // Tăng pool size
-      iceTransportPolicy: "all", // Allow both STUN and TURN
+      iceCandidatePoolSize: 10,
+      iceTransportPolicy: "all",
     });
 
-    // Thêm connection recovery logic
     let connectionRetryCount = 0;
     const maxRetries = 3;
 
@@ -131,8 +176,10 @@ const VideoChatUser = ({ userId }) => {
               .then(() => {
                 console.log("✅ User: Remote video playing (muted)");
                 setTimeout(() => {
-                  remoteVideoRef.current.muted = false;
-                  console.log("🔊 User: Unmuted remote video");
+                  if (remoteVideoRef.current) {
+                    remoteVideoRef.current.muted = false;
+                    console.log("🔊 User: Unmuted remote video");
+                  }
                 }, 1000);
               })
               .catch((e) => console.error("❌ User: Still can't play:", e));
@@ -147,7 +194,7 @@ const VideoChatUser = ({ userId }) => {
       if (peer.connectionState === "connected") {
         setCalling(false);
         setInCall(true);
-        connectionRetryCount = 0; // Reset retry count on success
+        connectionRetryCount = 0;
         message.success("✅ Đã kết nối với admin");
       } else if (peer.connectionState === "failed") {
         console.log(
@@ -159,16 +206,11 @@ const VideoChatUser = ({ userId }) => {
         if (connectionRetryCount < maxRetries) {
           connectionRetryCount++;
           console.log("🔄 User: Attempting to restart ICE...");
-
-          // Restart ICE connection
           peer.restartIce();
-
-          // Show retry message
           message.warning(
             `Đang thử kết nối lại... (${connectionRetryCount}/${maxRetries})`
           );
 
-          // Set a timeout for retry
           setTimeout(() => {
             if (peer.connectionState === "failed") {
               console.log("🔄 User: ICE restart timeout, trying again...");
@@ -185,7 +227,6 @@ const VideoChatUser = ({ userId }) => {
         );
         message.warning("Mất kết nối, đang thử kết nối lại...");
 
-        // Try to restart ICE on disconnection
         setTimeout(() => {
           if (peer.connectionState === "disconnected") {
             peer.restartIce();
@@ -202,7 +243,6 @@ const VideoChatUser = ({ userId }) => {
         peer.restartIce();
       } else if (peer.iceConnectionState === "disconnected") {
         console.log("⚠️ User: ICE disconnected, will attempt restart...");
-        // Wait a bit before restarting to see if it recovers
         setTimeout(() => {
           if (peer.iceConnectionState === "disconnected") {
             console.log("🔄 User: ICE still disconnected, restarting...");
@@ -216,12 +256,10 @@ const VideoChatUser = ({ userId }) => {
       }
     };
 
-    // Add gathering state change handler
     peer.onicegatheringstatechange = () => {
       console.log("🧊 User: ICE gathering state:", peer.iceGatheringState);
     };
 
-    // Add signaling state change handler
     peer.onsignalingstatechange = () => {
       console.log("📡 User: Signaling state:", peer.signalingState);
     };
@@ -229,89 +267,96 @@ const VideoChatUser = ({ userId }) => {
     return peer;
   }, [cleanupPeerConnection, endCall]);
 
-  const enableMedia = async (options = { video: false, audio: false }) => {
-    try {
-      const constraints = {};
-      if (options.video)
-        constraints.video = {
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-          facingMode: "user",
-        };
-      if (options.audio)
-        constraints.audio = {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        };
+  const enableMedia = useCallback(
+    async (options = { video: false, audio: false }) => {
+      try {
+        const constraints = {};
+        if (options.video)
+          constraints.video = {
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            facingMode: "user",
+          };
+        if (options.audio)
+          constraints.audio = {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          };
 
-      console.log("🎥 User: Requesting media access:", constraints);
-      const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log("🎥 User: Requesting media access:", constraints);
+        const newStream = await navigator.mediaDevices.getUserMedia(
+          constraints
+        );
 
-      if (localStreamRef.current) {
-        newStream.getTracks().forEach((newTrack) => {
-          const existingTrack = localStreamRef.current
+        if (localStreamRef.current) {
+          newStream.getTracks().forEach((newTrack) => {
+            const existingTrack = localStreamRef.current
+              .getTracks()
+              .find((t) => t.kind === newTrack.kind);
+            if (existingTrack) {
+              existingTrack.stop();
+              localStreamRef.current.removeTrack(existingTrack);
+            }
+            localStreamRef.current.addTrack(newTrack);
+          });
+
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = localStreamRef.current;
+            localVideoRef.current.muted = true;
+            try {
+              await localVideoRef.current.play();
+              console.log("✅ User: Local video playing");
+            } catch (playError) {
+              console.error("❌ User: Error playing local video:", playError);
+            }
+          }
+        } else {
+          localStreamRef.current = newStream;
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = newStream;
+            localVideoRef.current.muted = true;
+            try {
+              await localVideoRef.current.play();
+              console.log("✅ User: Local video playing");
+            } catch (playError) {
+              console.error("❌ User: Error playing local video:", playError);
+            }
+          }
+        }
+
+        setMediaEnabled((prev) => ({
+          video: prev.video || options.video,
+          audio: prev.audio || options.audio,
+        }));
+
+        const mediaType = [];
+        if (options.video) mediaType.push("camera");
+        if (options.audio) mediaType.push("microphone");
+
+        message.success(`🎥 Đã bật ${mediaType.join(" và ")}`);
+        console.log(
+          "✅ User: Media enabled - Tracks:",
+          localStreamRef.current
             .getTracks()
-            .find((t) => t.kind === newTrack.kind);
-          if (existingTrack) {
-            existingTrack.stop();
-            localStreamRef.current.removeTrack(existingTrack);
-          }
-          localStreamRef.current.addTrack(newTrack);
-        });
-
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = localStreamRef.current;
-          localVideoRef.current.muted = true; // Local video should be muted
-          try {
-            await localVideoRef.current.play();
-            console.log("✅ User: Local video playing");
-          } catch (playError) {
-            console.error("❌ User: Error playing local video:", playError);
-          }
-        }
-      } else {
-        localStreamRef.current = newStream;
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = newStream;
-          localVideoRef.current.muted = true; // Local video should always be muted
-          try {
-            await localVideoRef.current.play();
-            console.log("✅ User: Local video playing");
-          } catch (playError) {
-            console.error("❌ User: Error playing local video:", playError);
-          }
-        }
+            .map((t) => `${t.kind}:${t.enabled}`)
+        );
+        return localStreamRef.current;
+      } catch (err) {
+        console.error("❌ User: Không thể bật media:", err);
+        const mediaType = [];
+        if (options.video) mediaType.push("camera");
+        if (options.audio) mediaType.push("microphone");
+        message.error(
+          `Không thể truy cập ${mediaType.join(" và ")}: ${err.message}`
+        );
+        return null;
       }
+    },
+    []
+  );
 
-      setMediaEnabled((prev) => ({
-        video: prev.video || options.video,
-        audio: prev.audio || options.audio,
-      }));
-
-      const mediaType = [];
-      if (options.video) mediaType.push("camera");
-      if (options.audio) mediaType.push("microphone");
-
-      message.success(`🎥 Đã bật ${mediaType.join(" và ")}`);
-      console.log(
-        "✅ User: Media enabled - Tracks:",
-        localStreamRef.current.getTracks().map((t) => `${t.kind}:${t.enabled}`)
-      );
-      return localStreamRef.current;
-    } catch (err) {
-      console.error("❌ User: Không thể bật media:", err);
-      const mediaType = [];
-      if (options.video) mediaType.push("camera");
-      if (options.audio) mediaType.push("microphone");
-      message.error(
-        `Không thể truy cập ${mediaType.join(" và ")}: ${err.message}`
-      );
-      return null;
-    }
-  };
-
-  const addTracksToConnection = (peer, stream) => {
+  const addTracksToConnection = useCallback((peer, stream) => {
     if (!peer || peer.signalingState === "closed") {
       console.error("❌ User: Cannot add tracks: peer connection is closed");
       return false;
@@ -341,9 +386,9 @@ const VideoChatUser = ({ userId }) => {
       console.error("❌ User: Error adding tracks:", err);
       return false;
     }
-  };
+  }, []);
 
-  const startCall = async () => {
+  const startCall = useCallback(async () => {
     if (
       !localStreamRef.current ||
       (!mediaEnabled.video && !mediaEnabled.audio)
@@ -382,7 +427,6 @@ const VideoChatUser = ({ userId }) => {
       });
       await peer.setLocalDescription(offer);
 
-      // Wait a bit for ICE gathering
       console.log("⏳ User: Waiting for ICE gathering...");
       await new Promise((resolve) => {
         if (peer.iceGatheringState === "complete") {
@@ -395,8 +439,6 @@ const VideoChatUser = ({ userId }) => {
             }
           };
           peer.addEventListener("icegatheringstatechange", checkState);
-
-          // Timeout after 5 seconds
           setTimeout(resolve, 5000);
         }
       });
@@ -404,7 +446,7 @@ const VideoChatUser = ({ userId }) => {
       console.log("📤 User: Sending offer to admin...");
       socketRef.current.emit("call-user", {
         to: adminId,
-        offer: peer.localDescription, // Use the complete description
+        offer: peer.localDescription,
       });
 
       message.info("📞 Đang gọi đến admin...");
@@ -417,44 +459,14 @@ const VideoChatUser = ({ userId }) => {
     } finally {
       isCallingRef.current = false;
     }
-  };
+  }, [
+    mediaEnabled.video,
+    mediaEnabled.audio,
+    createPeerConnection,
+    addTracksToConnection,
+    cleanupPeerConnection,
+  ]);
 
-  const endCall = useCallback(() => {
-    if (cleanupRef.current) return;
-
-    console.log("📞 User: Ending call...");
-
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach((track) => {
-        track.stop();
-        console.log("🛑 User: Stopped track:", track.kind);
-      });
-      localStreamRef.current = null;
-    }
-
-    if (localVideoRef.current) {
-      localVideoRef.current.srcObject = null;
-    }
-
-    if (remoteVideoRef.current) {
-      remoteVideoRef.current.srcObject = null;
-    }
-
-    if ((inCall || calling) && socketRef.current?.connected) {
-      socketRef.current.emit("end-call", { to: adminId });
-    }
-
-    cleanupPeerConnection();
-
-    setInCall(false);
-    setCalling(false);
-    setMediaEnabled({ video: false, audio: false });
-    setConnectionState("new");
-
-    message.info("Cuộc gọi đã kết thúc");
-  }, [inCall, calling, cleanupPeerConnection]);
-
-  // Thêm function để monitor connection quality
   const monitorConnectionQuality = useCallback(() => {
     if (!peerRef.current) return;
 
@@ -464,14 +476,10 @@ const VideoChatUser = ({ userId }) => {
       try {
         const stats = await peer.getStats();
         let inboundRTP = null;
-        let outboundRTP = null;
 
         stats.forEach((report) => {
           if (report.type === "inbound-rtp" && report.kind === "video") {
             inboundRTP = report;
-          }
-          if (report.type === "outbound-rtp" && report.kind === "video") {
-            outboundRTP = report;
           }
         });
 
@@ -579,7 +587,6 @@ const VideoChatUser = ({ userId }) => {
       message.error("Admin đã từ chối cuộc gọi");
     };
 
-    // Add event listeners
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
     socket.on("connect_error", handleConnectError);
@@ -588,7 +595,6 @@ const VideoChatUser = ({ userId }) => {
     socket.on("call-ended", handleCallEnded);
     socket.on("call-rejected", handleCallRejected);
 
-    // Cleanup function
     return () => {
       if (cleanupRef.current) return;
 
@@ -613,7 +619,7 @@ const VideoChatUser = ({ userId }) => {
       setSocketConnected(false);
       isInitializedRef.current = false;
     };
-  }, []);
+  }, [userId, endCall, cleanupPeerConnection]);
 
   useEffect(() => {
     if (socketRef.current?.connected && userId) {
@@ -674,7 +680,6 @@ const VideoChatUser = ({ userId }) => {
           />
           {mediaEnabled.video && <Badge status="success" text="Camera" />}
           {mediaEnabled.audio && <Badge status="success" text="Microphone" />}
-          {/* Thêm network quality indicator */}
           {inCall && (
             <Badge
               status={
@@ -815,7 +820,7 @@ const VideoChatUser = ({ userId }) => {
                 <video
                   ref={localVideoRef}
                   autoPlay
-                  muted={true} // Local video should always be muted
+                  muted={true}
                   playsInline
                   style={{
                     width: "100%",
@@ -835,7 +840,7 @@ const VideoChatUser = ({ userId }) => {
                 <video
                   ref={remoteVideoRef}
                   autoPlay
-                  muted={false} // Remote video should NOT be muted to hear audio
+                  muted={false}
                   playsInline
                   style={{
                     width: "100%",
