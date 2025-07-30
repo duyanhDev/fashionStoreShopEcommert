@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Button, message, Card, Space, Badge } from "antd";
 import {
@@ -67,10 +65,6 @@ const VideoChatUser = ({ userId }) => {
       }
     };
 
-    peer.oniceconnectionstatechange = () => {
-      console.log("🧊 ICE connection state:", peer.iceConnectionState);
-    };
-
     return peer;
   }, []);
 
@@ -80,17 +74,35 @@ const VideoChatUser = ({ userId }) => {
       if (options.video) constraints.video = true;
       if (options.audio) constraints.audio = true;
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      const newStream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      // Merge with existing stream or create new one
+      // Nếu đã có stream, thêm tracks mới vào
       if (localStreamRef.current) {
-        stream.getTracks().forEach((track) => {
-          localStreamRef.current?.addTrack(track);
+        // Thêm tracks mới vào stream hiện tại
+        newStream.getTracks().forEach((track) => {
+          // Kiểm tra xem track loại này đã tồn tại chưa
+          const existingTrack = localStreamRef.current
+            .getTracks()
+            .find((t) => t.kind === track.kind);
+          if (!existingTrack) {
+            localStreamRef.current.addTrack(track);
+          } else {
+            // Thay thế track cũ
+            existingTrack.stop();
+            localStreamRef.current.removeTrack(existingTrack);
+            localStreamRef.current.addTrack(track);
+          }
         });
-      } else {
-        localStreamRef.current = stream;
+
+        // Cập nhật video element
         if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
+          localVideoRef.current.srcObject = localStreamRef.current;
+        }
+      } else {
+        // Tạo stream mới
+        localStreamRef.current = newStream;
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = newStream;
         }
       }
 
@@ -104,7 +116,7 @@ const VideoChatUser = ({ userId }) => {
       if (options.audio) mediaType.push("microphone");
 
       message.success(`🎥 Đã bật ${mediaType.join(" và ")}`);
-      return stream;
+      return localStreamRef.current;
     } catch (err) {
       console.error("❌ Không thể bật media:", err);
       const mediaType = [];
@@ -113,6 +125,22 @@ const VideoChatUser = ({ userId }) => {
       message.error(`Không thể truy cập ${mediaType.join(" và ")}`);
       return null;
     }
+  };
+
+  const addTracksToConnection = (peer, stream) => {
+    // Xóa tất cả senders cũ trước
+    const senders = peer.getSenders();
+    senders.forEach((sender) => {
+      if (sender.track) {
+        peer.removeTrack(sender);
+      }
+    });
+
+    // Thêm tracks mới
+    stream.getTracks().forEach((track) => {
+      console.log("➕ Adding track:", track.kind);
+      peer.addTrack(track, stream);
+    });
   };
 
   const startCall = async () => {
@@ -131,10 +159,8 @@ const VideoChatUser = ({ userId }) => {
       const peer = createPeerConnection();
       peerRef.current = peer;
 
-      // Add local stream tracks
-      localStreamRef.current.getTracks().forEach((track) => {
-        peer.addTrack(track, localStreamRef.current);
-      });
+      // Add local stream tracks một cách an toàn
+      addTracksToConnection(peer, localStreamRef.current);
 
       // Create offer
       const offer = await peer.createOffer();
@@ -157,16 +183,22 @@ const VideoChatUser = ({ userId }) => {
   const endCall = () => {
     console.log("📞 Ending call...");
 
+    // Đóng peer connection
     if (peerRef.current) {
       peerRef.current.close();
       peerRef.current = null;
     }
 
+    // Dừng tất cả media tracks
     if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach((track) => track.stop());
+      localStreamRef.current.getTracks().forEach((track) => {
+        track.stop();
+        console.log("🛑 Stopped track:", track.kind);
+      });
       localStreamRef.current = null;
     }
 
+    // Clear video elements
     if (localVideoRef.current) {
       localVideoRef.current.srcObject = null;
     }
@@ -175,17 +207,24 @@ const VideoChatUser = ({ userId }) => {
       remoteVideoRef.current.srcObject = null;
     }
 
-    socket.emit("end-call", { to: adminId });
+    // Emit end call nếu đang trong cuộc gọi
+    if (inCall || calling) {
+      socket.emit("end-call", { to: adminId });
+    }
 
+    // Reset states
     setInCall(false);
     setCalling(false);
     setMediaEnabled({ video: false, audio: false });
     setConnectionState("new");
+
     message.info("Cuộc gọi đã kết thúc");
   };
 
   useEffect(() => {
-    console.log("🔌 User connecting to socket...");
+    if (!userId) return;
+
+    console.log("🔌 User connecting to socket with ID:", userId);
     socket.emit("register", { userId });
 
     socket.on("call-answered", async ({ answer }) => {
@@ -217,17 +256,38 @@ const VideoChatUser = ({ userId }) => {
       endCall();
     });
 
+    socket.on("call-rejected", () => {
+      console.log("📞 Call was rejected by admin");
+      setCalling(false);
+      message.error("Admin đã từ chối cuộc gọi");
+    });
+
     return () => {
       socket.off("call-answered");
       socket.off("ice-candidate");
       socket.off("call-ended");
+      socket.off("call-rejected");
       endCall();
     };
-  }, [userId]);
+  }, [userId, createPeerConnection]);
+
+  // Nếu không có userId, hiển thị thông báo
+  if (!userId) {
+    return (
+      <div style={{ padding: "24px", textAlign: "center" }}>
+        <Card title="⚠️ Lỗi">
+          <p>Không tìm thấy User ID. Vui lòng đăng nhập lại.</p>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto" }}>
-      <Card title="📱 User Video Chat" style={{ marginBottom: "16px" }}>
+      <Card
+        title={`📱 User Video Chat - ID: ${userId}`}
+        style={{ marginBottom: "16px" }}
+      >
         <div
           style={{
             display: "flex",
@@ -270,6 +330,11 @@ const VideoChatUser = ({ userId }) => {
                   onClick={() => enableMedia({ video: true })}
                   type={mediaEnabled.video ? "primary" : "default"}
                   size="large"
+                  style={
+                    mediaEnabled.video
+                      ? { backgroundColor: "#1890ff", borderColor: "#1890ff" }
+                      : {}
+                  }
                 >
                   {mediaEnabled.video ? "Camera đã bật" : "Bật Camera"}
                 </Button>
@@ -278,6 +343,11 @@ const VideoChatUser = ({ userId }) => {
                   onClick={() => enableMedia({ audio: true })}
                   type={mediaEnabled.audio ? "primary" : "default"}
                   size="large"
+                  style={
+                    mediaEnabled.audio
+                      ? { backgroundColor: "#1890ff", borderColor: "#1890ff" }
+                      : {}
+                  }
                 >
                   {mediaEnabled.audio ? "Mic đã bật" : "Bật Microphone"}
                 </Button>
@@ -301,7 +371,7 @@ const VideoChatUser = ({ userId }) => {
 
         {calling && (
           <div style={{ textAlign: "center", padding: "32px 0" }}>
-            <div style={{ animation: "pulse 2s infinite" }}>
+            <div>
               <PhoneOutlined
                 style={{
                   fontSize: "48px",
@@ -314,7 +384,11 @@ const VideoChatUser = ({ userId }) => {
                 type="primary"
                 danger
                 onClick={endCall}
-                style={{ marginTop: "16px" }}
+                style={{
+                  marginTop: "16px",
+                  backgroundColor: "#ff4d4f",
+                  borderColor: "#ff4d4f",
+                }}
               >
                 Hủy cuộc gọi
               </Button>
@@ -345,9 +419,11 @@ const VideoChatUser = ({ userId }) => {
                   style={{
                     width: "100%",
                     maxWidth: "400px",
+                    height: "300px",
                     border: "1px solid #d9d9d9",
                     borderRadius: "8px",
                     backgroundColor: "black",
+                    objectFit: "cover",
                   }}
                 />
               </div>
@@ -362,9 +438,11 @@ const VideoChatUser = ({ userId }) => {
                   style={{
                     width: "100%",
                     maxWidth: "400px",
+                    height: "300px",
                     border: "1px solid #d9d9d9",
                     borderRadius: "8px",
                     backgroundColor: "black",
+                    objectFit: "cover",
                   }}
                 />
               </div>
@@ -378,6 +456,7 @@ const VideoChatUser = ({ userId }) => {
                   icon={<CloseOutlined />}
                   onClick={endCall}
                   size="large"
+                  style={{ backgroundColor: "#ff4d4f", borderColor: "#ff4d4f" }}
                 >
                   Kết thúc cuộc gọi
                 </Button>

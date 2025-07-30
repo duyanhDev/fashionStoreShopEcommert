@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Modal, Button, message, Card, Badge } from "antd";
 import {
@@ -63,15 +61,17 @@ const VideoChatAdmin = () => {
       }
     };
 
-    peer.oniceconnectionstatechange = () => {
-      console.log("🧊 ICE connection state:", peer.iceConnectionState);
-    };
-
     return peer;
   }, [incomingCall]);
 
   const enableMedia = async () => {
     try {
+      // Dừng stream cũ nếu có
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach((track) => track.stop());
+        localStreamRef.current = null;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true,
@@ -84,13 +84,6 @@ const VideoChatAdmin = () => {
         localVideoRef.current.srcObject = stream;
       }
 
-      // Nếu đã có peer connection, thêm tracks
-      if (peerRef.current) {
-        stream.getTracks().forEach((track) => {
-          peerRef.current?.addTrack(track, stream);
-        });
-      }
-
       message.success("🎥 Đã bật camera và microphone");
       return stream;
     } catch (err) {
@@ -100,12 +93,29 @@ const VideoChatAdmin = () => {
     }
   };
 
+  const addTracksToConnection = (peer, stream) => {
+    // Xóa tất cả senders cũ trước
+    const senders = peer.getSenders();
+    senders.forEach((sender) => {
+      if (sender.track) {
+        peer.removeTrack(sender);
+      }
+    });
+
+    // Thêm tracks mới
+    stream.getTracks().forEach((track) => {
+      console.log("➕ Adding track:", track.kind);
+      peer.addTrack(track, stream);
+    });
+  };
+
   const answerCall = async () => {
     if (!incomingCall) return;
 
     try {
       console.log("📞 Answering call from:", incomingCall.from);
 
+      // Tạo peer connection mới
       const peer = createPeerConnection();
       peerRef.current = peer;
 
@@ -116,10 +126,8 @@ const VideoChatAdmin = () => {
         return;
       }
 
-      // Thêm local stream tracks
-      stream.getTracks().forEach((track) => {
-        peer.addTrack(track, stream);
-      });
+      // Thêm local stream tracks một cách an toàn
+      addTracksToConnection(peer, stream);
 
       // Set remote description
       await peer.setRemoteDescription(
@@ -155,16 +163,24 @@ const VideoChatAdmin = () => {
   };
 
   const endCall = () => {
+    console.log("📞 Ending call...");
+
+    // Đóng peer connection
     if (peerRef.current) {
       peerRef.current.close();
       peerRef.current = null;
     }
 
+    // Dừng tất cả media tracks
     if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach((track) => track.stop());
+      localStreamRef.current.getTracks().forEach((track) => {
+        track.stop();
+        console.log("🛑 Stopped track:", track.kind);
+      });
       localStreamRef.current = null;
     }
 
+    // Clear video elements
     if (localVideoRef.current) {
       localVideoRef.current.srcObject = null;
     }
@@ -173,11 +189,22 @@ const VideoChatAdmin = () => {
       remoteVideoRef.current.srcObject = null;
     }
 
+    // Reset states
     setInCall(false);
     setMediaEnabled({ video: false, audio: false });
     setConnectionState("new");
     iceBufferRef.current = [];
+
     message.info("Cuộc gọi đã kết thúc");
+  };
+
+  const rejectCall = () => {
+    console.log("📞 Rejecting call from:", incomingCall?.from);
+    if (incomingCall) {
+      socket.emit("reject-call", { to: incomingCall.from });
+    }
+    setIncomingCall(null);
+    message.info("Đã từ chối cuộc gọi");
   };
 
   useEffect(() => {
@@ -186,6 +213,11 @@ const VideoChatAdmin = () => {
 
     socket.on("incoming-call", ({ from, offer }) => {
       console.log("📞 Incoming call from:", from);
+      // Nếu đang trong cuộc gọi khác, từ chối
+      if (inCall) {
+        socket.emit("reject-call", { to: from });
+        return;
+      }
       setIncomingCall({ from, offer });
     });
 
@@ -208,13 +240,19 @@ const VideoChatAdmin = () => {
       endCall();
     });
 
+    socket.on("call-rejected", () => {
+      console.log("📞 Call was rejected");
+      message.info("Cuộc gọi đã bị từ chối");
+    });
+
     return () => {
       socket.off("incoming-call");
       socket.off("ice-candidate");
       socket.off("call-ended");
+      socket.off("call-rejected");
       endCall();
     };
-  }, []);
+  }, [inCall, createPeerConnection]);
 
   return (
     <div style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto" }}>
@@ -277,9 +315,11 @@ const VideoChatAdmin = () => {
                   style={{
                     width: "100%",
                     maxWidth: "400px",
+                    height: "300px",
                     border: "1px solid #d9d9d9",
                     borderRadius: "8px",
                     backgroundColor: "black",
+                    objectFit: "cover",
                   }}
                 />
               </div>
@@ -294,9 +334,11 @@ const VideoChatAdmin = () => {
                   style={{
                     width: "100%",
                     maxWidth: "400px",
+                    height: "300px",
                     border: "1px solid #d9d9d9",
                     borderRadius: "8px",
                     backgroundColor: "black",
+                    objectFit: "cover",
                   }}
                 />
               </div>
@@ -309,6 +351,7 @@ const VideoChatAdmin = () => {
                 icon={<CloseOutlined />}
                 onClick={endCall}
                 size="large"
+                style={{ backgroundColor: "#ff4d4f", borderColor: "#ff4d4f" }}
               >
                 Kết thúc cuộc gọi
               </Button>
@@ -319,13 +362,17 @@ const VideoChatAdmin = () => {
 
       <Modal
         open={!!incomingCall}
-        onCancel={() => setIncomingCall(null)}
+        onCancel={rejectCall}
         onOk={answerCall}
         okText="Trả lời"
         cancelText="Từ chối"
         title="📲 Có cuộc gọi đến"
         centered
-        okButtonProps={{ icon: <PhoneOutlined />, size: "large" }}
+        okButtonProps={{
+          icon: <PhoneOutlined />,
+          size: "large",
+          style: { backgroundColor: "#52c41a", borderColor: "#52c41a" },
+        }}
         cancelButtonProps={{ size: "large" }}
       >
         <div style={{ textAlign: "center", padding: "16px 0" }}>
