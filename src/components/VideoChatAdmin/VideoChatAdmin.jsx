@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   Phone,
@@ -9,16 +7,13 @@ import {
   VideoOff,
   Mic,
   MicOff,
-  Settings,
-  Wifi,
-  WifiOff,
-  Users,
 } from "lucide-react";
 import { io } from "socket.io-client";
-
-const adminId = "673017dde4526bd79cc61fa6";
+import { Button, Modal, Space, message } from "antd";
+import { PhoneOutlined } from "@ant-design/icons";
 
 const VideoChatAdmin = () => {
+  const adminId = "673017dde4526bd79cc61fa6";
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const peerRef = useRef(null);
@@ -33,7 +28,6 @@ const VideoChatAdmin = () => {
   const [outgoingCall, setOutgoingCall] = useState(null);
   const [inCall, setInCall] = useState(false);
   const [connectionState, setConnectionState] = useState("new");
-  const [iceConnectionState, setIceConnectionState] = useState("new");
   const [mediaEnabled, setMediaEnabled] = useState({
     video: false,
     audio: false,
@@ -45,15 +39,11 @@ const VideoChatAdmin = () => {
   const [callDuration, setCallDuration] = useState(0);
   const [callStartTime, setCallStartTime] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState("");
-  const [debugLogs, setDebugLogs] = useState([]);
-  const [showDebug, setShowDebug] = useState(false);
 
-  // Enhanced ICE servers with more options
+  // ICE servers configuration
   const iceServers = [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
-    { urls: "stun:stun2.l.google.com:19302" },
-    { urls: "stun:stun3.l.google.com:19302" },
     {
       urls: "turn:openrelay.metered.ca:80",
       username: "openrelayproject",
@@ -64,20 +54,7 @@ const VideoChatAdmin = () => {
       username: "openrelayproject",
       credential: "openrelayproject",
     },
-    {
-      urls: "turn:openrelay.metered.ca:443?transport=tcp",
-      username: "openrelayproject",
-      credential: "openrelayproject",
-    },
   ];
-
-  // Debug logging function
-  const addDebugLog = useCallback((message) => {
-    const timestamp = new Date().toLocaleTimeString();
-    const logMessage = `[${timestamp}] ${message}`;
-    console.log(logMessage);
-    setDebugLogs((prev) => [...prev.slice(-50), logMessage]);
-  }, []);
 
   // Call duration timer
   useEffect(() => {
@@ -100,12 +77,12 @@ const VideoChatAdmin = () => {
 
   const endCall = useCallback(() => {
     if (cleanupRef.current) return;
-    addDebugLog("📞 Admin: Ending call...");
+    console.log("📞 Admin: Ending call...");
 
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((track) => {
         track.stop();
-        addDebugLog(`🛑 Admin: Stopped track: ${track.kind}`);
+        console.log("🛑 Admin: Stopped track:", track.kind);
       });
       localStreamRef.current = null;
     }
@@ -121,7 +98,6 @@ const VideoChatAdmin = () => {
       const targetUserId = incomingCall?.from || outgoingCall?.to;
       if (targetUserId) {
         socketRef.current.emit("end-call", { to: targetUserId });
-        addDebugLog(`📤 Admin: Sent end-call signal to ${targetUserId}`);
       }
     }
 
@@ -144,16 +120,14 @@ const VideoChatAdmin = () => {
     setOutgoingCall(null);
     setMediaEnabled({ video: false, audio: false });
     setConnectionState("new");
-    setIceConnectionState("new");
     setCallStartTime(null);
     setCallDuration(0);
     setIsFullscreen(false);
-  }, [inCall, outgoingCall, incomingCall, addDebugLog]);
+  }, [inCall, outgoingCall, incomingCall]);
 
   const cleanupPeerConnection = useCallback(() => {
     if (cleanupRef.current) return;
-    addDebugLog("🧹 Admin: Cleaning up peer connection...");
-
+    console.log("🧹 Admin: Cleaning up peer connection...");
     if (peerRef.current) {
       peerRef.current.onicecandidate = null;
       peerRef.current.ontrack = null;
@@ -166,7 +140,7 @@ const VideoChatAdmin = () => {
     }
     isCallingRef.current = false;
     isAnsweringRef.current = false;
-  }, [addDebugLog]);
+  }, []);
 
   const enableMedia = useCallback(
     async (options = { video: false, audio: false }) => {
@@ -176,67 +150,103 @@ const VideoChatAdmin = () => {
           constraints.video = {
             width: { ideal: 1280 },
             height: { ideal: 720 },
-            facingMode: "user",
           };
         if (options.audio)
           constraints.audio = {
             echoCancellation: true,
             noiseSuppression: true,
-            autoGainControl: true,
           };
 
-        addDebugLog(
-          `🎥 Admin: Requesting media access: ${JSON.stringify(constraints)}`
-        );
+        console.log("🎥 Admin: Requesting media access:", constraints);
         const newStream = await navigator.mediaDevices.getUserMedia(
           constraints
         );
 
         if (localStreamRef.current) {
-          // Stop existing tracks
-          localStreamRef.current.getTracks().forEach((track) => {
-            track.stop();
-            localStreamRef.current?.removeTrack(track);
+          // Replace existing tracks
+          newStream.getTracks().forEach((newTrack) => {
+            const existingTrack = localStreamRef.current
+              .getTracks()
+              .find((t) => t.kind === newTrack.kind);
+            if (existingTrack) {
+              existingTrack.stop();
+              localStreamRef.current.removeTrack(existingTrack);
+            }
+            localStreamRef.current.addTrack(newTrack);
           });
+        } else {
+          localStreamRef.current = newStream;
         }
-
-        localStreamRef.current = newStream;
 
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = localStreamRef.current;
           localVideoRef.current.muted = true;
           try {
             await localVideoRef.current.play();
-            addDebugLog("✅ Admin: Local video playing");
+            console.log("✅ Admin: Local video playing");
           } catch (playError) {
-            addDebugLog(`❌ Admin: Error playing local video: ${playError}`);
+            console.error("❌ Admin: Error playing local video:", playError);
           }
         }
 
-        setMediaEnabled({
-          video: options.video || mediaEnabled.video,
-          audio: options.audio || mediaEnabled.audio,
-        });
+        setMediaEnabled((prev) => ({
+          video: prev.video || options.video,
+          audio: prev.audio || options.audio,
+        }));
 
-        addDebugLog("✅ Admin: Media enabled successfully");
+        console.log("✅ Admin: Media enabled successfully");
         return localStreamRef.current;
       } catch (err) {
-        addDebugLog(`❌ Admin: Cannot enable media: ${err.message}`);
+        console.error("❌ Admin: Không thể bật media:", err);
         let errorMessage = "Không thể truy cập thiết bị.";
         if (err.name === "NotAllowedError") {
           errorMessage = "Bạn đã từ chối quyền truy cập camera/microphone.";
         } else if (err.name === "NotFoundError") {
           errorMessage = "Không tìm thấy camera hoặc microphone.";
         }
-        alert(errorMessage);
+        message.error(errorMessage);
         return null;
       }
     },
-    [mediaEnabled.video, mediaEnabled.audio, addDebugLog]
+    []
   );
 
+  const toggleVideo = useCallback(async () => {
+    if (mediaEnabled.video) {
+      // Turn off video
+      if (localStreamRef.current) {
+        const videoTracks = localStreamRef.current.getVideoTracks();
+        videoTracks.forEach((track) => {
+          track.stop();
+          localStreamRef.current.removeTrack(track);
+        });
+      }
+      setMediaEnabled((prev) => ({ ...prev, video: false }));
+    } else {
+      // Turn on video
+      await enableMedia({ video: true });
+    }
+  }, [mediaEnabled.video, enableMedia]);
+
+  const toggleAudio = useCallback(async () => {
+    if (mediaEnabled.audio) {
+      // Turn off audio
+      if (localStreamRef.current) {
+        const audioTracks = localStreamRef.current.getAudioTracks();
+        audioTracks.forEach((track) => {
+          track.stop();
+          localStreamRef.current.removeTrack(track);
+        });
+      }
+      setMediaEnabled((prev) => ({ ...prev, audio: false }));
+    } else {
+      // Turn on audio
+      await enableMedia({ audio: true });
+    }
+  }, [mediaEnabled.audio, enableMedia]);
+
   const createPeerConnection = useCallback(() => {
-    addDebugLog("🔗 Admin: Creating new peer connection...");
+    console.log("🔗 Admin: Creating new peer connection...");
     cleanupPeerConnection();
 
     const peer = new RTCPeerConnection({
@@ -245,14 +255,13 @@ const VideoChatAdmin = () => {
       iceTransportPolicy: "all",
     });
 
-    // Enhanced event handlers with better logging
     peer.onicecandidate = (event) => {
       if (
         event.candidate &&
         peer.signalingState !== "closed" &&
         socketRef.current?.connected
       ) {
-        addDebugLog(`🧊 Admin: Sending ICE candidate: ${event.candidate.type}`);
+        console.log("🧊 Admin: Sending ICE candidate");
         const targetUserId = incomingCall?.from || outgoingCall?.to;
         if (targetUserId) {
           socketRef.current.emit("ice-candidate", {
@@ -260,13 +269,11 @@ const VideoChatAdmin = () => {
             candidate: event.candidate,
           });
         }
-      } else if (!event.candidate) {
-        addDebugLog("🧊 Admin: ICE gathering completed");
       }
     };
 
     peer.ontrack = (event) => {
-      addDebugLog("📺 Admin: Received remote stream");
+      console.log("📺 Admin: Received remote stream");
       if (remoteVideoRef.current && event.streams[0]) {
         remoteVideoRef.current.srcObject = event.streams[0];
         remoteVideoRef.current.muted = false;
@@ -274,36 +281,31 @@ const VideoChatAdmin = () => {
         remoteVideoRef.current
           .play()
           .then(() => {
-            addDebugLog("✅ Admin: Remote video playing successfully");
+            console.log("✅ Admin: Remote video playing successfully");
           })
           .catch((playError) => {
-            addDebugLog(`❌ Admin: Error playing remote video: ${playError}`);
+            console.error("❌ Admin: Error playing remote video:", playError);
           });
       }
     };
 
     peer.onconnectionstatechange = () => {
-      const state = peer.connectionState;
-      addDebugLog(`🔗 Admin: Connection state changed to: ${state}`);
-      setConnectionState(state);
-
-      if (state === "connected") {
+      console.log("🔗 Admin: Connection state:", peer.connectionState);
+      setConnectionState(peer.connectionState);
+      if (peer.connectionState === "connected") {
         setOutgoingCall(null);
         setInCall(true);
         if (!callStartTime) {
           setCallStartTime(Date.now());
         }
-        addDebugLog("✅ Admin: Call connected successfully!");
-      } else if (state === "failed") {
-        addDebugLog("❌ Admin: Connection failed, ending call");
+      } else if (peer.connectionState === "failed") {
         setTimeout(() => endCall(), 2000);
-      } else if (state === "disconnected") {
-        addDebugLog(
+      } else if (peer.connectionState === "disconnected") {
+        console.log(
           "⚠️ Admin: Connection disconnected, attempting reconnection..."
         );
         setTimeout(() => {
           if (peer.connectionState === "disconnected") {
-            addDebugLog("🔄 Admin: Restarting ICE...");
             peer.restartIce();
           }
         }, 1000);
@@ -311,26 +313,11 @@ const VideoChatAdmin = () => {
     };
 
     peer.oniceconnectionstatechange = () => {
-      const state = peer.iceConnectionState;
-      addDebugLog(`🧊 Admin: ICE connection state changed to: ${state}`);
-      setIceConnectionState(state);
-
-      if (state === "failed") {
-        addDebugLog("🔄 Admin: ICE connection failed, attempting restart...");
+      console.log("🧊 Admin: ICE connection state:", peer.iceConnectionState);
+      if (peer.iceConnectionState === "failed") {
+        console.log("🔄 Admin: ICE connection failed, attempting restart...");
         peer.restartIce();
-      } else if (state === "disconnected") {
-        addDebugLog("⚠️ Admin: ICE disconnected");
-      } else if (state === "connected") {
-        addDebugLog("✅ Admin: ICE connected successfully!");
       }
-    };
-
-    peer.onicegatheringstatechange = () => {
-      addDebugLog(`🧊 Admin: ICE gathering state: ${peer.iceGatheringState}`);
-    };
-
-    peer.onsignalingstatechange = () => {
-      addDebugLog(`📡 Admin: Signaling state: ${peer.signalingState}`);
     };
 
     return peer;
@@ -340,67 +327,64 @@ const VideoChatAdmin = () => {
     incomingCall,
     outgoingCall,
     callStartTime,
-    addDebugLog,
   ]);
 
-  const addTracksToConnection = useCallback(
-    (peer, stream) => {
-      if (!peer || peer.signalingState === "closed") {
-        addDebugLog("❌ Admin: Cannot add tracks: peer connection is closed");
-        return false;
-      }
+  const addTracksToConnection = useCallback((peer, stream) => {
+    if (!peer || peer.signalingState === "closed") {
+      console.error("❌ Admin: Cannot add tracks: peer connection is closed");
+      return false;
+    }
 
-      try {
-        // Remove existing senders first
-        const senders = peer.getSenders();
-        senders.forEach((sender) => {
-          if (sender.track) {
-            addDebugLog(
-              `🗑️ Admin: Removing existing sender: ${sender.track.kind}`
-            );
-            peer.removeTrack(sender);
-          }
-        });
+    try {
+      // Remove existing senders
+      const senders = peer.getSenders();
+      senders.forEach((sender) => {
+        if (sender.track) {
+          console.log("🗑️ Admin: Removing existing sender:", sender.track.kind);
+          peer.removeTrack(sender);
+        }
+      });
 
-        // Add all tracks from stream
-        stream.getTracks().forEach((track) => {
-          addDebugLog(
-            `➕ Admin: Adding track: ${track.kind}, enabled: ${track.enabled}, readyState: ${track.readyState}`
-          );
-          peer.addTrack(track, stream);
-        });
+      // Add all tracks from stream
+      stream.getTracks().forEach((track) => {
+        console.log(
+          "➕ Admin: Adding track:",
+          track.kind,
+          "enabled:",
+          track.enabled,
+          "readyState:",
+          track.readyState
+        );
+        peer.addTrack(track, stream);
+      });
 
-        addDebugLog("✅ Admin: All tracks added successfully");
-        return true;
-      } catch (err) {
-        addDebugLog(`❌ Admin: Error adding tracks: ${err.message}`);
-        return false;
-      }
-    },
-    [addDebugLog]
-  );
+      console.log("✅ Admin: All tracks added successfully");
+      return true;
+    } catch (err) {
+      console.error("❌ Admin: Error adding tracks:", err);
+      return false;
+    }
+  }, []);
 
   const startCall = useCallback(
     async (userId) => {
-      if (isCallingRef.current || !socketRef.current?.connected) {
-        addDebugLog("⚠️ Admin: Already calling or socket not connected");
-        return;
-      }
-
-      // Ensure media is enabled
+      // Enable admin's camera and audio if not already enabled
       if (!mediaEnabled.video || !mediaEnabled.audio) {
-        addDebugLog("🎥 Admin: Enabling media before call...");
         const stream = await enableMedia({ video: true, audio: true });
         if (!stream) {
-          addDebugLog("❌ Admin: Failed to enable media, cannot start call");
-          alert("Không thể bắt đầu cuộc gọi do lỗi truy cập media.");
+          message.error("Không thể bắt đầu cuộc gọi do lỗi truy cập media.");
           return;
         }
       }
 
+      if (isCallingRef.current || !socketRef.current?.connected) {
+        console.log("⚠️ Admin: Already calling or socket not connected");
+        return;
+      }
+
       isCallingRef.current = true;
       try {
-        addDebugLog(`📞 Admin: Starting call to user: ${userId}`);
+        console.log("📞 Admin: Starting call to user:", userId);
         setOutgoingCall({ to: userId, status: "calling" });
 
         const peer = createPeerConnection();
@@ -410,26 +394,19 @@ const VideoChatAdmin = () => {
         peerRef.current = peer;
 
         // Add tracks BEFORE creating offer
-        if (!localStreamRef.current) {
-          throw new Error("No local stream available");
-        }
-
         const tracksAdded = addTracksToConnection(peer, localStreamRef.current);
         if (!tracksAdded) {
           throw new Error("Failed to add tracks to connection");
         }
 
-        addDebugLog("📤 Admin: Creating offer...");
+        console.log("📤 Admin: Creating offer...");
         const offer = await peer.createOffer({
           offerToReceiveAudio: true,
           offerToReceiveVideo: true,
         });
-
         await peer.setLocalDescription(offer);
-        addDebugLog("✅ Admin: Local description set");
 
-        // Wait for ICE gathering with timeout
-        addDebugLog("⏳ Admin: Waiting for ICE gathering...");
+        // Wait for ICE gathering
         await new Promise((resolve) => {
           if (peer.iceGatheringState === "complete") {
             resolve();
@@ -441,20 +418,20 @@ const VideoChatAdmin = () => {
               }
             };
             peer.addEventListener("icegatheringstatechange", checkState);
-            setTimeout(resolve, 10000); // Increased timeout to 10 seconds
+            setTimeout(resolve, 5000);
           }
         });
 
-        addDebugLog("📤 Admin: Sending offer to user...");
+        console.log("📤 Admin: Sending offer to user...");
         socketRef.current.emit("call-user", {
           to: userId,
           offer: peer.localDescription,
         });
 
-        addDebugLog("✅ Admin: Call initiated successfully");
+        console.log("✅ Admin: Call initiated successfully");
       } catch (err) {
-        addDebugLog(`❌ Admin: Error starting call: ${err.message}`);
-        alert(`Không thể bắt đầu cuộc gọi: ${err.message}`);
+        console.error("❌ Admin: Lỗi khi bắt đầu cuộc gọi:", err);
+        message.error(`Không thể bắt đầu cuộc gọi: ${err.message}`);
         setOutgoingCall(null);
         cleanupPeerConnection();
       } finally {
@@ -468,27 +445,24 @@ const VideoChatAdmin = () => {
       addTracksToConnection,
       cleanupPeerConnection,
       enableMedia,
-      addDebugLog,
     ]
   );
 
   const answerCall = useCallback(async () => {
-    if (!incomingCall || !peerRef.current || isAnsweringRef.current) return;
-
-    // Ensure media is enabled
+    // Enable admin's camera and audio if not already enabled
     if (!mediaEnabled.video || !mediaEnabled.audio) {
-      addDebugLog("🎥 Admin: Enabling media before answering...");
       const stream = await enableMedia({ video: true, audio: true });
       if (!stream) {
-        addDebugLog("❌ Admin: Failed to enable media, cannot answer call");
-        alert("Không thể trả lời cuộc gọi do lỗi truy cập media.");
+        message.error("Không thể trả lời cuộc gọi do lỗi truy cập media.");
         return;
       }
     }
 
+    if (!incomingCall || !peerRef.current || isAnsweringRef.current) return;
+
     isAnsweringRef.current = true;
     try {
-      addDebugLog(`✅ Admin: Answering call from: ${incomingCall.from}`);
+      console.log("✅ Admin: Answering call from:", incomingCall.from);
 
       // Add tracks to peer connection
       if (localStreamRef.current) {
@@ -508,69 +482,23 @@ const VideoChatAdmin = () => {
       setIncomingCall(null);
       setInCall(true);
       setCallStartTime(Date.now());
-      addDebugLog("✅ Admin: Call answered successfully");
     } catch (err) {
-      addDebugLog(`❌ Admin: Error answering call: ${err.message}`);
-      alert(`Không thể trả lời cuộc gọi: ${err.message}`);
+      console.error("❌ Admin: Error answering call:", err);
+      message.error(`Không thể trả lời cuộc gọi: ${err.message}`);
     } finally {
       isAnsweringRef.current = false;
     }
-  }, [
-    mediaEnabled,
-    incomingCall,
-    addTracksToConnection,
-    enableMedia,
-    addDebugLog,
-  ]);
+  }, [mediaEnabled, incomingCall, addTracksToConnection, enableMedia]);
 
   const rejectCall = useCallback(() => {
     if (incomingCall && socketRef.current?.connected) {
       socketRef.current.emit("reject-call", { to: incomingCall.from });
-      addDebugLog("📞 Admin: Call rejected");
     }
     setIncomingCall(null);
     cleanupPeerConnection();
-  }, [incomingCall, cleanupPeerConnection, addDebugLog]);
+  }, [incomingCall, cleanupPeerConnection]);
 
-  const toggleVideo = useCallback(async () => {
-    if (mediaEnabled.video) {
-      // Turn off video
-      if (localStreamRef.current) {
-        const videoTracks = localStreamRef.current.getVideoTracks();
-        videoTracks.forEach((track) => {
-          track.stop();
-          localStreamRef.current?.removeTrack(track);
-        });
-      }
-      setMediaEnabled((prev) => ({ ...prev, video: false }));
-      addDebugLog("📹 Admin: Video disabled");
-    } else {
-      // Turn on video
-      await enableMedia({ video: true });
-      addDebugLog("📹 Admin: Video enabled");
-    }
-  }, [mediaEnabled.video, enableMedia, addDebugLog]);
-
-  const toggleAudio = useCallback(async () => {
-    if (mediaEnabled.audio) {
-      // Turn off audio
-      if (localStreamRef.current) {
-        const audioTracks = localStreamRef.current.getAudioTracks();
-        audioTracks.forEach((track) => {
-          track.stop();
-          localStreamRef.current?.removeTrack(track);
-        });
-      }
-      setMediaEnabled((prev) => ({ ...prev, audio: false }));
-      addDebugLog("🎤 Admin: Audio disabled");
-    } else {
-      // Turn on audio
-      await enableMedia({ audio: true });
-      addDebugLog("🎤 Admin: Audio enabled");
-    }
-  }, [mediaEnabled.audio, enableMedia, addDebugLog]);
-
-  // Mock users for display
+  // Mock users for display (you can replace this with real user data from your backend)
   const mockUsers = [
     {
       id: "user1",
@@ -603,11 +531,11 @@ const VideoChatAdmin = () => {
   // Main useEffect for Socket.IO connection
   useEffect(() => {
     if (!adminId || isInitializedRef.current) {
-      addDebugLog("⚠️ Admin: Already initialized or no adminId, skipping...");
+      console.log("⚠️ Admin: Already initialized or no adminId, skipping...");
       return;
     }
 
-    addDebugLog(`🔌 Admin: Connecting to socket with ID: ${adminId}`);
+    console.log("🔌 Admin: Connecting to socket with ID:", adminId);
     isInitializedRef.current = true;
     cleanupRef.current = false;
 
@@ -622,64 +550,59 @@ const VideoChatAdmin = () => {
     socketRef.current = socket;
 
     const handleConnect = () => {
-      addDebugLog(`✅ Admin: Socket connected: ${socket.id}`);
+      console.log("✅ Admin: Socket connected:", socket.id);
       setSocketConnected(true);
       socket.emit("register", { userId: adminId });
     };
 
     const handleDisconnect = (reason) => {
-      addDebugLog(`❌ Admin: Socket disconnected: ${reason}`);
+      console.log("❌ Admin: Socket disconnected:", reason);
       setSocketConnected(false);
-      alert("Mất kết nối với server. Đang thử kết nối lại...");
     };
 
     const handleConnectError = (error) => {
-      addDebugLog(`❌ Admin: Socket connection error: ${error}`);
+      console.error("❌ Admin: Socket connection error:", error);
       setSocketConnected(false);
-      alert("Không thể kết nối đến server. Vui lòng thử lại sau.");
+      message.error("Không thể kết nối đến server. Vui lòng thử lại sau.");
     };
 
     const handleIncomingCall = async ({ from, offer }) => {
-      addDebugLog(`📞 Admin: Incoming call from: ${from}`);
+      console.log("📞 Admin: Incoming call from:", from);
 
       // Create peer connection for incoming call
       const peer = createPeerConnection();
       if (!peer) return;
+
       peerRef.current = peer;
 
       try {
         await peer.setRemoteDescription(new RTCSessionDescription(offer));
         setIncomingCall({ from, fromName: `User ${from}` });
-        addDebugLog("✅ Admin: Incoming call handled successfully");
       } catch (err) {
-        addDebugLog(`❌ Admin: Error handling incoming call: ${err.message}`);
-        alert("Lỗi khi xử lý cuộc gọi đến.");
+        console.error("❌ Admin: Error handling incoming call:", err);
+        message.error("Lỗi khi xử lý cuộc gọi đến.");
       }
     };
 
     const handleCallAnswered = async ({ answer }) => {
-      addDebugLog("✅ Admin: Call answered by user");
+      console.log("✅ Admin: Call answered by user");
       if (peerRef.current && peerRef.current.signalingState !== "closed") {
         try {
           await peerRef.current.setRemoteDescription(
             new RTCSessionDescription(answer)
           );
-          addDebugLog("✅ Admin: Remote description set successfully");
+          console.log("✅ Admin: Set remote description successfully");
           setOutgoingCall(null);
           setInCall(true);
         } catch (err) {
-          addDebugLog(
-            `❌ Admin: Error setting remote description: ${err.message}`
-          );
-          alert("Lỗi khi thiết lập kết nối.");
+          console.error("❌ Admin: Error setting remote description:", err);
+          message.error("Lỗi khi thiết lập kết nối.");
         }
       }
     };
 
     const handleIceCandidate = async ({ candidate }) => {
-      addDebugLog(
-        `🧊 Admin: Received ICE candidate: ${candidate?.type || "unknown"}`
-      );
+      console.log("🧊 Admin: Received ICE candidate");
       try {
         if (
           peerRef.current &&
@@ -687,24 +610,24 @@ const VideoChatAdmin = () => {
           peerRef.current.signalingState !== "closed"
         ) {
           await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
-          addDebugLog("✅ Admin: ICE candidate added successfully");
+          console.log("✅ Admin: Added ICE candidate");
         }
       } catch (err) {
-        addDebugLog(`❌ Admin: Failed to add ICE candidate: ${err.message}`);
+        console.error("❌ Admin: Failed to add ICE candidate:", err);
       }
     };
 
     const handleCallEnded = () => {
-      addDebugLog("📞 Admin: Call ended by user");
+      console.log("📞 Admin: Call ended by user");
       endCall();
-      alert("Cuộc gọi đã kết thúc bởi người dùng.");
+      message.info("Cuộc gọi đã kết thúc bởi người dùng.");
     };
 
     const handleCallRejected = () => {
-      addDebugLog("📞 Admin: Call was rejected by user");
+      console.log("📞 Admin: Call was rejected by user");
       setOutgoingCall(null);
       cleanupPeerConnection();
-      alert("Người dùng đã từ chối cuộc gọi.");
+      message.warning("Người dùng đã từ chối cuộc gọi.");
     };
 
     socket.on("connect", handleConnect);
@@ -718,7 +641,7 @@ const VideoChatAdmin = () => {
 
     return () => {
       if (cleanupRef.current) return;
-      addDebugLog("🧹 Admin: Component unmounting, cleaning up...");
+      console.log("🧹 Admin: Component unmounting, cleaning up...");
       cleanupRef.current = true;
 
       socket.off("connect", handleConnect);
@@ -738,13 +661,7 @@ const VideoChatAdmin = () => {
       setSocketConnected(false);
       isInitializedRef.current = false;
     };
-  }, [
-    adminId,
-    endCall,
-    cleanupPeerConnection,
-    createPeerConnection,
-    addDebugLog,
-  ]);
+  }, [adminId, endCall, cleanupPeerConnection, createPeerConnection]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -772,413 +689,156 @@ const VideoChatAdmin = () => {
     }
   };
 
-  // In-call interface
-  if (inCall) {
-    return (
-      <div className="flex h-screen bg-gray-900 text-white">
-        {/* Header */}
-        <div className="absolute top-0 left-0 right-0 z-10 bg-black bg-opacity-50 p-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium">Đang gọi với User</span>
-              </div>
-              <span className="text-lg font-semibold">
-                {formatDuration(callDuration)}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-1">
-                {socketConnected ? (
-                  <Wifi className="w-4 h-4 text-green-500" />
-                ) : (
-                  <WifiOff className="w-4 h-4 text-red-500" />
-                )}
-                <span className="text-xs">{connectionState}</span>
-                <span className="text-xs">ICE: {iceConnectionState}</span>
-              </div>
-              <button
-                onClick={() => setShowDebug(!showDebug)}
-                className="p-2 rounded-full bg-black bg-opacity-50 hover:bg-opacity-70 transition-all"
-              >
-                <Settings className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Debug Panel */}
-        {showDebug && (
-          <div className="absolute top-16 right-4 w-96 h-64 bg-black bg-opacity-80 rounded-lg p-4 overflow-y-auto z-20">
-            <h3 className="text-white font-bold mb-2">Debug Logs</h3>
-            <div className="text-xs text-gray-300 space-y-1">
-              {debugLogs.slice(-20).map((log, index) => (
-                <div key={index}>{log}</div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Video Container */}
-        <div className="relative w-full h-full flex">
-          {/* Remote Video (Main) */}
-          <div className="flex-1 relative bg-black">
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute bottom-4 left-4 bg-black bg-opacity-50 px-3 py-1 rounded-full">
-              <span className="text-sm">User</span>
-            </div>
-          </div>
-
-          {/* Local Video (Picture in Picture) */}
-          <div className="absolute top-20 right-4 w-64 h-48 bg-black rounded-lg overflow-hidden shadow-2xl border-2 border-white border-opacity-20">
-            <video
-              ref={localVideoRef}
-              autoPlay
-              muted
-              playsInline
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 px-2 py-1 rounded text-xs">
-              Admin (You)
-            </div>
-          </div>
-        </div>
-
-        {/* Controls */}
-        <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 p-6">
-          <div className="flex justify-center items-center space-x-6">
-            <button
-              onClick={toggleVideo}
-              className={`p-4 rounded-full transition-all ${
-                mediaEnabled.video
-                  ? "bg-gray-700 hover:bg-gray-600 text-white"
-                  : "bg-red-600 hover:bg-red-700 text-white"
-              }`}
-            >
-              {mediaEnabled.video ? (
-                <Video className="w-6 h-6" />
-              ) : (
-                <VideoOff className="w-6 h-6" />
-              )}
-            </button>
-
-            <button
-              onClick={toggleAudio}
-              className={`p-4 rounded-full transition-all ${
-                mediaEnabled.audio
-                  ? "bg-gray-700 hover:bg-gray-600 text-white"
-                  : "bg-red-600 hover:bg-red-700 text-white"
-              }`}
-            >
-              {mediaEnabled.audio ? (
-                <Mic className="w-6 h-6" />
-              ) : (
-                <MicOff className="w-6 h-6" />
-              )}
-            </button>
-
-            <button
-              onClick={endCall}
-              className="p-4 rounded-full bg-red-600 hover:bg-red-700 transition-all"
-            >
-              <PhoneOff className="w-6 h-6 text-white" />
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg">
-        <div className="p-4 border-b">
-          <h2 className="text-lg font-semibold flex items-center">
-            <Users className="w-5 h-5 mr-2" />
-            Danh sách người dùng
-          </h2>
-        </div>
-        <div className="p-4">
-          <ul className="space-y-2">
-            {onlineUsers.map((user) => (
-              <li
-                key={user.id}
-                className={`flex items-center justify-between py-3 px-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors ${
-                  selectedUser?.id === user.id
-                    ? "bg-blue-50 border border-blue-200"
-                    : ""
-                }`}
-                onClick={() => setSelectedUser(user)}
-              >
-                <div className="flex items-center">
-                  <span className="mr-3 text-2xl">{user.avatar}</span>
-                  <div>
-                    <div className="font-medium text-gray-900">{user.name}</div>
-                    <div className="text-sm text-gray-500">{user.id}</div>
-                  </div>
-                </div>
-                <span
-                  className={`inline-block w-3 h-3 rounded-full ${getStatusColor(
-                    user.status
-                  )}`}
-                  title={getStatusText(user.status)}
-                ></span>
-              </li>
-            ))}
-          </ul>
-        </div>
+      <div className="w-64 bg-gray-200 p-4">
+        <h2 className="text-lg font-semibold mb-4">Danh sách người dùng</h2>
+        <ul>
+          {onlineUsers.map((user) => (
+            <li
+              key={user.id}
+              className={`flex items-center justify-between py-2 px-3 rounded hover:bg-gray-300 cursor-pointer ${
+                selectedUser?.id === user.id ? "bg-gray-300" : ""
+              }`}
+              onClick={() => setSelectedUser(user)}
+            >
+              <div className="flex items-center">
+                <span className="mr-2">{user.avatar}</span>
+                <span>{user.name}</span>
+              </div>
+              <span
+                className={`inline-block w-2.5 h-2.5 rounded-full ${getStatusColor(
+                  user.status
+                )}`}
+                title={getStatusText(user.status)}
+              ></span>
+            </li>
+          ))}
+        </ul>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Top Bar */}
-        <div className="bg-white shadow-sm border-b p-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-xl font-semibold text-gray-900">
-              Quản lý cuộc gọi video - Admin
-            </h1>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setShowDebug(!showDebug)}
-                className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm"
-              >
-                Debug
-              </button>
-              <div
-                className={`flex items-center space-x-2 px-3 py-1 rounded-full ${
-                  socketConnected
-                    ? "bg-green-100 text-green-800"
-                    : "bg-red-100 text-red-800"
-                }`}
-              >
-                {socketConnected ? (
-                  <Wifi className="w-4 h-4" />
-                ) : (
-                  <WifiOff className="w-4 h-4" />
-                )}
-                <span className="text-sm font-medium">
-                  {socketConnected ? "Đã kết nối" : "Mất kết nối"}
-                </span>
-              </div>
-            </div>
-          </div>
+        <div className="bg-white p-4 shadow-md">
+          <h1 className="text-xl font-semibold">Quản lý cuộc gọi video</h1>
         </div>
 
-        {/* Debug Panel */}
-        {showDebug && (
-          <div className="bg-white border-b p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Debug Information
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-medium text-gray-700">Socket</div>
-                <div
-                  className={`text-sm ${
-                    socketConnected ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  {socketConnected ? "Connected" : "Disconnected"}
-                </div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-medium text-gray-700">
-                  Connection
-                </div>
-                <div className="text-sm text-blue-600">{connectionState}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-medium text-gray-700">ICE</div>
-                <div className="text-sm text-purple-600">
-                  {iceConnectionState}
-                </div>
-              </div>
-            </div>
-            <div className="bg-gray-900 text-green-400 p-4 rounded-lg h-32 overflow-y-auto text-xs font-mono">
-              {debugLogs.slice(-15).map((log, index) => (
-                <div key={index}>{log}</div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Video Area */}
-        <div className="flex-1 flex p-6 space-x-6">
+        <div className="flex-1 flex p-4">
           {/* Remote Video */}
-          <div className="flex-1 bg-gray-900 rounded-lg overflow-hidden shadow-lg relative">
+          <div className="relative w-2/3 rounded-lg overflow-hidden shadow-lg">
             <video
               ref={remoteVideoRef}
               autoPlay
               playsInline
               className="w-full h-full object-cover"
-            />
-            {!inCall && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-                <div className="text-center text-white">
-                  <VideoOff className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg">Chưa có cuộc gọi</p>
-                </div>
-              </div>
-            )}
-            <div className="absolute bottom-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full">
-              <span className="text-sm">Connection: {connectionState}</span>
+            ></video>
+            <div className="absolute bottom-0 left-0 w-full bg-black bg-opacity-50 text-white p-2 flex justify-between items-center">
+              <span>Đang kết nối: {connectionState}</span>
               {inCall && (
-                <span className="ml-4">
-                  Time: {formatDuration(callDuration)}
-                </span>
+                <span>Thời gian gọi: {formatDuration(callDuration)}</span>
               )}
             </div>
           </div>
 
           {/* Local Video & Controls */}
-          <div className="w-80 flex flex-col space-y-4">
-            {/* Local Video Preview */}
-            <div
-              className="bg-gray-900 rounded-lg overflow-hidden shadow-lg relative"
-              style={{ aspectRatio: "4/3" }}
-            >
+          <div className="w-1/3 flex flex-col pl-4">
+            <div className="relative rounded-lg overflow-hidden shadow-lg mb-4">
               <video
                 ref={localVideoRef}
                 autoPlay
                 playsInline
                 muted
-                className="w-full h-full object-cover"
-              />
-              {!mediaEnabled.video && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-                  <div className="text-center text-white">
-                    <VideoOff className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">Camera tắt</p>
-                  </div>
-                </div>
-              )}
-              <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-1 rounded flex space-x-1">
+                className="w-full h-48 object-cover"
+              ></video>
+              <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-1 rounded">
+                {mediaEnabled.video ? <Video /> : <VideoOff />}
+                {mediaEnabled.audio ? <Mic /> : <MicOff />}
+              </div>
+            </div>
+
+            {/* Call Controls */}
+            <div className="flex justify-around mt-4">
+              {/* Enable/Disable Media */}
+              <button
+                onClick={toggleVideo}
+                className="p-3 rounded-full shadow-lg hover:bg-gray-200"
+              >
                 {mediaEnabled.video ? (
-                  <Video className="w-4 h-4" />
+                  <Video className="w-6 h-6" />
                 ) : (
-                  <VideoOff className="w-4 h-4" />
+                  <VideoOff className="w-6 h-6" />
                 )}
+              </button>
+              <button
+                onClick={toggleAudio}
+                className="p-3 rounded-full shadow-lg hover:bg-gray-200"
+              >
                 {mediaEnabled.audio ? (
-                  <Mic className="w-4 h-4" />
+                  <Mic className="w-6 h-6" />
                 ) : (
-                  <MicOff className="w-4 h-4" />
+                  <MicOff className="w-6 h-6" />
                 )}
-              </div>
-              <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 px-2 py-1 rounded text-white text-xs">
-                Admin (You)
-              </div>
-            </div>
+              </button>
 
-            {/* Media Controls */}
-            <div className="bg-white rounded-lg shadow-sm border p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Media Controls
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
+              {/* Call Actions */}
+              {inCall ? (
                 <button
-                  onClick={() => enableMedia({ video: true })}
-                  className={`flex items-center justify-center space-x-2 px-4 py-3 rounded-lg border-2 transition-all ${
-                    mediaEnabled.video
-                      ? "border-blue-500 bg-blue-50 text-blue-700"
-                      : "border-gray-300 hover:border-gray-400 text-gray-700"
+                  onClick={endCall}
+                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-full shadow-lg"
+                >
+                  <PhoneOff className="w-6 h-6 inline-block mr-2" />
+                  Kết thúc
+                </button>
+              ) : (
+                <button
+                  onClick={() => selectedUser && startCall(selectedUser.id)}
+                  disabled={!selectedUser}
+                  className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-lg ${
+                    !selectedUser ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                 >
-                  <Video className="w-5 h-5" />
-                  <span className="text-sm">
-                    {mediaEnabled.video ? "Camera On" : "Enable Camera"}
-                  </span>
+                  <Phone className="w-6 h-6 inline-block mr-2" />
+                  Gọi
                 </button>
-
-                <button
-                  onClick={() => enableMedia({ audio: true })}
-                  className={`flex items-center justify-center space-x-2 px-4 py-3 rounded-lg border-2 transition-all ${
-                    mediaEnabled.audio
-                      ? "border-blue-500 bg-blue-50 text-blue-700"
-                      : "border-gray-300 hover:border-gray-400 text-gray-700"
-                  }`}
-                >
-                  <Mic className="w-5 h-5" />
-                  <span className="text-sm">
-                    {mediaEnabled.audio ? "Mic On" : "Enable Mic"}
-                  </span>
-                </button>
-              </div>
-            </div>
-
-            {/* Call Actions */}
-            <div className="bg-white rounded-lg shadow-sm border p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Call Actions
-              </h3>
-
-              {/* Selected User Call */}
-              {selectedUser && (
-                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Selected User:</span>
-                    <span className="text-sm text-gray-600">
-                      {selectedUser.name}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => startCall(selectedUser.id)}
-                    disabled={
-                      !socketConnected ||
-                      (!mediaEnabled.video && !mediaEnabled.audio)
-                    }
-                    className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-all font-medium flex items-center justify-center space-x-2"
-                  >
-                    <PhoneCall className="w-5 h-5" />
-                    <span>Call {selectedUser.name}</span>
-                  </button>
-                </div>
               )}
-
-              {/* Manual User ID Input */}
-              <div className="space-y-3">
+            </div>
+            <div style={{ marginTop: "16px", textAlign: "center" }}>
+              <Space direction="vertical" size="middle">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Manual User ID:
-                  </label>
+                  <label style={{ marginRight: "8px" }}>User ID để gọi:</label>
                   <input
                     type="text"
                     value={selectedUserId}
                     onChange={(e) => setSelectedUserId(e.target.value)}
-                    placeholder="Enter User ID"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Nhập User ID"
+                    style={{
+                      padding: "4px 8px",
+                      border: "1px solid #d9d9d9",
+                      borderRadius: "4px",
+                      marginRight: "8px",
+                    }}
                   />
+                  <Button
+                    type="primary"
+                    icon={<PhoneOutlined />}
+                    onClick={() => selectedUserId && startCall(selectedUserId)}
+                    disabled={
+                      !selectedUserId ||
+                      !socketConnected ||
+                      (!mediaEnabled.video && !mediaEnabled.audio)
+                    }
+                    style={{
+                      backgroundColor: "#52c41a",
+                      borderColor: "#52c41a",
+                    }}
+                  >
+                    Gọi User
+                  </Button>
                 </div>
-                <button
-                  onClick={() => selectedUserId && startCall(selectedUserId)}
-                  disabled={
-                    !selectedUserId ||
-                    !socketConnected ||
-                    (!mediaEnabled.video && !mediaEnabled.audio)
-                  }
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-all font-medium flex items-center justify-center space-x-2"
-                >
-                  <Phone className="w-5 h-5" />
-                  <span>Call User</span>
-                </button>
-              </div>
-
-              {/* End Call Button */}
-              {inCall && (
-                <button
-                  onClick={endCall}
-                  className="w-full mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-all font-medium flex items-center justify-center space-x-2"
-                >
-                  <PhoneOff className="w-5 h-5" />
-                  <span>End Call</span>
-                </button>
-              )}
+              </Space>
             </div>
           </div>
         </div>
@@ -1186,64 +846,70 @@ const VideoChatAdmin = () => {
 
       {/* Incoming Call Modal */}
       {incomingCall && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <PhoneCall className="w-10 h-10 text-blue-600 animate-pulse" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                📲 Có cuộc gọi đến
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Người gọi: <strong>{incomingCall?.fromName}</strong>
-              </p>
-              <div className="flex space-x-4">
-                <button
-                  onClick={rejectCall}
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-all font-medium"
-                >
-                  Từ chối
-                </button>
-                <button
-                  onClick={answerCall}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-all font-medium"
-                >
-                  Trả lời
-                </button>
-              </div>
-            </div>
+        <Modal
+          open={!!incomingCall}
+          onCancel={rejectCall}
+          onOk={answerCall}
+          okText="Trả lời"
+          cancelText="Từ chối"
+          title="📲 Có cuộc gọi đến"
+          centered
+          closable={false}
+          maskClosable={false}
+          okButtonProps={{
+            icon: <PhoneOutlined />,
+            size: "large",
+            style: { backgroundColor: "#52c41a", borderColor: "#52c41a" },
+          }}
+          cancelButtonProps={{ size: "large", danger: true }}
+        >
+          <div style={{ textAlign: "center", padding: "16px 0" }}>
+            <PhoneOutlined
+              style={{
+                fontSize: "48px",
+                color: "#1890ff",
+                marginBottom: "16px",
+              }}
+            />
+            <p style={{ fontSize: "16px" }}>
+              Người gọi: <strong>{incomingCall?.fromName}</strong>
+            </p>
+            <p style={{ color: "#666" }}>
+              Bạn có muốn trả lời cuộc gọi video không?
+            </p>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* Outgoing Call Modal */}
       {outgoingCall && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <PhoneCall className="w-10 h-10 text-blue-600 animate-pulse" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                📞 Đang gọi...
-              </h2>
-              <p className="text-gray-600 mb-2">
-                Đang gọi đến: <strong>{outgoingCall?.to}</strong>
-              </p>
-              <p className="text-gray-600 mb-2">
-                Connection: {connectionState}
-              </p>
-              <p className="text-gray-600 mb-6">ICE: {iceConnectionState}</p>
-              <button
-                onClick={() => setOutgoingCall(null)}
-                className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-all font-medium"
-              >
-                Hủy cuộc gọi
-              </button>
-            </div>
+        <Modal
+          open={!!outgoingCall}
+          onCancel={() => setOutgoingCall(null)}
+          footer={[
+            <Button key="cancel" onClick={() => setOutgoingCall(null)} danger>
+              Hủy cuộc gọi
+            </Button>,
+          ]}
+          title="📞 Đang gọi..."
+          centered
+          closable={false}
+          maskClosable={false}
+        >
+          <div style={{ textAlign: "center", padding: "16px 0" }}>
+            <PhoneOutlined
+              style={{
+                fontSize: "48px",
+                color: "#1890ff",
+                marginBottom: "16px",
+              }}
+            />
+            <p style={{ fontSize: "16px" }}>
+              Đang gọi đến: <strong>{outgoingCall?.to}</strong>
+            </p>
+            <p style={{ color: "#666" }}>Vui lòng chờ người dùng trả lời...</p>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );
