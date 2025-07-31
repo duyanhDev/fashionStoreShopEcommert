@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   Phone,
@@ -199,7 +197,13 @@ const VideoChatAdmin = ({ adminId = "673017dde4526bd79cc61fa6" }) => {
         return localStreamRef.current;
       } catch (err) {
         console.error("❌ Admin: Không thể bật media:", err);
-        alert(`Không thể truy cập thiết bị: ${err.message}`);
+        let errorMessage = "Không thể truy cập thiết bị.";
+        if (err.name === "NotAllowedError") {
+          errorMessage = "Bạn đã từ chối quyền truy cập camera/microphone.";
+        } else if (err.name === "NotFoundError") {
+          errorMessage = "Không tìm thấy camera hoặc microphone.";
+        }
+        message.error(errorMessage);
         return null;
       }
     },
@@ -363,12 +367,13 @@ const VideoChatAdmin = ({ adminId = "673017dde4526bd79cc61fa6" }) => {
 
   const startCall = useCallback(
     async (userId) => {
-      if (
-        !localStreamRef.current ||
-        (!mediaEnabled.video && !mediaEnabled.audio)
-      ) {
-        message.warning("⚠️ Bạn cần bật camera hoặc microphone trước khi gọi.");
-        return;
+      // Enable admin's camera and audio if not already enabled
+      if (!mediaEnabled.video || !mediaEnabled.audio) {
+        const stream = await enableMedia({ video: true, audio: true });
+        if (!stream) {
+          message.error("Không thể bắt đầu cuộc gọi do lỗi truy cập media.");
+          return;
+        }
       }
 
       if (isCallingRef.current || !socketRef.current?.connected) {
@@ -438,13 +443,18 @@ const VideoChatAdmin = ({ adminId = "673017dde4526bd79cc61fa6" }) => {
       createPeerConnection,
       addTracksToConnection,
       cleanupPeerConnection,
+      enableMedia,
     ]
   );
 
   const answerCall = useCallback(async () => {
-    if (!mediaEnabled.video && !mediaEnabled.audio) {
-      alert("Vui lòng bật camera hoặc microphone trước khi trả lời.");
-      return;
+    // Enable admin's camera and audio if not already enabled
+    if (!mediaEnabled.video || !mediaEnabled.audio) {
+      const stream = await enableMedia({ video: true, audio: true });
+      if (!stream) {
+        message.error("Không thể trả lời cuộc gọi do lỗi truy cập media.");
+        return;
+      }
     }
 
     if (!incomingCall || !peerRef.current || isAnsweringRef.current) return;
@@ -473,11 +483,11 @@ const VideoChatAdmin = ({ adminId = "673017dde4526bd79cc61fa6" }) => {
       setCallStartTime(Date.now());
     } catch (err) {
       console.error("❌ Admin: Error answering call:", err);
-      alert(`Không thể trả lời cuộc gọi: ${err.message}`);
+      message.error(`Không thể trả lời cuộc gọi: ${err.message}`);
     } finally {
       isAnsweringRef.current = false;
     }
-  }, [mediaEnabled, incomingCall, addTracksToConnection]);
+  }, [mediaEnabled, incomingCall, addTracksToConnection, enableMedia]);
 
   const rejectCall = useCallback(() => {
     if (incomingCall && socketRef.current?.connected) {
@@ -552,6 +562,7 @@ const VideoChatAdmin = ({ adminId = "673017dde4526bd79cc61fa6" }) => {
     const handleConnectError = (error) => {
       console.error("❌ Admin: Socket connection error:", error);
       setSocketConnected(false);
+      message.error("Không thể kết nối đến server. Vui lòng thử lại sau.");
     };
 
     const handleIncomingCall = async ({ from, offer }) => {
@@ -568,6 +579,7 @@ const VideoChatAdmin = ({ adminId = "673017dde4526bd79cc61fa6" }) => {
         setIncomingCall({ from, fromName: `User ${from}` });
       } catch (err) {
         console.error("❌ Admin: Error handling incoming call:", err);
+        message.error("Lỗi khi xử lý cuộc gọi đến.");
       }
     };
 
@@ -583,6 +595,7 @@ const VideoChatAdmin = ({ adminId = "673017dde4526bd79cc61fa6" }) => {
           setInCall(true);
         } catch (err) {
           console.error("❌ Admin: Error setting remote description:", err);
+          message.error("Lỗi khi thiết lập kết nối.");
         }
       }
     };
@@ -606,13 +619,14 @@ const VideoChatAdmin = ({ adminId = "673017dde4526bd79cc61fa6" }) => {
     const handleCallEnded = () => {
       console.log("📞 Admin: Call ended by user");
       endCall();
+      message.info("Cuộc gọi đã kết thúc bởi người dùng.");
     };
 
     const handleCallRejected = () => {
       console.log("📞 Admin: Call was rejected by user");
       setOutgoingCall(null);
       cleanupPeerConnection();
-      alert("User đã từ chối cuộc gọi");
+      message.warning("Người dùng đã từ chối cuộc gọi.");
     };
 
     socket.on("connect", handleConnect);
@@ -769,24 +783,7 @@ const VideoChatAdmin = ({ adminId = "673017dde4526bd79cc61fa6" }) => {
               </button>
 
               {/* Call Actions */}
-              {incomingCall ? (
-                <>
-                  <button
-                    onClick={answerCall}
-                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full shadow-lg"
-                  >
-                    <PhoneCall className="w-6 h-6 inline-block mr-2" />
-                    Trả lời
-                  </button>
-                  <button
-                    onClick={rejectCall}
-                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-full shadow-lg"
-                  >
-                    <PhoneOff className="w-6 h-6 inline-block mr-2" />
-                    Từ chối
-                  </button>
-                </>
-              ) : outgoingCall ? (
+              {inCall ? (
                 <button
                   onClick={endCall}
                   className="bg-red-500 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-full shadow-lg"
@@ -845,6 +842,45 @@ const VideoChatAdmin = ({ adminId = "673017dde4526bd79cc61fa6" }) => {
           </div>
         </div>
       </div>
+
+      {/* Incoming Call Modal */}
+      {incomingCall && (
+        <Modal
+          open={!!incomingCall}
+          onCancel={rejectCall}
+          onOk={answerCall}
+          okText="Trả lời"
+          cancelText="Từ chối"
+          title="📲 Có cuộc gọi đến"
+          centered
+          closable={false}
+          maskClosable={false}
+          okButtonProps={{
+            icon: <PhoneOutlined />,
+            size: "large",
+            style: { backgroundColor: "#52c41a", borderColor: "#52c41a" },
+          }}
+          cancelButtonProps={{ size: "large", danger: true }}
+        >
+          <div style={{ textAlign: "center", padding: "16px 0" }}>
+            <PhoneOutlined
+              style={{
+                fontSize: "48px",
+                color: "#1890ff",
+                marginBottom: "16px",
+              }}
+            />
+            <p style={{ fontSize: "16px" }}>
+              Người gọi: <strong>{incomingCall?.fromName}</strong>
+            </p>
+            <p style={{ color: "#666" }}>
+              Bạn có muốn trả lời cuộc gọi video không?
+            </p>
+          </div>
+        </Modal>
+      )}
+
+      {/* Outgoing Call Modal */}
       {outgoingCall && (
         <Modal
           open={!!outgoingCall}

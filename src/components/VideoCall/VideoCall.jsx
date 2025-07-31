@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   PhoneCall,
@@ -202,7 +200,13 @@ const VideoChatUser = ({ userId }) => {
         return localStreamRef.current;
       } catch (err) {
         console.error("❌ User: Không thể bật media:", err);
-        alert(`Không thể truy cập thiết bị: ${err.message}`);
+        let errorMessage = "Không thể truy cập thiết bị.";
+        if (err.name === "NotAllowedError") {
+          errorMessage = "Bạn đã từ chối quyền truy cập camera/microphone.";
+        } else if (err.name === "NotFoundError") {
+          errorMessage = "Không tìm thấy camera hoặc microphone.";
+        }
+        message.error(errorMessage);
         return null;
       }
     },
@@ -354,12 +358,13 @@ const VideoChatUser = ({ userId }) => {
   }, []);
 
   const startCall = useCallback(async () => {
-    if (
-      !localStreamRef.current ||
-      (!mediaEnabled.video && !mediaEnabled.audio)
-    ) {
-      alert("⚠️ Bạn cần bật camera hoặc microphone trước khi gọi.");
-      return;
+    // Enable user's camera and audio if not already enabled
+    if (!mediaEnabled.video || !mediaEnabled.audio) {
+      const stream = await enableMedia({ video: true, audio: true });
+      if (!stream) {
+        message.error("Không thể bắt đầu cuộc gọi do lỗi truy cập media.");
+        return;
+      }
     }
 
     if (isCallingRef.current || !socketRef.current?.connected) {
@@ -417,7 +422,7 @@ const VideoChatUser = ({ userId }) => {
       console.log("✅ User: Call initiated successfully");
     } catch (err) {
       console.error("❌ User: Lỗi khi bắt đầu cuộc gọi:", err);
-      alert(`Không thể bắt đầu cuộc gọi: ${err.message}`);
+      message.error(`Không thể bắt đầu cuộc gọi: ${err.message}`);
       setCalling(false);
       cleanupPeerConnection();
     } finally {
@@ -429,12 +434,17 @@ const VideoChatUser = ({ userId }) => {
     createPeerConnection,
     addTracksToConnection,
     cleanupPeerConnection,
+    enableMedia,
   ]);
 
   const answerCall = useCallback(async () => {
-    if (!mediaEnabled.video && !mediaEnabled.audio) {
-      message.warning("Vui lòng bật camera hoặc microphone trước khi trả lời.");
-      return;
+    // Enable user's camera and audio if not already enabled
+    if (!mediaEnabled.video || !mediaEnabled.audio) {
+      const stream = await enableMedia({ video: true, audio: true });
+      if (!stream) {
+        message.error("Không thể trả lời cuộc gọi do lỗi truy cập media.");
+        return;
+      }
     }
 
     if (!incomingCall || !peerRef.current) return;
@@ -464,7 +474,7 @@ const VideoChatUser = ({ userId }) => {
       console.error("❌ User: Error answering call:", err);
       message.error(`Không thể trả lời cuộc gọi: ${err.message}`);
     }
-  }, [mediaEnabled, incomingCall, addTracksToConnection]);
+  }, [mediaEnabled, incomingCall, addTracksToConnection, enableMedia]);
 
   const rejectCall = useCallback(() => {
     if (incomingCall && socketRef.current?.connected) {
@@ -504,11 +514,13 @@ const VideoChatUser = ({ userId }) => {
     const handleDisconnect = (reason) => {
       console.log("❌ User: Socket disconnected:", reason);
       setSocketConnected(false);
+      message.error("Mất kết nối với server. Đang thử kết nối lại...");
     };
 
     const handleConnectError = (error) => {
       console.error("❌ User: Socket connection error:", error);
       setSocketConnected(false);
+      message.error("Không thể kết nối đến server. Vui lòng thử lại sau.");
     };
 
     const handleIncomingCall = async ({ from, offer }) => {
@@ -525,6 +537,7 @@ const VideoChatUser = ({ userId }) => {
         setIncomingCall({ from, fromName: "Admin" });
       } catch (err) {
         console.error("❌ User: Error handling incoming call:", err);
+        message.error("Lỗi khi xử lý cuộc gọi đến.");
       }
     };
 
@@ -538,6 +551,7 @@ const VideoChatUser = ({ userId }) => {
           console.log("✅ User: Set remote description successfully");
         } catch (err) {
           console.error("❌ User: Error setting remote description:", err);
+          message.error("Lỗi khi thiết lập kết nối.");
         }
       }
     };
@@ -561,13 +575,14 @@ const VideoChatUser = ({ userId }) => {
     const handleCallEnded = () => {
       console.log("📞 User: Call ended by admin");
       endCall();
+      message.info("Cuộc gọi đã kết thúc bởi Admin.");
     };
 
     const handleCallRejected = () => {
       console.log("📞 User: Call was rejected by admin");
       setCalling(false);
       cleanupPeerConnection();
-      alert("Admin đã từ chối cuộc gọi");
+      message.warning("Admin đã từ chối cuộc gọi.");
     };
 
     socket.on("connect", handleConnect);
@@ -912,20 +927,12 @@ const VideoChatUser = ({ userId }) => {
                 <div className="text-center">
                   <button
                     onClick={startCall}
-                    disabled={
-                      (!mediaEnabled.video && !mediaEnabled.audio) ||
-                      !socketConnected
-                    }
+                    disabled={!socketConnected}
                     className="inline-flex items-center space-x-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-8 py-4 rounded-lg transition-all font-medium text-lg"
                   >
                     <PhoneCall className="w-6 h-6" />
                     <span>Gọi Admin</span>
                   </button>
-                  {!mediaEnabled.video && !mediaEnabled.audio && (
-                    <p className="text-sm text-gray-500 mt-2">
-                      Vui lòng bật camera hoặc microphone trước khi gọi
-                    </p>
-                  )}
                 </div>
               )}
 
@@ -968,10 +975,8 @@ const VideoChatUser = ({ userId }) => {
             icon: <PhoneOutlined />,
             size: "large",
             style: { backgroundColor: "#52c41a", borderColor: "#52c41a" },
-            disabled:
-              !socketConnected || (!mediaEnabled.video && !mediaEnabled.audio),
           }}
-          cancelButtonProps={{ size: "large" }}
+          cancelButtonProps={{ size: "large", danger: true }}
         >
           <div style={{ textAlign: "center", padding: "16px 0" }}>
             <VideoCameraOutlined
@@ -987,13 +992,6 @@ const VideoChatUser = ({ userId }) => {
             <p style={{ color: "#666" }}>
               Bạn có muốn trả lời cuộc gọi video không?
             </p>
-            {!mediaEnabled.video && !mediaEnabled.audio && (
-              <p
-                style={{ color: "#ff4d4f", fontSize: "12px", marginTop: "8px" }}
-              >
-                ⚠️ Bạn cần bật camera hoặc microphone trước khi trả lời
-              </p>
-            )}
           </div>
         </Modal>
       )}
