@@ -254,17 +254,6 @@ function App() {
     [ListProducts, CartListProductsUser, ListCart, user]
   );
 
-  // Memoize video chat component
-  const VideoChat = useMemo(() => {
-    if (!user?._id) return null;
-
-    return isAdmin ? (
-      <MemoizedVideoChatAdmin />
-    ) : (
-      <MemoizedVideoChatUser userId={user._id} />
-    );
-  }, [isAdmin, user?._id]);
-
   return (
     <div className="container_nav">
       <div className="nav_header">
