@@ -1,5 +1,4 @@
-"use client";
-
+import { io } from "socket.io-client";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { BsChatDots } from "react-icons/bs";
 import {
@@ -22,11 +21,16 @@ import Message from "./components/Messages/Message";
 import { getMessagesList, UpdateIsReadAPI } from "./service/Message";
 import { getListProductsAPI } from "./service/ApiProduct";
 import VideoChatUser from "./components/VideoCall/VideoCall";
+import VideoChatAdmin from "./components/VideoChatAdmin/VideoChatAdmin";
 
 // Memoize các components con để tránh re-render
 const MemoizedHeader = memo(Header);
 const MemoizedFooter = memo(Footer);
 const MemoizedMessage = memo(Message);
+
+const socket = io("https://fashionstoreshopecommertbe.onrender.com", {
+  withCredentials: true,
+});
 
 function App() {
   const { user } = useSelector((state) => state.auth);
@@ -38,6 +42,12 @@ function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const Navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    if (user?._id) {
+      socket.emit("register", { userId: user._id });
+    }
+  }, [user]);
 
   // Memoize các giá trị computed
   const hideFooter = useMemo(
@@ -660,10 +670,13 @@ function App() {
       )}
 
       {!hideFooter && <MemoizedFooter />}
-      <VideoChatUser
-        currentUserId={user?._id}
-        targetUserId={"673017dde4526bd79cc61fa6"}
-      />
+      <div>
+        {user.role === "admin" ? (
+          <VideoChatAdmin socket={socket} user={user} />
+        ) : (
+          <VideoChatUser socket={socket} user={user} />
+        )}
+      </div>
     </div>
   );
 }
