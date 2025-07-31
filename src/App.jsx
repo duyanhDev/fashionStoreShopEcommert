@@ -1,4 +1,5 @@
-import { io } from "socket.io-client";
+"use client";
+
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { BsChatDots } from "react-icons/bs";
 import {
@@ -20,17 +21,15 @@ import Footer from "./components/Footer/Footer";
 import Message from "./components/Messages/Message";
 import { getMessagesList, UpdateIsReadAPI } from "./service/Message";
 import { getListProductsAPI } from "./service/ApiProduct";
-import VideoChatUser from "./components/VideoCall/VideoCall";
 import VideoChatAdmin from "./components/VideoChatAdmin/VideoChatAdmin";
+import VideoChatUser from "./components/VideoCall/VideoCall";
 
 // Memoize các components con để tránh re-render
 const MemoizedHeader = memo(Header);
 const MemoizedFooter = memo(Footer);
 const MemoizedMessage = memo(Message);
-
-const socket = io("https://fashionstoreshopecommertbe.onrender.com", {
-  withCredentials: true,
-});
+const MemoizedVideoChatAdmin = memo(VideoChatAdmin);
+const MemoizedVideoChatUser = memo(VideoChatUser);
 
 function App() {
   const { user } = useSelector((state) => state.auth);
@@ -42,12 +41,6 @@ function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const Navigate = useNavigate();
   const location = useLocation();
-
-  useEffect(() => {
-    if (user?._id) {
-      socket.emit("register", { userId: user._id });
-    }
-  }, [user]);
 
   // Memoize các giá trị computed
   const hideFooter = useMemo(
@@ -263,6 +256,17 @@ function App() {
     }),
     [ListProducts, CartListProductsUser, ListCart, user]
   );
+
+  // Memoize video chat component
+  const VideoChat = useMemo(() => {
+    if (!user?._id) return null;
+
+    return isAdmin ? (
+      <MemoizedVideoChatAdmin />
+    ) : (
+      <MemoizedVideoChatUser userId={user._id} />
+    );
+  }, [isAdmin, user?._id]);
 
   return (
     <div className="container_nav">
@@ -670,13 +674,9 @@ function App() {
       )}
 
       {!hideFooter && <MemoizedFooter />}
-      <div>
-        {user.role === "admin" ? (
-          <VideoChatAdmin socket={socket} user={user} />
-        ) : (
-          <VideoChatUser socket={socket} user={user} />
-        )}
-      </div>
+
+      {/* Video Chat Component - Memoized và chỉ render khi cần */}
+      <div style={{ display: user?._id ? "block" : "none" }}>{VideoChat}</div>
     </div>
   );
 }
