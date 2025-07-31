@@ -676,7 +676,7 @@ function App() {
       {!hideFooter && <MemoizedFooter />}
 
       {/* Video Chat Component - Memoized và chỉ render khi cần */}
-      <div style={{ display: user?._id ? "block" : "none" }}>{VideoChat}</div>
+      {/* <div style={{ display: user?._id ? "block" : "none" }}>{VideoChat}</div> */}
     </div>
   );
 }
