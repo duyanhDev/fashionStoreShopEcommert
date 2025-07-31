@@ -1,13 +1,5 @@
-"use client";
-
-import { useEffect, useRef, useState, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { Button, Modal, message } from "antd";
 import { Phone, PhoneOff, Mic, MicOff, Video, VideoOff } from "lucide-react";
 
 const VideoChatAdmin = ({ socket, user }) => {
@@ -23,6 +15,13 @@ const VideoChatAdmin = ({ socket, user }) => {
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [videoEnabled, setVideoEnabled] = useState(true);
   const [connectionState, setConnectionState] = useState("new");
+
+  // Register admin with socket
+  useEffect(() => {
+    if (user?._id) {
+      socket.emit("register", { userId: user._id, role: "admin" });
+    }
+  }, [user, socket]);
 
   const createPeerConnection = useCallback(() => {
     const peer = new RTCPeerConnection({
@@ -68,6 +67,7 @@ const VideoChatAdmin = ({ socket, user }) => {
       }
     } catch (error) {
       console.error("Error accessing media devices:", error);
+      message.error("Không thể truy cập camera/microphone");
     }
   }, []);
 
@@ -80,7 +80,6 @@ const VideoChatAdmin = ({ socket, user }) => {
       const peer = createPeerConnection();
       peerRef.current = peer;
 
-      // Add local stream tracks
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => {
           if (peerRef.current && streamRef.current) {
@@ -100,8 +99,10 @@ const VideoChatAdmin = ({ socket, user }) => {
 
       setIncomingCall(false);
       setInCall(true);
+      message.success("Đã chấp nhận cuộc gọi");
     } catch (error) {
       console.error("Error accepting call:", error);
+      message.error("Lỗi khi chấp nhận cuộc gọi");
     }
   };
 
@@ -109,26 +110,25 @@ const VideoChatAdmin = ({ socket, user }) => {
     socket.emit("reject-call", { to: callerIdRef.current });
     setIncomingCall(false);
     callerIdRef.current = null;
+    message.info("Đã từ chối cuộc gọi");
   };
 
   const endCall = useCallback(() => {
-    // Close peer connection
     if (peerRef.current) {
       peerRef.current.close();
       peerRef.current = null;
     }
 
-    // Clear remote video
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
 
     setInCall(false);
     setConnectionState("new");
 
-    // Notify caller
     if (callerIdRef.current) {
       socket.emit("call-ended", { to: callerIdRef.current });
       callerIdRef.current = null;
     }
+    message.info("Cuộc gọi đã kết thúc");
   }, [socket]);
 
   const toggleAudio = () => {
@@ -137,6 +137,9 @@ const VideoChatAdmin = ({ socket, user }) => {
       if (audioTrack) {
         audioTrack.enabled = !audioTrack.enabled;
         setAudioEnabled(audioTrack.enabled);
+        message.info(
+          audioTrack.enabled ? "Đã bật microphone" : "Đã tắt microphone"
+        );
       }
     }
   };
@@ -147,6 +150,7 @@ const VideoChatAdmin = ({ socket, user }) => {
       if (videoTrack) {
         videoTrack.enabled = !videoTrack.enabled;
         setVideoEnabled(videoTrack.enabled);
+        message.info(videoTrack.enabled ? "Đã bật camera" : "Đã tắt camera");
       }
     }
   };
@@ -158,8 +162,6 @@ const VideoChatAdmin = ({ socket, user }) => {
       callerIdRef.current = from;
       setCallerInfo(from);
       setIncomingCall(true);
-
-      // Store offer for when user accepts
       window.pendingOffer = offer;
     });
 
@@ -182,7 +184,6 @@ const VideoChatAdmin = ({ socket, user }) => {
       socket.off("ice-candidate");
       socket.off("end-call");
 
-      // Cleanup
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
@@ -190,97 +191,142 @@ const VideoChatAdmin = ({ socket, user }) => {
     };
   }, [socket, initStream, endCall]);
 
+  const getConnectionStatusColor = () => {
+    switch (connectionState) {
+      case "connected":
+        return "#52c41a";
+      case "connecting":
+        return "#faad14";
+      case "disconnected":
+        return "#ff4d4f";
+      default:
+        return "#d9d9d9";
+    }
+  };
+
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2">Admin Video Chat</h2>
-        <div className="flex items-center gap-2 text-sm text-gray-600">
+    <div style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto" }}>
+      <div style={{ marginBottom: "24px" }}>
+        <h2
+          style={{ fontSize: "24px", fontWeight: "bold", marginBottom: "8px" }}
+        >
+          Admin Video Chat
+        </h2>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            fontSize: "14px",
+            color: "#666",
+          }}
+        >
           <div
-            className={`w-2 h-2 rounded-full ${
-              connectionState === "connected"
-                ? "bg-green-500"
-                : connectionState === "connecting"
-                ? "bg-yellow-500"
-                : "bg-gray-400"
-            }`}
+            style={{
+              width: "8px",
+              height: "8px",
+              borderRadius: "50%",
+              backgroundColor: getConnectionStatusColor(),
+            }}
           />
           Connection: {connectionState}
         </div>
       </div>
 
       {inCall && (
-        <div className="mb-4 flex gap-2">
+        <div style={{ marginBottom: "16px", display: "flex", gap: "8px" }}>
           <Button
+            type={audioEnabled ? "default" : "primary"}
+            danger={!audioEnabled}
+            icon={audioEnabled ? <Mic size={16} /> : <MicOff size={16} />}
             onClick={toggleAudio}
-            variant={audioEnabled ? "default" : "destructive"}
-          >
-            {audioEnabled ? (
-              <Mic className="w-4 h-4" />
-            ) : (
-              <MicOff className="w-4 h-4" />
-            )}
-          </Button>
+          />
           <Button
+            type={videoEnabled ? "default" : "primary"}
+            danger={!videoEnabled}
+            icon={videoEnabled ? <Video size={16} /> : <VideoOff size={16} />}
             onClick={toggleVideo}
-            variant={videoEnabled ? "default" : "destructive"}
+          />
+          <Button
+            type="primary"
+            danger
+            icon={<PhoneOff size={16} />}
+            onClick={endCall}
           >
-            {videoEnabled ? (
-              <Video className="w-4 h-4" />
-            ) : (
-              <VideoOff className="w-4 h-4" />
-            )}
-          </Button>
-          <Button onClick={endCall} variant="destructive">
-            <PhoneOff className="w-4 h-4 mr-2" />
-            End Call
+            Kết thúc
           </Button>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <h3 className="font-semibold">Your Video</h3>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+          gap: "16px",
+        }}
+      >
+        <div>
+          <h3 style={{ fontWeight: "600", marginBottom: "8px" }}>
+            Video của bạn
+          </h3>
           <video
             ref={localVideoRef}
             autoPlay
             muted
             playsInline
-            className="w-full h-64 bg-gray-900 rounded-lg object-cover"
+            style={{
+              width: "100%",
+              height: "240px",
+              backgroundColor: "#000",
+              borderRadius: "8px",
+              objectFit: "cover",
+            }}
           />
         </div>
-        <div className="space-y-2">
-          <h3 className="font-semibold">User Video</h3>
+        <div>
+          <h3 style={{ fontWeight: "600", marginBottom: "8px" }}>Video User</h3>
           <video
             ref={remoteVideoRef}
             autoPlay
             playsInline
-            className="w-full h-64 bg-gray-900 rounded-lg object-cover"
+            style={{
+              width: "100%",
+              height: "240px",
+              backgroundColor: "#000",
+              borderRadius: "8px",
+              objectFit: "cover",
+            }}
           />
         </div>
       </div>
 
-      {/* Incoming Call Dialog */}
-      <Dialog open={incomingCall} onOpenChange={setIncomingCall}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Phone className="w-5 h-5" />
-              Incoming Call
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p>User {callerInfo} is calling you. Do you want to answer?</p>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={rejectCall}>
-                Decline
-              </Button>
-              <Button onClick={() => acceptCall(window.pendingOffer)}>
-                Accept
-              </Button>
-            </div>
+      <Modal
+        title={
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Phone size={20} />
+            Cuộc gọi đến
           </div>
-        </DialogContent>
-      </Dialog>
+        }
+        open={incomingCall}
+        onCancel={rejectCall}
+        footer={[
+          <Button key="reject" onClick={rejectCall}>
+            Từ chối
+          </Button>,
+          <Button
+            key="accept"
+            type="primary"
+            onClick={() => acceptCall(window.pendingOffer)}
+          >
+            Chấp nhận
+          </Button>,
+        ]}
+      >
+        <p>
+          Người dùng <strong>{callerInfo}</strong> đang gọi cho bạn. Bạn có muốn
+          trả lời không?
+        </p>
+      </Modal>
     </div>
   );
 };
