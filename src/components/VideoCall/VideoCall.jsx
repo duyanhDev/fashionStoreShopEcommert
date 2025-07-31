@@ -170,22 +170,69 @@ const VideoChatUserFixed = ({ userId }) => {
     isCallingRef.current = false;
   }, [addDebugLog]);
 
-  // Safe video play function
+  // Safe video play function with better timing and error handling
   const safePlayVideo = useCallback(
     async (videoElement, streamType) => {
       if (!videoElement || !mountedRef.current) return false;
 
       try {
-        // Wait a bit to ensure the element is ready
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // Ensure the video element is ready and has a source
+        if (!videoElement.srcObject) {
+          addDebugLog(`⚠️ User: No srcObject for ${streamType} video`);
+          return false;
+        }
+
+        // Wait for loadedmetadata event before playing
+        await new Promise((resolve, reject) => {
+          if (videoElement.readyState >= 1) {
+            resolve();
+            return;
+          }
+
+          const onLoadedMetadata = () => {
+            videoElement.removeEventListener(
+              "loadedmetadata",
+              onLoadedMetadata
+            );
+            videoElement.removeEventListener("error", onError);
+            resolve();
+          };
+
+          const onError = (error) => {
+            videoElement.removeEventListener(
+              "loadedmetadata",
+              onLoadedMetadata
+            );
+            videoElement.removeEventListener("error", onError);
+            reject(error);
+          };
+
+          videoElement.addEventListener("loadedmetadata", onLoadedMetadata);
+          videoElement.addEventListener("error", onError);
+
+          // Timeout after 5 seconds
+          setTimeout(() => {
+            videoElement.removeEventListener(
+              "loadedmetadata",
+              onLoadedMetadata
+            );
+            videoElement.removeEventListener("error", onError);
+            resolve();
+          }, 5000);
+        });
 
         if (!mountedRef.current || !videoElement.srcObject) return false;
 
-        await videoElement.play();
+        // Try to play the video
+        const playPromise = videoElement.play();
+        if (playPromise !== undefined) {
+          await playPromise;
+        }
+
         addDebugLog(`✅ User: ${streamType} video playing successfully`);
         return true;
       } catch (error) {
-        if (mountedRef.current) {
+        if (mountedRef.current && error.name !== "AbortError") {
           addDebugLog(
             `❌ User: Error playing ${streamType} video: ${error.message}`
           );
@@ -258,12 +305,10 @@ const VideoChatUserFixed = ({ userId }) => {
           localVideoRef.current.srcObject = localStreamRef.current;
           localVideoRef.current.muted = true;
 
-          // Use safe play function
-          setTimeout(() => {
-            if (mountedRef.current) {
-              safePlayVideo(localVideoRef.current, "local");
-            }
-          }, 200);
+          // Play immediately after setting srcObject
+          if (mountedRef.current) {
+            safePlayVideo(localVideoRef.current, "local");
+          }
         }
 
         // If in call, update peer connection with new tracks
@@ -389,16 +434,15 @@ const VideoChatUserFixed = ({ userId }) => {
 
       addDebugLog("📺 User: Received remote stream from admin");
       if (remoteVideoRef.current && event.streams[0]) {
+        // Set srcObject immediately
         remoteVideoRef.current.srcObject = event.streams[0];
         remoteVideoRef.current.muted = false;
         remoteVideoRef.current.volume = 1.0;
 
-        // Use safe play function with delay
-        setTimeout(() => {
-          if (mountedRef.current) {
-            safePlayVideo(remoteVideoRef.current, "remote");
-          }
-        }, 300);
+        // Don't use setTimeout, play immediately after setting srcObject
+        if (mountedRef.current) {
+          safePlayVideo(remoteVideoRef.current, "remote");
+        }
       }
     };
 
