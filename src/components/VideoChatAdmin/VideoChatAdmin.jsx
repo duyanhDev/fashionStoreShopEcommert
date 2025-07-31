@@ -45,10 +45,8 @@ const VideoChatAdmin = () => {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [debugLogs, setDebugLogs] = useState([]);
   const [showDebug, setShowDebug] = useState(false);
-  const [callState, setCallState] = useState("idle"); // idle, calling, receiving, connected
-  const [peerConnectionReady, setPeerConnectionReady] = useState(false);
 
-  // Enhanced ICE servers with more options
+  // Enhanced ICE servers
   const iceServers = [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
@@ -168,35 +166,55 @@ const VideoChatAdmin = () => {
     isAnsweringRef.current = false;
   }, [addDebugLog]);
 
+  // Fixed enableMedia function - same as User component
   const enableMedia = useCallback(
     async (options = { video: false, audio: false }) => {
       try {
+        // Determine what we need to request
+        const needVideo = options.video && !mediaEnabled.video;
+        const needAudio = options.audio && !mediaEnabled.audio;
+        const keepVideo =
+          mediaEnabled.video && !options.hasOwnProperty("video");
+        const keepAudio =
+          mediaEnabled.audio && !options.hasOwnProperty("audio");
+
         const constraints = {};
-        if (options.video)
+
+        // Request video if needed or keeping existing
+        if (needVideo || keepVideo || (options.video && mediaEnabled.video)) {
           constraints.video = {
             width: { ideal: 1280 },
             height: { ideal: 720 },
             facingMode: "user",
           };
-        if (options.audio)
+        }
+
+        // Request audio if needed or keeping existing
+        if (needAudio || keepAudio || (options.audio && mediaEnabled.audio)) {
           constraints.audio = {
             echoCancellation: true,
             noiseSuppression: true,
             autoGainControl: true,
           };
+        }
 
         addDebugLog(
           `🎥 Admin: Requesting media access: ${JSON.stringify(constraints)}`
         );
+
+        if (Object.keys(constraints).length === 0) {
+          addDebugLog("⚠️ Admin: No media constraints, skipping getUserMedia");
+          return localStreamRef.current;
+        }
+
         const newStream = await navigator.mediaDevices.getUserMedia(
           constraints
         );
 
+        // Stop old stream if exists
         if (localStreamRef.current) {
-          // Stop existing tracks
           localStreamRef.current.getTracks().forEach((track) => {
             track.stop();
-            localStreamRef.current?.removeTrack(track);
           });
         }
 
@@ -213,10 +231,17 @@ const VideoChatAdmin = () => {
           }
         }
 
+        // Update media enabled state
         setMediaEnabled({
-          video: options.video || mediaEnabled.video,
-          audio: options.audio || mediaEnabled.audio,
+          video: constraints.video ? true : false,
+          audio: constraints.audio ? true : false,
         });
+
+        // If in call, update peer connection with new tracks
+        if (peerRef.current && (inCall || outgoingCall)) {
+          addDebugLog("🔄 Admin: Updating peer connection with new tracks");
+          await updatePeerConnectionTracks(peerRef.current, newStream);
+        }
 
         addDebugLog("✅ Admin: Media enabled successfully");
         return localStreamRef.current;
@@ -232,7 +257,69 @@ const VideoChatAdmin = () => {
         return null;
       }
     },
-    [mediaEnabled.video, mediaEnabled.audio, addDebugLog]
+    [mediaEnabled.video, mediaEnabled.audio, addDebugLog, inCall, outgoingCall]
+  );
+
+  // New function to update peer connection tracks
+  const updatePeerConnectionTracks = useCallback(
+    async (peer, stream) => {
+      if (!peer || peer.signalingState === "closed") {
+        addDebugLog(
+          "❌ Admin: Cannot update tracks: peer connection is closed"
+        );
+        return false;
+      }
+
+      try {
+        // Get current senders
+        const senders = peer.getSenders();
+
+        // Update or add video track
+        const videoTrack = stream.getVideoTracks()[0];
+        const videoSender = senders.find(
+          (s) => s.track && s.track.kind === "video"
+        );
+
+        if (videoTrack) {
+          if (videoSender) {
+            addDebugLog("🔄 Admin: Replacing video track");
+            await videoSender.replaceTrack(videoTrack);
+          } else {
+            addDebugLog("➕ Admin: Adding video track");
+            peer.addTrack(videoTrack, stream);
+          }
+        } else if (videoSender) {
+          addDebugLog("🗑️ Admin: Removing video track");
+          peer.removeTrack(videoSender);
+        }
+
+        // Update or add audio track
+        const audioTrack = stream.getAudioTracks()[0];
+        const audioSender = senders.find(
+          (s) => s.track && s.track.kind === "audio"
+        );
+
+        if (audioTrack) {
+          if (audioSender) {
+            addDebugLog("🔄 Admin: Replacing audio track");
+            await audioSender.replaceTrack(audioTrack);
+          } else {
+            addDebugLog("➕ Admin: Adding audio track");
+            peer.addTrack(audioTrack, stream);
+          }
+        } else if (audioSender) {
+          addDebugLog("🗑️ Admin: Removing audio track");
+          peer.removeTrack(audioSender);
+        }
+
+        addDebugLog("✅ Admin: Peer connection tracks updated successfully");
+        return true;
+      } catch (err) {
+        addDebugLog(`❌ Admin: Error updating tracks: ${err.message}`);
+        return false;
+      }
+    },
+    [addDebugLog]
   );
 
   const createPeerConnection = useCallback(() => {
@@ -245,7 +332,6 @@ const VideoChatAdmin = () => {
       iceTransportPolicy: "all",
     });
 
-    // Enhanced event handlers with better logging
     peer.onicecandidate = (event) => {
       if (
         event.candidate &&
@@ -255,7 +341,6 @@ const VideoChatAdmin = () => {
         addDebugLog(`🧊 Admin: Sending ICE candidate: ${event.candidate.type}`);
         const targetUserId = incomingCall?.from || outgoingCall?.to;
         if (targetUserId) {
-          addDebugLog(`🧊 Admin: Sending ICE to: ${targetUserId}`);
           socketRef.current.emit("ice-candidate", {
             to: targetUserId,
             candidate: event.candidate,
@@ -291,14 +376,12 @@ const VideoChatAdmin = () => {
       if (state === "connected") {
         setOutgoingCall(null);
         setInCall(true);
-        setCallState("connected");
         if (!callStartTime) {
           setCallStartTime(Date.now());
         }
         addDebugLog("✅ Admin: Call connected successfully!");
       } else if (state === "failed") {
         addDebugLog("❌ Admin: Connection failed, ending call");
-        setCallState("failed");
         setTimeout(() => endCall(), 2000);
       } else if (state === "disconnected") {
         addDebugLog(
@@ -313,12 +396,18 @@ const VideoChatAdmin = () => {
       }
     };
 
-    // Thêm signaling state change handler
-    peer.onsignalingstatechange = () => {
-      addDebugLog(`📡 Admin: Signaling state: ${peer.signalingState}`);
-      if (peer.signalingState === "stable") {
-        setPeerConnectionReady(true);
-        addDebugLog("✅ Admin: Peer connection is stable and ready");
+    peer.oniceconnectionstatechange = () => {
+      const state = peer.iceConnectionState;
+      addDebugLog(`🧊 Admin: ICE connection state changed to: ${state}`);
+      setIceConnectionState(state);
+
+      if (state === "failed") {
+        addDebugLog("🔄 Admin: ICE connection failed, attempting restart...");
+        peer.restartIce();
+      } else if (state === "disconnected") {
+        addDebugLog("⚠️ Admin: ICE disconnected");
+      } else if (state === "connected") {
+        addDebugLog("✅ Admin: ICE connected successfully!");
       }
     };
 
@@ -340,17 +429,6 @@ const VideoChatAdmin = () => {
       }
 
       try {
-        // Remove existing senders first
-        const senders = peer.getSenders();
-        senders.forEach((sender) => {
-          if (sender.track) {
-            addDebugLog(
-              `🗑️ Admin: Removing existing sender: ${sender.track.kind}`
-            );
-            peer.removeTrack(sender);
-          }
-        });
-
         // Add all tracks from stream
         stream.getTracks().forEach((track) => {
           addDebugLog(
@@ -388,8 +466,6 @@ const VideoChatAdmin = () => {
       }
 
       isCallingRef.current = true;
-      setCallState("calling");
-
       try {
         addDebugLog(`📞 Admin: Starting call to user: ${userId}`);
         setOutgoingCall({ to: userId, status: "calling" });
@@ -416,7 +492,6 @@ const VideoChatAdmin = () => {
           offerToReceiveVideo: true,
         });
 
-        addDebugLog(`📤 Admin: Offer created: ${JSON.stringify(offer.type)}`);
         await peer.setLocalDescription(offer);
         addDebugLog("✅ Admin: Local description set");
 
@@ -427,27 +502,17 @@ const VideoChatAdmin = () => {
             resolve();
           } else {
             const checkState = () => {
-              addDebugLog(
-                `🧊 Admin: ICE gathering state: ${peer.iceGatheringState}`
-              );
               if (peer.iceGatheringState === "complete") {
                 peer.removeEventListener("icegatheringstatechange", checkState);
                 resolve();
               }
             };
             peer.addEventListener("icegatheringstatechange", checkState);
-            setTimeout(resolve, 10000); // Increased timeout to 10 seconds
+            setTimeout(resolve, 10000);
           }
         });
 
         addDebugLog("📤 Admin: Sending offer to user...");
-        addDebugLog(
-          `📤 Admin: Offer SDP: ${peer.localDescription?.sdp?.substring(
-            0,
-            100
-          )}...`
-        );
-
         socketRef.current.emit("call-user", {
           to: userId,
           offer: peer.localDescription,
@@ -460,7 +525,6 @@ const VideoChatAdmin = () => {
         addDebugLog(`❌ Admin: Error starting call: ${err.message}`);
         alert(`Không thể bắt đầu cuộc gọi: ${err.message}`);
         setOutgoingCall(null);
-        setCallState("failed");
         cleanupPeerConnection();
       } finally {
         isCallingRef.current = false;
@@ -492,8 +556,6 @@ const VideoChatAdmin = () => {
     }
 
     isAnsweringRef.current = true;
-    setCallState("connecting");
-
     try {
       addDebugLog(`✅ Admin: Answering call from: ${incomingCall.from}`);
 
@@ -503,22 +565,10 @@ const VideoChatAdmin = () => {
       }
 
       // Create answer
-      addDebugLog("📤 Admin: Creating answer...");
       const answer = await peerRef.current.createAnswer();
-      addDebugLog(`📤 Admin: Answer created: ${JSON.stringify(answer.type)}`);
-
       await peerRef.current.setLocalDescription(answer);
-      addDebugLog("✅ Admin: Local description set");
 
       // Send answer to caller
-      addDebugLog("📤 Admin: Sending answer to caller...");
-      addDebugLog(
-        `📤 Admin: Answer SDP: ${peerRef.current.localDescription?.sdp?.substring(
-          0,
-          100
-        )}...`
-      );
-
       socketRef.current.emit("answer-call", {
         to: incomingCall.from,
         answer: peerRef.current.localDescription,
@@ -529,12 +579,10 @@ const VideoChatAdmin = () => {
       setIncomingCall(null);
       setInCall(true);
       setCallStartTime(Date.now());
-      setCallState("connected");
       addDebugLog("✅ Admin: Call answered successfully");
     } catch (err) {
       addDebugLog(`❌ Admin: Error answering call: ${err.message}`);
       alert(`Không thể trả lời cuộc gọi: ${err.message}`);
-      setCallState("failed");
     } finally {
       isAnsweringRef.current = false;
     }
@@ -555,49 +603,71 @@ const VideoChatAdmin = () => {
     cleanupPeerConnection();
   }, [incomingCall, cleanupPeerConnection, addDebugLog]);
 
+  // Fixed toggle functions - same as User component
   const toggleVideo = useCallback(async () => {
+    addDebugLog(
+      `📹 Admin: Toggling video from ${
+        mediaEnabled.video
+      } to ${!mediaEnabled.video}`
+    );
+
     if (mediaEnabled.video) {
-      // Turn off video
+      // Turn off video only
       if (localStreamRef.current) {
         const videoTracks = localStreamRef.current.getVideoTracks();
         videoTracks.forEach((track) => {
           track.stop();
-          localStreamRef.current?.removeTrack(track);
         });
       }
-      setMediaEnabled((prev) => ({ ...prev, video: false }));
-      addDebugLog("📹 Admin: Video disabled");
+
+      // Create new stream with only audio
+      if (mediaEnabled.audio) {
+        await enableMedia({ audio: true, video: false });
+      } else {
+        setMediaEnabled((prev) => ({ ...prev, video: false }));
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = null;
+        }
+      }
     } else {
-      // Turn on video
-      await enableMedia({ video: true });
-      addDebugLog("📹 Admin: Video enabled");
+      // Turn on video, keep audio state
+      await enableMedia({ video: true, audio: mediaEnabled.audio });
     }
-  }, [mediaEnabled.video, enableMedia, addDebugLog]);
+  }, [mediaEnabled.video, mediaEnabled.audio, enableMedia, addDebugLog]);
 
   const toggleAudio = useCallback(async () => {
+    addDebugLog(
+      `🎤 Admin: Toggling audio from ${
+        mediaEnabled.audio
+      } to ${!mediaEnabled.audio}`
+    );
+
     if (mediaEnabled.audio) {
-      // Turn off audio
+      // Turn off audio only
       if (localStreamRef.current) {
         const audioTracks = localStreamRef.current.getAudioTracks();
         audioTracks.forEach((track) => {
           track.stop();
-          localStreamRef.current?.removeTrack(track);
         });
       }
-      setMediaEnabled((prev) => ({ ...prev, audio: false }));
-      addDebugLog("🎤 Admin: Audio disabled");
+
+      // Create new stream with only video
+      if (mediaEnabled.video) {
+        await enableMedia({ video: true, audio: false });
+      } else {
+        setMediaEnabled((prev) => ({ ...prev, audio: false }));
+      }
     } else {
-      // Turn on audio
-      await enableMedia({ audio: true });
-      addDebugLog("🎤 Admin: Audio enabled");
+      // Turn on audio, keep video state
+      await enableMedia({ audio: true, video: mediaEnabled.video });
     }
-  }, [mediaEnabled.audio, enableMedia, addDebugLog]);
+  }, [mediaEnabled.audio, mediaEnabled.video, enableMedia, addDebugLog]);
 
   // Mock users for display
   const mockUsers = [
     {
-      id: "user1",
-      name: "Nguyễn Văn A",
+      id: "user123",
+      name: "Test User",
       avatar: "👤",
       status: "online",
       lastSeen: new Date(),
@@ -623,13 +693,9 @@ const VideoChatAdmin = () => {
     setOnlineUsers(mockUsers);
   }, []);
 
+  // Socket event handlers
   const handleIncomingCall = async ({ from, offer, timestamp }) => {
-    addDebugLog(
-      `📞 Admin: Incoming call from: ${from} at ${new Date(
-        timestamp
-      ).toLocaleTimeString()}`
-    );
-    addDebugLog(`📥 Admin: Offer SDP: ${offer?.sdp?.substring(0, 100)}...`);
+    addDebugLog(`📞 Admin: Incoming call from: ${from}`);
 
     // Create peer connection for incoming call
     const peer = createPeerConnection();
@@ -637,12 +703,8 @@ const VideoChatAdmin = () => {
     peerRef.current = peer;
 
     try {
-      addDebugLog(
-        `📡 Admin: Setting remote description, signaling state: ${peer.signalingState}`
-      );
       await peer.setRemoteDescription(new RTCSessionDescription(offer));
       setIncomingCall({ from, fromName: `User ${from}`, timestamp });
-      setCallState("receiving");
       addDebugLog("✅ Admin: Incoming call handled successfully");
     } catch (err) {
       addDebugLog(`❌ Admin: Error handling incoming call: ${err.message}`);
@@ -650,30 +712,22 @@ const VideoChatAdmin = () => {
     }
   };
 
-  const handleCallAnswered = async ({ answer, from }) => {
-    addDebugLog(`✅ Admin: Call answered by user: ${from}`);
-    addDebugLog(`📥 Admin: Answer SDP: ${answer?.sdp?.substring(0, 100)}...`);
-
+  const handleCallAnswered = async ({ answer }) => {
+    addDebugLog("✅ Admin: Call answered by user");
     if (peerRef.current && peerRef.current.signalingState !== "closed") {
       try {
-        addDebugLog(
-          `📡 Admin: Current signaling state: ${peerRef.current.signalingState}`
-        );
         await peerRef.current.setRemoteDescription(
           new RTCSessionDescription(answer)
         );
         addDebugLog("✅ Admin: Remote description set successfully");
         setOutgoingCall(null);
         setInCall(true);
-        setCallState("connected");
       } catch (err) {
         addDebugLog(
           `❌ Admin: Error setting remote description: ${err.message}`
         );
         alert("Lỗi khi thiết lập kết nối.");
       }
-    } else {
-      addDebugLog("❌ Admin: No peer connection or connection closed");
     }
   };
 
@@ -1039,12 +1093,6 @@ const VideoChatAdmin = () => {
                 <div className="text-sm text-purple-600">
                   {iceConnectionState}
                 </div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm font-medium text-gray-700">
-                  Call State
-                </div>
-                <div className="text-sm text-orange-600">{callState}</div>
               </div>
             </div>
             <div className="bg-gray-900 text-green-400 p-4 rounded-lg h-32 overflow-y-auto text-xs font-mono">
