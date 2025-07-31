@@ -22,7 +22,7 @@ import Message from "./components/Messages/Message";
 import { getMessagesList, UpdateIsReadAPI } from "./service/Message";
 import { getListProductsAPI } from "./service/ApiProduct";
 import VideoChatUser from "./components/VideoCall/VideoCall";
-im;
+
 // Memoize các components con để tránh re-render
 const MemoizedHeader = memo(Header);
 const MemoizedFooter = memo(Footer);
