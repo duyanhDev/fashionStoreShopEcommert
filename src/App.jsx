@@ -21,15 +21,12 @@ import Footer from "./components/Footer/Footer";
 import Message from "./components/Messages/Message";
 import { getMessagesList, UpdateIsReadAPI } from "./service/Message";
 import { getListProductsAPI } from "./service/ApiProduct";
-import VideoChatAdmin from "./components/VideoChatAdmin/VideoChatAdmin";
 import VideoChatUser from "./components/VideoCall/VideoCall";
-
+im;
 // Memoize các components con để tránh re-render
 const MemoizedHeader = memo(Header);
 const MemoizedFooter = memo(Footer);
 const MemoizedMessage = memo(Message);
-const MemoizedVideoChatAdmin = memo(VideoChatAdmin);
-const MemoizedVideoChatUser = memo(VideoChatUser);
 
 function App() {
   const { user } = useSelector((state) => state.auth);
@@ -674,9 +671,10 @@ function App() {
       )}
 
       {!hideFooter && <MemoizedFooter />}
-
-      {/* Video Chat Component - Memoized và chỉ render khi cần */}
-      <div style={{ display: user?._id ? "block" : "none" }}>{VideoChat}</div>
+      <VideoChatUser
+        currentUserId={user?._id}
+        targetUserId={"673017dde4526bd79cc61fa6"}
+      />
     </div>
   );
 }

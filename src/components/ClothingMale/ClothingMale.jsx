@@ -1,831 +1,915 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import { Button, message, Card, Space, Badge } from "antd";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  PhoneOutlined,
-  VideoCameraOutlined,
-  AudioOutlined,
-  CloseOutlined,
-} from "@ant-design/icons";
-import { io } from "socket.io-client";
+  Radio,
+  Space,
+  Slider,
+  Button,
+  Card,
+  Skeleton,
+  Rate,
+  Drawer,
+  notification,
+} from "antd";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { ListCategoryAPI } from "../../service/ApiCategory";
+import ReactPaginate from "react-paginate";
+import { fetchProducts } from "../../redux/actions/filterAction";
+import SliderComponent from "../Slider/Slider";
+import ProductCart from "../ProductCart/ProductCart";
+import "./ClothingMale.css";
+import {
+  addToWishlistAPI,
+  getWishlistAPI,
+  RemoveToWishListAPI,
+} from "../../service/WishList";
 
-const adminId = "673017dde4526bd79cc61fa6";
+const ClothingMale = () => {
+  const { user } = useSelector((state) => state.auth);
+  const param = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [modalCartOpen, setModalCartOpen] = useState(false);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [api, contextHolder] = notification.useNotification();
+  const [IdProduct, setIdProducts] = useState("");
+  const [listItems, setListItems] = useState();
+  const [price, setPrice] = useState(0);
+  const [costPrice, setCostPrice] = useState(0);
+  const [productname, setProductname] = useState("");
+  const [discount, setDiscount] = useState(0);
 
-const VideoChatUser = ({ userId }) => {
-  const localVideoRef = useRef(null);
-  const remoteVideoRef = useRef(null);
-  const peerRef = useRef(null);
-  const localStreamRef = useRef(null);
-  const isCallingRef = useRef(false);
-  const socketRef = useRef(null);
-  const isInitializedRef = useRef(false);
-  const cleanupRef = useRef(false);
+  const [ratings, setRatings] = useState({});
+  const [WishList, setWishList] = useState([]);
 
-  const [inCall, setInCall] = useState(false);
-  const [calling, setCalling] = useState(false);
-  const [connectionState, setConnectionState] = useState("new");
-  const [mediaEnabled, setMediaEnabled] = useState({
-    video: false,
-    audio: false,
-  });
-  const [socketConnected, setSocketConnected] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const [checkFilter, setCheckFilter] = useState(false);
+  const [listCategory, setListCategory] = useState([]);
+  const [valueId, setValueId] = useState("");
+  const [size, setSize] = useState([]);
+  const [priceRange, setPriceRange] = useState([0, 1000000]);
+  const [selectedCare, setSelectedCare] = useState("");
+  const [color, setColor] = useState("");
 
-  // ICE servers configuration - Updated with better STUN/TURN servers
-  const iceServers = [
-    { urls: "stun:stun.l.google.com:19302" },
-    { urls: "stun:stun1.l.google.com:19302" },
-    { urls: "stun:stun2.l.google.com:19302" },
-    {
-      urls: "turn:openrelay.metered.ca:80",
-      username: "openrelayproject",
-      credential: "openrelayproject",
-    },
-    {
-      urls: "turn:openrelay.metered.ca:443",
-      username: "openrelayproject",
-      credential: "openrelayproject",
-    },
-  ];
-
-  const cleanupPeerConnection = useCallback(() => {
-    if (cleanupRef.current || !peerRef.current) return;
-
-    console.log("🧹 User: Cleaning up peer connection...");
-
-    try {
-      peerRef.current.onicecandidate = null;
-      peerRef.current.ontrack = null;
-      peerRef.current.onconnectionstatechange = null;
-      peerRef.current.oniceconnectionstatechange = null;
-      peerRef.current.onsignalingstatechange = null;
-
-      if (peerRef.current.signalingState !== "closed") {
-        peerRef.current.close();
-      }
-      peerRef.current = null;
-    } catch (error) {
-      console.error("❌ User: Error cleaning up peer connection:", error);
-    }
-
-    isCallingRef.current = false;
-  }, []);
-
-  const cleanupMediaStreams = useCallback(() => {
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach((track) => {
-        track.stop();
-        console.log("🛑 User: Stopped track:", track.kind);
-      });
-      localStreamRef.current = null;
-    }
-
-    if (localVideoRef.current) {
-      localVideoRef.current.srcObject = null;
-    }
-
-    if (remoteVideoRef.current) {
-      remoteVideoRef.current.srcObject = null;
-    }
-  }, []);
-
-  const endCall = useCallback(() => {
-    if (cleanupRef.current) return;
-
-    console.log("📞 User: Ending call...");
-
-    cleanupMediaStreams();
-
-    if ((inCall || calling) && socketRef.current?.connected) {
-      socketRef.current.emit("end-call", { to: adminId });
-    }
-
-    cleanupPeerConnection();
-
-    setInCall(false);
-    setCalling(false);
-    setMediaEnabled({ video: false, audio: false });
-    setConnectionState("new");
-
-    message.info("Cuộc gọi đã kết thúc");
-  }, [inCall, calling, cleanupPeerConnection, cleanupMediaStreams]);
-
-  const enableMedia = useCallback(
-    async (options = { video: false, audio: false }) => {
-      try {
-        // Consistent media constraints matching admin
-        const constraints = {
-          video: options.video
-            ? {
-                width: { ideal: 1280, max: 1920 },
-                height: { ideal: 720, max: 1080 },
-                frameRate: { ideal: 30, max: 60 },
-                facingMode: "user",
-              }
-            : false,
-          audio: options.audio
-            ? {
-                echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: true,
-                sampleRate: 48000,
-                channelCount: 2,
-              }
-            : false,
-        };
-
-        console.log("🎥 User: Requesting media access:", constraints);
-        const newStream = await navigator.mediaDevices.getUserMedia(
-          constraints
-        );
-
-        // Stop previous tracks if they exist
-        if (localStreamRef.current) {
-          localStreamRef.current.getTracks().forEach((track) => {
-            track.stop();
-          });
-        }
-
-        localStreamRef.current = newStream;
-
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = newStream;
-          localVideoRef.current.muted = true;
-          localVideoRef.current.playsInline = true;
-
-          try {
-            await localVideoRef.current.play();
-            console.log("✅ User: Local video playing");
-          } catch (playError) {
-            console.error("❌ User: Error playing local video:", playError);
-          }
-        }
-
-        setMediaEnabled({
-          video: options.video,
-          audio: options.audio,
-        });
-
-        const mediaType = [];
-        if (options.video) mediaType.push("camera");
-        if (options.audio) mediaType.push("microphone");
-
-        message.success(`🎥 Đã bật ${mediaType.join(" và ")}`);
-        console.log(
-          "✅ User: Media enabled - Tracks:",
-          newStream
-            .getTracks()
-            .map((t) => `${t.kind}:${t.enabled}:${t.readyState}`)
-        );
-        return newStream;
-      } catch (err) {
-        console.error("❌ User: Không thể bật media:", err);
-        const mediaType = [];
-        if (options.video) mediaType.push("camera");
-        if (options.audio) mediaType.push("microphone");
-        message.error(
-          `Không thể truy cập ${mediaType.join(" và ")}: ${err.message}`
-        );
-        return null;
-      }
-    },
-    []
+  const menuRef = useRef(null);
+  const { products, loading, totalPages } = useSelector(
+    (state) => state.filter
   );
 
-  const createPeerConnection = useCallback(() => {
-    console.log("🔗 User: Creating new peer connection...");
-    cleanupPeerConnection();
+  // Parse URL parameters
+  const queryParams = new URLSearchParams(location.search);
+  const careParams = queryParams.get("care") || "";
+  const sizeParams = queryParams.get("size")?.split(",").filter(Boolean) || [];
+  const colorParms = queryParams.get("color") || "";
+  const viewParams = queryParams.get("view") || "";
+  const savedSortPrice = queryParams.get("sortPrice") || "";
+  const savedCategory = queryParams.get("Category") || "";
+  const savedCurrentPage = Number.parseInt(queryParams.get("currentPage")) || 1;
+  const savedSortDate = queryParams.get("sortDate") || "";
+  const savedSortSold = queryParams.get("sortSold") || "";
+  const urlMinPrice = Number(queryParams.get("minPrice")) || undefined;
+  const urlMaxPrice = Number(queryParams.get("maxPrice")) || undefined;
 
-    const peer = new RTCPeerConnection({
-      iceServers,
-      iceCandidatePoolSize: 10,
-      iceTransportPolicy: "all",
-      bundlePolicy: "max-bundle",
-      rtcpMuxPolicy: "require",
-    });
-
-    // Enhanced ICE candidate handling
-    peer.onicecandidate = (event) => {
-      if (event.candidate && socketRef.current?.connected) {
-        console.log("🧊 User: Sending ICE candidate:", event.candidate.type);
-        socketRef.current.emit("ice-candidate", {
-          to: adminId,
-          candidate: event.candidate,
-        });
-      } else if (!event.candidate) {
-        console.log("🧊 User: All ICE candidates have been sent");
-      }
+  // Fetch params function
+  const getFetchParams = useCallback(() => {
+    return {
+      gender: param.gender,
+      category:
+        valueId ||
+        (savedCategory
+          ? listCategory.find((cat) => cat.name === savedCategory)?._id
+          : ""),
+      sortPrice: savedSortPrice,
+      sortDate: savedSortDate,
+      sortSold: savedSortSold,
+      minPrice: urlMinPrice,
+      maxPrice: urlMaxPrice,
+      care: careParams,
+      size: sizeParams,
+      color: colorParms,
+      currentPage: savedCurrentPage,
+      view: viewParams,
     };
-
-    // Enhanced track handling
-    peer.ontrack = (event) => {
-      console.log("📺 User: Received remote stream from admin");
-      const [remoteStream] = event.streams;
-
-      if (remoteVideoRef.current && remoteStream) {
-        remoteVideoRef.current.srcObject = remoteStream;
-        remoteVideoRef.current.muted = false;
-        remoteVideoRef.current.volume = 1.0;
-        remoteVideoRef.current.playsInline = true;
-
-        // Handle autoplay policy
-        const playRemote = async () => {
-          try {
-            await remoteVideoRef.current.play();
-            console.log("✅ User: Remote video playing successfully");
-          } catch (playError) {
-            console.warn(
-              "⚠️ User: Autoplay blocked, trying muted first:",
-              playError
-            );
-            remoteVideoRef.current.muted = true;
-            try {
-              await remoteVideoRef.current.play();
-              console.log("✅ User: Remote video playing (muted)");
-              // Try to unmute after a delay
-              setTimeout(() => {
-                if (remoteVideoRef.current) {
-                  remoteVideoRef.current.muted = false;
-                  console.log("🔊 User: Unmuted remote video");
-                }
-              }, 1000);
-            } catch (mutedError) {
-              console.error("❌ User: Cannot play remote video:", mutedError);
-            }
-          }
-        };
-
-        playRemote();
-
-        // Log track information
-        remoteStream.getTracks().forEach((track) => {
-          console.log(`📊 User: Remote ${track.kind} track:`, {
-            enabled: track.enabled,
-            muted: track.muted,
-            readyState: track.readyState,
-          });
-        });
-      }
-    };
-
-    peer.onconnectionstatechange = () => {
-      console.log("🔗 User: Connection state:", peer.connectionState);
-      setConnectionState(peer.connectionState);
-
-      switch (peer.connectionState) {
-        case "connected":
-          setCalling(false);
-          setInCall(true);
-          message.success("✅ Đã kết nối với admin");
-          break;
-        case "failed":
-          message.error("❌ Kết nối thất bại");
-          setTimeout(() => endCall(), 2000);
-          break;
-        case "disconnected":
-          console.log(
-            "⚠️ User: Connection disconnected, attempting reconnection..."
-          );
-          message.warning("Mất kết nối, đang thử kết nối lại...");
-          setTimeout(() => {
-            if (peer.connectionState === "disconnected") {
-              peer.restartIce();
-            }
-          }, 1000);
-          break;
-        case "closed":
-          console.log("🔒 User: Connection closed");
-          break;
-      }
-    };
-
-    peer.oniceconnectionstatechange = () => {
-      console.log("🧊 User: ICE connection state:", peer.iceConnectionState);
-
-      switch (peer.iceConnectionState) {
-        case "failed":
-          console.log("🔄 User: ICE connection failed, attempting restart...");
-          peer.restartIce();
-          break;
-        case "disconnected":
-          console.log("⚠️ User: ICE disconnected, will attempt restart...");
-          setTimeout(() => {
-            if (peer.iceConnectionState === "disconnected") {
-              console.log("🔄 User: ICE still disconnected, restarting...");
-              peer.restartIce();
-            }
-          }, 2000);
-          break;
-      }
-    };
-
-    // Monitor signaling state
-    peer.onsignalingstatechange = () => {
-      console.log("📡 User: Signaling state:", peer.signalingState);
-    };
-
-    return peer;
-  }, [cleanupPeerConnection, endCall]);
-
-  const addTracksToConnection = useCallback((peer, stream) => {
-    if (!peer || peer.signalingState === "closed") {
-      console.error("❌ User: Cannot add tracks: peer connection is closed");
-      return false;
-    }
-
-    try {
-      // Clear existing senders
-      const existingSenders = peer.getSenders();
-      existingSenders.forEach((sender) => {
-        if (sender.track) {
-          console.log("🗑️ User: Removing existing sender:", sender.track.kind);
-          peer.removeTrack(sender);
-        }
-      });
-
-      // Add new tracks
-      stream.getTracks().forEach((track) => {
-        console.log("➕ User: Adding track:", {
-          kind: track.kind,
-          enabled: track.enabled,
-          readyState: track.readyState,
-          id: track.id,
-        });
-        peer.addTrack(track, stream);
-      });
-
-      console.log("✅ User: All tracks added successfully");
-      return true;
-    } catch (err) {
-      console.error("❌ User: Error adding tracks:", err);
-      return false;
-    }
-  }, []);
-
-  const startCall = useCallback(async () => {
-    if (
-      !localStreamRef.current ||
-      (!mediaEnabled.video && !mediaEnabled.audio)
-    ) {
-      message.warning("⚠️ Bạn cần bật camera hoặc microphone trước khi gọi.");
-      return;
-    }
-
-    if (isCallingRef.current || !socketRef.current?.connected) {
-      console.log("⚠️ User: Already calling or socket not connected");
-      return;
-    }
-
-    isCallingRef.current = true;
-
-    try {
-      console.log("📞 User: Starting call to admin...");
-      setCalling(true);
-
-      const peer = createPeerConnection();
-      if (!peer) {
-        throw new Error("Failed to create peer connection");
-      }
-
-      peerRef.current = peer;
-
-      // CRITICAL: Add tracks BEFORE creating offer
-      const tracksAdded = addTracksToConnection(peer, localStreamRef.current);
-      if (!tracksAdded) {
-        throw new Error("Failed to add tracks to connection");
-      }
-
-      console.log("📤 User: Creating offer...");
-      const offer = await peer.createOffer({
-        offerToReceiveAudio: true,
-        offerToReceiveVideo: true,
-      });
-
-      await peer.setLocalDescription(offer);
-
-      // Wait for ICE gathering to complete with timeout
-      console.log("⏳ User: Waiting for ICE gathering...");
-      await new Promise((resolve) => {
-        if (peer.iceGatheringState === "complete") {
-          resolve();
-        } else {
-          const handleIceGatheringStateChange = () => {
-            if (peer.iceGatheringState === "complete") {
-              peer.removeEventListener(
-                "icegatheringstatechange",
-                handleIceGatheringStateChange
-              );
-              resolve();
-            }
-          };
-          peer.addEventListener(
-            "icegatheringstatechange",
-            handleIceGatheringStateChange
-          );
-          // Timeout after 5 seconds
-          setTimeout(() => {
-            peer.removeEventListener(
-              "icegatheringstatechange",
-              handleIceGatheringStateChange
-            );
-            resolve();
-          }, 5000);
-        }
-      });
-
-      console.log("📤 User: Sending offer to admin...");
-      console.log("📤 User: Offer details:", {
-        type: peer.localDescription.type,
-        sdpLength: peer.localDescription.sdp?.length,
-        hasAudio: peer.localDescription.sdp?.includes("m=audio"),
-        hasVideo: peer.localDescription.sdp?.includes("m=video"),
-      });
-
-      socketRef.current.emit("call-user", {
-        to: adminId,
-        offer: peer.localDescription,
-      });
-
-      message.info("📞 Đang gọi đến admin...");
-      console.log("✅ User: Call initiated successfully");
-    } catch (err) {
-      console.error("❌ User: Lỗi khi bắt đầu cuộc gọi:", err);
-      message.error(`Không thể bắt đầu cuộc gọi: ${err.message}`);
-      setCalling(false);
-      cleanupPeerConnection();
-    } finally {
-      isCallingRef.current = false;
-    }
   }, [
-    mediaEnabled.video,
-    mediaEnabled.audio,
-    createPeerConnection,
-    addTracksToConnection,
-    cleanupPeerConnection,
+    param.gender,
+    valueId,
+    savedCategory,
+    listCategory,
+    savedSortPrice,
+    savedSortDate,
+    savedSortSold,
+    urlMinPrice,
+    urlMaxPrice,
+    careParams,
+    sizeParams,
+    colorParms,
+    viewParams,
+    savedCurrentPage,
   ]);
 
-  // Main useEffect
+  // Initial category fetch and URL sync
   useEffect(() => {
-    if (!userId || isInitializedRef.current) {
-      console.log("⚠️ User: Already initialized or no userId, skipping...");
+    const fetchListCategoryAndInitialize = async () => {
+      try {
+        const res = await ListCategoryAPI();
+        if (res && res.data) {
+          setListCategory(res.data.data);
+          const categoryFromURL = queryParams.get("Category");
+          if (categoryFromURL) {
+            const foundCategory = res.data.data.find(
+              (cat) => cat.name === categoryFromURL
+            );
+            if (foundCategory) setValueId(foundCategory._id);
+          }
+          if (sizeParams.length > 0) setSize(sizeParams);
+          if (careParams) setSelectedCare(careParams);
+          if (urlMinPrice || urlMaxPrice)
+            setPriceRange([urlMinPrice || 0, urlMaxPrice || 1000000]);
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+    fetchListCategoryAndInitialize();
+  }, []);
+
+  // Fetch products when URL changes or categories load
+  useEffect(() => {
+    if (listCategory.length > 0) {
+      const params = getFetchParams();
+      dispatch(fetchProducts(params));
+    }
+  }, [param.gender, location.search, listCategory.length, dispatch]);
+
+  // Handle click outside for filter menu
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setCheckFilter(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handlePageClick = (page) => {
+    const pageNumber = page.selected + 1;
+    const newParams = new URLSearchParams(location.search);
+    newParams.set("currentPage", pageNumber);
+    navigate(`${location.pathname}?${newParams.toString()}`);
+    // window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const formatPrice = (price) => {
+    if (price === null || price === undefined || isNaN(price)) return "0đ";
+    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
+  };
+
+  const marks = { 0: "0", 500000: "500K", 1000000: "1M" };
+
+  const onChange = (e) => {
+    const selectedValue = e.target.value;
+    const selectedCategory = listCategory.find(
+      (category) => category._id === selectedValue
+    );
+    if (selectedCategory) {
+      setValueId(selectedValue);
+      setHidden(true);
+      const newParams = new URLSearchParams(location.search);
+      newParams.set("Category", selectedCategory.name);
+      newParams.set("currentPage", "1");
+      navigate(`${location.pathname}?${newParams.toString()}`);
+    }
+  };
+
+  const handleCheckboxChange = (value) => {
+    const updatedSizes = size.includes(value)
+      ? size.filter((s) => s !== value)
+      : [...size, value];
+    setSize(updatedSizes);
+    const queryParams = new URLSearchParams(location.search);
+    queryParams.set("size", updatedSizes.join(","));
+    queryParams.set("currentPage", "1");
+    navigate(`${location.pathname}?${queryParams.toString()}`);
+    setHidden(true);
+    setCheckFilter(false);
+  };
+
+  const handleSortDesAndAsc = (value) => {
+    const queryParams = new URLSearchParams(location.search);
+    queryParams.set("sortPrice", value);
+    queryParams.set("currentPage", "1");
+    navigate(`${location.pathname}?${queryParams.toString()}`);
+    setHidden(true);
+    setCheckFilter(false);
+  };
+
+  const handleSortDate = (value) => {
+    const queryParams = new URLSearchParams(location.search);
+    queryParams.set("sortDate", value);
+    queryParams.set("currentPage", "1");
+    navigate(`${location.pathname}?${queryParams.toString()}`);
+    setHidden(true);
+    setCheckFilter(false);
+  };
+
+  const handleSortSold = (value) => {
+    const queryParams = new URLSearchParams(location.search);
+    queryParams.set("sortSold", value);
+    queryParams.set("currentPage", "1");
+    navigate(`${location.pathname}?${queryParams.toString()}`);
+    setHidden(true);
+    setCheckFilter(false);
+  };
+
+  const handleFilterProduct = () => {
+    setValueId("");
+    setSelectedCare("");
+    setSize([]);
+    setPriceRange([0, 1000000]);
+    setHidden(false);
+    navigate(`${location.pathname}`);
+  };
+
+  const handleRangeChange = (value) => {
+    setPriceRange(value);
+    const [min, max] = value;
+    const queryParams = new URLSearchParams(location.search);
+    queryParams.set("minPrice", min);
+    queryParams.set("maxPrice", max);
+    queryParams.set("currentPage", "1");
+    navigate(`${location.pathname}?${queryParams.toString()}`);
+    setHidden(true);
+    setCheckFilter(false);
+  };
+
+  const handleOnClickColor = (value) => {
+    const color = value;
+    setColor(value);
+    const queryParams = new URLSearchParams(location.search);
+    queryParams.set("color", color);
+    queryParams.set("currentPage", "1");
+    navigate(`${location.pathname}?${queryParams.toString()}`);
+    setHidden(true);
+    setCheckFilter(false);
+  };
+
+  const handleSortView = (value) => {
+    const queryParams = new URLSearchParams(location.search);
+    queryParams.set("view", value);
+    queryParams.set("currentPage", "1");
+    navigate(`${location.pathname}?${queryParams.toString()}`);
+    setHidden(true);
+    setCheckFilter(false);
+  };
+
+  const onChangeCare = (e) => {
+    const careItem = e.target.value;
+    setSelectedCare(careItem);
+    const queryParams = new URLSearchParams(location.search);
+    queryParams.set("care", careItem);
+    queryParams.set("currentPage", "1");
+    navigate(`${location.pathname}?${queryParams.toString()}`);
+    setHidden(true);
+    setCheckFilter(false);
+  };
+
+  const SkeletonCard = () => (
+    <Card
+      className="w-full max-w-sm mx-auto bg-white rounded-2xl shadow-lg overflow-hidden"
+      cover={<Skeleton.Image active style={{ width: "100%", height: 200 }} />}
+    >
+      <Skeleton active paragraph={{ rows: 4 }} />
+    </Card>
+  );
+
+  const OptionGender = (gender) => {
+    switch (gender) {
+      case "male":
+        return "Nam";
+      case "female":
+        return "Nữ";
+      case "unisex":
+        return "Unisex";
+      default:
+        return "Không có giới tính";
+    }
+  };
+
+  const handleDetails = (slug) => {
+    navigate(`/product/${slug}`);
+  };
+
+  const handelModelProductCart = (
+    id,
+    items,
+    price,
+    costPrice,
+    name,
+    discount
+  ) => {
+    setIdProducts(id);
+    setListItems(items);
+    setPrice(price);
+    setCostPrice(costPrice);
+    setModalCartOpen(true);
+    setProductname(name);
+    setDiscount(discount);
+  };
+
+  const handleRate = (productId, value) => {
+    setRatings((prev) => ({ ...prev, [productId]: value }));
+  };
+
+  const handlAddWishList = async (productId) => {
+    if (!user) {
+      api["error"]({
+        message: "Vui lòng đăng nhập",
+        description: "Khách hàng đăng nhập mới sử dụng được tính năng này",
+      });
       return;
     }
+    try {
+      const res = await addToWishlistAPI(user?._id, productId);
 
-    console.log("🔌 User: Connecting to socket with ID:", userId);
-    isInitializedRef.current = true;
-    cleanupRef.current = false;
-
-    const socket = io("https://fashionstoreshopecommertbe.onrender.com", {
-      forceNew: false,
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      timeout: 20000,
-      transports: ["websocket", "polling"],
-    });
-
-    socketRef.current = socket;
-
-    const handleConnect = () => {
-      console.log("✅ User: Socket connected:", socket.id);
-      setSocketConnected(true);
-      socket.emit("register", { userId });
-    };
-
-    const handleDisconnect = (reason) => {
-      console.log("❌ User: Socket disconnected:", reason);
-      setSocketConnected(false);
-    };
-
-    const handleConnectError = (error) => {
-      console.error("❌ User: Socket connection error:", error);
-      setSocketConnected(false);
-    };
-
-    const handleCallAnswered = async ({ answer }) => {
-      console.log("✅ User: Call answered by admin");
-      console.log("✅ User: Answer details:", {
-        type: answer.type,
-        sdpLength: answer.sdp?.length,
+      if (res && res.data && res.data.EC === 0) {
+        api["success"]({
+          message: "Đã thêm vào danh sách yêu thích",
+          description: res.data.message,
+        });
+        fetchListWishList();
+      }
+    } catch (error) {
+      api["error"]({
+        message: "Sản phẩm đã tồn tại danh sách yêu thích",
+        description: "Sản phẩm đã tồn tại danh sách yêu thích",
       });
-
-      if (peerRef.current && peerRef.current.signalingState !== "closed") {
-        try {
-          await peerRef.current.setRemoteDescription(
-            new RTCSessionDescription(answer)
-          );
-          console.log("✅ User: Set remote description successfully");
-        } catch (err) {
-          console.error("❌ User: Error setting remote description:", err);
-        }
-      }
-    };
-
-    const handleIceCandidate = async ({ candidate }) => {
-      console.log("🧊 User: Received ICE candidate from admin");
-      try {
-        if (
-          peerRef.current &&
-          candidate &&
-          peerRef.current.signalingState !== "closed"
-        ) {
-          await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
-          console.log("✅ User: Added ICE candidate");
-        }
-      } catch (err) {
-        console.error("❌ User: Failed to add ICE candidate:", err);
-      }
-    };
-
-    const handleCallEnded = () => {
-      console.log("📞 User: Call ended by admin");
-      endCall();
-    };
-
-    const handleCallRejected = () => {
-      console.log("📞 User: Call was rejected by admin");
-      setCalling(false);
-      cleanupPeerConnection();
-      message.error("Admin đã từ chối cuộc gọi");
-    };
-
-    // Socket event listeners
-    socket.on("connect", handleConnect);
-    socket.on("disconnect", handleDisconnect);
-    socket.on("connect_error", handleConnectError);
-    socket.on("call-answered", handleCallAnswered);
-    socket.on("ice-candidate", handleIceCandidate);
-    socket.on("call-ended", handleCallEnded);
-    socket.on("call-rejected", handleCallRejected);
-
-    return () => {
-      if (cleanupRef.current) return;
-
-      console.log("🧹 User: Component unmounting, cleaning up...");
-      cleanupRef.current = true;
-
-      // Remove event listeners
-      socket.off("connect", handleConnect);
-      socket.off("disconnect", handleDisconnect);
-      socket.off("connect_error", handleConnectError);
-      socket.off("call-answered", handleCallAnswered);
-      socket.off("ice-candidate", handleIceCandidate);
-      socket.off("call-ended", handleCallEnded);
-      socket.off("call-rejected", handleCallRejected);
-
-      endCall();
-
-      if (socket.connected) {
-        socket.disconnect();
-      }
-
-      socketRef.current = null;
-      setSocketConnected(false);
-      isInitializedRef.current = false;
-    };
-  }, [userId, endCall, cleanupPeerConnection]);
-
-  useEffect(() => {
-    if (socketRef.current?.connected && userId) {
-      console.log(
-        "🔄 User: Updating user registration with new userId:",
-        userId
-      );
-      socketRef.current.emit("register", { userId });
     }
-  }, [userId]);
+  };
 
-  if (!userId) {
-    return (
-      <div style={{ padding: "24px", textAlign: "center" }}>
-        <Card title="⚠️ Lỗi">
-          <p>Không tìm thấy User ID. Vui lòng đăng nhập lại.</p>
-        </Card>
+  const fetchListWishList = async () => {
+    try {
+      const res = await getWishlistAPI(user?._id);
+      if (res && res.data && res.data.EC === 0) {
+        setWishList(res.data.data.products);
+      }
+    } catch (error) {
+      throw new Error("Lỗi lấy danh sách yêu thích");
+    }
+  };
+
+  const handleRemoveWishList = async (productId) => {
+    try {
+      const res = await RemoveToWishListAPI(user?._id, productId);
+
+      if (res && res.data && res.data.EC === 0) {
+        api["success"]({
+          message: "Đã xóa khỏi danh sách yêu thích",
+        });
+        fetchListWishList();
+      }
+    } catch (error) {
+      api["error"]({
+        message: "Lỗi khi xóa sản phẩm khỏi danh sách yêu thích",
+        description: "Lỗi khi xóa sản phẩm khỏi danh sách yêu thích",
+      });
+    }
+  };
+  useEffect(() => {
+    fetchListWishList();
+  }, [user?._id]);
+
+  const isProductInWishlist = WishList?.map((item) => item.product._id);
+
+  // Filter Component
+  const FilterContent = () => (
+    <div className="space-y-6">
+      <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-3">
+        Bộ lọc sản phẩm
+      </h2>
+
+      {/* Category Filter */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">
+          Loại sản phẩm
+        </h3>
+        <Radio.Group onChange={onChange} value={valueId} className="w-full">
+          <Space direction="vertical" className="w-full">
+            {listCategory.length > 0 &&
+              listCategory.map((category) => (
+                <Radio
+                  key={category._id}
+                  value={category._id}
+                  className="text-gray-700 hover:text-green-600"
+                >
+                  {category.name}
+                </Radio>
+              ))}
+          </Space>
+        </Radio.Group>
       </div>
-    );
+
+      {/* Care Collection Filter */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">Bộ sưu tập</h3>
+        <Radio.Group
+          onChange={onChangeCare}
+          value={selectedCare}
+          className="w-full"
+        >
+          <Space direction="vertical" className="w-full">
+            {products &&
+              products
+                .filter(
+                  (item, index, self) =>
+                    index === self.findIndex((t) => t.care === item.care)
+                )
+                .map((item) => (
+                  <Radio
+                    key={item.care}
+                    value={item.care}
+                    className="text-gray-700 hover:text-green-600"
+                  >
+                    {item.care}
+                  </Radio>
+                ))}
+          </Space>
+        </Radio.Group>
+      </div>
+
+      {/* Size Filter */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">Kích cỡ</h3>
+        <div className="grid grid-cols-5 gap-2">
+          {["S", "M", "L", "XL", "XXL", "28", "29", "30", "31", "32"].map(
+            (sizeOption) => (
+              <label
+                key={sizeOption}
+                className={`flex items-center justify-center w-10 h-10 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+                  size.includes(sizeOption)
+                    ? "border-green-500 bg-green-500 text-white"
+                    : "border-gray-300 hover:border-green-400 text-gray-700"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  value={sizeOption}
+                  checked={size.includes(sizeOption)}
+                  onChange={() => handleCheckboxChange(sizeOption)}
+                  className="hidden"
+                />
+                <span className="text-sm font-medium">{sizeOption}</span>
+              </label>
+            )
+          )}
+        </div>
+      </div>
+
+      {/* Color Filter */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">Màu sắc</h3>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { value: "vàng", label: "Vàng", color: "bg-yellow-400" },
+            { value: "xanh lá cây", label: "Xanh lá", color: "bg-green-500" },
+            { value: "đen", label: "Đen", color: "bg-black" },
+            { value: "đỏ", label: "Đỏ", color: "bg-red-500" },
+            {
+              value: "trắng",
+              label: "Trắng",
+              color: "bg-white border-2 border-gray-300",
+            },
+          ].map((colorOption) => (
+            <label
+              key={colorOption.value}
+              className="flex flex-col items-center cursor-pointer group"
+            >
+              <input
+                type="radio"
+                name="color"
+                value={colorOption.value}
+                onChange={() => handleOnClickColor(colorOption.value)}
+                className="hidden"
+              />
+              <div
+                className={`w-8 h-8 rounded-full ${colorOption.color} group-hover:scale-110 transition-transform duration-200 shadow-md`}
+              />
+              <span className="text-xs text-gray-600 mt-1">
+                {colorOption.label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Price Range Filter */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">
+          Lọc theo giá
+        </h3>
+        <Slider
+          range
+          marks={marks}
+          value={priceRange}
+          min={0}
+          max={1000000}
+          step={50000}
+          onChange={handleRangeChange}
+          className="mb-4"
+        />
+        <div className="flex justify-between text-sm text-gray-600">
+          <span>{formatPrice(priceRange[0])}</span>
+          <span>{formatPrice(priceRange[1])}</span>
+        </div>
+      </div>
+
+      {/* Clear Filters */}
+    </div>
+  );
+
+  function formatNumberToShort(num) {
+    if (num >= 1_000_000_000) {
+      return (num / 1_000_000_000).toFixed(1).replace(".", ",") + "b";
+    } else if (num >= 1_000_000) {
+      return (num / 1_000_000).toFixed(1).replace(".", ",") + "m";
+    } else if (num >= 1_000) {
+      return (num / 1_000).toFixed(1).replace(".", ",") + "k";
+    } else {
+      return num.toString();
+    }
   }
 
   return (
-    <div style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto" }}>
-      <Card
-        title={`📱 User Video Chat - ID: ${userId}`}
-        style={{ marginBottom: "16px" }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-            marginBottom: "16px",
-          }}
-        >
-          <Badge
-            status={socketConnected ? "success" : "error"}
-            text={`Socket: ${socketConnected ? "Connected" : "Disconnected"}`}
-          />
-          <Badge
-            status={
-              connectionState === "connected"
-                ? "success"
-                : connectionState === "connecting"
-                ? "processing"
-                : connectionState === "failed"
-                ? "error"
-                : "default"
-            }
-            text={`WebRTC: ${connectionState}`}
-          />
-          {mediaEnabled.video && <Badge status="success" text="Camera" />}
-          {mediaEnabled.audio && <Badge status="success" text="Microphone" />}
-        </div>
-
-        {!socketConnected && (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "16px",
-              backgroundColor: "#fff2f0",
-              borderRadius: "8px",
-              marginBottom: "16px",
-            }}
-          >
-            <p style={{ color: "#ff4d4f", margin: 0 }}>
-              ⚠️ Mất kết nối với server. Đang thử kết nối lại...
-            </p>
-          </div>
-        )}
-
-        {!inCall && !calling && (
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-          >
-            <div style={{ textAlign: "center" }}>
-              <h3
-                style={{
-                  fontSize: "18px",
-                  fontWeight: "500",
-                  marginBottom: "16px",
-                }}
-              >
-                Chuẩn bị cuộc gọi
-              </h3>
-              <Space size="large">
-                <Button
-                  icon={<VideoCameraOutlined />}
-                  onClick={() =>
-                    enableMedia({ video: true, audio: mediaEnabled.audio })
-                  }
-                  type={mediaEnabled.video ? "primary" : "default"}
-                  size="large"
-                  style={
-                    mediaEnabled.video
-                      ? { backgroundColor: "#1890ff", borderColor: "#1890ff" }
-                      : {}
-                  }
-                >
-                  {mediaEnabled.video ? "Camera đã bật" : "Bật Camera"}
-                </Button>
-                <Button
-                  icon={<AudioOutlined />}
-                  onClick={() =>
-                    enableMedia({ video: mediaEnabled.video, audio: true })
-                  }
-                  type={mediaEnabled.audio ? "primary" : "default"}
-                  size="large"
-                  style={
-                    mediaEnabled.audio
-                      ? { backgroundColor: "#1890ff", borderColor: "#1890ff" }
-                      : {}
-                  }
-                >
-                  {mediaEnabled.audio ? "Mic đã bật" : "Bật Microphone"}
-                </Button>
-              </Space>
-            </div>
-
-            <div style={{ textAlign: "center" }}>
-              <Button
-                type="primary"
-                size="large"
-                icon={<PhoneOutlined />}
-                onClick={startCall}
-                disabled={
-                  (!mediaEnabled.video && !mediaEnabled.audio) ||
-                  !socketConnected
-                }
-                loading={isCallingRef.current}
-                style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
-              >
-                Gọi Admin
-              </Button>
+    <div className="min-h-screen bg-white">
+      <SliderComponent />
+      {contextHolder}
+      <div className="clothing-male-wrapper">
+        <div className="clothing-male-layout-grid">
+          {/* Desktop Sidebar Filters */}
+          <div className="clothing-male-sidebar">
+            <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-4">
+              <FilterContent />
             </div>
           </div>
-        )}
 
-        {calling && (
-          <div style={{ textAlign: "center", padding: "32px 0" }}>
-            <div>
-              <PhoneOutlined
-                style={{
-                  fontSize: "48px",
-                  color: "#1890ff",
-                  marginBottom: "16px",
-                }}
-              />
-              <p style={{ fontSize: "18px" }}>Đang gọi admin...</p>
-              <Button
-                type="primary"
-                danger
-                onClick={endCall}
-                style={{
-                  marginTop: "16px",
-                  backgroundColor: "#ff4d4f",
-                  borderColor: "#ff4d4f",
-                }}
-              >
-                Hủy cuộc gọi
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {(inCall || calling || mediaEnabled.video || mediaEnabled.audio) && (
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-          >
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-                gap: "16px",
-              }}
-            >
-              <div style={{ textAlign: "center" }}>
-                <h3 style={{ marginBottom: "8px", fontWeight: "500" }}>
-                  Camera của bạn
-                </h3>
-                <video
-                  ref={localVideoRef}
-                  autoPlay
-                  muted={true}
-                  playsInline
-                  style={{
-                    width: "100%",
-                    maxWidth: "400px",
-                    height: "300px",
-                    border: "1px solid #d9d9d9",
-                    borderRadius: "8px",
-                    backgroundColor: "black",
-                    objectFit: "cover",
-                  }}
-                />
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <h3 style={{ marginBottom: "8px", fontWeight: "500" }}>
-                  Camera Admin
-                </h3>
-                <video
-                  ref={remoteVideoRef}
-                  autoPlay
-                  muted={false}
-                  playsInline
-                  style={{
-                    width: "100%",
-                    maxWidth: "400px",
-                    height: "300px",
-                    border: "1px solid #d9d9d9",
-                    borderRadius: "8px",
-                    backgroundColor: "black",
-                    objectFit: "cover",
-                  }}
-                  onLoadedMetadata={() => {
-                    console.log("🎬 User: Remote video metadata loaded");
-                    if (remoteVideoRef.current) {
-                      remoteVideoRef.current.volume = 1.0;
-                      console.log("🔊 User: Set remote video volume to 1.0");
-                    }
-                  }}
-                />
+          {/* Main Content */}
+          <div className="clothing-male-main-content">
+            {/* Breadcrumb */}
+            <div className="bg-white rounded-2xl shadow-lg p-4 mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm">
+                  <Link to="/" className="text-gray-500 hover:text-green-600">
+                    Trang chủ
+                  </Link>
+                  <span className="text-gray-400">/</span>
+                  <span className="text-gray-700 font-medium">
+                    Đồ {OptionGender(param.gender)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-700 font-semibold">
+                    Trang {savedCurrentPage} - {products?.length || 0} sản phẩm
+                  </span>
+                </div>
               </div>
             </div>
 
-            {inCall && (
-              <div style={{ textAlign: "center" }}>
+            {/* Mobile Filter Button & Sort Controls */}
+            <div className="bg-white rounded-2xl shadow-lg p-4 mb-6">
+              <div className="flex items-center justify-between gap-4">
+                {/* Mobile Filter Button */}
                 <Button
-                  type="primary"
-                  danger
-                  icon={<CloseOutlined />}
-                  onClick={endCall}
-                  size="large"
-                  style={{ backgroundColor: "#ff4d4f", borderColor: "#ff4d4f" }}
+                  onClick={() => setFilterDrawerOpen(true)}
+                  className="clothing-male-filter-btn bg-green-500 hover:bg-green-600 text-white border-none rounded-xl px-4 h-10 flex items-center gap-2"
                 >
-                  Kết thúc cuộc gọi
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                    />
+                  </svg>
+                  Bộ lọc
                 </Button>
+
+                {/* Sort Controls */}
+                <div className="relative" ref={menuRef}>
+                  <div className=" flex items-center gap-2">
+                    <Button
+                      onClick={() => setCheckFilter((prev) => !prev)}
+                      className="bg-green-500 hover:bg-green-600 text-white border-none rounded-xl px-6 h-10"
+                    >
+                      Sắp xếp theo
+                    </Button>
+
+                    {hidden && (
+                      <Button
+                        onClick={handleFilterProduct}
+                        className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 border-none rounded-xl h-10"
+                      >
+                        Xóa tất cả bộ lọc
+                      </Button>
+                    )}
+                  </div>
+                  {checkFilter && (
+                    <div className="absolute top-12 right-0 z-50 bg-white rounded-xl shadow-xl border border-gray-200 py-2 min-w-48">
+                      <button
+                        onClick={() => handleSortDate("newest")}
+                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-gray-700"
+                      >
+                        Mới nhất
+                      </button>
+                      <button
+                        onClick={() => handleSortDesAndAsc("asc")}
+                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-gray-700"
+                      >
+                        Giá: thấp - cao
+                      </button>
+                      <button
+                        onClick={() => handleSortDesAndAsc("desc")}
+                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-gray-700"
+                      >
+                        Giá: cao - thấp
+                      </button>
+                      <button
+                        onClick={() => handleSortSold("hot")}
+                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-gray-700"
+                      >
+                        Bán chạy nhất
+                      </button>
+
+                      <button
+                        onClick={() => handleSortView("asc")}
+                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-gray-700"
+                      >
+                        Lượt xem nhiều nhất
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Products Grid */}
+            <div className="clothing-male-grid">
+              {loading ? (
+                [...Array(12)].map((_, index) => <SkeletonCard key={index} />)
+              ) : products && products.length > 0 ? (
+                products.map((product) => (
+                  <div
+                    key={product._id}
+                    className="clothing-male-card bg-white rounded-2xl shadow-lg overflow-hidden group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                  >
+                    <div className="relative">
+                      <img
+                        className="clothing-male-image w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        src={
+                          product.variants[0]?.images[0]?.url ||
+                          "/placeholder.svg?height=250&width=350"
+                        }
+                        alt={product.name}
+                      />
+                      {product.discount > 0 && (
+                        <span className="absolute top-3 right-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                          -{product.discount}%
+                        </span>
+                      )}
+                      <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        {isProductInWishlist.includes(product._id) ? (
+                          <>
+                            <button
+                              className="bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
+                              onClick={() => handleRemoveWishList(product._id)}
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 text-green-600"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                                />
+                              </svg>
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
+                            onClick={() => handlAddWishList(product._id)}
+                          >
+                            <svg
+                              className="w-4 h-4 text-gray-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                              />
+                            </svg>
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() =>
+                            handelModelProductCart(
+                              product._id,
+                              product.variants,
+                              product.price,
+                              product.discountedPrice,
+                              product.name,
+                              product.discount
+                            )
+                          }
+                          className="bg-green-500 hover:bg-green-600 p-2 rounded-full shadow-lg transition-colors"
+                        >
+                          <svg
+                            className="w-4 h-4 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    <div
+                      className="clothing-male-content"
+                      onClick={() => handleDetails(product.slug)}
+                    >
+                      <p className="text-sm text-green-600 uppercase tracking-wider font-medium mb-2">
+                        {product.brand}
+                      </p>
+                      <h3 className="clothing-male-title font-semibold text-gray-900 line-clamp-2 mb-3 cursor-pointer hover:text-green-600">
+                        {product.name}
+                      </h3>
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <span className="clothing-male-price font-bold text-green-600">
+                            {formatPrice(product.discountedPrice)}
+                          </span>
+                          {product.discount > 0 && (
+                            <span className="clothing-male-original-price text-gray-500 line-through ml-2">
+                              {formatPrice(product.price)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className=" flex items-center justify-between">
+                        <span className="italic">
+                          {" "}
+                          {formatNumberToShort(product.view)} lượt xem
+                        </span>
+                        <span className="italic">Đã bán {product.sold}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-full flex justify-center items-center h-64 bg-white rounded-2xl shadow-lg">
+                  <div className="text-center">
+                    <svg
+                      className="w-16 h-16 text-gray-400 mx-auto mb-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1}
+                        d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                      />
+                    </svg>
+                    <p className="text-gray-500 text-lg">
+                      Không tìm thấy sản phẩm nào
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Pagination */}
+            {products && products.length > 0 && (
+              <div className="mt-8 flex justify-center">
+                <ReactPaginate
+                  previousLabel={
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 19l-7-7 7-7"
+                      />
+                    </svg>
+                  }
+                  nextLabel={
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  }
+                  initialPage={savedCurrentPage - 1}
+                  breakLabel="..."
+                  pageCount={totalPages}
+                  marginPagesDisplayed={2}
+                  pageRangeDisplayed={3}
+                  onPageChange={handlePageClick}
+                  containerClassName="clothing-male-pagination flex items-center gap-2 flex-wrap justify-center"
+                  pageLinkClassName="clothing-male-page-link flex items-center justify-center rounded-xl border border-gray-300 hover:border-green-500 hover:bg-green-50 text-gray-700 hover:text-green-600 transition-colors text-sm"
+                  activeLinkClassName="bg-green-500 text-white border-green-500 hover:bg-green-600"
+                  previousClassName="p-1 sm:p-2 rounded-xl border border-gray-300 hover:border-green-500 hover:bg-green-50 text-gray-700 hover:text-green-600 transition-colors"
+                  nextClassName="p-1 sm:p-2 rounded-xl border border-gray-300 hover:border-green-500 hover:bg-green-50 text-gray-700 hover:text-green-600 transition-colors"
+                  disabledClassName="opacity-50 cursor-not-allowed"
+                />
               </div>
             )}
           </div>
-        )}
-      </Card>
+        </div>
+      </div>
+
+      {/* Mobile Filter Drawer */}
+      <Drawer
+        title={
+          <div className="flex items-center gap-2">
+            <svg
+              className="w-5 h-5 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+              />
+            </svg>
+            <span className="text-lg font-semibold text-gray-900">
+              Bộ lọc sản phẩm
+            </span>
+          </div>
+        }
+        placement="left"
+        onClose={() => setFilterDrawerOpen(false)}
+        open={filterDrawerOpen}
+        width={320}
+        className="clothing-male-drawer"
+        styles={{
+          header: { borderBottom: "1px solid #e5e7eb" },
+          body: { padding: "20px" },
+        }}
+      >
+        <FilterContent />
+      </Drawer>
+
+      <ProductCart
+        modalCartOpen={modalCartOpen}
+        setModalCartOpen={setModalCartOpen}
+        IdProduct={IdProduct}
+        listItems={listItems}
+        price={price}
+        costPrice={costPrice}
+        productname={productname}
+        discount={discount}
+      />
     </div>
   );
 };
 
-export default VideoChatUser;
+export default ClothingMale;
