@@ -28,8 +28,6 @@ import VideoChatUser from "./components/VideoCall/VideoCall";
 const MemoizedHeader = memo(Header);
 const MemoizedFooter = memo(Footer);
 const MemoizedMessage = memo(Message);
-const MemoizedVideoChatAdmin = memo(VideoChatAdmin);
-const MemoizedVideoChatUser = memo(VideoChatUser);
 
 function App() {
   const { user } = useSelector((state) => state.auth);
@@ -258,15 +256,6 @@ function App() {
   );
 
   // Memoize video chat component
-  const VideoChat = useMemo(() => {
-    if (!user?._id) return null;
-
-    return isAdmin ? (
-      <MemoizedVideoChatAdmin />
-    ) : (
-      <MemoizedVideoChatUser userId={user._id} />
-    );
-  }, [isAdmin, user?._id]);
 
   return (
     <div className="container_nav">
@@ -674,9 +663,6 @@ function App() {
       )}
 
       {!hideFooter && <MemoizedFooter />}
-
-      {/* Video Chat Component - Memoized và chỉ render khi cần */}
-      <div style={{ display: user?._id ? "block" : "none" }}>{VideoChat}</div>
     </div>
   );
 }
