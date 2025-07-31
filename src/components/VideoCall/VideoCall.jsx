@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   PhoneCall,
@@ -19,7 +21,7 @@ import { io } from "socket.io-client";
 
 const adminId = "673017dde4526bd79cc61fa6";
 
-const VideoChatUser = ({ userId }) => {
+const VideoChatUserFixed = ({ userId }) => {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const peerRef = useRef(null);
@@ -28,6 +30,7 @@ const VideoChatUser = ({ userId }) => {
   const socketRef = useRef(null);
   const isInitializedRef = useRef(false);
   const cleanupRef = useRef(false);
+  const mountedRef = useRef(true);
 
   const [inCall, setInCall] = useState(false);
   const [calling, setCalling] = useState(false);
@@ -70,6 +73,7 @@ const VideoChatUser = ({ userId }) => {
 
   // Debug logging function
   const addDebugLog = useCallback((message) => {
+    if (!mountedRef.current) return;
     const timestamp = new Date().toLocaleTimeString();
     const logMessage = `[${timestamp}] ${message}`;
     console.log(logMessage);
@@ -79,12 +83,16 @@ const VideoChatUser = ({ userId }) => {
   // Call duration timer
   useEffect(() => {
     let interval;
-    if (inCall && callStartTime) {
+    if (inCall && callStartTime && mountedRef.current) {
       interval = setInterval(() => {
-        setCallDuration(Math.floor((Date.now() - callStartTime) / 1000));
+        if (mountedRef.current) {
+          setCallDuration(Math.floor((Date.now() - callStartTime) / 1000));
+        }
       }, 1000);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [inCall, callStartTime]);
 
   const formatDuration = (seconds) => {
@@ -96,7 +104,7 @@ const VideoChatUser = ({ userId }) => {
   };
 
   const endCall = useCallback(() => {
-    if (cleanupRef.current) return;
+    if (cleanupRef.current || !mountedRef.current) return;
     addDebugLog("📞 User: Ending call...");
 
     if (localStreamRef.current) {
@@ -107,10 +115,10 @@ const VideoChatUser = ({ userId }) => {
       localStreamRef.current = null;
     }
 
-    if (localVideoRef.current) {
+    if (localVideoRef.current && mountedRef.current) {
       localVideoRef.current.srcObject = null;
     }
-    if (remoteVideoRef.current) {
+    if (remoteVideoRef.current && mountedRef.current) {
       remoteVideoRef.current.srcObject = null;
     }
 
@@ -132,19 +140,21 @@ const VideoChatUser = ({ userId }) => {
     }
 
     isCallingRef.current = false;
-    setInCall(false);
-    setCalling(false);
-    setIncomingCall(null);
-    setMediaEnabled({ video: false, audio: false });
-    setConnectionState("new");
-    setIceConnectionState("new");
-    setCallStartTime(null);
-    setCallDuration(0);
-    setIsFullscreen(false);
+    if (mountedRef.current) {
+      setInCall(false);
+      setCalling(false);
+      setIncomingCall(null);
+      setMediaEnabled({ video: false, audio: false });
+      setConnectionState("new");
+      setIceConnectionState("new");
+      setCallStartTime(null);
+      setCallDuration(0);
+      setIsFullscreen(false);
+    }
   }, [inCall, calling, addDebugLog]);
 
   const cleanupPeerConnection = useCallback(() => {
-    if (cleanupRef.current) return;
+    if (cleanupRef.current || !mountedRef.current) return;
     addDebugLog("🧹 User: Cleaning up peer connection...");
 
     if (peerRef.current) {
@@ -160,22 +170,41 @@ const VideoChatUser = ({ userId }) => {
     isCallingRef.current = false;
   }, [addDebugLog]);
 
+  // Safe video play function
+  const safePlayVideo = useCallback(
+    async (videoElement, streamType) => {
+      if (!videoElement || !mountedRef.current) return false;
+
+      try {
+        // Wait a bit to ensure the element is ready
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        if (!mountedRef.current || !videoElement.srcObject) return false;
+
+        await videoElement.play();
+        addDebugLog(`✅ User: ${streamType} video playing successfully`);
+        return true;
+      } catch (error) {
+        if (mountedRef.current) {
+          addDebugLog(
+            `❌ User: Error playing ${streamType} video: ${error.message}`
+          );
+        }
+        return false;
+      }
+    },
+    [addDebugLog]
+  );
+
   // Fixed enableMedia function
   const enableMedia = useCallback(
     async (options = { video: false, audio: false }) => {
-      try {
-        // Determine what we need to request
-        const needVideo = options.video && !mediaEnabled.video;
-        const needAudio = options.audio && !mediaEnabled.audio;
-        const keepVideo =
-          mediaEnabled.video && !options.hasOwnProperty("video");
-        const keepAudio =
-          mediaEnabled.audio && !options.hasOwnProperty("audio");
+      if (!mountedRef.current) return null;
 
+      try {
         const constraints = {};
 
-        // Request video if needed or keeping existing
-        if (needVideo || keepVideo || (options.video && mediaEnabled.video)) {
+        if (options.video) {
           constraints.video = {
             width: { ideal: 1280 },
             height: { ideal: 720 },
@@ -183,8 +212,7 @@ const VideoChatUser = ({ userId }) => {
           };
         }
 
-        // Request audio if needed or keeping existing
-        if (needAudio || keepAudio || (options.audio && mediaEnabled.audio)) {
+        if (options.audio) {
           constraints.audio = {
             echoCancellation: true,
             noiseSuppression: true,
@@ -205,6 +233,11 @@ const VideoChatUser = ({ userId }) => {
           constraints
         );
 
+        if (!mountedRef.current) {
+          newStream.getTracks().forEach((track) => track.stop());
+          return null;
+        }
+
         // Stop old stream if exists
         if (localStreamRef.current) {
           localStreamRef.current.getTracks().forEach((track) => {
@@ -214,25 +247,27 @@ const VideoChatUser = ({ userId }) => {
 
         localStreamRef.current = newStream;
 
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = localStreamRef.current;
-          localVideoRef.current.muted = true;
-          try {
-            await localVideoRef.current.play();
-            addDebugLog("✅ User: Local video playing");
-          } catch (playError) {
-            addDebugLog(`❌ User: Error playing local video: ${playError}`);
-          }
-        }
-
         // Update media enabled state
         setMediaEnabled({
-          video: constraints.video ? true : false,
-          audio: constraints.audio ? true : false,
+          video: !!constraints.video,
+          audio: !!constraints.audio,
         });
 
+        // Set video source and play
+        if (localVideoRef.current && mountedRef.current) {
+          localVideoRef.current.srcObject = localStreamRef.current;
+          localVideoRef.current.muted = true;
+
+          // Use safe play function
+          setTimeout(() => {
+            if (mountedRef.current) {
+              safePlayVideo(localVideoRef.current, "local");
+            }
+          }, 200);
+        }
+
         // If in call, update peer connection with new tracks
-        if (peerRef.current && (inCall || calling)) {
+        if (peerRef.current && (inCall || calling) && mountedRef.current) {
           addDebugLog("🔄 User: Updating peer connection with new tracks");
           await updatePeerConnectionTracks(peerRef.current, newStream);
         }
@@ -240,25 +275,29 @@ const VideoChatUser = ({ userId }) => {
         addDebugLog("✅ User: Media enabled successfully");
         return localStreamRef.current;
       } catch (err) {
-        addDebugLog(`❌ User: Cannot enable media: ${err.message}`);
-        let errorMessage = "Không thể truy cập thiết bị.";
-        if (err.name === "NotAllowedError") {
-          errorMessage = "Bạn đã từ chối quyền truy cập camera/microphone.";
-        } else if (err.name === "NotFoundError") {
-          errorMessage = "Không tìm thấy camera hoặc microphone.";
+        if (mountedRef.current) {
+          addDebugLog(`❌ User: Cannot enable media: ${err.message}`);
+          let errorMessage = "Không thể truy cập thiết bị.";
+          if (err.name === "NotAllowedError") {
+            errorMessage = "Bạn đã từ chối quyền truy cập camera/microphone.";
+          } else if (err.name === "NotFoundError") {
+            errorMessage = "Không tìm thấy camera hoặc microphone.";
+          }
+          alert(errorMessage);
         }
-        alert(errorMessage);
         return null;
       }
     },
-    [mediaEnabled.video, mediaEnabled.audio, addDebugLog, inCall, calling]
+    [addDebugLog, inCall, calling, safePlayVideo]
   );
 
   // New function to update peer connection tracks
   const updatePeerConnectionTracks = useCallback(
     async (peer, stream) => {
-      if (!peer || peer.signalingState === "closed") {
-        addDebugLog("❌ User: Cannot update tracks: peer connection is closed");
+      if (!peer || peer.signalingState === "closed" || !mountedRef.current) {
+        addDebugLog(
+          "❌ User: Cannot update tracks: peer connection is closed or component unmounted"
+        );
         return false;
       }
 
@@ -307,7 +346,9 @@ const VideoChatUser = ({ userId }) => {
         addDebugLog("✅ User: Peer connection tracks updated successfully");
         return true;
       } catch (err) {
-        addDebugLog(`❌ User: Error updating tracks: ${err.message}`);
+        if (mountedRef.current) {
+          addDebugLog(`❌ User: Error updating tracks: ${err.message}`);
+        }
         return false;
       }
     },
@@ -315,6 +356,8 @@ const VideoChatUser = ({ userId }) => {
   );
 
   const createPeerConnection = useCallback(() => {
+    if (!mountedRef.current) return null;
+
     addDebugLog("🔗 User: Creating new peer connection...");
     cleanupPeerConnection();
 
@@ -328,36 +371,40 @@ const VideoChatUser = ({ userId }) => {
       if (
         event.candidate &&
         peer.signalingState !== "closed" &&
-        socketRef.current?.connected
+        socketRef.current?.connected &&
+        mountedRef.current
       ) {
         addDebugLog(`🧊 User: Sending ICE candidate: ${event.candidate.type}`);
         socketRef.current.emit("ice-candidate", {
           to: adminId,
           candidate: event.candidate,
         });
-      } else if (!event.candidate) {
+      } else if (!event.candidate && mountedRef.current) {
         addDebugLog("🧊 User: ICE gathering completed");
       }
     };
 
     peer.ontrack = (event) => {
+      if (!mountedRef.current) return;
+
       addDebugLog("📺 User: Received remote stream from admin");
       if (remoteVideoRef.current && event.streams[0]) {
         remoteVideoRef.current.srcObject = event.streams[0];
         remoteVideoRef.current.muted = false;
         remoteVideoRef.current.volume = 1.0;
-        remoteVideoRef.current
-          .play()
-          .then(() => {
-            addDebugLog("✅ User: Remote video playing successfully");
-          })
-          .catch((playError) => {
-            addDebugLog(`❌ User: Error playing remote video: ${playError}`);
-          });
+
+        // Use safe play function with delay
+        setTimeout(() => {
+          if (mountedRef.current) {
+            safePlayVideo(remoteVideoRef.current, "remote");
+          }
+        }, 300);
       }
     };
 
     peer.onconnectionstatechange = () => {
+      if (!mountedRef.current) return;
+
       const state = peer.connectionState;
       addDebugLog(`🔗 User: Connection state changed to: ${state}`);
       setConnectionState(state);
@@ -369,13 +416,15 @@ const VideoChatUser = ({ userId }) => {
         addDebugLog("✅ User: Call connected successfully!");
       } else if (state === "failed") {
         addDebugLog("❌ User: Connection failed, ending call");
-        setTimeout(() => endCall(), 2000);
+        setTimeout(() => {
+          if (mountedRef.current) endCall();
+        }, 2000);
       } else if (state === "disconnected") {
         addDebugLog(
           "⚠️ User: Connection disconnected, attempting reconnection..."
         );
         setTimeout(() => {
-          if (peer.connectionState === "disconnected") {
+          if (peer.connectionState === "disconnected" && mountedRef.current) {
             addDebugLog("🔄 User: Restarting ICE...");
             peer.restartIce();
           }
@@ -384,6 +433,8 @@ const VideoChatUser = ({ userId }) => {
     };
 
     peer.oniceconnectionstatechange = () => {
+      if (!mountedRef.current) return;
+
       const state = peer.iceConnectionState;
       addDebugLog(`🧊 User: ICE connection state changed to: ${state}`);
       setIceConnectionState(state);
@@ -399,12 +450,14 @@ const VideoChatUser = ({ userId }) => {
     };
 
     return peer;
-  }, [cleanupPeerConnection, endCall, addDebugLog]);
+  }, [cleanupPeerConnection, endCall, addDebugLog, safePlayVideo]);
 
   const addTracksToConnection = useCallback(
     (peer, stream) => {
-      if (!peer || peer.signalingState === "closed") {
-        addDebugLog("❌ User: Cannot add tracks: peer connection is closed");
+      if (!peer || peer.signalingState === "closed" || !mountedRef.current) {
+        addDebugLog(
+          "❌ User: Cannot add tracks: peer connection is closed or component unmounted"
+        );
         return false;
       }
 
@@ -420,7 +473,9 @@ const VideoChatUser = ({ userId }) => {
         addDebugLog("✅ User: All tracks added successfully");
         return true;
       } catch (err) {
-        addDebugLog(`❌ User: Error adding tracks: ${err.message}`);
+        if (mountedRef.current) {
+          addDebugLog(`❌ User: Error adding tracks: ${err.message}`);
+        }
         return false;
       }
     },
@@ -428,8 +483,14 @@ const VideoChatUser = ({ userId }) => {
   );
 
   const startCall = useCallback(async () => {
-    if (isCallingRef.current || !socketRef.current?.connected) {
-      addDebugLog("⚠️ User: Already calling or socket not connected");
+    if (
+      isCallingRef.current ||
+      !socketRef.current?.connected ||
+      !mountedRef.current
+    ) {
+      addDebugLog(
+        "⚠️ User: Already calling, socket not connected, or component unmounted"
+      );
       return;
     }
 
@@ -437,9 +498,13 @@ const VideoChatUser = ({ userId }) => {
     if (!mediaEnabled.video || !mediaEnabled.audio) {
       addDebugLog("🎥 User: Enabling media before call...");
       const stream = await enableMedia({ video: true, audio: true });
-      if (!stream) {
-        addDebugLog("❌ User: Failed to enable media, cannot start call");
-        alert("Không thể bắt đầu cuộc gọi do lỗi truy cập media.");
+      if (!stream || !mountedRef.current) {
+        addDebugLog(
+          "❌ User: Failed to enable media or component unmounted, cannot start call"
+        );
+        if (mountedRef.current) {
+          alert("Không thể bắt đầu cuộc gọi do lỗi truy cập media.");
+        }
         return;
       }
     }
@@ -450,8 +515,10 @@ const VideoChatUser = ({ userId }) => {
       setCalling(true);
 
       const peer = createPeerConnection();
-      if (!peer) {
-        throw new Error("Failed to create peer connection");
+      if (!peer || !mountedRef.current) {
+        throw new Error(
+          "Failed to create peer connection or component unmounted"
+        );
       }
       peerRef.current = peer;
 
@@ -471,6 +538,10 @@ const VideoChatUser = ({ userId }) => {
         offerToReceiveVideo: true,
       });
 
+      if (!mountedRef.current) {
+        throw new Error("Component unmounted during offer creation");
+      }
+
       await peer.setLocalDescription(offer);
       addDebugLog("✅ User: Local description set");
 
@@ -481,7 +552,7 @@ const VideoChatUser = ({ userId }) => {
           resolve();
         } else {
           const checkState = () => {
-            if (peer.iceGatheringState === "complete") {
+            if (peer.iceGatheringState === "complete" || !mountedRef.current) {
               peer.removeEventListener("icegatheringstatechange", checkState);
               resolve();
             }
@@ -490,6 +561,10 @@ const VideoChatUser = ({ userId }) => {
           setTimeout(resolve, 10000);
         }
       });
+
+      if (!mountedRef.current) {
+        throw new Error("Component unmounted during ICE gathering");
+      }
 
       addDebugLog("📤 User: Sending offer to admin...");
       socketRef.current.emit("call-user", {
@@ -501,10 +576,12 @@ const VideoChatUser = ({ userId }) => {
 
       addDebugLog("✅ User: Call initiated successfully");
     } catch (err) {
-      addDebugLog(`❌ User: Error starting call: ${err.message}`);
-      alert(`Không thể bắt đầu cuộc gọi: ${err.message}`);
-      setCalling(false);
-      cleanupPeerConnection();
+      if (mountedRef.current) {
+        addDebugLog(`❌ User: Error starting call: ${err.message}`);
+        alert(`Không thể bắt đầu cuộc gọi: ${err.message}`);
+        setCalling(false);
+        cleanupPeerConnection();
+      }
     } finally {
       isCallingRef.current = false;
     }
@@ -520,15 +597,19 @@ const VideoChatUser = ({ userId }) => {
   ]);
 
   const answerCall = useCallback(async () => {
-    if (!incomingCall || !peerRef.current) return;
+    if (!incomingCall || !peerRef.current || !mountedRef.current) return;
 
     // Ensure media is enabled
     if (!mediaEnabled.video || !mediaEnabled.audio) {
       addDebugLog("🎥 User: Enabling media before answering...");
       const stream = await enableMedia({ video: true, audio: true });
-      if (!stream) {
-        addDebugLog("❌ User: Failed to enable media, cannot answer call");
-        alert("Không thể trả lời cuộc gọi do lỗi truy cập media.");
+      if (!stream || !mountedRef.current) {
+        addDebugLog(
+          "❌ User: Failed to enable media or component unmounted, cannot answer call"
+        );
+        if (mountedRef.current) {
+          alert("Không thể trả lời cuộc gọi do lỗi truy cập media.");
+        }
         return;
       }
     }
@@ -543,6 +624,9 @@ const VideoChatUser = ({ userId }) => {
 
       // Create answer
       const answer = await peerRef.current.createAnswer();
+
+      if (!mountedRef.current) return;
+
       await peerRef.current.setLocalDescription(answer);
 
       // Send answer to caller
@@ -556,8 +640,10 @@ const VideoChatUser = ({ userId }) => {
       setCallStartTime(Date.now());
       addDebugLog("✅ User: Call answered successfully");
     } catch (err) {
-      addDebugLog(`❌ User: Error answering call: ${err.message}`);
-      alert(`Không thể trả lời cuộc gọi: ${err.message}`);
+      if (mountedRef.current) {
+        addDebugLog(`❌ User: Error answering call: ${err.message}`);
+        alert(`Không thể trả lời cuộc gọi: ${err.message}`);
+      }
     }
   }, [
     mediaEnabled,
@@ -568,6 +654,8 @@ const VideoChatUser = ({ userId }) => {
   ]);
 
   const rejectCall = useCallback(() => {
+    if (!mountedRef.current) return;
+
     if (incomingCall && socketRef.current?.connected) {
       socketRef.current.emit("reject-call", { to: incomingCall.from });
       addDebugLog("📞 User: Call rejected");
@@ -578,6 +666,8 @@ const VideoChatUser = ({ userId }) => {
 
   // Fixed toggle functions
   const toggleVideo = useCallback(async () => {
+    if (!mountedRef.current) return;
+
     addDebugLog(
       `📹 User: Toggling video from ${
         mediaEnabled.video
@@ -585,30 +675,17 @@ const VideoChatUser = ({ userId }) => {
     );
 
     if (mediaEnabled.video) {
-      // Turn off video only
-      if (localStreamRef.current) {
-        const videoTracks = localStreamRef.current.getVideoTracks();
-        videoTracks.forEach((track) => {
-          track.stop();
-        });
-      }
-
-      // Create new stream with only audio
-      if (mediaEnabled.audio) {
-        await enableMedia({ audio: true, video: false });
-      } else {
-        setMediaEnabled((prev) => ({ ...prev, video: false }));
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = null;
-        }
-      }
+      // Turn off video, keep audio
+      await enableMedia({ video: false, audio: mediaEnabled.audio });
     } else {
-      // Turn on video, keep audio state
+      // Turn on video, keep audio
       await enableMedia({ video: true, audio: mediaEnabled.audio });
     }
   }, [mediaEnabled.video, mediaEnabled.audio, enableMedia, addDebugLog]);
 
   const toggleAudio = useCallback(async () => {
+    if (!mountedRef.current) return;
+
     addDebugLog(
       `🎤 User: Toggling audio from ${
         mediaEnabled.audio
@@ -616,103 +693,125 @@ const VideoChatUser = ({ userId }) => {
     );
 
     if (mediaEnabled.audio) {
-      // Turn off audio only
-      if (localStreamRef.current) {
-        const audioTracks = localStreamRef.current.getAudioTracks();
-        audioTracks.forEach((track) => {
-          track.stop();
-        });
-      }
-
-      // Create new stream with only video
-      if (mediaEnabled.video) {
-        await enableMedia({ video: true, audio: false });
-      } else {
-        setMediaEnabled((prev) => ({ ...prev, audio: false }));
-      }
+      // Turn off audio, keep video
+      await enableMedia({ video: mediaEnabled.video, audio: false });
     } else {
-      // Turn on audio, keep video state
-      await enableMedia({ audio: true, video: mediaEnabled.video });
+      // Turn on audio, keep video
+      await enableMedia({ video: mediaEnabled.video, audio: true });
     }
   }, [mediaEnabled.audio, mediaEnabled.video, enableMedia, addDebugLog]);
 
   // Socket event handlers
-  const handleIncomingCall = async ({ from, offer, timestamp }) => {
-    addDebugLog(`📞 User: Incoming call from: ${from}`);
+  const handleIncomingCall = useCallback(
+    async ({ from, offer, timestamp }) => {
+      if (!mountedRef.current) return;
 
-    // Create peer connection for incoming call
-    const peer = createPeerConnection();
-    if (!peer) return;
-    peerRef.current = peer;
+      addDebugLog(`📞 User: Incoming call from: ${from}`);
 
-    try {
-      await peer.setRemoteDescription(new RTCSessionDescription(offer));
-      setIncomingCall({ from, fromName: "Admin", timestamp });
-      addDebugLog("✅ User: Incoming call handled successfully");
-    } catch (err) {
-      addDebugLog(`❌ User: Error handling incoming call: ${err.message}`);
-      alert("Lỗi khi xử lý cuộc gọi đến.");
-    }
-  };
+      // Create peer connection for incoming call
+      const peer = createPeerConnection();
+      if (!peer || !mountedRef.current) return;
+      peerRef.current = peer;
 
-  const handleCallAnswered = async ({ answer }) => {
-    addDebugLog("✅ User: Call answered by admin");
-    if (peerRef.current && peerRef.current.signalingState !== "closed") {
       try {
-        await peerRef.current.setRemoteDescription(
-          new RTCSessionDescription(answer)
-        );
-        addDebugLog("✅ User: Remote description set successfully");
+        await peer.setRemoteDescription(new RTCSessionDescription(offer));
+        if (mountedRef.current) {
+          setIncomingCall({ from, fromName: "Admin", timestamp });
+          addDebugLog("✅ User: Incoming call handled successfully");
+        }
       } catch (err) {
-        addDebugLog(
-          `❌ User: Error setting remote description: ${err.message}`
-        );
-        alert("Lỗi khi thiết lập kết nối.");
+        if (mountedRef.current) {
+          addDebugLog(`❌ User: Error handling incoming call: ${err.message}`);
+          alert("Lỗi khi xử lý cuộc gọi đến.");
+        }
       }
-    }
-  };
+    },
+    [createPeerConnection, addDebugLog]
+  );
 
-  const handleIceCandidate = async ({ candidate }) => {
-    addDebugLog(
-      `🧊 User: Received ICE candidate: ${candidate?.type || "unknown"}`
-    );
-    try {
-      if (
-        peerRef.current &&
-        candidate &&
-        peerRef.current.signalingState !== "closed"
-      ) {
-        await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
-        addDebugLog("✅ User: ICE candidate added successfully");
+  const handleCallAnswered = useCallback(
+    async ({ answer }) => {
+      if (!mountedRef.current) return;
+
+      addDebugLog("✅ User: Call answered by admin");
+      if (peerRef.current && peerRef.current.signalingState !== "closed") {
+        try {
+          await peerRef.current.setRemoteDescription(
+            new RTCSessionDescription(answer)
+          );
+          addDebugLog("✅ User: Remote description set successfully");
+        } catch (err) {
+          if (mountedRef.current) {
+            addDebugLog(
+              `❌ User: Error setting remote description: ${err.message}`
+            );
+            alert("Lỗi khi thiết lập kết nối.");
+          }
+        }
       }
-    } catch (err) {
-      addDebugLog(`❌ User: Failed to add ICE candidate: ${err.message}`);
-    }
-  };
+    },
+    [addDebugLog]
+  );
 
-  const handleCallEnded = () => {
+  const handleIceCandidate = useCallback(
+    async ({ candidate }) => {
+      if (!mountedRef.current) return;
+
+      addDebugLog(
+        `🧊 User: Received ICE candidate: ${candidate?.type || "unknown"}`
+      );
+      try {
+        if (
+          peerRef.current &&
+          candidate &&
+          peerRef.current.signalingState !== "closed"
+        ) {
+          await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+          addDebugLog("✅ User: ICE candidate added successfully");
+        }
+      } catch (err) {
+        if (mountedRef.current) {
+          addDebugLog(`❌ User: Failed to add ICE candidate: ${err.message}`);
+        }
+      }
+    },
+    [addDebugLog]
+  );
+
+  const handleCallEnded = useCallback(() => {
+    if (!mountedRef.current) return;
+
     addDebugLog("📞 User: Call ended by admin");
     endCall();
     alert("Cuộc gọi đã kết thúc bởi Admin.");
-  };
+  }, [endCall, addDebugLog]);
 
-  const handleCallRejected = () => {
+  const handleCallRejected = useCallback(() => {
+    if (!mountedRef.current) return;
+
     addDebugLog("📞 User: Call was rejected by admin");
     setCalling(false);
     cleanupPeerConnection();
     alert("Admin đã từ chối cuộc gọi.");
-  };
+  }, [cleanupPeerConnection, addDebugLog]);
 
-  // Main useEffect for Socket.IO connection
+  // Main useEffect for Socket.IO connection - Fixed to prevent re-initialization
   useEffect(() => {
-    if (!userId || isInitializedRef.current) {
-      addDebugLog("⚠️ User: Already initialized or no userId, skipping...");
+    if (!userId) {
+      addDebugLog("⚠️ User: No userId provided");
       return;
     }
 
-    addDebugLog(`🔌 User: Connecting to socket with ID: ${userId}`);
+    // Prevent multiple initializations
+    if (isInitializedRef.current) {
+      addDebugLog("⚠️ User: Already initialized, skipping...");
+      return;
+    }
+
+    addDebugLog(`🔌 User: Initializing socket connection with ID: ${userId}`);
     isInitializedRef.current = true;
     cleanupRef.current = false;
+    mountedRef.current = true;
 
     const socket = io("https://fashionstoreshopecommertbe.onrender.com", {
       forceNew: false,
@@ -725,18 +824,21 @@ const VideoChatUser = ({ userId }) => {
     socketRef.current = socket;
 
     const handleConnect = () => {
+      if (!mountedRef.current) return;
       addDebugLog(`✅ User: Socket connected: ${socket.id}`);
       setSocketConnected(true);
       socket.emit("register", { userId });
     };
 
     const handleDisconnect = (reason) => {
+      if (!mountedRef.current) return;
       addDebugLog(`❌ User: Socket disconnected: ${reason}`);
       setSocketConnected(false);
       alert("Mất kết nối với server. Đang thử kết nối lại...");
     };
 
     const handleConnectError = (error) => {
+      if (!mountedRef.current) return;
       addDebugLog(`❌ User: Socket connection error: ${error}`);
       setSocketConnected(false);
       alert("Không thể kết nối đến server. Vui lòng thử lại sau.");
@@ -752,8 +854,8 @@ const VideoChatUser = ({ userId }) => {
     socket.on("call-rejected", handleCallRejected);
 
     return () => {
-      if (cleanupRef.current) return;
       addDebugLog("🧹 User: Component unmounting, cleaning up...");
+      mountedRef.current = false;
       cleanupRef.current = true;
 
       socket.off("connect", handleConnect);
@@ -773,23 +875,14 @@ const VideoChatUser = ({ userId }) => {
       setSocketConnected(false);
       isInitializedRef.current = false;
     };
-  }, [
-    userId,
-    endCall,
-    cleanupPeerConnection,
-    createPeerConnection,
-    addDebugLog,
-  ]);
+  }, [userId]); // Only depend on userId
 
-  // Update user registration when userId changes
+  // Cleanup on unmount
   useEffect(() => {
-    if (socketRef.current?.connected && userId) {
-      addDebugLog(
-        `🔄 User: Updating user registration with new userId: ${userId}`
-      );
-      socketRef.current.emit("register", { userId });
-    }
-  }, [userId, addDebugLog]);
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   if (!userId) {
     return (
@@ -1096,7 +1189,9 @@ const VideoChatUser = ({ userId }) => {
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <button
-                    onClick={() => enableMedia({ video: true })}
+                    onClick={() =>
+                      enableMedia({ video: true, audio: mediaEnabled.audio })
+                    }
                     className={`flex items-center justify-center space-x-2 px-4 py-3 rounded-lg border-2 transition-all ${
                       mediaEnabled.video
                         ? "border-blue-500 bg-blue-50 text-blue-700"
@@ -1110,7 +1205,9 @@ const VideoChatUser = ({ userId }) => {
                   </button>
 
                   <button
-                    onClick={() => enableMedia({ audio: true })}
+                    onClick={() =>
+                      enableMedia({ video: mediaEnabled.video, audio: true })
+                    }
                     className={`flex items-center justify-center space-x-2 px-4 py-3 rounded-lg border-2 transition-all ${
                       mediaEnabled.audio
                         ? "border-blue-500 bg-blue-50 text-blue-700"
@@ -1227,4 +1324,4 @@ const VideoChatUser = ({ userId }) => {
   );
 };
 
-export default VideoChatUser;
+export default VideoChatUserFixed;
