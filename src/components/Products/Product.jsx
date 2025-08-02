@@ -23,7 +23,7 @@ import {
 } from "../../service/ApiProduct";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import "./Products.css";
 const { Text } = Typography;
 
 const Products = () => {
@@ -243,13 +243,15 @@ const Products = () => {
       setSelectedRowKeys(allProductKeys);
     }
   };
+
+  const token = localStorage.getItem("token");
   const props = {
     name: "execl", // key này phải giống bên backend đọc
     accept: ".xlsx,.xls", // chỉ nhận file Excel
     action:
       "https://fashionstoreshopecommertbe.onrender.com/api/v1/products/excel",
     headers: {
-      authorization: "authorization-text",
+      Authorization: `Bearer ${token}`,
     },
     onChange(info) {
       if (info.file.status !== "uploading") {

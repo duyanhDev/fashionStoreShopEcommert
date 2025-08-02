@@ -30,11 +30,11 @@ import FavoritesList from "../components/FavoritesList/FavoritesList";
 import ProductReviewAdmin from "../components/ProductReviewAdmin/ProductReviewAdmin";
 import LoginForm from "../components/Login/Login";
 import RegisterForm from "../components/Register/Register";
-import GeminiBlogGenerator from "../components/GeminiBlogGenerator/GeminiBlogGenerator";
 import AdminPostCreator from "../components/AdminPostCreator/AdminPostCreator";
 import AccountAdmin from "../components/AccountAdmin/AccountAdmin";
 import AddVoucher from "../components/AddVoucher/AddVoucher";
 import ManageStore from "../components/ManageStore/ManageStore";
+import PermissionRoute from "../PermissionRoute/PermissionRoute ";
 
 export const RouterLayout = [
   {
@@ -113,39 +113,125 @@ export const RouterAdmin = [
     path: "admin",
     element: <Admin />,
     children: [
-      { index: true, element: <UserStatsCard /> },
-      { path: "products", element: <Products /> },
-      { path: "addproduct", element: <Create /> },
-      { path: "category", element: <Category /> },
-      { path: "uploadproducts/:id", element: <UpLoad /> },
-      { path: "viewproduct/:id", element: <View /> },
-      { path: "order", element: <OrderAdmin /> },
-      { path: "support-chat", element: <ChatSp /> },
-      { path: "voucher", element: <Voucher /> },
+      {
+        index: true,
+        element: <UserStatsCard />,
+      },
+      {
+        path: "products",
+        element: (
+          <PermissionRoute allowedPermissions={["admin"]}>
+            <Products />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "addproduct",
+        element: (
+          <PermissionRoute allowedPermissions={["admin"]}>
+            <Create />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "category",
+        element: (
+          <PermissionRoute allowedPermissions={["admin"]}>
+            <Category />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "uploadproducts/:id",
+        element: (
+          <PermissionRoute allowedPermissions={["admin"]}>
+            <UpLoad />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "viewproduct/:id",
+        element: (
+          <PermissionRoute allowedPermissions={["admin"]}>
+            <View />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "order",
+        element: (
+          <PermissionRoute
+            allowedPermissions={["admin", "staff", "order_approval"]}
+          >
+            <OrderAdmin />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "support-chat",
+        element: (
+          <PermissionRoute
+            allowedPermissions={["admin", "staff", "customer_support"]}
+          >
+            <ChatSp />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "voucher",
+        element: (
+          <PermissionRoute allowedPermissions={["admin"]}>
+            <Voucher />
+          </PermissionRoute>
+        ),
+      },
       {
         path: "usercustom",
-        element: <UsersCustom />,
+        element: (
+          <PermissionRoute allowedPermissions={["admin"]}>
+            <UsersCustom />
+          </PermissionRoute>
+        ),
       },
       {
         path: "account",
-        element: <AccountAdmin />,
+        element: (
+          <PermissionRoute allowedPermissions={["admin"]}>
+            <AccountAdmin />
+          </PermissionRoute>
+        ),
       },
       {
         path: "usercustom/:id",
-        element: <EditCustom />,
+        element: (
+          <PermissionRoute allowedPermissions={["admin"]}>
+            <EditCustom />
+          </PermissionRoute>
+        ),
       },
       {
         path: "review",
-        element: <ProductReviewAdmin />,
+        element: (
+          <PermissionRoute allowedPermissions={["admin", "review", "support"]}>
+            <ProductReviewAdmin />
+          </PermissionRoute>
+        ),
       },
       {
         path: "add-voucher",
-        element: <AddVoucher />,
+        element: (
+          <PermissionRoute allowedPermissions={["admin"]}>
+            <AddVoucher />
+          </PermissionRoute>
+        ),
       },
-
       {
         path: "manage-store",
-        element: <ManageStore />,
+        element: (
+          <PermissionRoute allowedPermissions={["admin"]}>
+            <ManageStore />
+          </PermissionRoute>
+        ),
       },
     ],
   },

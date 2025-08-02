@@ -31,16 +31,12 @@ const UpdateSupplierForm = ({ openUpdate, setOpenUpdate, id, fetchData }) => {
     notes: "",
   });
 
-  console.log(id);
-
   const fetchDataSupplier = async () => {
     if (!id) return;
 
     setFetchLoading(true);
     try {
       const res = await findOneSupplierAPI(id);
-
-      console.log(res);
 
       if (res && res.data && res.data.EC === 0) {
         const supplier = res.data.data; // Assuming DT contains the supplier data

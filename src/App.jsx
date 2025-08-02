@@ -1,5 +1,3 @@
-"use client";
-
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { BsChatDots } from "react-icons/bs";
 import {
@@ -21,8 +19,6 @@ import Footer from "./components/Footer/Footer";
 import Message from "./components/Messages/Message";
 import { getMessagesList, UpdateIsReadAPI } from "./service/Message";
 import { getListProductsAPI } from "./service/ApiProduct";
-import VideoChatAdmin from "./components/VideoChatAdmin/VideoChatAdmin";
-import VideoChatUser from "./components/VideoCall/VideoCall";
 
 // Memoize các components con để tránh re-render
 const MemoizedHeader = memo(Header);
@@ -37,7 +33,7 @@ function App() {
   const [ListCart, setListCard] = useState([]);
   const [open, setOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const Navigate = useNavigate();
+  const navigate = useNavigate();
   const location = useLocation();
 
   // Memoize các giá trị computed
@@ -71,7 +67,6 @@ function App() {
 
   const CartListProductsUser = useCallback(async () => {
     if (!user?._id) {
-      console.log("User is not authenticated");
       return;
     }
     try {
@@ -128,9 +123,9 @@ function App() {
   }, [user?.role]);
 
   const handleAIClick = useCallback(() => {
-    Navigate("/ChatAi");
+    navigate("/ChatAi");
     setIsMenuOpen(false);
-  }, [Navigate]);
+  }, [navigate, user]);
 
   const fetchAPIMessasge = useCallback(async () => {
     if (!user?._id) return;
@@ -278,7 +273,7 @@ function App() {
                     <h1
                       className="text-lg font-bold text-center border-b-2  border-black"
                       onClick={() =>
-                        Navigate("category/unisex?currentPage=1&Category=Áo")
+                        navigate("category/unisex?currentPage=1&Category=Áo")
                       }
                     >
                       Áo

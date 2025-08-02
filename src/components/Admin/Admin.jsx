@@ -10,14 +10,15 @@ import {
   CloseOutlined,
 } from "@ant-design/icons";
 import { Avatar, Badge } from "antd";
-import { IoMdNotificationsOutline } from "react-icons/io";
-import { FiHome, FiUsers, FiShoppingBag } from "react-icons/fi";
-import { FaOpencart } from "react-icons/fa";
+
+import { FiUsers, FiShoppingBag } from "react-icons/fi";
+
 import { FaSquarePollVertical } from "react-icons/fa6";
 import { AiTwotoneAppstore } from "react-icons/ai";
-import { RiBillLine, RiAdminLine } from "react-icons/ri";
+import { RiAdminLine } from "react-icons/ri";
 import { FcFeedback } from "react-icons/fc";
 import { MdDashboard, MdCategory, MdInventory } from "react-icons/md";
+import { useSelector } from "react-redux";
 
 const menuItems = [
   {
@@ -81,7 +82,7 @@ const menuItems = [
     color: "text-yellow-500",
   },
   {
-    icon: <FcFeedback className="text-xl" />,
+    icon: <FcFeedback className="text-xl " />,
     label: "Đánh giá",
     to: "/admin/review",
     color: "text-gray-500",
@@ -90,6 +91,7 @@ const menuItems = [
 
 const Admin = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { user } = useSelector((state) => state.auth);
   const location = useLocation();
   const sidebarRef = useRef(null);
 
@@ -121,6 +123,12 @@ const Admin = () => {
       location.pathname === itemTo || location.pathname === `/admin/${itemTo}`
     );
   };
+
+  const checkIsorder_approval =
+    user?.role === "staff" && user?.permissions === " order_approval";
+
+  const checkIscustomer_support =
+    user?.role === "staff" && user?.permissions === " customer_support";
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">

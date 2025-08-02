@@ -62,10 +62,12 @@ const EditCustom = () => {
           height: data.height || "",
           weight: data.weight || "",
           phone: data.phone || "",
-          city: data.address.city || "",
-          district: data.address.district || "",
+          city: data.address && data.address.city ? data.address.city : "",
+          district:
+            data.address && data.address.district ? data.address.district : "",
+          ward: data.address && data.address.ward ? data.address.ward : "",
           dateOfBirth: data.dateOfBirth || "",
-          ward: data.address.ward || "",
+
           role: data.role || "customer",
           permissions: data.permissions || "",
           avatar: data.avatar || "",
@@ -82,7 +84,9 @@ const EditCustom = () => {
         );
         if (selectedDistrict) SetSeletectIdDistrict(selectedDistrict.id);
       }
-    } catch (error) {}
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const FetchDataProvince = async () => {
@@ -214,6 +218,9 @@ const EditCustom = () => {
       console.log(error);
     }
   };
+
+  console.log(formData);
+
   return (
     <div className="max-w-7xl mx-auto p-6">
       <Card
