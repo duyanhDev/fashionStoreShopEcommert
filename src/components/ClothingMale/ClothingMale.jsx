@@ -57,7 +57,7 @@ const ClothingMale = () => {
     (state) => state.filter
   );
 
-  // Parse URL parameters
+  // Parse URL parameters with safety checks
   const queryParams = new URLSearchParams(location.search);
   const careParams = queryParams.get("care") || "";
   const sizeParams = queryParams.get("size")?.split(",").filter(Boolean) || [];
@@ -65,11 +65,32 @@ const ClothingMale = () => {
   const viewParams = queryParams.get("view") || "";
   const savedSortPrice = queryParams.get("sortPrice") || "";
   const savedCategory = queryParams.get("Category") || "";
-  const savedCurrentPage = Number.parseInt(queryParams.get("currentPage")) || 1;
+
+  // Safer URL parameter parsing for current page
+  const savedCurrentPage = (() => {
+    const pageParam = queryParams.get("currentPage");
+    if (!pageParam) return 1;
+    const parsed = Number.parseInt(pageParam, 10);
+    return !isNaN(parsed) && parsed > 0 ? parsed : 1;
+  })();
+
   const savedSortDate = queryParams.get("sortDate") || "";
   const savedSortSold = queryParams.get("sortSold") || "";
-  const urlMinPrice = Number(queryParams.get("minPrice")) || undefined;
-  const urlMaxPrice = Number(queryParams.get("maxPrice")) || undefined;
+
+  // Safer URL parameter parsing for prices
+  const urlMinPrice = (() => {
+    const minParam = queryParams.get("minPrice");
+    if (!minParam) return undefined;
+    const parsed = Number(minParam);
+    return !isNaN(parsed) ? parsed : undefined;
+  })();
+
+  const urlMaxPrice = (() => {
+    const maxParam = queryParams.get("maxPrice");
+    if (!maxParam) return undefined;
+    const parsed = Number(maxParam);
+    return !isNaN(parsed) ? parsed : undefined;
+  })();
 
   // Fetch params function
   const getFetchParams = useCallback(() => {
@@ -114,11 +135,11 @@ const ClothingMale = () => {
       try {
         const res = await ListCategoryAPI();
         if (res && res.data) {
-          setListCategory(res.data.data);
+          setListCategory(res.data.data || []);
           const categoryFromURL = queryParams.get("Category");
-          if (categoryFromURL) {
+          if (categoryFromURL && res.data.data) {
             const foundCategory = res.data.data.find(
-              (cat) => cat.name === categoryFromURL
+              (cat) => cat && cat.name === categoryFromURL
             );
             if (foundCategory) setValueId(foundCategory._id);
           }
@@ -129,6 +150,7 @@ const ClothingMale = () => {
         }
       } catch (error) {
         console.error("Error fetching categories:", error);
+        setListCategory([]);
       }
     };
     fetchListCategoryAndInitialize();
@@ -161,9 +183,13 @@ const ClothingMale = () => {
     // window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // Safer formatPrice function
   const formatPrice = (price) => {
-    if (price === null || price === undefined || isNaN(price)) return "0đ";
-    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
+    if (price === null || price === undefined || isNaN(Number(price))) {
+      return "0đ";
+    }
+    const numPrice = Number(price);
+    return numPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
   };
 
   const marks = { 0: "0", 500000: "500K", 1000000: "1M" };
@@ -171,7 +197,7 @@ const ClothingMale = () => {
   const onChange = (e) => {
     const selectedValue = e.target.value;
     const selectedCategory = listCategory.find(
-      (category) => category._id === selectedValue
+      (category) => category && category._id === selectedValue
     );
     if (selectedCategory) {
       setValueId(selectedValue);
@@ -298,7 +324,9 @@ const ClothingMale = () => {
   };
 
   const handleDetails = (slug) => {
-    navigate(`/product/${slug}`);
+    if (slug) {
+      navigate(`/product/${slug}`);
+    }
   };
 
   const handelModelProductCart = (
@@ -348,20 +376,28 @@ const ClothingMale = () => {
     }
   };
 
+  // Safer fetchListWishList function
   const fetchListWishList = async () => {
+    if (!user?._id) return;
+
     try {
-      const res = await getWishlistAPI(user?._id);
-      if (res && res.data && res.data.EC === 0) {
+      const res = await getWishlistAPI(user._id);
+      if (res?.data?.EC === 0 && res.data.data?.products) {
         setWishList(res.data.data.products);
+      } else {
+        setWishList([]);
       }
     } catch (error) {
-      throw new Error("Lỗi lấy danh sách yêu thích");
+      console.error("Error fetching wishlist:", error);
+      setWishList([]);
     }
   };
 
   const handleRemoveWishList = async (productId) => {
+    if (!user?._id) return;
+
     try {
-      const res = await RemoveToWishListAPI(user?._id, productId);
+      const res = await RemoveToWishListAPI(user._id, productId);
 
       if (res && res.data && res.data.EC === 0) {
         api["success"]({
@@ -376,11 +412,20 @@ const ClothingMale = () => {
       });
     }
   };
+
   useEffect(() => {
     fetchListWishList();
   }, [user?._id]);
 
-  const isProductInWishlist = WishList?.map((item) => item.product._id);
+  // Safer wishlist check function
+  const isInWishlist = (productId) => {
+    if (!WishList || !Array.isArray(WishList) || !productId) return false;
+    return WishList.some((item) => item?.product?._id === productId);
+  };
+
+  // Safer wishlist mapping
+  const isProductInWishlist =
+    WishList?.map((item) => item?.product?._id).filter(Boolean) || [];
 
   // Filter Component
   const FilterContent = () => (
@@ -397,15 +442,18 @@ const ClothingMale = () => {
         <Radio.Group onChange={onChange} value={valueId} className="w-full">
           <Space direction="vertical" className="w-full">
             {listCategory.length > 0 &&
-              listCategory.map((category) => (
-                <Radio
-                  key={category._id}
-                  value={category._id}
-                  className="text-gray-700 hover:text-green-600"
-                >
-                  {category.name}
-                </Radio>
-              ))}
+              listCategory.map((category) => {
+                if (!category || !category._id) return null;
+                return (
+                  <Radio
+                    key={category._id}
+                    value={category._id}
+                    className="text-gray-700 hover:text-green-600"
+                  >
+                    {category.name || "Unnamed Category"}
+                  </Radio>
+                );
+              })}
           </Space>
         </Radio.Group>
       </div>
@@ -421,9 +469,10 @@ const ClothingMale = () => {
           <Space direction="vertical" className="w-full">
             {products &&
               products
+                .filter((item) => item && item.care)
                 .filter(
                   (item, index, self) =>
-                    index === self.findIndex((t) => t.care === item.care)
+                    index === self.findIndex((t) => t?.care === item?.care)
                 )
                 .map((item) => (
                   <Radio
@@ -528,15 +577,21 @@ const ClothingMale = () => {
     </div>
   );
 
+  // Safer formatNumberToShort function
   function formatNumberToShort(num) {
-    if (num >= 1_000_000_000) {
-      return (num / 1_000_000_000).toFixed(1).replace(".", ",") + "b";
-    } else if (num >= 1_000_000) {
-      return (num / 1_000_000).toFixed(1).replace(".", ",") + "m";
-    } else if (num >= 1_000) {
-      return (num / 1_000).toFixed(1).replace(".", ",") + "k";
+    if (num === null || num === undefined || isNaN(Number(num))) {
+      return "0";
+    }
+
+    const numValue = Number(num);
+    if (numValue >= 1_000_000_000) {
+      return (numValue / 1_000_000_000).toFixed(1).replace(".", ",") + "b";
+    } else if (numValue >= 1_000_000) {
+      return (numValue / 1_000_000).toFixed(1).replace(".", ",") + "m";
+    } else if (numValue >= 1_000) {
+      return (numValue / 1_000).toFixed(1).replace(".", ",") + "k";
     } else {
-      return num.toString();
+      return numValue.toString();
     }
   }
 
@@ -662,130 +717,140 @@ const ClothingMale = () => {
               {loading ? (
                 [...Array(12)].map((_, index) => <SkeletonCard key={index} />)
               ) : products && products.length > 0 ? (
-                products.map((product) => (
-                  <div
-                    key={product._id}
-                    className="clothing-male-card bg-white rounded-2xl shadow-lg overflow-hidden group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-                  >
-                    <div className="relative">
-                      <img
-                        className="clothing-male-image w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        src={
-                          product.variants[0]?.images[0]?.url ||
-                          "/placeholder.svg?height=250&width=350"
-                        }
-                        alt={product.name}
-                      />
-                      {product.discount > 0 && (
-                        <span className="absolute top-3 right-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                          -{product.discount}%
-                        </span>
-                      )}
-                      <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        {isProductInWishlist.includes(product._id) ? (
-                          <>
+                products
+                  .map((product) => {
+                    // Add safety checks for product data
+                    if (!product || !product._id) return null;
+
+                    return (
+                      <div
+                        key={product._id}
+                        className="clothing-male-card bg-white rounded-2xl shadow-lg overflow-hidden group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                      >
+                        <div className="relative">
+                          <img
+                            className="clothing-male-image w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            src={
+                              product.variants?.[0]?.images?.[0]?.url ||
+                              "/placeholder.svg?height=250&width=350"
+                            }
+                            alt={product.name || "Product"}
+                          />
+                          {product.discount && product.discount > 0 && (
+                            <span className="absolute top-3 right-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                              -{product.discount}%
+                            </span>
+                          )}
+                          <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            {isInWishlist(product._id) ? (
+                              <button
+                                className="bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
+                                onClick={() =>
+                                  handleRemoveWishList(product._id)
+                                }
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-4 w-4 text-green-600"
+                                  fill="currentColor"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                                  />
+                                </svg>
+                              </button>
+                            ) : (
+                              <button
+                                className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
+                                onClick={() => handlAddWishList(product._id)}
+                              >
+                                <svg
+                                  className="w-4 h-4 text-gray-600"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                                  />
+                                </svg>
+                              </button>
+                            )}
+
                             <button
-                              className="bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
-                              onClick={() => handleRemoveWishList(product._id)}
+                              onClick={() =>
+                                handelModelProductCart(
+                                  product._id,
+                                  product.variants,
+                                  product.price,
+                                  product.discountedPrice,
+                                  product.name,
+                                  product.discount
+                                )
+                              }
+                              className="bg-green-500 hover:bg-green-600 p-2 rounded-full shadow-lg transition-colors"
                             >
                               <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4 text-green-600"
-                                fill="currentColor"
-                                viewBox="0 0 24 24"
+                                className="w-4 h-4 text-white"
+                                fill="none"
                                 stroke="currentColor"
+                                viewBox="0 0 24 24"
                               >
                                 <path
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
                                   strokeWidth={2}
-                                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
                                 />
                               </svg>
                             </button>
-                          </>
-                        ) : (
-                          <button
-                            className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
-                            onClick={() => handlAddWishList(product._id)}
-                          >
-                            <svg
-                              className="w-4 h-4 text-gray-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                              />
-                            </svg>
-                          </button>
-                        )}
-
-                        <button
-                          onClick={() =>
-                            handelModelProductCart(
-                              product._id,
-                              product.variants,
-                              product.price,
-                              product.discountedPrice,
-                              product.name,
-                              product.discount
-                            )
-                          }
-                          className="bg-green-500 hover:bg-green-600 p-2 rounded-full shadow-lg transition-colors"
+                          </div>
+                        </div>
+                        <div
+                          className="clothing-male-content"
+                          onClick={() => handleDetails(product.slug)}
                         >
-                          <svg
-                            className="w-4 h-4 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                    <div
-                      className="clothing-male-content"
-                      onClick={() => handleDetails(product.slug)}
-                    >
-                      <p className="text-sm text-green-600 uppercase tracking-wider font-medium mb-2">
-                        {product.brand}
-                      </p>
-                      <h3 className="clothing-male-title font-semibold text-gray-900 line-clamp-2 mb-3 cursor-pointer hover:text-green-600">
-                        {product.name}
-                      </h3>
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <span className="clothing-male-price font-bold text-green-600">
-                            {formatPrice(product.discountedPrice)}
-                          </span>
-                          {product.discount > 0 && (
-                            <span className="clothing-male-original-price text-gray-500 line-through ml-2">
-                              {formatPrice(product.price)}
+                          <p className="text-sm text-green-600 uppercase tracking-wider font-medium mb-2">
+                            {product.brand || "Unknown Brand"}
+                          </p>
+                          <h3 className="clothing-male-title font-semibold text-gray-900 line-clamp-2 mb-3 cursor-pointer hover:text-green-600">
+                            {product.name || "Unnamed Product"}
+                          </h3>
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <span className="clothing-male-price font-bold text-green-600">
+                                {formatPrice(
+                                  product.discountedPrice || product.price || 0
+                                )}
+                              </span>
+                              {product.discount && product.discount > 0 && (
+                                <span className="clothing-male-original-price text-gray-500 line-through ml-2">
+                                  {formatPrice(product.price || 0)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className=" flex items-center justify-between">
+                            <span className="italic">
+                              {formatNumberToShort(product.view || 0)} lượt xem
                             </span>
-                          )}
+                            <span className="italic">
+                              Đã bán {product.sold || 0}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <div className=" flex items-center justify-between">
-                        <span className="italic">
-                          {" "}
-                          {formatNumberToShort(product.view)} lượt xem
-                        </span>
-                        <span className="italic">Đã bán {product.sold}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))
+                    );
+                  })
+                  .filter(Boolean) // Remove any null entries
               ) : (
                 <div className="col-span-full flex justify-center items-center h-64 bg-white rounded-2xl shadow-lg">
                   <div className="text-center">
