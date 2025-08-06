@@ -312,66 +312,135 @@ const Home = () => {
             BẠN ĐANG TÌM KIẾM?
           </h1>
         </div>
-
         <div className="dosin_home_hc">
-          {[
-            {
-              img: Aokhoac,
-              title: "ÁO KHOÁC",
-              desc: "Áo khoác thời trang Nam/Nữ",
-            },
-            {
-              img: Ao,
-              title: "ĐỒ NAM",
-              desc: "Áo thun, sơ mi, quần dài, sort...",
-            },
-            {
-              img: Quan,
-              title: "ĐỒ NỮ",
-              desc: "Áo quần, chân váy, đầm, yếm...",
-            },
-            {
-              img: Unisex,
-              title: "ĐỒ UNISEX",
-              desc: "Áo thun, sơ mi, áo khoác UNISEX",
-            },
-            {
-              img: Phukien,
-              title: "PHỤ KIỆN",
-              desc: "Balo, túi xách, nón, thắt lưng, ví...",
-            },
-            {
-              img: logo,
-              title: "#DOSIN",
-              desc: "Sản phẩm được TOTODAY đề xuất",
-            },
-          ].map((item, index) => (
-            <div
-              key={index}
-              className="doisin_hc_item fade-in"
-              data-aos="zoom-in-up"
-              data-aos-delay={index * 100}
-              tabIndex={0}
-              role="button"
-              aria-label={`Xem ${item.title}`}
+          {/* ÁO KHOÁC */}
+          <div
+            className="doisin_hc_item fade-in"
+            data-aos="zoom-in-up"
+            data-aos-delay="0"
+            tabIndex={0}
+            role="button"
+            aria-label="Xem ÁO KHOÁC"
+          >
+            <Link
+              className="hc_item"
+              to="/unisex?Category=Áo+Khoác&currentPage=1"
             >
-              <Link
-                className="hc_item"
-                to={`/category/${item.title.toLowerCase()}`}
-              >
-                <img
-                  src={item.img || "/placeholder.svg"}
-                  alt={item.title}
-                  loading="lazy"
-                  className="m-auto"
-                />
-                <span>
-                  <span>{item.title}</span>
-                  <span>{item.desc}</span>
-                </span>
-              </Link>
-            </div>
-          ))}
+              <img
+                src={Aokhoac}
+                alt="ÁO KHOÁC"
+                loading="lazy"
+                className="m-auto"
+              />
+              <span>
+                <span>ÁO KHOÁC</span>
+                <span>Áo khoác thời trang Nam/Nữ</span>
+              </span>
+            </Link>
+          </div>
+
+          {/* ĐỒ NAM */}
+          <div
+            className="doisin_hc_item fade-in"
+            data-aos="zoom-in-up"
+            data-aos-delay="100"
+            tabIndex={0}
+            role="button"
+            aria-label="Xem ĐỒ NAM"
+          >
+            <Link className="hc_item" to="/male">
+              <img src={Ao} alt="ĐỒ NAM" loading="lazy" className="m-auto" />
+              <span>
+                <span>ĐỒ NAM</span>
+                <span>Áo thun, sơ mi, quần dài, sort...</span>
+              </span>
+            </Link>
+          </div>
+
+          {/* ĐỒ NỮ */}
+          <div
+            className="doisin_hc_item fade-in"
+            data-aos="zoom-in-up"
+            data-aos-delay="200"
+            tabIndex={0}
+            role="button"
+            aria-label="Xem ĐỒ NỮ"
+          >
+            <Link className="hc_item" to="/female">
+              <img src={Quan} alt="ĐỒ NỮ" loading="lazy" className="m-auto" />
+              <span>
+                <span>ĐỒ NỮ</span>
+                <span>Áo quần, chân váy, đầm, yếm...</span>
+              </span>
+            </Link>
+          </div>
+
+          {/* ĐỒ UNISEX */}
+          <div
+            className="doisin_hc_item fade-in"
+            data-aos="zoom-in-up"
+            data-aos-delay="300"
+            tabIndex={0}
+            role="button"
+            aria-label="Xem ĐỒ UNISEX"
+          >
+            <Link className="hc_item" to="/unisex">
+              <img
+                src={Unisex}
+                alt="ĐỒ UNISEX"
+                loading="lazy"
+                className="m-auto"
+              />
+              <span>
+                <span>ĐỒ UNISEX</span>
+                <span>Áo thun, sơ mi, áo khoác UNISEX</span>
+              </span>
+            </Link>
+          </div>
+
+          {/* PHỤ KIỆN */}
+          <div
+            className="doisin_hc_item fade-in"
+            data-aos="zoom-in-up"
+            data-aos-delay="400"
+            tabIndex={0}
+            role="button"
+            aria-label="Xem PHỤ KIỆN"
+          >
+            <Link
+              className="hc_item"
+              to="/unisex?Category=Phụ+Kiện&currentPage=1"
+            >
+              <img
+                src={Phukien}
+                alt="PHỤ KIỆN"
+                loading="lazy"
+                className="m-auto"
+              />
+              <span>
+                <span>PHỤ KIỆN</span>
+                <span>Balo, túi xách, nón, thắt lưng, ví...</span>
+              </span>
+            </Link>
+          </div>
+
+          {/* #DOSIN */}
+          <div
+            className="doisin_hc_item fade-in"
+            data-aos="zoom-in-up"
+            data-aos-delay="500"
+            tabIndex={0}
+            role="button"
+            aria-label="Xem #DOSIN"
+          >
+            <Link className="hc_item" to="/dosin">
+              <img src={logo} alt="#DOSIN" loading="lazy" className="m-auto" />
+              <span>
+                <span>#DOSIN</span>
+                <span>Sản phẩm được TOTODAY đề xuất</span>
+              </span>
+            </Link>
+          </div>
         </div>
 
         {/* Services Section */}

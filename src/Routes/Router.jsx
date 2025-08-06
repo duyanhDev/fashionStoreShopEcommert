@@ -30,11 +30,13 @@ import FavoritesList from "../components/FavoritesList/FavoritesList";
 import ProductReviewAdmin from "../components/ProductReviewAdmin/ProductReviewAdmin";
 import LoginForm from "../components/Login/Login";
 import RegisterForm from "../components/Register/Register";
+import GeminiBlogGenerator from "../components/GeminiBlogGenerator/GeminiBlogGenerator";
 import AdminPostCreator from "../components/AdminPostCreator/AdminPostCreator";
 import AccountAdmin from "../components/AccountAdmin/AccountAdmin";
 import AddVoucher from "../components/AddVoucher/AddVoucher";
 import ManageStore from "../components/ManageStore/ManageStore";
 import PermissionRoute from "../PermissionRoute/PermissionRoute ";
+import AdminAccountManagement from "../components/AdminAccountManagement/AdminAccountManagement";
 
 export const RouterLayout = [
   {
@@ -71,7 +73,7 @@ export const RouterLayout = [
     element: <BotChatAI />,
   },
   {
-    path: "/category/:gender",
+    path: "/:gender",
     element: <ClothingMale />,
   },
   {
@@ -122,6 +124,14 @@ export const RouterAdmin = [
         element: (
           <PermissionRoute allowedPermissions={["admin"]}>
             <Products />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "adminAccountManagement",
+        element: (
+          <PermissionRoute allowedPermissions={["admin"]}>
+            <AdminAccountManagement />
           </PermissionRoute>
         ),
       },

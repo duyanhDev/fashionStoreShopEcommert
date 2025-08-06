@@ -117,6 +117,7 @@ const Details = () => {
         setSize(SizeMap || []);
         SetcolorCart(res.data.data.variants[0]?.color || "");
         setSelectedColor(res.data.data.variants[0]?.color || "");
+        SetquantityProduct(res.data.data.sold || 0);
       }
     } catch (error) {
       console.log(error);
@@ -571,7 +572,10 @@ const Details = () => {
               <span className="text-pink-gradient uppercase">{brand}</span>
               <div>
                 <h1 className="text-[#484848] text-base">{name}</h1>
-                <h1 className="text-[#484848] text-base">{description}</h1>
+                <div
+                  className="text-[#484848] text-base"
+                  dangerouslySetInnerHTML={{ __html: description }}
+                />
               </div>
             </div>
           </div>

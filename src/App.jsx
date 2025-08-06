@@ -264,7 +264,7 @@ function App() {
           <ul className="flex gap-10 lg:mt-3">
             {/* Navigation items - memoized để tránh re-render */}
             <li className="">
-              <Link to="/category/unisex" className="">
+              <Link to="/unisex" className="">
                 Sản phẩm
               </Link>
               <div className="absolute mt-3 w-full hover_item m-auto flex  ">
@@ -273,7 +273,7 @@ function App() {
                     <h1
                       className="text-lg font-bold text-center border-b-2  border-black"
                       onClick={() =>
-                        navigate("category/unisex?currentPage=1&Category=Áo")
+                        navigate("/unisex?currentPage=1&Category=Áo")
                       }
                     >
                       Áo
@@ -406,7 +406,7 @@ function App() {
               </div>
             </li>
             <li className="">
-              <Link to={"category/male"}>Nam</Link>
+              <Link to={"/male"}>Nam</Link>
               <div className="absolute mt-3 w-full hover_item m-auto flex  ">
                 <div className="flex flex-1 justify-between  border-r-2  border-black short_fitter ">
                   <div className="ml-4 ">
@@ -545,13 +545,10 @@ function App() {
               </div>
             </li>
             <li className="">
-              <Link to="category/female">Nữ</Link>
+              <Link to="/female">Nữ</Link>
             </li>
             <li>
-              <Link
-                to="category/unisex?Category=Phụ+Kiện&currentPage=1"
-                target="_top"
-              >
+              <Link to="/unisex?Category=Phụ+Kiện&currentPage=1" target="_top">
                 Phụ kiện
               </Link>
             </li>
