@@ -1,10 +1,16 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
-import "./Ranking.css";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
-  DollarOutlined,
-  CrownOutlined,
-  TrophyOutlined,
-} from "@ant-design/icons";
+  Crown,
+  Trophy,
+  Medal,
+  DollarSign,
+  Users,
+  TrendingUp,
+  Star,
+  Sparkles,
+  Award,
+  Zap,
+} from "lucide-react";
 import { UserAuth } from "../../service/Auth";
 
 const Ranking = () => {
@@ -18,56 +24,54 @@ const Ranking = () => {
   const getRankStyles = (index) => {
     const styles = [
       {
-        bg: "bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600",
-        border: "border-yellow-300",
-        shadow: "shadow-yellow-200",
-        text: "text-yellow-900",
-        glow: "shadow-2xl shadow-yellow-400/50",
+        bg: "from-yellow-400 via-yellow-500 to-amber-500",
+        text: "text-yellow-100",
+        border: "border-yellow-300/50",
+        glow: "shadow-2xl shadow-yellow-500/40",
+        particle: "bg-yellow-300",
       },
       {
-        bg: "bg-gradient-to-r from-gray-300 via-gray-400 to-gray-500",
-        border: "border-gray-300",
-        shadow: "shadow-gray-200",
-        text: "text-gray-800",
-        glow: "shadow-2xl shadow-gray-400/50",
+        bg: "from-slate-400 via-slate-500 to-gray-600",
+        text: "text-slate-100",
+        border: "border-slate-300/50",
+        glow: "shadow-2xl shadow-slate-500/40",
+        particle: "bg-slate-300",
       },
       {
-        bg: "bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800",
-        border: "border-amber-400",
-        shadow: "shadow-amber-200",
+        bg: "from-amber-600 via-orange-600 to-amber-700",
         text: "text-amber-100",
-        glow: "shadow-2xl shadow-amber-600/50",
+        border: "border-amber-300/50",
+        glow: "shadow-2xl shadow-amber-600/40",
+        particle: "bg-amber-400",
       },
     ];
     return (
       styles[index] || {
-        bg: "bg-gradient-to-r from-blue-100 to-blue-200",
-        border: "border-blue-200",
-        shadow: "shadow-blue-100",
-        text: "text-blue-800",
-        glow: "shadow-lg shadow-blue-200/30",
+        bg: "from-blue-500 via-indigo-500 to-purple-600",
+        text: "text-blue-100",
+        border: "border-blue-300/50",
+        glow: "shadow-xl shadow-blue-500/30",
+        particle: "bg-blue-400",
       }
     );
   };
 
   const getRankIcon = (index) => {
-    const iconClass = "text-2xl drop-shadow-lg";
     switch (index) {
       case 0:
         return (
-          <CrownOutlined
-            className={`${iconClass} text-yellow-600 animate-pulse`}
-          />
+          <Crown className="w-8 h-8 text-yellow-300 drop-shadow-lg animate-bounce" />
         );
       case 1:
-        return <TrophyOutlined className={`${iconClass} text-gray-600`} />;
+        return <Trophy className="w-7 h-7 text-slate-300 drop-shadow-lg" />;
       case 2:
-        return <TrophyOutlined className={`${iconClass} text-amber-600`} />;
+        return <Medal className="w-7 h-7 text-amber-400 drop-shadow-lg" />;
       default:
-        return <TrophyOutlined className={`${iconClass} text-blue-500`} />;
+        return <Award className="w-6 h-6 text-indigo-400 drop-shadow-lg" />;
     }
   };
 
+  // Simulated API call
   const fetchDataUsers = useCallback(async () => {
     let res = await UserAuth();
     if (res?.data?.EC === 0) {
@@ -85,219 +89,425 @@ const Ranking = () => {
       .sort((a, b) => (b.totalPrice || 0) - (a.totalPrice || 0));
   }, [users]);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 p-6 mt-28">
-      <div className="max-w-4xl mx-auto">
-        {/* Header Section */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full mb-6 shadow-2xl shadow-purple-500/30">
-            <DollarOutlined className="text-4xl text-white animate-pulse" />
-          </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
-            🏆 Bảng Xếp Hạng Chi Tiêu 🏆
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Những người dẫn đầu trong tháng này
-          </p>
-        </div>
-
-        {/* Top 3 Podium */}
-        {/* Top 3 Podium */}
-        {sortedRanking.length >= 3 && (
-          <div className="grid grid-cols-3 gap-4 mb-12 max-w-3xl mx-auto">
-            {[1, 0, 2].map((position, displayIndex) => {
-              const user = sortedRanking[position];
-              const rankStyle = getRankStyles(position);
-              const heights = ["h-32", "h-40", "h-28"]; // Thấp - Cao - Trung bình
-              return (
-                <div
-                  key={user._id}
-                  className={`relative ${heights[displayIndex]} ${rankStyle.glow} rounded-2xl ${rankStyle.bg} ${rankStyle.border} border-2 flex flex-col items-center justify-end p-4 transform hover:scale-105 transition-all duration-300 cursor-pointer overflow-hidden`}
-                >
-                  {/* Background decoration */}
-                  <div className="absolute inset-0 opacity-20">
-                    <div className="absolute top-2 left-2 w-4 h-4 bg-white rounded-full animate-ping"></div>
-                    <div
-                      className="absolute top-4 right-3 w-3 h-3 bg-white rounded-full animate-ping"
-                      style={{ animationDelay: "0.5s" }}
-                    ></div>
-                    <div className="absolute bottom-8 left-3 w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                  </div>
-
-                  {/* Rank number badge */}
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-8 h-8 bg-white rounded-full flex items-center justify-center font-bold text-lg shadow-lg border-2 border-current">
-                    #{position + 1}
-                  </div>
-
-                  {/* User avatar */}
-                  <div className="relative mb-3">
-                    <img
-                      src={user.avatar}
-                      alt={user.name}
-                      className="w-16 h-16 rounded-full border-4 border-white shadow-xl object-cover"
-                    />
-                    <div className="absolute -top-2 -right-2">
-                      {getRankIcon(position)}
-                    </div>
-                  </div>
-
-                  {/* User info */}
-                  <h3 className="font-bold text-white text-center text-sm mb-1 drop-shadow-lg">
-                    {user.name}
-                  </h3>
-                  <p className="text-white/90 text-xs font-semibold drop-shadow">
-                    {formatPrice(user.totalPrice)}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Detailed Ranking List */}
-        <div className="main_ranking bg-white rounded-3xl shadow-2xl p-8 backdrop-blur-sm bg-white/95">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-              <DollarOutlined className="text-green-500 text-3xl mr-3" />
-              Bảng Xếp Hạng Chi Tiết
-            </h2>
-            <div className="text-sm text-gray-500 bg-gray-100 px-4 py-2 rounded-full">
-              {sortedRanking.length} thành viên
-            </div>
-          </div>
-
-          <div className="space-y-4 top_ranking">
-            {sortedRanking.map((user, index) => {
-              const rankStyle = getRankStyles(index);
-
-              return (
-                <div
-                  key={user._id}
-                  className={`relative group flex items-center p-6 bg-gradient-to-r from-white to-gray-50 border-2 ${
-                    rankStyle.border
-                  } rounded-2xl hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 ${
-                    index < 3 ? rankStyle.glow : "hover:shadow-lg"
-                  }`}
-                >
-                  {/* Rank number with special styling for top 3 */}
-                  <div
-                    className={`flex items-center justify-center w-12 h-12 rounded-xl mr-6 ${
-                      index < 3
-                        ? rankStyle.bg + " text-white shadow-lg"
-                        : "bg-gray-100 text-gray-700"
-                    } font-bold text-lg transition-all duration-300 group-hover:scale-110`}
-                  >
-                    #{index + 1}
-                  </div>
-
-                  {/* Rank icon */}
-                  <div className="mr-4 transform group-hover:scale-110 transition-transform duration-300">
-                    {getRankIcon(index)}
-                  </div>
-
-                  {/* User avatar with online indicator */}
-                  <div className="relative mr-6">
-                    <img
-                      src={user.avatar}
-                      alt={user.name}
-                      className={`w-16 h-16 rounded-full border-4 ${
-                        index < 3 ? "border-white shadow-lg" : "border-gray-200"
-                      } object-cover transition-all duration-300 group-hover:scale-105`}
-                    />
-                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-400 border-2 border-white rounded-full animate-pulse"></div>
-                  </div>
-
-                  {/* User details */}
-                  <div className="flex-grow">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-bold text-xl text-gray-800 group-hover:text-purple-600 transition-colors duration-300">
-                        {user.name}
-                      </h3>
-                    </div>
-
-                    <div className="text-sm">
-                      <span className="text-gray-500 block">Tổng chi tiêu</span>
-                      <span className="font-semibold text-green-600 text-lg">
-                        {formatPrice(user.totalPrice)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Achievement badges for top performers */}
-                  {index < 3 && (
-                    <div className="absolute top-4 right-4 flex space-x-1">
-                      <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-                      <div
-                        className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"
-                        style={{ animationDelay: "0.5s" }}
-                      ></div>
-                      <div
-                        className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"
-                        style={{ animationDelay: "1s" }}
-                      ></div>
-                    </div>
-                  )}
-
-                  {/* Progress bar */}
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200 rounded-b-2xl overflow-hidden">
-                    <div
-                      className={`h-full ${
-                        index < 3
-                          ? rankStyle.bg
-                          : "bg-gradient-to-r from-blue-400 to-purple-500"
-                      } transition-all duration-1000 ease-out`}
-                      style={{
-                        width:
-                          sortedRanking.length > 0
-                            ? `${Math.min(
-                                (user.totalPrice /
-                                  sortedRanking[0].totalPrice) *
-                                  100,
-                                100
-                              )}%`
-                            : "0%",
-                      }}
-                    ></div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Stats Footer */}
-        {sortedRanking.length > 0 && (
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-2xl p-6 shadow-lg text-center transform hover:scale-105 transition-all duration-300">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <DollarOutlined className="text-xl text-white" />
-              </div>
-              <h3 className="font-bold text-2xl text-gray-800 mb-2">
-                {formatPrice(
-                  sortedRanking.reduce(
-                    (sum, user) => sum + (user.totalPrice || 0),
-                    0
-                  )
-                )}
-              </h3>
-              <p className="text-gray-600">
-                Tổng chi tiêu của tất cả thành viên
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl p-6 shadow-lg text-center transform hover:scale-105 transition-all duration-300">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <TrophyOutlined className="text-xl text-white" />
-              </div>
-              <h3 className="font-bold text-2xl text-gray-800 mb-2">
-                {sortedRanking.length}
-              </h3>
-              <p className="text-gray-600">Tổng số thành viên tham gia</p>
-            </div>
-          </div>
-        )}
-      </div>
+  const FloatingParticles = ({ count = 6, className = "bg-white" }) => (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          className={`absolute w-1 h-1 ${className} rounded-full opacity-60`}
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animation: `float ${3 + Math.random() * 2}s ease-in-out infinite`,
+            animationDelay: `${Math.random() * 2}s`,
+          }}
+        />
+      ))}
     </div>
+  );
+
+  return (
+    <>
+      <style jsx>{`
+        @keyframes float {
+          0%,
+          100% {
+            transform: translateY(0px) rotate(0deg);
+            opacity: 0.6;
+          }
+          50% {
+            transform: translateY(-10px) rotate(180deg);
+            opacity: 1;
+          }
+        }
+
+        @keyframes pulse-glow {
+          0%,
+          100% {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+          }
+          50% {
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.8),
+              0 0 40px rgba(59, 130, 246, 0.6);
+          }
+        }
+
+        @keyframes shimmer {
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(100%);
+          }
+        }
+
+        .pulse-glow {
+          animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        .shimmer::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.2),
+            transparent
+          );
+          animation: shimmer 2s infinite;
+        }
+      `}</style>
+
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+        {/* Animated Background */}
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
+          <div
+            className="absolute bottom-20 right-10 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
+            style={{ animationDelay: "1s" }}
+          ></div>
+          <div
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl animate-pulse"
+            style={{ animationDelay: "2s" }}
+          ></div>
+        </div>
+
+        <div className="relative z-10 p-4 sm:p-6 lg:p-8 pt-24">
+          <div className="max-w-7xl mx-auto">
+            {/* Header Section */}
+            <div className="text-center mb-12 lg:mb-16">
+              <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full mb-6 shadow-2xl shadow-purple-500/30 pulse-glow">
+                <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 text-white animate-pulse" />
+              </div>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black bg-gradient-to-r from-yellow-400 via-purple-500 to-pink-500 bg-clip-text text-transparent mb-4 tracking-tight">
+                🏆 BẢNG XẾP HẠNG ELITE 🏆
+              </h1>
+              <p className="text-gray-300 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed">
+                Những người dẫn đầu trong cuộc đua chi tiêu tháng này
+              </p>
+              <div className="flex items-center justify-center gap-4 mt-6">
+                <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full">
+                  <Users className="w-4 h-4 text-blue-400" />
+                  <span className="text-white text-sm">
+                    {sortedRanking.length} Thành viên
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full">
+                  <TrendingUp className="w-4 h-4 text-green-400" />
+                  <span className="text-white text-sm">Cập nhật realtime</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Top 3 Podium */}
+            {sortedRanking.length >= 3 && (
+              <div className="mb-16 lg:mb-20">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
+                  {/* Responsive podium order: 2nd, 1st, 3rd */}
+                  {[1, 0, 2].map((position, displayIndex) => {
+                    const user = sortedRanking[position];
+                    const rankStyle = getRankStyles(position);
+                    const heights = ["lg:h-32", "lg:h-48", "lg:h-28"];
+                    const orders = [
+                      "order-2 lg:order-1",
+                      "order-1 lg:order-2",
+                      "order-3 lg:order-3",
+                    ];
+
+                    return (
+                      <div
+                        key={user._id}
+                        className={`${orders[displayIndex]} relative`}
+                      >
+                        <div
+                          className={`
+                          relative ${heights[displayIndex]} h-40 lg:h-auto
+                          bg-gradient-to-br ${rankStyle.bg} 
+                          ${rankStyle.border} border-2 ${rankStyle.glow}
+                          rounded-3xl flex flex-col items-center justify-end 
+                          p-4 lg:p-6 transform hover:scale-105 transition-all duration-500 
+                          cursor-pointer overflow-hidden group shimmer
+                        `}
+                        >
+                          <FloatingParticles
+                            count={8}
+                            className={rankStyle.particle}
+                          />
+
+                          {/* Rank badge */}
+                          <div
+                            className={`
+                            absolute -top-4 left-1/2 transform -translate-x-1/2 
+                            w-10 h-10 lg:w-12 lg:h-12 bg-white rounded-full 
+                            flex items-center justify-center font-black text-lg lg:text-xl 
+                            shadow-2xl border-4 ${rankStyle.border}
+                            ${position === 0 ? "animate-pulse" : ""}
+                          `}
+                          >
+                            #{position + 1}
+                          </div>
+
+                          {/* Crown for first place */}
+                          {position === 0 && (
+                            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
+                              <Crown className="w-8 h-8 lg:w-10 lg:h-10 text-yellow-400 animate-bounce" />
+                            </div>
+                          )}
+
+                          {/* User avatar */}
+                          <div className="relative mb-4 lg:mb-6">
+                            <div className="relative">
+                              <img
+                                src={user.avatar}
+                                alt={user.name}
+                                className={`
+                                  w-16 h-16 lg:w-20 lg:h-20 rounded-full border-4 border-white 
+                                  shadow-2xl object-cover transform transition-transform duration-300 
+                                  group-hover:scale-110
+                                  ${
+                                    position === 0
+                                      ? "ring-4 ring-yellow-400/50"
+                                      : ""
+                                  }
+                                `}
+                              />
+                              <div className="absolute -bottom-1 -right-1 w-5 h-5 lg:w-6 lg:h-6 bg-green-400 border-2 border-white rounded-full animate-pulse"></div>
+                            </div>
+                            <div className="absolute -top-2 -right-2">
+                              {getRankIcon(position)}
+                            </div>
+                          </div>
+
+                          {/* User info */}
+                          <div className="text-center mb-2">
+                            <h3
+                              className={`font-bold ${rankStyle.text} text-sm lg:text-base mb-1 drop-shadow-lg tracking-wide`}
+                            >
+                              {user.name}
+                            </h3>
+                            <p className="text-white/90 text-xs lg:text-sm font-bold drop-shadow">
+                              {formatPrice(user.totalPrice)}
+                            </p>
+                          </div>
+
+                          {/* Special effects for top 3 */}
+                          <div className="absolute top-2 right-2 flex flex-col space-y-1">
+                            {Array.from({ length: 3 - position }).map(
+                              (_, i) => (
+                                <Star
+                                  key={i}
+                                  className="w-3 h-3 lg:w-4 lg:h-4 text-yellow-300 animate-pulse"
+                                  style={{ animationDelay: `${i * 0.2}s` }}
+                                />
+                              )
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Detailed Ranking List */}
+            <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-4 sm:p-6 lg:p-8 border border-white/10 shadow-2xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+                <h2 className="text-2xl lg:text-3xl font-bold text-white flex items-center gap-3">
+                  <DollarSign className="text-green-400 w-8 h-8" />
+                  Bảng Xếp Hạng Chi Tiết
+                </h2>
+                <div className="flex items-center gap-4">
+                  <div className="text-sm text-gray-300 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
+                    {sortedRanking.length} thành viên
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3 lg:space-y-4">
+                {sortedRanking.map((user, index) => {
+                  const rankStyle = getRankStyles(index);
+                  const isTopThree = index < 3;
+
+                  return (
+                    <div
+                      key={user._id}
+                      className={`
+                        relative group flex flex-col sm:flex-row items-start sm:items-center 
+                        p-4 lg:p-6 bg-gradient-to-r from-white/10 to-white/5 
+                        border border-white/20 rounded-2xl backdrop-blur-sm
+                        hover:bg-white/20 transition-all duration-500 
+                        transform hover:-translate-y-1 hover:shadow-2xl
+                        ${
+                          isTopThree
+                            ? rankStyle.glow + " " + rankStyle.border
+                            : "hover:shadow-xl"
+                        }
+                      `}
+                    >
+                      {isTopThree && (
+                        <FloatingParticles count={4} className="bg-white/40" />
+                      )}
+
+                      <div className="flex items-center gap-4 sm:gap-6 mb-3 sm:mb-0 w-full sm:w-auto">
+                        {/* Rank number */}
+                        <div
+                          className={`
+                          flex items-center justify-center w-12 h-12 lg:w-14 lg:h-14 
+                          rounded-xl font-black text-lg lg:text-xl transition-all duration-300 
+                          group-hover:scale-110 shrink-0
+                          ${
+                            isTopThree
+                              ? `bg-gradient-to-r ${rankStyle.bg} text-white shadow-lg`
+                              : "bg-white/10 text-gray-300 border border-white/20"
+                          }
+                        `}
+                        >
+                          #{index + 1}
+                        </div>
+
+                        {/* Rank icon */}
+                        <div className="transform group-hover:scale-110 transition-transform duration-300 shrink-0">
+                          {getRankIcon(index)}
+                        </div>
+
+                        {/* User avatar */}
+                        <div className="relative shrink-0">
+                          <img
+                            src={user.avatar}
+                            alt={user.name}
+                            className={`
+                              w-12 h-12 lg:w-16 lg:h-16 rounded-full border-3 object-cover 
+                              transition-all duration-300 group-hover:scale-105
+                              ${
+                                isTopThree
+                                  ? "border-white shadow-xl ring-2 ring-white/30"
+                                  : "border-white/30"
+                              }
+                            `}
+                          />
+                          <div className="absolute -bottom-1 -right-1 w-4 h-4 lg:w-5 lg:h-5 bg-green-400 border-2 border-white rounded-full"></div>
+                        </div>
+                      </div>
+
+                      {/* User details */}
+                      <div className="flex-grow w-full sm:ml-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div>
+                            <h3 className="font-bold text-lg lg:text-xl text-white group-hover:text-yellow-300 transition-colors duration-300">
+                              {user.name}
+                            </h3>
+                            <div className="flex items-center gap-2 text-sm text-gray-300">
+                              <span>Tổng chi tiêu:</span>
+                              <span className="font-bold text-green-400 text-base lg:text-lg">
+                                {formatPrice(user.totalPrice)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Achievement badges */}
+                          {isTopThree && (
+                            <div className="flex items-center gap-1">
+                              <Zap className="w-4 h-4 lg:w-5 lg:h-5 text-yellow-400 animate-pulse" />
+                              <span className="text-xs lg:text-sm text-yellow-300 font-semibold">
+                                VIP
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Progress bar */}
+                        <div className="mt-3 w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                          <div
+                            className={`
+                              h-full transition-all duration-1000 ease-out rounded-full
+                              ${
+                                isTopThree
+                                  ? `bg-gradient-to-r ${rankStyle.bg}`
+                                  : "bg-gradient-to-r from-blue-400 to-purple-500"
+                              }
+                            `}
+                            style={{
+                              width:
+                                sortedRanking.length > 0
+                                  ? `${Math.min(
+                                      (user.totalPrice /
+                                        sortedRanking[0].totalPrice) *
+                                        100,
+                                      100
+                                    )}%`
+                                  : "0%",
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Stats Footer */}
+            {sortedRanking.length > 0 && (
+              <div className="mt-12 lg:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[
+                  {
+                    icon: DollarSign,
+                    title: formatPrice(
+                      sortedRanking.reduce(
+                        (sum, user) => sum + (user.totalPrice || 0),
+                        0
+                      )
+                    ),
+                    subtitle: "Tổng chi tiêu",
+                    color: "from-green-400 to-green-600",
+                  },
+                  {
+                    icon: Users,
+                    title: sortedRanking.length.toString(),
+                    subtitle: "Thành viên tham gia",
+                    color: "from-blue-400 to-blue-600",
+                  },
+                  {
+                    icon: Trophy,
+                    title: formatPrice(sortedRanking[0]?.totalPrice || 0),
+                    subtitle: "Người dẫn đầu",
+                    color: "from-yellow-400 to-yellow-600",
+                  },
+                  {
+                    icon: TrendingUp,
+                    title: "98%",
+                    subtitle: "Mức độ tham gia",
+                    color: "from-purple-400 to-purple-600",
+                  },
+                ].map((stat, index) => (
+                  <div
+                    key={index}
+                    className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center transform hover:scale-105 transition-all duration-300 border border-white/20 hover:bg-white/20"
+                  >
+                    <div
+                      className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg`}
+                    >
+                      <stat.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="font-bold text-xl lg:text-2xl text-white mb-2 truncate">
+                      {stat.title}
+                    </h3>
+                    <p className="text-gray-300 text-sm lg:text-base">
+                      {stat.subtitle}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
   );
 };
 

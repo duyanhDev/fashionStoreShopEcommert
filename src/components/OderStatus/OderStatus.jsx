@@ -1,4 +1,4 @@
-import { Button, notification, Popover, Steps } from "antd";
+import { Button, notification } from "antd";
 
 import "mapbox-gl/dist/mapbox-gl.css";
 import "./OderStaus.css";
@@ -17,8 +17,7 @@ import { FaTruck } from "react-icons/fa";
 
 import io from "socket.io-client";
 import FeedBack from "../FeedBack/FeeBack";
-
-import GoogleMapsStyleDelivery from "../Map/Map";
+import OrderDetailModal from "../OrderDetailModal/OrderDetailModal";
 
 const socket = io("https://fashionstoreshopecommertbe.onrender.com", {
   withCredentials: true,
@@ -39,7 +38,7 @@ const OderStatus = () => {
   const [data, setData] = useState([]);
   const { user } = useSelector((state) => state.auth);
   const [modal2Open, setModal2Open] = useState(false);
-
+  const [visible, setVisible] = useState(false);
   const [api, contextHolder] = notification.useNotification();
 
   const Navigate = useNavigate();
@@ -241,7 +240,7 @@ const OderStatus = () => {
                     }
                   })()}
                 </span>
-                <span>Xem chi tiết</span>
+                <span onClick={() => setVisible(true)}>Xem chi tiết</span>
               </div>
             </div>
             <div className="mt-3">
@@ -327,7 +326,7 @@ const OderStatus = () => {
           </div>
         </div>
       </div>
-      <GoogleMapsStyleDelivery />
+
       <div>
         <FeedBack
           modal2Open={modal2Open}
@@ -337,6 +336,7 @@ const OderStatus = () => {
           setData={setData}
         />
       </div>
+      <OrderDetailModal visible={visible} onClose={() => setVisible(false)} />
     </div>
   );
 };

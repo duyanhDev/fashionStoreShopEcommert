@@ -10,9 +10,7 @@ import {
   CloseOutlined,
 } from "@ant-design/icons";
 import { Avatar, Badge } from "antd";
-
 import { FiUsers, FiShoppingBag } from "react-icons/fi";
-
 import { FaSquarePollVertical } from "react-icons/fa6";
 import { AiTwotoneAppstore } from "react-icons/ai";
 import { RiAdminLine } from "react-icons/ri";
@@ -79,6 +77,12 @@ const menuItems = [
     icon: <GiftFilled className="text-xl" />,
     label: "Khuyến mãi",
     to: "/admin/voucher",
+    color: "text-yellow-500",
+  },
+  {
+    icon: <GiftFilled className="text-xl" />,
+    label: "Quản lý Banner",
+    to: "/admin/banner",
     color: "text-yellow-500",
   },
   {

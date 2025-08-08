@@ -1,5 +1,3 @@
-"use client";
-
 import "./Details.css";
 import { useEffect, useState, useCallback } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -8,11 +6,10 @@ import "swiper/css/free-mode";
 import "swiper/css/navigation";
 import "swiper/css/thumbs";
 import { FreeMode, Navigation, Thumbs } from "swiper/modules";
-import { Rate, Button, Flex, notification, Image, Avatar } from "antd";
+import { Rate, Button, notification, Image, Avatar } from "antd";
 import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import {
-  ListOneProductAPI,
   ListSlugProductAPI,
   toggleLikeRatingAPI,
 } from "../../service/ApiProduct";

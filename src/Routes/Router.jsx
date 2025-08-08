@@ -37,6 +37,9 @@ import AddVoucher from "../components/AddVoucher/AddVoucher";
 import ManageStore from "../components/ManageStore/ManageStore";
 import PermissionRoute from "../PermissionRoute/PermissionRoute ";
 import AdminAccountManagement from "../components/AdminAccountManagement/AdminAccountManagement";
+import Banner from "../components/Banner/Banner";
+import CreateBannerForm from "../components/Banner/CreateBannerForm/CreateBannerForm";
+import UpdateBannerForm from "../components/Banner/UpdateBannerForm/UpdateBannerForm";
 
 export const RouterLayout = [
   {
@@ -118,6 +121,22 @@ export const RouterAdmin = [
       {
         index: true,
         element: <UserStatsCard />,
+      },
+      {
+        path: "banner",
+        element: <Banner />,
+      },
+      {
+        path: "add-banner",
+        element: <CreateBannerForm />,
+      },
+      {
+        path: "banner",
+        element: <Banner />,
+      },
+      {
+        path: "update-banner/:id",
+        element: <UpdateBannerForm />,
       },
       {
         path: "products",
