@@ -195,6 +195,27 @@ const DeleteUserAPI = async (id) => {
     },
   });
 };
+
+const AdminChangleProfileAPI = async (
+  email,
+  password,
+  passwordAdmin,
+  adminEmail
+) => {
+  try {
+    const token = localStorage.getItem("token");
+    return await axios.put(
+      `api/v1/config-password`,
+      { email, password, passwordAdmin, adminEmail },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bear ${token}`,
+        },
+      }
+    );
+  } catch (error) {}
+};
 export {
   LoginAuth,
   UserAuth,
@@ -208,4 +229,5 @@ export {
   verifyOTP,
   RefreshTokenUser,
   DeleteUserAPI,
+  AdminChangleProfileAPI,
 };

@@ -27,6 +27,8 @@ import {
   SettingOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
+import { AdminChangleProfileAPI } from "../../service/Auth";
+import { useSelector } from "react-redux";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -39,6 +41,7 @@ const AdminAccountManagement = () => {
   const [resetMethod, setResetMethod] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
 
+  const { user } = useSelector((state) => state.auth);
   // Dữ liệu mô tả vai trò
   const roleDescriptions = {
     admin: "Toàn quyền truy cập và quản lý hệ thống",
@@ -91,7 +94,12 @@ const AdminAccountManagement = () => {
 
     try {
       // Giả lập API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const res = await AdminChangleProfileAPI(
+        values.resetEmail,
+        values.newPassword,
+        values.adminPassword,
+        user.email
+      );
 
       let successMessage = "";
       switch (values.resetMethod) {

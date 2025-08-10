@@ -41,7 +41,7 @@ export const fetchProducts = (params) => async (dispatch) => {
         dispatch(setProducts(response.data.data));
         dispatch(setTotalPages(response.data.totalPages));
         dispatch(setLoading(false));
-      }, 3000);
+      }, 1000);
     }
   } catch (error) {
     console.error("Error fetching products:", error);

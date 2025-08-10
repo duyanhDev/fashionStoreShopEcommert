@@ -38,7 +38,7 @@ const ViewSearch = ({}) => {
   }, [searchKeyword]);
 
   return (
-    <div className="mx-10 mt-32">
+    <div className="mx-10 mt-32 min-h-screen">
       <div className="border-b-2 h-10">
         <span className="text-black font-bold mt-4 text-2xl">KẾT QUẢ</span>
       </div>

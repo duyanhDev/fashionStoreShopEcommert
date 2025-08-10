@@ -8,6 +8,7 @@ import {
   BellOutlined,
   MenuOutlined,
   CloseOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import { Avatar, Badge } from "antd";
 import { FiUsers, FiShoppingBag } from "react-icons/fi";
@@ -35,6 +36,12 @@ const menuItems = [
     icon: <RiAdminLine className="text-xl" />,
     label: "Quản trị viên",
     to: "/admin/account",
+    color: "text-purple-500",
+  },
+  {
+    icon: <SettingOutlined className="text-xl" />,
+    label: "Hộ trợ tài khoản",
+    to: "/admin/adminAccountManagement",
     color: "text-purple-500",
   },
   {
@@ -127,12 +134,6 @@ const Admin = () => {
       location.pathname === itemTo || location.pathname === `/admin/${itemTo}`
     );
   };
-
-  const checkIsorder_approval =
-    user?.role === "staff" && user?.permissions === " order_approval";
-
-  const checkIscustomer_support =
-    user?.role === "staff" && user?.permissions === " customer_support";
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">

@@ -7,7 +7,7 @@ import {
   IoMenuOutline,
   IoCloseOutline,
 } from "react-icons/io5";
-import { Dropdown, Button, Drawer, Modal, message } from "antd";
+import { Dropdown, Button, Drawer, Modal, message, Badge } from "antd";
 import { LogoutOutlined } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
 import { logout, Search as SearchAction } from "../../redux/actions/Auth";
@@ -78,32 +78,57 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
   const items = [
     {
       key: "user-name",
-      label: user?.name || "My name",
+      label: (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-sm">
+              {user?.name?.charAt(0).toUpperCase() || "U"}
+            </span>
+          </div>
+          <span className="font-semibold text-gray-900">
+            {user?.name || "My name"}
+          </span>
+        </div>
+      ),
       disabled: true,
-      style: { ...itemStyle, fontWeight: "bold", color: "#1890ff" },
+      style: { ...itemStyle, padding: "12px 16px" },
     },
     { type: "divider" },
     {
       key: "profile",
-      icon: <FaRegUserCircle size={18} />,
-      label: <span style={{ flex: 1 }}>Thông tin tài khoản</span>,
+      icon: (
+        <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center">
+          <FaRegUserCircle size={16} className="text-white" />
+        </div>
+      ),
+      label: (
+        <span className="text-gray-700 font-medium">Thông tin tài khoản</span>
+      ),
       onClick: () => {
         navigate(`/profile/${user?.name || ""}`);
         setMobileMenuOpen(false);
       },
-      style: itemStyle,
+      style: { ...itemStyle, padding: "12px 16px" },
     },
     ...(user
       ? [
           {
             key: "orders",
-            icon: <FaRegListAlt size={18} />,
-            label: <span style={{ flex: 1 }}>Đơn hàng của tôi</span>,
+            icon: (
+              <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
+                <FaRegListAlt size={16} className="text-white" />
+              </div>
+            ),
+            label: (
+              <span className="text-gray-700 font-medium">
+                Đơn hàng của tôi
+              </span>
+            ),
             onClick: () => {
               navigate("/order");
               setMobileMenuOpen(false);
             },
-            style: itemStyle,
+            style: { ...itemStyle, padding: "12px 16px" },
           },
         ]
       : []),
@@ -112,37 +137,53 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
       ? [
           {
             key: "admin",
-            icon: <RiAdminLine size={20} />,
-            label: <span style={{ flex: 1 }}>Quản trị viên</span>,
+            icon: (
+              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+                <RiAdminLine size={16} className="text-white" />
+              </div>
+            ),
+            label: (
+              <span className="text-gray-700 font-medium">Quản trị viên</span>
+            ),
             onClick: () => {
               navigate("/admin");
               setMobileMenuOpen(false);
             },
-            style: itemStyle,
+            style: { ...itemStyle, padding: "12px 16px" },
           },
           { type: "divider" },
         ]
       : []),
     {
       key: "settings",
-      icon: <MdOutlineVolunteerActivism size={18} />,
-      label: <span style={{ flex: 1 }}>Danh sách yêu thích</span>,
+      icon: (
+        <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-pink-600 rounded-lg flex items-center justify-center">
+          <MdOutlineVolunteerActivism size={16} className="text-white" />
+        </div>
+      ),
+      label: (
+        <span className="text-gray-700 font-medium">Danh sách yêu thích</span>
+      ),
       onClick: () => {
         navigate("/wishlist");
         setMobileMenuOpen(false);
       },
-      style: itemStyle,
+      style: { ...itemStyle, padding: "12px 16px" },
     },
     {
       key: "auth",
-      icon: <LogoutOutlined />,
+      icon: (
+        <div className="w-8 h-8 bg-gradient-to-br from-gray-500 to-gray-700 rounded-lg flex items-center justify-center">
+          <LogoutOutlined className="text-white text-sm" />
+        </div>
+      ),
       label: (
-        <span style={{ flex: 1 }}>
+        <span className="text-gray-700 font-medium">
           {user?.name ? "Đăng Xuất" : "Đăng Nhập"}
         </span>
       ),
       onClick: handleLogOut,
-      style: itemStyle,
+      style: { ...itemStyle, padding: "12px 16px" },
     },
   ].filter(Boolean);
 
@@ -163,7 +204,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
           setLoadingSpin(false);
           CartListProductsUser();
           message.success("Đã xóa sản phẩm khỏi giỏ hàng!");
-        }, 1000); // Reduced timeout for better UX
+        }, 1000);
       } else {
         throw new Error(res.data?.message || "Remove failed");
       }
@@ -300,34 +341,57 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
     setShowSearch(false);
   };
 
-  const FetchSearhProductsAPI = async () => {
+  const FetchSearhProductsAPI = async (keyword = keywordSearch) => {
     try {
-      const res = await searchProductsByNameAPI(keywordSearch, page);
+      const res = await searchProductsByNameAPI(keyword, page);
       if (res && res.data && res.data.EC === 0) {
         setData(res.data.data);
         setTotalPage(res.data.totalPages);
+        setShowSearch(false);
+      } else {
+        setData([]);
+        setShowSearch(true); // hiện thông báo không tìm thấy
       }
     } catch (error) {
       console.error("Error searching products:", error);
+      setData([]);
+      setShowSearch(true);
     }
   };
 
-  useEffect(() => {
-    if (keywordSearch && keywordSearch.trim() !== "") {
-      FetchSearhProductsAPI();
-    }
-  }, [keywordSearch]);
+  // ✅ debounce cho phần nhập gõ chữ
+  const debouncedFetchSearch = useCallback(
+    debounce((keyword) => {
+      if (keyword.trim()) {
+        FetchSearhProductsAPI(keyword);
+      } else {
+        setData([]);
+        setTotalPage(0);
+      }
+    }, 500),
+    []
+  );
 
-  const btnHandleChangeSearch = () => {
+  useEffect(() => {
+    debouncedFetchSearch(keywordSearch);
+    return () => debouncedFetchSearch.cancel();
+  }, [keywordSearch, debouncedFetchSearch]);
+
+  const btnHandleChangeSearch = async () => {
     setOpenSearch(false);
     const keyword = keywordSearch.trim();
+    console.log(keyword);
+
     if (!keyword) {
       message.error("Vui lòng nhập từ khóa tìm kiếm!");
       return;
     }
+
+    // Gọi API trực tiếp khi bấm nút
+    await FetchSearhProductsAPI(keyword);
+
     navigate(`search?q=${keyword}`);
     dispatch(SearchAction(data, totalPage));
-    setKeywordSearch("");
     setSearchVisible(false);
   };
 
@@ -428,26 +492,6 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
     [handleUpdateQuantity]
   );
 
-  useEffect(() => {
-    return () => {
-      debouncedUpdate.cancel();
-    };
-  }, [debouncedUpdate]);
-
-  const debouncedFetchSearch = useCallback(
-    debounce(() => {
-      if (keywordSearch.trim()) {
-        FetchSearhProductsAPI();
-      }
-    }, 500),
-    [keywordSearch]
-  );
-
-  useEffect(() => {
-    debouncedFetchSearch();
-    return () => debouncedFetchSearch.cancel();
-  }, [debouncedFetchSearch]);
-
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
@@ -458,486 +502,599 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
 
   return (
     <>
-      {/* Main Header */}
-      <div className="header_main_dosin w-full flex justify-between items-center h-full mx-auto px-2 sm:px-4 lg:px-6">
-        {/* Logo Section */}
-        <div className="flex items-center doin_image flex-shrink-0">
-          <ul className="flex items-center justify-between">
-            <li className="px-2 sm:px-3 lg:px-5">
-              <Link to="/" className="image_logo">
-                <img
-                  src="https://dosi-in.com/images/assets/icons/logo.svg"
-                  alt="Logo"
-                  className="h-8 sm:h-10 w-auto"
-                />
+      {/* Professional Header */}
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-lg border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 lg:h-20">
+            {/* Logo Section */}
+            <div className="flex items-center space-x-4 flex-shrink-0">
+              <Link to="/" className="flex items-center space-x-2 group">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg">
+                  <img
+                    src="https://dosi-in.com/images/assets/icons/logo.svg"
+                    alt="Logo"
+                    className="w-6 h-6 lg:w-8 lg:h-8 filter brightness-0 invert"
+                  />
+                </div>
+                <div className="hidden sm:block">
+                  <span className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    Shopping
+                  </span>
+                </div>
               </Link>
-            </li>
-            <li className="hidden sm:block">
-              <Link className="text_shop text-lg sm:text-xl">Shopping</Link>
-            </li>
-          </ul>
-        </div>
+            </div>
 
-        {/* Desktop Search */}
-        <div className="input_search_item input relative items-center hidden md:flex flex-1 max-w-md mx-4">
-          <input
-            type="text"
-            placeholder="Tìm kiếm sản phẩm"
-            className="absolute w-full outline-none px-4 py-2 pr-12 border rounded-lg"
-            onClick={handleSearchProducts}
-            onChange={handleChangeInput}
-            value={keywordSearch}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && keywordSearch.trim()) {
-                btnHandleChangeSearch();
-              }
-            }}
-          />
-          <IoSearch
-            color="#ccc"
-            className="absolute right-0 m-4 text-2xl cursor-pointer"
-            onClick={btnHandleChangeSearch}
-          />
-          <Search
-            open={openSerch}
-            setOpen={setOpenSearch}
-            show={showSearch}
-            setShow={setShowSearch}
-            keywordSearch={keywordSearch}
-            setKeywordSearch={setKeywordSearch}
-            data={data}
-            setData={setData}
-            onSearch={(keyword) => {
-              FetchSearhProductsAPI(keyword);
-            }}
-          />
-        </div>
-
-        {/* Desktop Right Section */}
-        <div className="hidden md:flex w-auto justify-between doin_right px-2 sm:px-5">
-          <ul className="dosin_right_items flex justify-end items-center space-x-2 sm:space-x-4">
-            <li
-              className="relative cursor-pointer"
-              onClick={handleShowNocations}
-            >
-              <IoNotificationsOutline size={24} className="sm:w-7 sm:h-7" />
-              <span className="cart_items absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                {unreadNotifications && unreadNotifications.length > 0
-                  ? unreadNotifications.filter((item) => !item.read).length
-                  : 0}
-              </span>
-            </li>
-            <li className="relative cursor-pointer" onClick={showLoading}>
-              <IoCartOutline size={24} className="sm:w-7 sm:h-7" />
-              <span className="cart_items absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                {ListCart && ListCart.items ? ListCart.items.length : 0}
-              </span>
-            </li>
-            <li>
-              {user ? (
-                <Dropdown
-                  menu={{
-                    items,
+            {/* Desktop Search */}
+            <div className="hidden md:flex flex-1 max-w-2xl mx-8">
+              <div className="relative w-full group">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm sản phẩm..."
+                    className="w-full h-12 pl-6 pr-14 text-gray-900 placeholder-gray-500 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 hover:shadow-lg"
+                    onClick={handleSearchProducts}
+                    onChange={handleChangeInput}
+                    value={keywordSearch}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && keywordSearch.trim()) {
+                        btnHandleChangeSearch();
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={btnHandleChangeSearch}
+                    className="absolute right-2 w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-white hover:shadow-lg transition-all duration-300 hover:scale-105"
+                  >
+                    <IoSearch size={18} />
+                  </button>
+                </div>
+                <Search
+                  open={openSerch}
+                  setOpen={setOpenSearch}
+                  show={showSearch}
+                  setShow={setShowSearch}
+                  keywordSearch={keywordSearch}
+                  setKeywordSearch={setKeywordSearch}
+                  data={data}
+                  setData={setData}
+                  onSearch={(keyword) => {
+                    FetchSearhProductsAPI(keyword);
                   }}
-                  trigger={["click"]}
-                >
-                  <a onClick={(e) => e.preventDefault()}>
-                    <img
-                      src={user.avatar}
-                      alt={user.name}
-                      className="w-8 h-8 rounded-full cursor-pointer"
-                    />
-                  </a>
-                </Dropdown>
-              ) : (
-                <FaUser
-                  size={20}
-                  className="cursor-pointer"
-                  onClick={handleLogOut}
                 />
-              )}
-            </li>
-          </ul>
-        </div>
+              </div>
+            </div>
 
-        {/* Mobile Right Section */}
-        <div className="flex md:hidden items-center space-x-3">
-          <IoSearch
-            size={24}
-            className="cursor-pointer"
-            onClick={toggleMobileSearch}
-          />
-          <div className="relative cursor-pointer" onClick={showLoading}>
-            <IoCartOutline size={24} />
-            <span className="cart_items absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-              {ListCart && ListCart.items ? ListCart.items.length : 0}
-            </span>
+            {/* Desktop Right Section */}
+            <div className="hidden md:flex items-center space-x-4">
+              {/* Notifications */}
+              <div className="relative">
+                <button
+                  onClick={handleShowNocations}
+                  className="w-12 h-12 bg-gray-50 hover:bg-gray-100 rounded-xl flex items-center justify-center transition-all duration-300 hover:shadow-lg group"
+                >
+                  <IoNotificationsOutline
+                    size={22}
+                    className="text-gray-700 group-hover:text-blue-600 transition-colors duration-300"
+                  />
+                  {unreadNotifications.length > 0 && (
+                    <Badge
+                      count={
+                        unreadNotifications.filter((item) => !item.read).length
+                      }
+                      className="absolute -top-1 -right-1"
+                      size="small"
+                    />
+                  )}
+                </button>
+              </div>
+
+              {/* Cart */}
+              <div className="relative">
+                <button
+                  onClick={showLoading}
+                  className="w-12 h-12 bg-gray-50 hover:bg-gray-100 rounded-xl flex items-center justify-center transition-all duration-300 hover:shadow-lg group"
+                >
+                  <IoCartOutline
+                    size={22}
+                    className="text-gray-700 group-hover:text-blue-600 transition-colors duration-300"
+                  />
+                  {ListCart?.items?.length > 0 && (
+                    <Badge
+                      count={ListCart.items.length}
+                      className="absolute -top-1 -right-1"
+                      size="small"
+                    />
+                  )}
+                </button>
+              </div>
+
+              {/* User Menu */}
+              <div className="relative">
+                {user ? (
+                  <Dropdown
+                    menu={{ items }}
+                    trigger={["click"]}
+                    placement="bottomRight"
+                  >
+                    <button className="flex items-center space-x-3 p-2 rounded-xl hover:bg-gray-50 transition-all duration-300">
+                      <img
+                        src={user.avatar}
+                        alt={user.name}
+                        className="w-10 h-10 rounded-xl object-cover border-2 border-gray-200"
+                      />
+                      <div className="hidden lg:block text-left">
+                        <p className="text-sm font-semibold text-gray-900 truncate max-w-24">
+                          {user.name}
+                        </p>
+                        <p className="text-xs text-gray-500">Tài khoản</p>
+                      </div>
+                    </button>
+                  </Dropdown>
+                ) : (
+                  <button
+                    onClick={handleLogOut}
+                    className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-105"
+                  >
+                    <FaUser size={18} />
+                    <span className="hidden lg:inline font-medium">
+                      Đăng nhập
+                    </span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Mobile Right Section */}
+            <div className="flex md:hidden items-center space-x-2">
+              <button
+                onClick={toggleMobileSearch}
+                className="w-10 h-10 bg-gray-50 hover:bg-gray-100 rounded-xl flex items-center justify-center transition-all duration-300"
+              >
+                <IoSearch size={20} className="text-gray-700" />
+              </button>
+
+              <div className="relative">
+                <button
+                  onClick={showLoading}
+                  className="w-10 h-10 bg-gray-50 hover:bg-gray-100 rounded-xl flex items-center justify-center transition-all duration-300"
+                >
+                  <IoCartOutline size={20} className="text-gray-700" />
+                  {ListCart?.items?.length > 0 && (
+                    <Badge
+                      count={ListCart.items.length}
+                      className="absolute -top-1 -right-1"
+                      size="small"
+                    />
+                  )}
+                </button>
+              </div>
+
+              <button
+                onClick={toggleMobileMenu}
+                className="w-10 h-10 bg-gray-50 hover:bg-gray-100 rounded-xl flex items-center justify-center transition-all duration-300"
+              >
+                {mobileMenuOpen ? (
+                  <IoCloseOutline size={22} className="text-gray-700" />
+                ) : (
+                  <IoMenuOutline size={22} className="text-gray-700" />
+                )}
+              </button>
+            </div>
           </div>
-          <button onClick={toggleMobileMenu} className="cursor-pointer">
-            {mobileMenuOpen ? (
-              <IoCloseOutline size={28} />
-            ) : (
-              <IoMenuOutline size={28} />
-            )}
-          </button>
         </div>
-      </div>
 
-      {/* Mobile Search Bar */}
-      {searchVisible && (
-        <div className="md:hidden px-4 py-2 border-t bg-white">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Tìm kiếm sản phẩm"
-              className="w-full outline-none px-4 py-2 pr-12 border rounded-lg"
-              onClick={handleSearchProducts}
-              onChange={handleChangeInput}
-              value={keywordSearch}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && keywordSearch.trim()) {
-                  btnHandleChangeSearch();
-                }
+        {/* Mobile Search Bar */}
+        {searchVisible && (
+          <div className="md:hidden border-t border-gray-200 bg-white p-4">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Tìm kiếm sản phẩm..."
+                className="w-full h-12 pl-6 pr-14 text-gray-900 placeholder-gray-500 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onClick={handleSearchProducts}
+                onChange={handleChangeInput}
+                value={keywordSearch}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && keywordSearch.trim()) {
+                    btnHandleChangeSearch();
+                  }
+                }}
+              />
+              <button
+                onClick={btnHandleChangeSearch}
+                className="absolute right-2 top-2 w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-white"
+              >
+                <IoSearch size={18} />
+              </button>
+            </div>
+            <Search
+              open={openSerch}
+              setOpen={setOpenSearch}
+              show={showSearch}
+              setShow={setShowSearch}
+              keywordSearch={keywordSearch}
+              setKeywordSearch={setKeywordSearch}
+              data={data}
+              setData={setData}
+              onSearch={(keyword) => {
+                FetchSearhProductsAPI(keyword);
               }}
             />
-            <IoSearch
-              color="#ccc"
-              className="absolute right-0 top-1/2 transform -translate-y-1/2 mr-4 text-2xl cursor-pointer"
-              onClick={btnHandleChangeSearch}
-            />
           </div>
-          <Search
-            open={openSerch}
-            setOpen={setOpenSearch}
-            show={showSearch}
-            setShow={setShowSearch}
-            keywordSearch={keywordSearch}
-            setKeywordSearch={setKeywordSearch}
-            data={data}
-            setData={setData}
-            onSearch={(keyword) => {
-              FetchSearhProductsAPI(keyword);
-            }}
-          />
-        </div>
-      )}
+        )}
 
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 bg-white border-t shadow-lg z-50">
-          <div className="px-4 py-6">
-            {user ? (
-              <div className="flex items-center space-x-3 mb-6 pb-4 border-b">
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  className="w-10 h-10 rounded-full"
-                />
-                <span className="font-semibold">{user.name}</span>
-              </div>
-            ) : (
-              <div className="mb-6 pb-4 border-b">
-                <Button
-                  type="primary"
-                  className="w-full"
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-200 bg-white shadow-lg">
+            <div className="p-4 space-y-4">
+              {user ? (
+                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl">
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="w-12 h-12 rounded-xl object-cover"
+                  />
+                  <div>
+                    <p className="font-semibold text-gray-900">{user.name}</p>
+                    <p className="text-sm text-gray-500">Thành viên</p>
+                  </div>
+                </div>
+              ) : (
+                <button
                   onClick={() => {
                     handleLogOut();
                     setMobileMenuOpen(false);
                   }}
+                  className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-medium"
                 >
                   Đăng Nhập
-                </Button>
-              </div>
-            )}
-            <div className="space-y-4">
-              <div
-                className="flex items-center justify-between py-2 cursor-pointer"
-                onClick={() => {
-                  handleShowNocations();
-                  setMobileMenuOpen(false);
-                }}
-              >
-                <div className="flex items-center space-x-3">
-                  <IoNotificationsOutline size={20} />
-                  <span>Thông báo</span>
-                </div>
-                <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {unreadNotifications && unreadNotifications.length > 0
-                    ? unreadNotifications.filter((item) => !item.read).length
-                    : 0}
-                </span>
-              </div>
-              {user && (
-                <>
-                  <div
-                    className="flex items-center space-x-3 py-2 cursor-pointer"
-                    onClick={() => {
-                      navigate(`/profile/${user?.name || ""}`);
-                      setMobileMenuOpen(false);
-                    }}
-                  >
-                    <FaRegUserCircle size={20} />
-                    <span>Thông tin tài khoản</span>
+                </button>
+              )}
+
+              <div className="space-y-2">
+                <button
+                  className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors duration-300"
+                  onClick={() => {
+                    handleShowNocations();
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                      <IoNotificationsOutline
+                        size={16}
+                        className="text-white"
+                      />
+                    </div>
+                    <span className="text-gray-900 font-medium">Thông báo</span>
                   </div>
-                  <div
-                    className="flex items-center space-x-3 py-2 cursor-pointer"
-                    onClick={() => {
-                      navigate("/order");
-                      setMobileMenuOpen(false);
-                    }}
-                  >
-                    <FaRegListAlt size={20} />
-                    <span>Đơn hàng của tôi</span>
-                  </div>
-                  {user?.role === "admin" && (
-                    <div
-                      className="flex items-center space-x-3 py-2 cursor-pointer"
+                  {unreadNotifications.length > 0 && (
+                    <Badge
+                      count={
+                        unreadNotifications.filter((item) => !item.read).length
+                      }
+                      size="small"
+                    />
+                  )}
+                </button>
+
+                {user && (
+                  <>
+                    <button
+                      className="w-full flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-xl transition-colors duration-300"
                       onClick={() => {
-                        navigate("/admin");
+                        navigate(`/profile/${user?.name || ""}`);
                         setMobileMenuOpen(false);
                       }}
                     >
-                      <RiAdminLine size={20} />
-                      <span>Quản trị viên</span>
-                    </div>
-                  )}
-                  <div
-                    className="flex items-center space-x-3 py-2 cursor-pointer"
-                    onClick={() => {
-                      navigate("/wishlist");
-                      setMobileMenuOpen(false);
-                    }}
-                  >
-                    <MdOutlineVolunteerActivism size={20} />
-                    <span>Danh sách yêu thích</span>
-                  </div>
-                  <div
-                    className="flex items-center space-x-3 py-2 cursor-pointer text-red-600"
-                    onClick={() => {
-                      handleLogOut();
-                      setMobileMenuOpen(false);
-                    }}
-                  >
-                    <LogoutOutlined />
-                    <span>Đăng Xuất</span>
-                  </div>
-                </>
-              )}
+                      <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center">
+                        <FaRegUserCircle size={16} className="text-white" />
+                      </div>
+                      <span className="text-gray-900 font-medium">
+                        Thông tin tài khoản
+                      </span>
+                    </button>
+
+                    <button
+                      className="w-full flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-xl transition-colors duration-300"
+                      onClick={() => {
+                        navigate("/order");
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
+                        <FaRegListAlt size={16} className="text-white" />
+                      </div>
+                      <span className="text-gray-900 font-medium">
+                        Đơn hàng của tôi
+                      </span>
+                    </button>
+
+                    {user?.role === "admin" && (
+                      <button
+                        className="w-full flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-xl transition-colors duration-300"
+                        onClick={() => {
+                          navigate("/admin");
+                          setMobileMenuOpen(false);
+                        }}
+                      >
+                        <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+                          <RiAdminLine size={16} className="text-white" />
+                        </div>
+                        <span className="text-gray-900 font-medium">
+                          Quản trị viên
+                        </span>
+                      </button>
+                    )}
+
+                    <button
+                      className="w-full flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-xl transition-colors duration-300"
+                      onClick={() => {
+                        navigate("/wishlist");
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-pink-600 rounded-lg flex items-center justify-center">
+                        <MdOutlineVolunteerActivism
+                          size={16}
+                          className="text-white"
+                        />
+                      </div>
+                      <span className="text-gray-900 font-medium">
+                        Danh sách yêu thích
+                      </span>
+                    </button>
+
+                    <button
+                      className="w-full flex items-center space-x-3 p-3 hover:bg-red-50 rounded-xl transition-colors duration-300 text-red-600"
+                      onClick={() => {
+                        handleLogOut();
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <div className="w-8 h-8 bg-gradient-to-br from-gray-500 to-gray-700 rounded-lg flex items-center justify-center">
+                        <LogoutOutlined className="text-white text-sm" />
+                      </div>
+                      <span className="font-medium">Đăng Xuất</span>
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </header>
 
-      {/* Cart Modal */}
+      {/* Enhanced Cart Modal */}
       <Modal
         title={
-          <div className="flex items-center gap-2">
-            <HiShoppingBag className="cart_color_item text-green-600" />
-            <span className="text-sm sm:text-base">
-              Hiện đang có
-              <span className="mx-1">
-                {ListCart && ListCart.items ? ListCart.items.length : 0}
-              </span>
-              sản phẩm trong giỏ hàng
-            </span>
+          <div className="flex items-center gap-3 p-2">
+            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+              <HiShoppingBag className="text-white" size={20} />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Giỏ hàng của bạn
+              </h3>
+              <p className="text-sm text-gray-500">
+                {ListCart?.items?.length || 0} sản phẩm
+              </p>
+            </div>
           </div>
         }
-        placement="right"
         open={open}
+        onCancel={() => setOpen(false)}
+        footer={null}
+        width={window.innerWidth < 768 ? "95%" : 700}
+        className="cart-modal"
         centered
         loading={loading}
-        onCancel={() => setOpen(false)}
-        className="relative cart_products_item"
-        width={window.innerWidth < 768 ? "95%" : 600}
       >
-        <div className="item_list_cart_products hidden sm:grid">
-          <span>Hình ảnh</span>
-          <span>Sản phẩm</span>
-          <span className="text-center">Số lượng</span>
-          <span>Thành tiền</span>
+        <div className="max-h-96 overflow-y-auto">
+          {ListCart?.items?.length > 0 ? (
+            <div className="space-y-4">
+              {ListCart.items.map((cart) => {
+                const imageUrl =
+                  cart.productId?.variants.find(
+                    (product) => product.color === cart.color
+                  )?.images[0]?.url || "";
+
+                return (
+                  <div
+                    key={cart._id}
+                    className="flex items-center p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all duration-300"
+                  >
+                    <div className="flex-shrink-0">
+                      <img
+                        src={imageUrl}
+                        alt={cart.productId?.name || "Product"}
+                        className="w-20 h-20 object-cover rounded-xl border border-gray-200"
+                      />
+                    </div>
+
+                    <div className="flex-1 ml-4">
+                      <h4 className="font-semibold text-gray-900 mb-1 line-clamp-2">
+                        {cart.productId?.name || "Unknown Product"}
+                      </h4>
+                      <p className="text-sm text-gray-500 mb-2 uppercase">
+                        {cart.color} - {cart.size}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-lg font-bold text-orange-600">
+                          {formatPrice(cart.price)}
+                        </span>
+                        <button
+                          onClick={() => handleRemoveCartProduct(cart._id)}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all duration-300"
+                        >
+                          <MdDeleteForever size={20} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex-shrink-0 ml-4">
+                      <div className="flex items-center bg-white border border-gray-300 rounded-xl overflow-hidden">
+                        <button
+                          className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 transition-colors duration-300"
+                          onClick={() => handleMinus(cart._id, cart.quantity)}
+                          disabled={loadingSpin}
+                        >
+                          <span className="text-lg font-bold text-gray-600">
+                            −
+                          </span>
+                        </button>
+                        <input
+                          type="number"
+                          className="w-16 h-10 text-center font-semibold text-gray-900 bg-transparent border-none outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          value={
+                            inputValue[cart._id] !== undefined
+                              ? inputValue[cart._id]
+                              : cart.quantity
+                          }
+                          min={0}
+                          onChange={(e) =>
+                            handleInputChange(cart._id, e.target.value)
+                          }
+                          onBlur={(e) => handleBlur(cart._id, e.target.value)}
+                        />
+                        <button
+                          className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 transition-colors duration-300"
+                          onClick={() => handlePlus(cart._id, cart.quantity)}
+                          disabled={loadingSpin}
+                        >
+                          <span className="text-lg font-bold text-gray-600">
+                            +
+                          </span>
+                        </button>
+                      </div>
+                      <div className="text-center mt-2">
+                        <span className="text-sm font-semibold text-green-600">
+                          {formatPrice(cart.totalItemPrice)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <FaCartArrowDown size={40} className="text-gray-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Giỏ hàng trống
+              </h3>
+              <p className="text-gray-500 text-center">
+                Chưa có sản phẩm nào trong giỏ hàng của bạn
+              </p>
+            </div>
+          )}
         </div>
 
-        {ListCart?.items?.length > 0 ? (
-          ListCart.items.map((cart) => {
-            const imageUrl =
-              cart.productId?.variants.find(
-                (product) => product.color === cart.color
-              )?.images[0]?.url || "";
-
-            return (
-              <div
-                className="item_list_cart_total flex flex-col sm:flex-row items-start sm:items-center py-4 border-b"
-                key={cart._id}
-              >
-                <div className="w-full sm:w-auto mb-2 sm:mb-0 flex justify-center sm:justify-start">
-                  <img
-                    src={imageUrl}
-                    alt={cart.productId?.name || "Product"}
-                    className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded"
-                  />
-                </div>
-                <div className="flex-1 px-0 sm:px-4 mb-2 sm:mb-0">
-                  <h4 className="font-medium text-sm sm:text-base mb-1 line-clamp-2">
-                    {cart.productId?.name || "Unknown Product"}
-                  </h4>
-                  <p className="text-xs sm:text-sm text-gray-600 uppercase mb-2">
-                    {cart.color || "N/A"} - {cart.size || "N/A"}
-                  </p>
-                  <div className="flex items-center justify-between sm:justify-start gap-3">
-                    <span className="text-sm sm:text-base font-semibold text-orange-600">
-                      {formatPrice(cart.price)}
-                    </span>
-                    <MdDeleteForever
-                      className="cursor-pointer hover:text-orange-600"
-                      size={20}
-                      color="rgb(242, 153, 74)"
-                      onClick={() => handleRemoveCartProduct(cart._id)}
-                    />
-                  </div>
-                </div>
-                <div className="w-full sm:w-auto flex justify-center mb-2 sm:mb-0">
-                  <div className="flex items-center border border-gray-400 rounded-lg overflow-hidden">
-                    <button
-                      className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-lg font-bold"
-                      onClick={() => handleMinus(cart._id, cart.quantity)}
-                      disabled={loadingSpin}
-                    >
-                      −
-                    </button>
-                    <input
-                      type="number"
-                      className="w-12 h-8 text-center text-lg font-semibold text-gray-900 bg-transparent border-x border-gray-300 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      value={
-                        inputValue[cart._id] !== undefined
-                          ? inputValue[cart._id]
-                          : cart.quantity
-                      }
-                      min={0}
-                      placeholder="1"
-                      onChange={(e) =>
-                        handleInputChange(cart._id, e.target.value)
-                      }
-                      onBlur={(e) => handleBlur(cart._id, e.target.value)}
-                    />
-                    <button
-                      className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-lg font-bold"
-                      onClick={() => handlePlus(cart._id, cart.quantity)}
-                      disabled={loadingSpin}
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-                <div className="w-full sm:w-auto text-center sm:text-right">
-                  <span className="font-semibold text-base text-green-600">
-                    {formatPrice(cart.totalItemPrice)}
-                  </span>
-                </div>
+        {ListCart?.items?.length > 0 && (
+          <div className="border-t border-gray-200 pt-6 mt-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm text-gray-500">Tổng cộng</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {formatPrice(ListCart.totalPrice)}
+                </p>
               </div>
-            );
-          })
-        ) : (
-          <div className="h-64 sm:h-96 flex flex-col justify-center items-center gap-3">
-            <FaCartArrowDown className="cart-icon text-gray-400" size={80} />
-            <span className="text-center text-gray-600 px-4">
-              Giỏ hàng chưa có gì :(, chọn mua đồ bạn nhé
-            </span>
-          </div>
-        )}
-
-        {ListCart && ListCart.items && ListCart.items.length > 0 && (
-          <div className="flex flex-col sm:flex-row justify-between items-center mt-4 pt-4 border-t gap-3">
-            <p className="font-semibold text-base sm:text-lg text-center sm:text-left">
-              Tổng tiền:{" "}
-              <span className="text-green-600 text-lg sm:text-xl">
-                {ListCart && ListCart.totalPrice !== undefined
-                  ? formatPrice(ListCart.totalPrice)
-                  : "0đ"}
-              </span>
-            </p>
-            <Button
-              className="w-full sm:w-auto min-w-32"
-              type="primary"
-              size="large"
-              onClick={() => handlePay()}
-            >
-              Đặt Hàng
-            </Button>
+              <button
+                onClick={handlePay}
+                className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105"
+              >
+                Đặt Hàng
+              </button>
+            </div>
           </div>
         )}
 
         {loadingSpin && (
-          <div className="overlay flex items-center justify-center w-full h-full absolute top-0 left-0 bg-white bg-opacity-80 z-10">
-            <ClipLoader />
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center rounded-2xl">
+            <ClipLoader color="#3b82f6" />
           </div>
         )}
       </Modal>
 
-      {/* Notifications Drawer */}
+      {/* Enhanced Notifications Drawer */}
       <Drawer
-        closable
-        destroyOnClose
-        title={<p>Thông Báo</p>}
+        title={
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+              <IoNotificationsOutline className="text-white" size={20} />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold">Thông báo</h3>
+              <p className="text-sm text-gray-500">
+                {unreadNotifications.length} chưa đọc
+              </p>
+            </div>
+          </div>
+        }
         placement="right"
         open={showHiden}
-        loading={loading}
         onClose={() => setShowHiden(false)}
-        width={window.innerWidth < 768 ? "90%" : 400}
+        width={window.innerWidth < 768 ? "90%" : 420}
+        loading={loading}
+        extra={
+          <div className="flex gap-2">
+            <Button
+              type="primary"
+              size="small"
+              onClick={handleReadsNocations}
+              className="bg-gradient-to-r from-blue-500 to-indigo-600 border-none"
+            >
+              Đọc tất cả
+            </Button>
+            <Button danger size="small" onClick={handleDeleteNocations}>
+              Xóa tất cả
+            </Button>
+          </div>
+        }
       >
-        <div className="flex justify-between gap-2">
-          <Button
-            type="primary"
-            style={{ marginBottom: 16 }}
-            onClick={handleShowNocations}
-            className="w-full sm:w-auto"
-          >
-            Reload
-          </Button>
-          <Button
-            color="cyan"
-            variant="solid"
-            style={{ marginBottom: 16 }}
-            onClick={handleReadsNocations}
-            className="w-full sm:w-auto"
-          >
-            Đọc tất cả
-          </Button>
-          <Button
-            color="default"
-            variant="solid"
-            style={{ marginBottom: 16 }}
-            onClick={handleDeleteNocations}
-            className="w-full sm:w-auto"
-          >
-            Xóa tất cả
-          </Button>
-        </div>
-        {DataNotifications && DataNotifications.length > 0 ? (
-          DataNotifications.filter((item) => item.isAdmin === false).map(
-            (item) => (
-              <div key={item._id}>
+        <div className="space-y-3">
+          {DataNotifications?.filter((item) => !item.isAdmin)?.length > 0 ? (
+            DataNotifications.filter((item) => item.isAdmin === false).map(
+              (item) => (
                 <div
-                  className="border-b-2 p-3 cursor-pointer hover:bg-gray-50 rounded"
+                  key={item._id}
+                  className={`p-4 rounded-2xl cursor-pointer transition-all duration-300 hover:shadow-md ${
+                    item.read === false
+                      ? "bg-blue-50 border border-blue-200"
+                      : "bg-gray-50 hover:bg-gray-100"
+                  }`}
                   onClick={() => handleBtnNocafition(item._id, item.orderId)}
                 >
-                  <p className="text-sm sm:text-base mb-2">{item.message}</p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs sm:text-sm text-gray-500">
-                      {formatTimeAgo(item.createdAt)}
-                    </span>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-gray-900 leading-relaxed mb-2">
+                        {item.message}
+                      </p>
+                      <span className="text-xs text-gray-500">
+                        {formatTimeAgo(item.createdAt)}
+                      </span>
+                    </div>
                     {item.read === false && (
-                      <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                      <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0 ml-3 mt-1"></div>
                     )}
                   </div>
                 </div>
-              </div>
+              )
             )
-          )
-        ) : (
-          <p className="text-center text-gray-500 py-8">
-            Hiện tại không có thông báo nào
-          </p>
-        )}
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <IoNotificationsOutline size={32} className="text-gray-400" />
+              </div>
+              <p className="text-gray-500 text-center">
+                Không có thông báo nào
+              </p>
+            </div>
+          )}
+        </div>
       </Drawer>
     </>
   );

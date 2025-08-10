@@ -43,6 +43,7 @@ import {
   MapPinIcon,
   CalendarIcon,
 } from "@heroicons/react/24/outline";
+import EnhancedProductsSection from "../EnhancedProductsSection/EnhancedProductsSection";
 
 const Home = () => {
   const { ListProducts } = useOutletContext();
@@ -468,6 +469,7 @@ const Home = () => {
           </div>
         </div>
 
+        <EnhancedProductsSection ListProducts={ListProducts} />
         {/* Featured Products */}
         <div className="section-padding">
           <h1 className="responsive-subtitle ml-4">SẢN PHẨM NỔI BẬT</h1>

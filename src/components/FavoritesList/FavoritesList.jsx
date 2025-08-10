@@ -39,16 +39,6 @@ const FavoritesList = () => {
     }
   };
 
-  const addToCart = async (productId) => {
-    setActionLoading((prev) => ({ ...prev, [productId]: true }));
-
-    // Simulate API call
-    setTimeout(() => {
-      alert("Đã thêm vào giỏ hàng!");
-      setActionLoading((prev) => ({ ...prev, [productId]: false }));
-    }, 1000);
-  };
-
   const formatPrice = (price) => {
     if (!price && price !== 0) return "Liên hệ";
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
