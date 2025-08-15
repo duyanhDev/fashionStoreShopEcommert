@@ -17,24 +17,23 @@ function MainLayout() {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
 
   const isAdmin =
-    isAuthenticated && (user?.role === "admin" || user?.role === "staff");
+    isAuthenticated &&
+    (user?.role === "admin" ||
+      (user?.role === "staff" && !user?.isAccountLocked));
 
   return (
     <Router>
       <Routes>
         {/* Public fallback route */}
         <Route path="*" element={<NotFound />} />
-
-        {/* App routes (nested layout) */}
+        {/* App routes (nested layout) */}(
         <Route path="/" element={<App />}>
           {RouterLayout.map((route, index) => (
             <Route key={index} path={route.path} element={route.element} />
           ))}
         </Route>
-
-        {/* Auth callback route */}
+        ){/* Auth callback route */}
         <Route path="/auth/callback" element={<AuthCallback />} />
-
         {/* Admin routes - secured with Navigate */}
         {RouterAdmin.map((adminRoute, index) => (
           <Route
@@ -60,7 +59,6 @@ function MainLayout() {
             ))}
           </Route>
         ))}
-
         {/* Login fallback route */}
         <Route path="/login" element={<LoginForm />} />
       </Routes>

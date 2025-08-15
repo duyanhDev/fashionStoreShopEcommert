@@ -18,6 +18,7 @@ import {
   Select,
   Tooltip,
   Badge,
+  Switch,
 } from "antd";
 import {
   EyeOutlined,
@@ -32,6 +33,8 @@ import {
   TeamOutlined,
   CrownOutlined,
   SafetyCertificateOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
 } from "@ant-design/icons";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
@@ -113,6 +116,9 @@ const AccountAdmin = () => {
     }
   };
 
+  const handleStatusToggle = (checked) => {
+    console.log(checked);
+  };
   const columns = [
     {
       title: "STT",
@@ -146,6 +152,37 @@ const AccountAdmin = () => {
         </div>
       ),
     },
+    {
+      title: "Trạng thái",
+      dataIndex: "isActive",
+      width: 120,
+      align: "center",
+      render: (isAccountLocked, record) => {
+        return (
+          <div className="flex flex-col items-center gap-2">
+            <Tag
+              color={isAccountLocked ? "error" : "success"}
+              icon={
+                isAccountLocked ? (
+                  <LockOutlined style={{ color: "#ff4d4f" }} /> // Tài khoản bị khóa - icon khóa màu đỏ
+                ) : (
+                  <CheckCircleOutlined style={{ color: "#52c41a" }} /> // Tài khoản mở - icon check màu xanh
+                )
+              }
+              className="px-3 py-1 font-medium"
+            >
+              {isAccountLocked ? "Đang bị khóa" : "Đang hoạt động"}
+            </Tag>
+            <Switch
+              size="small"
+              checked={isAccountLocked}
+              onChange={(checked) => handleStatusToggle(checked)}
+            />
+          </div>
+        );
+      },
+    },
+
     {
       title: "Quyền hạn",
       dataIndex: "role",
@@ -268,6 +305,7 @@ const AccountAdmin = () => {
           gender: user.gender,
           role: user.role,
           totalPrice: formatPrice(user.totalPrice),
+          isAccountLocked: user.isAccountLocked,
         }))
       : [];
 

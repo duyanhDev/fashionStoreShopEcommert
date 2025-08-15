@@ -52,36 +52,50 @@ const LoginForm = () => {
 
   const handleLogin = async () => {
     if (!validateForm()) {
-      api["error"]({
+      api.error({
         message: "Lỗi đăng nhập",
         description: "Vui lòng kiểm tra lại thông tin đăng nhập",
       });
       return;
     }
 
+    setIsLoading(true); // ✅ Bắt đầu loading trước khi gọi API
+
     try {
       const res = await LoginAuth(email, password);
-      setIsLoading(true);
+      console.log(res);
+
       if (res && res.data.EC === 0) {
-        setTimeout(async () => {
-          localStorage.setItem("token", res.data.data.token);
-          dispatch(login(res.data.data.token, res.data.data.user));
-          setIsLoading(false);
-          navigate("/");
-        }, 5000);
-      } else {
-        api["error"]({
-          message: "Lỗi đăng nhập",
-          description: res.data.message || "Đăng nhập không thành công",
-        });
+        // Đăng nhập thành công
+        dispatch(login(res.data.data.token, res.data.data.user));
+        localStorage.setItem("token", res.data.data.token);
+        navigate("/");
       }
     } catch (error) {
       setIsLoading(false);
-      api["error"]({
-        message: "Lỗi đăng nhập",
-        description: "Vui lòng nhập đúng tài khoản hoặc mật khẩu",
-      });
-      console.error("Login error:", error);
+
+      if (error.response && error.response.data) {
+        const { EC, message } = error.response.data;
+
+        if (EC === -1) {
+          api.error({
+            message: "Tài khoản đang bị khóa",
+            description: message,
+          });
+        } else {
+          api.error({
+            message: "Lỗi đăng nhập",
+            description: message || "Đăng nhập không thành công",
+          });
+        }
+      } else {
+        api.error({
+          message: "Lỗi đăng nhập",
+          description: "Không thể kết nối tới máy chủ",
+        });
+      }
+    } finally {
+      setIsLoading(false); // ✅ Đảm bảo tắt loading trong mọi trường hợp
     }
   };
 

@@ -18,6 +18,7 @@ import {
   Select,
   Tooltip,
   Badge,
+  Switch,
 } from "antd";
 import {
   EyeOutlined,
@@ -27,12 +28,11 @@ import {
   UserOutlined,
   SearchOutlined,
   ReloadOutlined,
-  PlusOutlined,
   FilterOutlined,
-  TeamOutlined,
-  ShoppingCartOutlined,
   UsergroupAddOutlined,
   DollarOutlined,
+  CheckCircleOutlined,
+  LockOutlined,
 } from "@ant-design/icons";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
@@ -128,6 +128,10 @@ const UsersCustom = () => {
     return { level: "Mới", color: "green" };
   };
 
+  const handleStatusToggle = (checked) => {
+    console.log(checked);
+  };
+
   const columns = [
     {
       title: "STT",
@@ -164,6 +168,36 @@ const UsersCustom = () => {
           </div>
         </div>
       ),
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "isActive",
+      width: 120,
+      align: "center",
+      render: (isAccountLocked, record) => {
+        return (
+          <div className="flex flex-col items-center gap-2">
+            <Tag
+              color={isAccountLocked ? "error" : "success"}
+              icon={
+                isAccountLocked ? (
+                  <LockOutlined style={{ color: "#ff4d4f" }} /> // Tài khoản bị khóa - icon khóa màu đỏ
+                ) : (
+                  <CheckCircleOutlined style={{ color: "#52c41a" }} /> // Tài khoản mở - icon check màu xanh
+                )
+              }
+              className="px-3 py-1 font-medium"
+            >
+              {isAccountLocked ? "Đang bị khóa" : "Đang hoạt động"}
+            </Tag>
+            <Switch
+              size="small"
+              checked={isAccountLocked}
+              onChange={(checked) => handleStatusToggle(checked)}
+            />
+          </div>
+        );
+      },
     },
     {
       title: "Tổng chi tiêu",
@@ -281,6 +315,7 @@ const UsersCustom = () => {
           id: user._id,
           gender: user.gender,
           totalPrice: formatPrice(user.totalPrice),
+          isAccountLocked: user.isAccountLocked,
         }))
       : [];
 

@@ -153,7 +153,7 @@ const RegisterUser = async (name, email, password, avatar, isAdmin) => {
 };
 
 const SendverifyOTP = async (email) => {
-  return await axios.post("api/v1//send-otp", { email });
+  return await axios.post("api/v1/send-otp", { email });
 };
 
 const verifyOTP = async (

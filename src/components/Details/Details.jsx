@@ -6,8 +6,14 @@ import "swiper/css/free-mode";
 import "swiper/css/navigation";
 import "swiper/css/thumbs";
 import { FreeMode, Navigation, Thumbs } from "swiper/modules";
-import { Rate, Button, notification, Image, Avatar } from "antd";
-import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
+import { Rate, Button, notification } from "antd";
+import {
+  MinusOutlined,
+  PlusOutlined,
+  ShoppingCartOutlined,
+  HeartOutlined,
+  HeartFilled,
+} from "@ant-design/icons";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import {
   ListSlugProductAPI,
@@ -52,6 +58,8 @@ const Details = () => {
   const [activeThumbIndex, setActiveThumbIndex] = useState(0);
   const itemsPerPage = 5;
   const [currentPage, setCurrentPage] = useState(0);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isBuyingNow, setIsBuyingNow] = useState(false);
 
   const navigagte = useNavigate();
 
@@ -77,6 +85,7 @@ const Details = () => {
       setCount(count - 1);
     }
   };
+
   const formatPrice = (price) => {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
   };
@@ -86,10 +95,15 @@ const Details = () => {
       const res = await ListSlugProductAPI(param.slug);
 
       if (res && res.data && res.data.EC === 0) {
-        const ImagesUrl =
-          res.data.data.variants &&
-          res.data.data.variants.length > 0 &&
-          res.data.data.variants.map((item) => item.images);
+        const allImages =
+          res.data.data.variants?.reduce((acc, variant) => {
+            const variantImages = variant.images.map((img) => ({
+              ...img,
+              color: variant.color,
+            }));
+            return [...acc, ...variantImages];
+          }, []) || [];
+
         const Color =
           res.data.data.variants &&
           res.data.data.variants.length > 0 &&
@@ -98,6 +112,7 @@ const Details = () => {
           res.data.data.variants &&
           res.data.data.variants.length > 0 &&
           res.data.data.variants.map((item) => item.sizes);
+
         setId(res.data.data._id || "");
         setName(res.data.data.name || "");
         setDescription(res.data.data.description);
@@ -107,9 +122,9 @@ const Details = () => {
         setPricedisscount(res.data.data.discountedPrice || "");
         setStock(res.data.data.stock || "");
         setFeedBack(res.data.data.ratings || []);
-        setSumProducts(res.data.data.sold || 0);
+        setSumProducts(res.data.data.stock || 0);
         setVariants(res.data.data.variants || []);
-        setImage(ImagesUrl || []);
+        setImage(allImages);
         setColor(Color || []);
         setSize(SizeMap || []);
         SetcolorCart(res.data.data.variants[0]?.color || "");
@@ -131,43 +146,16 @@ const Details = () => {
     }
   }, [variants]);
 
-  const total = pricediscount ? count * pricediscount : count * price;
-
-  const handleSize = (item, quantity) => {
-    setSelectedSize(item);
-    setCheckSelectedSize(true);
-    SetSizeCart(item);
-    SetquantityProduct(quantity);
-  };
-
-  // Thêm state mới
-
-  // Tạo danh sách tất cả ảnh từ tất cả variants
-  const allImages = variants.reduce((acc, variant) => {
-    return [
-      ...acc,
-      ...variant.images.map((img) => ({ ...img, color: variant.color })),
-    ];
-  }, []);
-
-  // Tìm index của ảnh đầu tiên của màu được chọn trong danh sách tất cả ảnh
-  const getFirstImageIndexOfColor = (color) => {
-    return allImages.findIndex((img) => img.color === color);
-  };
-
-  // Cập nhật handleColor function
   const handleColor = useCallback(
     (item) => {
       setChecked(true);
       setSelectedColor(item);
       SetcolorCart(item);
 
-      // Tìm index của ảnh đầu tiên của màu được chọn
-      const firstImageIndex = getFirstImageIndexOfColor(item);
+      const firstImageIndex = image.findIndex((img) => img.color === item);
       if (firstImageIndex !== -1) {
         setActiveThumbIndex(firstImageIndex);
 
-        // Reset Swiper với delay để đảm bảo DOM đã cập nhật
         setTimeout(() => {
           if (mainSwiper) {
             mainSwiper.slideTo(firstImageIndex, 300);
@@ -180,10 +168,16 @@ const Details = () => {
         }, 100);
       }
     },
-    [mainSwiper, thumbsSwiper, allImages]
+    [mainSwiper, thumbsSwiper, image]
   );
 
-  // Thêm handler cho thumbnail click
+  const handleSize = (item, quantity) => {
+    setSelectedSize(item);
+    setCheckSelectedSize(true);
+    SetSizeCart(item);
+    setSumProducts(quantity);
+  };
+
   const handleThumbnailClick = useCallback(
     (index) => {
       setActiveThumbIndex(index);
@@ -191,36 +185,33 @@ const Details = () => {
         mainSwiper.slideTo(index);
       }
 
-      // Cập nhật màu được chọn dựa trên ảnh được click
-      const clickedImage = allImages[index];
+      const clickedImage = image[index];
       if (clickedImage && clickedImage.color !== SelectedColor) {
         setSelectedColor(clickedImage.color);
         SetcolorCart(clickedImage.color);
         setChecked(true);
       }
     },
-    [mainSwiper, allImages, SelectedColor]
+    [mainSwiper, image, SelectedColor]
   );
 
-  // Cập nhật main swiper để sync với thumbnail
   const handleSlideChange = useCallback(
     (swiper) => {
       setActiveThumbIndex(swiper.activeIndex);
 
-      // Cập nhật màu được chọn dựa trên slide hiện tại
-      const currentImage = allImages[swiper.activeIndex];
+      const currentImage = image[swiper.activeIndex];
       if (currentImage && currentImage.color !== SelectedColor) {
         setSelectedColor(currentImage.color);
         SetcolorCart(currentImage.color);
         setChecked(true);
       }
     },
-    [allImages, SelectedColor]
+    [image, SelectedColor]
   );
 
   const priceShift = discount ? pricediscount : price;
 
-  const handleAddCart = async () => {
+  const validateSelection = () => {
     if (!user) {
       api.open({
         message: "Yêu cầu đăng nhập",
@@ -228,30 +219,30 @@ const Details = () => {
         duration: 3,
         type: "warning",
       });
-      return;
+      return false;
     }
 
-    if (!color) {
+    if (!SelectedColor) {
       api.open({
         message: "Lỗi",
         description: "Vui lòng chọn màu khi thêm vào giỏ hàng.",
         duration: 3,
         type: "warning",
       });
-      return;
+      return false;
     }
 
-    if (!sizeCart) {
+    if (!SelectedSize) {
       api.open({
         message: "Lỗi",
-        description: "Vui lòng chọn kích thước  khi thêm vào giỏ hàng.",
+        description: "Vui lòng chọn kích thước khi thêm vào giỏ hàng.",
         duration: 3,
         type: "warning",
       });
-      return;
+      return false;
     }
 
-    if (quantityProduct < count) {
+    if (sumProducts < count) {
       api.open({
         message: "Lỗi",
         description:
@@ -259,15 +250,23 @@ const Details = () => {
         duration: 3,
         type: "warning",
       });
-      return;
+      return false;
     }
+
+    return true;
+  };
+
+  const handleAddCart = async () => {
+    if (!validateSelection() || isAddingToCart) return;
+
+    setIsAddingToCart(true);
     try {
       const res = await AddCartAPI(
         user._id,
         id,
         count,
-        sizeCart,
-        colorCart,
+        SelectedSize,
+        SelectedColor,
         priceShift
       );
 
@@ -275,20 +274,24 @@ const Details = () => {
         api.open({
           message: "Đã thêm vào giỏ hàng",
           description: (
-            <div className="flex gap-2 p-2 ">
+            <div className="flex gap-2 p-2">
               <img
                 src={
                   variants.find(
-                    (item) => item.color === colorCart.toLowerCase()
-                  )?.images[0]?.url || "/placeholder.svg"
+                    (item) => item.color === SelectedColor.toLowerCase()
+                  )?.images[0]?.url ||
+                  "/placeholder.svg" ||
+                  "/placeholder.svg"
                 }
-                className="img_cart"
-                alt="lỗi"
+                className="w-12 h-12 object-cover rounded"
+                alt="Product"
               />
               <div>
-                <h1 className="whitespace-nowrap">{name}</h1>
-                <h1>{`${colorCart} / ${sizeCart}`}</h1>
-                <h1>{`${pricediscount} / ${price}`}</h1>
+                <h1 className="whitespace-nowrap font-medium">{name}</h1>
+                <h1 className="text-sm text-gray-600">{`${SelectedColor} / ${SelectedSize}`}</h1>
+                <h1 className="text-sm font-medium">
+                  {formatPrice(priceShift)}
+                </h1>
               </div>
             </div>
           ),
@@ -298,6 +301,15 @@ const Details = () => {
       }
     } catch (error) {
       console.error("Error adding product to cart:", error);
+      api.open({
+        message: "Lỗi",
+        description:
+          "Đã xảy ra lỗi khi thêm sản phẩm vào giỏ hàng. Vui lòng thử lại.",
+        duration: 3,
+        type: "error",
+      });
+    } finally {
+      setIsAddingToCart(false);
     }
   };
 
@@ -307,7 +319,7 @@ const Details = () => {
       return acc + current.rating;
     }, 0);
 
-  const hanldetoggleLikeRatingAPI = async (ratings) => {
+  const toggleLikeRatingAPIHandler = async (ratingId) => {
     if (!user) {
       api.open({
         message: "Yêu cầu đăng nhập",
@@ -318,21 +330,27 @@ const Details = () => {
       return;
     }
     try {
-      const res = await toggleLikeRatingAPI(id, ratings, user._id);
+      const res = await toggleLikeRatingAPI(id, ratingId, user._id);
+
+      console.log(res);
 
       if (res && res.data && res.data.success === true) {
         FetchAPIDetaillProuduct();
       }
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   };
 
-  const TotalStock = variants
-    .map((item) => item.sizes.reduce((acc, size) => acc + size.quantity, 0))
-    .reduce((acc, total) => acc + total, 0);
+  const TotalStock = variants.reduce((total, variant) => {
+    return (
+      total +
+      variant.sizes.reduce((sizeTotal, sizeItem) => {
+        return sizeTotal + sizeItem.quantity;
+      }, 0)
+    );
+  }, 0);
 
-  // Navigation handlers với error handling
   const handleMainPrev = useCallback(() => {
     try {
       if (mainSwiper && !mainSwiper.destroyed) {
@@ -353,74 +371,15 @@ const Details = () => {
     }
   }, [mainSwiper]);
 
-  const handleThumbPrev = useCallback(() => {
+  const handleBuyNow = async () => {
+    if (!validateSelection() || isBuyingNow) return;
+
+    setIsBuyingNow(true);
     try {
-      if (thumbsSwiper && !thumbsSwiper.destroyed) {
-        thumbsSwiper.slidePrev();
-      }
-    } catch (error) {
-      console.error("Error in handleThumbPrev:", error);
-    }
-  }, [thumbsSwiper]);
-
-  const handleThumbNext = useCallback(() => {
-    try {
-      if (thumbsSwiper && !thumbsSwiper.destroyed) {
-        thumbsSwiper.slideNext();
-      }
-    } catch (error) {
-      console.error("Error in handleThumbNext:", error);
-    }
-  }, [thumbsSwiper]);
-
-  const handleAddProduct = async () => {
-    if (!user) {
-      api.open({
-        message: "Yêu cầu đăng nhập",
-        description: "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.",
-        duration: 3,
-        type: "warning",
-      });
-      return;
-    }
-
-    if (!color) {
-      api.open({
-        message: "Lỗi",
-        description: "Vui lòng chọn màu khi thêm vào giỏ hàng.",
-        duration: 3,
-        type: "warning",
-      });
-      return;
-    }
-
-    if (!sizeCart) {
-      api.open({
-        message: "Lỗi",
-        description: "Vui lòng chọn kích thước  khi thêm vào giỏ hàng.",
-        duration: 3,
-        type: "warning",
-      });
-      return;
-    }
-
-    if (quantityProduct < count) {
-      api.open({
-        message: "Lỗi",
-        description:
-          "Xin lỗi, số lượng bạn chọn vượt quá hàng có sẵn. Vui lòng điều chỉnh số lượng.",
-        duration: 3,
-        type: "warning",
-      });
-      return;
-    }
-
-    try {
-      handleAddCart();
-      CartListProductsUser();
+      await handleAddCart();
       setTimeout(() => {
         navigagte(`/cart`);
-      }, 2000);
+      }, 1500);
     } catch (error) {
       console.error(error);
       api.open({
@@ -430,580 +389,488 @@ const Details = () => {
         duration: 3,
         type: "error",
       });
+    } finally {
+      setIsBuyingNow(false);
     }
   };
 
+  const handleQuantityInput = (e) => {
+    const value = e.target.value;
+    if (value === "") {
+      setCount(""); // cho phép xóa tạm
+    } else {
+      const num = parseInt(value);
+      if (num >= 1 && num <= sumProducts) {
+        setCount(num);
+      } else if (num > sumProducts) {
+        setCount(sumProducts);
+      } else {
+        setCount(1);
+      }
+    }
+  };
+
+  const totalPrice = price && count && price * count;
+
   return (
-    <div className="Details ">
+    <div className="mt-28 min-h-screen bg-gradient-to-br from-white via-green-50/20 to-gray-50/30 relative overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-20 -right-20 w-64 h-64 bg-green-500/5 rounded-full blur-2xl animate-pulse"></div>
+        <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-green-400/5 rounded-full blur-2xl animate-pulse delay-1000"></div>
+      </div>
+
       {contextHolder}
-      <div className="Details_main flex flex-col md:flex-row gap-4 md:gap-8">
-        <div className="sm:w-full md:w-1/2">
-          <div className="relative">
-            <Swiper
-              onSwiper={setMainSwiper}
-              onSlideChange={handleSlideChange}
-              loop={allImages.length > 1}
-              spaceBetween={10}
-              navigation={false}
-              thumbs={{
-                swiper:
-                  thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null,
-              }}
-              modules={[FreeMode, Navigation, Thumbs]}
-              className="mySwiper2"
-              key={`main-all-images`}
-            >
-              {allImages.map((image, index) => (
-                <SwiperSlide key={`all-${index}`}>
-                  <Image
-                    src={image.url || "/placeholder.svg"}
-                    preview={{
-                      src: image.url,
-                    }}
-                    alt={`${name} - ${image.color} - ${index + 1}`}
-                  />
-                </SwiperSlide>
-              ))}
-            </Swiper>
 
-            {allImages.length > 1 && (
-              <>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+          {/* Image Gallery Section */}
+          <div className="space-y-6">
+            <div className="relative group">
+              <div className="aspect-square rounded-2xl overflow-hidden bg-white shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-[1.02]">
+                <Swiper
+                  onSwiper={setMainSwiper}
+                  spaceBetween={10}
+                  navigation={{
+                    nextEl: ".swiper-button-next-custom",
+                    prevEl: ".swiper-button-prev-custom",
+                  }}
+                  thumbs={{
+                    swiper:
+                      thumbsSwiper && !thumbsSwiper.destroyed
+                        ? thumbsSwiper
+                        : null,
+                  }}
+                  modules={[FreeMode, Navigation, Thumbs]}
+                  className="h-full"
+                  onSlideChange={handleSlideChange}
+                  effect="fade"
+                >
+                  {image.map((item, index) => (
+                    <SwiperSlide key={index}>
+                      <div className="w-full h-full flex items-center justify-center p-8 bg-gradient-to-br from-white to-gray-50/30">
+                        <img
+                          src={item.url || "/placeholder.svg"}
+                          alt={`${name} - ${item.color}`}
+                          className="max-w-full max-h-full object-contain transition-all duration-500 group-hover:scale-105"
+                        />
+                      </div>
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+
                 <button
+                  className="swiper-button-prev-custom absolute left-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-green-50"
                   onClick={handleMainPrev}
-                  className="custom-nav-btn custom-nav-prev"
-                  aria-label="Previous image"
                 >
                   <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
+                    className="w-4 h-4 text-gray-700"
                     fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
                     <path
-                      d="M15 18L9 12L15 6"
-                      stroke="currentColor"
-                      strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
                     />
                   </svg>
                 </button>
-
                 <button
+                  className="swiper-button-next-custom absolute right-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-green-50"
                   onClick={handleMainNext}
-                  className="custom-nav-btn custom-nav-next"
-                  aria-label="Next image"
                 >
                   <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
+                    className="w-4 h-4 text-gray-700"
                     fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
                     <path
-                      d="M9 18L15 12L9 6"
-                      stroke="currentColor"
-                      strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
                     />
                   </svg>
                 </button>
-              </>
-            )}
-          </div>
+              </div>
+            </div>
 
-          {allImages.length > 0 && (
-            <div className="compact-thumbnail-wrapper flex justify-center items-center">
+            <div className="relative">
               <Swiper
                 onSwiper={setThumbsSwiper}
-                loop={false}
-                spaceBetween={8}
-                slidesPerView="auto"
+                spaceBetween={10}
+                slidesPerView={4}
                 freeMode={true}
                 watchSlidesProgress={true}
                 modules={[FreeMode, Navigation, Thumbs]}
-                className="compact-thumbnail-swiper"
-                key={`compact-thumb-all-images`}
+                breakpoints={{
+                  640: { slidesPerView: 5, spaceBetween: 12 },
+                  768: { slidesPerView: 6, spaceBetween: 16 },
+                }}
+                className="thumbnail-swiper"
               >
-                {allImages.map((image, index) => (
-                  <SwiperSlide
-                    key={`compact-thumb-all-${index}`}
-                    className="compact-thumbnail-slide"
-                  >
+                {image.map((item, index) => (
+                  <SwiperSlide key={index}>
                     <div
-                      className={`compact-thumbnail-container ${
-                        index === activeThumbIndex ? "active" : ""
-                      } ${
-                        image.color === SelectedColor ? "current-color" : ""
-                      }`}
+                      className={`aspect-square rounded-lg overflow-hidden cursor-pointer transition-all duration-300 transform hover:scale-105 ${
+                        activeThumbIndex === index
+                          ? "ring-2 ring-green-500 shadow-lg scale-105"
+                          : "hover:shadow-md hover:ring-1 hover:ring-green-300/50"
+                      } bg-white shadow-sm`}
                       onClick={() => handleThumbnailClick(index)}
                     >
                       <img
-                        src={image.url || "/placeholder.svg"}
-                        className="compact-thumbnail-image"
-                        alt={`${name} ${image.color} thumbnail ${index + 1}`}
+                        src={item.url || "/placeholder.svg"}
+                        alt={`${name} thumbnail ${index + 1}`}
+                        className="w-full h-full object-cover transition-transform duration-300"
                       />
-                      {/* Hiển thị indicator cho màu hiện tại */}
-                      {image.color === SelectedColor && (
-                        <div className="color-indicator">
-                          <div className="color-dot"></div>
-                        </div>
-                      )}
                     </div>
                   </SwiperSlide>
                 ))}
               </Swiper>
             </div>
-          )}
-        </div>
-
-        <div className="w-full md:w-1/2 doisi_detail__main">
-          <div className="border border-b-2 ">
-            <div className="p-4">
-              <span className="text-[#484848] font-normal text-sm">
-                Thương hiệu :{" "}
-              </span>
-              <span className="text-pink-gradient uppercase">{brand}</span>
-              <div>
-                <h1 className="text-[#484848] text-base">{name}</h1>
-                <div
-                  className="text-[#484848] text-base"
-                  dangerouslySetInnerHTML={{ __html: description }}
-                />
-              </div>
-            </div>
           </div>
 
-          <div className="border border-b-2">
-            <div className="p-4">
-              <div className=" flex items-center gap-2">
-                <h1 className=" text-3xl text-black">
-                  {formatPrice(pricediscount)}
-                </h1>
-                <span className="text-[#b3b3b3] font-normal text-sm">
-                  {discount ? formatPrice(price) : ""}
+          {/* Product Information Section */}
+          <div className="space-y-8">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="px-4 py-2 bg-black text-white text-sm font-semibold rounded-full">
+                  {brand}
                 </span>
-                <span className="text-[#fe252c] font-normal text-sm">
-                  {discount ? `${discount}% ` : ""}
-                </span>
+                {discount && (
+                  <span className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-full animate-pulse">
+                    -{discount}% OFF
+                  </span>
+                )}
               </div>
-              <h1>
-                <Rate disabled value={TotalRatings > 30 ? 5 : 4} />
+
+              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
+                {name}
               </h1>
-            </div>
-          </div>
 
-          <div className="border border-b-2">
-            <div className="p-4">
-              <div className="flex items-center gap-1 ">
-                <h4 className="font-normal text-sm border-r pr-1">Màu sắc</h4>
-                <span className="text-[#b3b3b3] font-normal text-sm">
-                  {color.length} màu
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Rate
+                    disabled
+                    value={TotalRatings > 30 ? 5 : 4}
+                    className="text-base"
+                  />
+                  <span className="text-gray-600 text-sm">
+                    ({feedback.length} đánh giá)
+                  </span>
+                </div>
+                <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
+                <span className="text-green-700 font-medium bg-green-50 px-3 py-1 rounded-full text-sm">
+                  {quantityProduct} đã bán
                 </span>
               </div>
-
-              <div className="flex items-center gap-3 mt-3">
-                {variants.map((variant, index) => (
-                  <div
-                    key={index}
-                    className={`color-swatch ${
-                      SelectedColor === variant.color ? "selected" : ""
-                    }`}
-                    onClick={() => handleColor(variant.color)}
-                  >
-                    <img
-                      src={variant.images[0]?.url || "/placeholder.svg"}
-                      alt={`${name} - ${variant.color}`}
-                      className="color-swatch-image"
-                    />
-                    <div className="color-swatch-overlay">
-                      {SelectedColor === variant.color && (
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="check-icon"
-                        >
-                          <path
-                            d="M20 6L9 17L4 12"
-                            stroke="white"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                    <span className="color-name">{variant.color}</span>
-                  </div>
-                ))}
-              </div>
             </div>
-          </div>
 
-          <div className="border border-b-2">
-            <div className="p-4">
-              <div className="flex items-center gap-1">
-                <h4 className="font-normal text-sm border-r pr-1">
-                  Kích thước
-                </h4>
-                <span className="text-[#b3b3b3] font-normal text-sm">
-                  {size.length}
+            <div className="bg-white rounded-xl p-5 shadow-lg transform hover:scale-[1.01] transition-all duration-300">
+              <div className="flex items-baseline gap-3 flex-wrap">
+                <span className="text-3xl lg:text-4xl font-bold text-green-600">
+                  {formatPrice(pricediscount)}
                 </span>
+                {discount && (
+                  <span className="text-lg text-gray-500 line-through">
+                    {formatPrice(price)}
+                  </span>
+                )}
               </div>
-              <div className="flex items-center gap-1 m-3 size-selector">
-                {SelectedColor &&
-                  variants
-                    .find((variant) => variant.color === SelectedColor)
-                    ?.sizes.map((item, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleSize(item.size, item.quantity)}
-                        disabled={item.quantity === 0}
-                        className={`size-button ${
-                          sizeCart === item.size ? "selected" : ""
-                        } ${item.quantity === 0 ? "disabled" : ""}`}
-                      >
-                        {item.size} (
-                        {item.quantity > 0 ? item.quantity : "Hết hàng"})
-                      </button>
-                    ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="border border-b-2">
-            <div className="p-4">
-              <div className="flex items-center gap-1">
-                <span className="">Tổng Tiền : {formatPrice(total)}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm">
-            <div className="p-4 space-y-4">
-              {/* Product availability info */}
-              <div className="space-y-1">
-                <div className="flex items-center">
-                  <h4 className="text-gray-500 font-normal text-sm">
-                    {TotalStock > 0
-                      ? `${TotalStock} sản phẩm có sẵn`
-                      : "Đã bán hết"}
-                  </h4>
-                </div>
-
-                <div className="flex items-center">
-                  <h4 className="text-gray-500 font-normal text-sm">
-                    {sumProducts} sản phẩm đã bán
-                  </h4>
-                </div>
-              </div>
-
-              {/* Quantity selector and action buttons */}
-              {quantityProduct > 0 && (
-                <div className="space-y-4">
-                  {/* Desktop layout: Horizontal */}
-                  <div className="block md:flex items-center gap-x-4">
-                    {/* Quantity selector */}
-                    <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden w-[140px]">
-                      <Button
-                        className="w-10 h-10 border-none flex items-center justify-center hover:bg-gray-50"
-                        style={{ background: "transparent" }}
-                        onClick={handleDecrements}
-                        disabled={count <= 1}
-                      >
-                        <MinusOutlined className="text-gray-600" />
-                      </Button>
-
-                      <input
-                        type="number"
-                        min={1}
-                        max={quantityProduct}
-                        value={count}
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value, 10);
-                          if (
-                            !isNaN(value) &&
-                            value >= 1 &&
-                            value <= quantityProduct
-                          ) {
-                            setCount(value);
-                          } else if (e.target.value === "") {
-                            setCount("");
-                          }
-                        }}
-                        onBlur={() => {
-                          if (count === "" || isNaN(count)) setCount(1);
-                        }}
-                        className="w-12 h-10 text-center border-none outline-none focus:ring-0 border-x border-gray-300 text-base"
-                        style={{
-                          appearance: "textfield",
-                          MozAppearance: "textfield",
-                        }}
-                      />
-
-                      <Button
-                        className="w-10 h-10 border-none flex items-center justify-center hover:bg-gray-50"
-                        style={{ background: "transparent" }}
-                        onClick={handleIncrment}
-                        disabled={count >= quantityProduct}
-                      >
-                        <PlusOutlined className="text-gray-600" />
-                      </Button>
-                    </div>
-
-                    {/* Action buttons - Desktop */}
-                    <div className="flex flex-1 gap-3 sm:mt-4 md:mt-0">
-                      <Button
-                        type="primary"
-                        size="large"
-                        className="flex-1 font-medium"
-                        style={{
-                          backgroundColor: "#000",
-                          borderColor: "#000",
-                          height: "40px",
-                        }}
-                        onClick={handleAddProduct}
-                      >
-                        Mua ngay
-                      </Button>
-
-                      <Button
-                        type="primary"
-                        size="large"
-                        className="flex-1 font-medium"
-                        style={{
-                          backgroundColor: "#000",
-                          borderColor: "#000",
-                          height: "40px",
-                        }}
-                        onClick={handleAddCart}
-                      >
-                        Thêm vào giỏ hàng
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Out of stock message */}
-              {TotalStock <= 0 && (
-                <div className="text-center py-4">
-                  <p className="text-red-500 font-medium">
-                    Sản phẩm hiện đã hết hàng
+              {discount && (
+                <div className="mt-2 p-2 bg-green-50 rounded-lg">
+                  <p className="text-green-700 font-medium text-sm">
+                    🎉 Tiết kiệm {formatPrice(price - pricediscount)}
                   </p>
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      </div>
 
-      <div className="feedback">
-        <div className="w-1/5 star ">
-          <div className=" ">
-            <h1 className="text-center font-bold text-xl">ĐÁNH GIÁ SẢN PHẨM</h1>
-          </div>
-          <div className="mt-2">
-            <h1 className="text-center text-6xl font-bold">5</h1>
-          </div>
-          <div className="text-center mt-2">
-            <Rate disabled value={TotalRatings > 30 ? 5 : 4} size={30} />
-          </div>
-          <div className="text-center mt-2">
-            <p className="text-[#4d4d4d] text-xl italic">
-              {feedback && feedback.length} đánh giá
-            </p>
-          </div>
-        </div>
-        <div className="flex-1">
-          <div className="text-center font-bold text-xl mt-16">PHẢN HỒI</div>
-          {currentFeedback &&
-            [...currentFeedback]
-              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-              .map((item) => {
-                return (
-                  <div className="comment_users" key={item._id}>
-                    <div className="w-full m-4 flex items-center gap-3">
-                      {item && (
-                        <img
-                          className="w-10 h-10 rounded-full"
-                          src={
-                            item && item.userId.avatar ? (
-                              item.userId.avatar
-                            ) : (
-                              <Avatar>U</Avatar>
-                            )
-                          }
-                          alt="avatar lỗi"
-                        />
-                      )}
-
-                      {item && (
-                        <p className="flex items-center text-neutral-900 font-bold">
-                          {item.userId.name}{" "}
-                          <span className="ml-2 time_span">
-                            {" "}
-                            {moment(item.createdAt).format("DD-MM-YY")}
-                          </span>
-                        </p>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-gray-900">Màu sắc</h3>
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                  {color.length} màu
+                </span>
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                {variants.map((variant, index) => (
+                  <div
+                    key={index}
+                    className={`relative group cursor-pointer transition-all duration-300 transform hover:scale-105 ${
+                      SelectedColor === variant.color
+                        ? "ring-2 ring-green-500 scale-105 shadow-lg"
+                        : "hover:scale-105 hover:shadow-md"
+                    }`}
+                    onClick={() => handleColor(variant.color)}
+                  >
+                    <div className="aspect-square rounded-lg overflow-hidden bg-white shadow-sm">
+                      <img
+                        src={variant.images[0]?.url || "/placeholder.svg"}
+                        alt={`${name} - ${variant.color}`}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                      />
+                      {SelectedColor === variant.color && (
+                        <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center">
+                          <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                            <svg
+                              className="w-4 h-4 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2.5}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          </div>
+                        </div>
                       )}
                     </div>
-                    <div className="ml-5">
+                    <p className="text-center text-xs font-medium text-gray-700 mt-1 group-hover:text-green-600 transition-colors capitalize">
+                      {variant.color}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {SelectedColor && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-gray-900">Kích thước</h3>
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                  {variants
+                    .find((variant) => variant.color === SelectedColor)
+                    ?.sizes.map((sizeItem, index) => (
+                      <button
+                        key={index}
+                        className={`py-3 px-2 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 text-sm ${
+                          SelectedSize === sizeItem.size
+                            ? "bg-green-600 text-white shadow-lg scale-105"
+                            : sizeItem.quantity > 0
+                            ? "hover:bg-green-50 hover:shadow-md bg-white text-gray-900 border border-gray-200"
+                            : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                        }`}
+                        onClick={() =>
+                          sizeItem.quantity > 0 &&
+                          handleSize(sizeItem.size, sizeItem.quantity)
+                        }
+                        disabled={sizeItem.quantity <= 0}
+                      >
+                        <div>{sizeItem.size}</div>
+                        {sizeItem.quantity <= 0 && (
+                          <div className="text-xs">Hết</div>
+                        )}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-5">
+              <div className="flex items-center gap-4 flex-wrap">
+                <h3 className="text-lg font-bold text-gray-900">Số lượng</h3>
+                <div className="flex items-center bg-white rounded-lg overflow-hidden shadow-md">
+                  <button
+                    onClick={handleDecrements}
+                    className="p-2 hover:bg-green-50 transition-all duration-300 disabled:opacity-50"
+                    disabled={count <= 1}
+                  >
+                    <MinusOutlined className="text-gray-600" />
+                  </button>
+                  <input
+                    type="number"
+                    value={count}
+                    onChange={handleQuantityInput}
+                    min="1"
+                    max={sumProducts}
+                    className="w-16 px-2 py-2 text-center font-bold text-gray-900 bg-gray-50 border-0 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all duration-300"
+                  />
+                  <button
+                    onClick={handleIncrment}
+                    className="p-2 hover:bg-green-50 transition-all duration-300 disabled:opacity-50"
+                    disabled={count >= sumProducts}
+                  >
+                    <PlusOutlined className="text-gray-600" />
+                  </button>
+                </div>
+                {sumProducts > 0 && (
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                    {sumProducts} có sẵn
+                  </span>
+                )}
+
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-gray-900">Tổng tiền</h3>
+                  <span className="text-xs font-medium text-green-700 bg-green-100 px-3 py-1 rounded-full shadow-sm">
+                    {formatPrice(totalPrice)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<ShoppingCartOutlined />}
+                  onClick={handleAddCart}
+                  loading={isAddingToCart}
+                  disabled={
+                    TotalStock <= 0 ||
+                    !SelectedColor ||
+                    !SelectedSize ||
+                    isAddingToCart
+                  }
+                  className="flex-1 h-12 font-semibold rounded-lg bg-green-600 border-0 hover:bg-green-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
+                >
+                  {isAddingToCart ? "Đang thêm..." : "Thêm vào giỏ"}
+                </Button>
+                <Button
+                  size="large"
+                  onClick={handleBuyNow}
+                  loading={isBuyingNow}
+                  disabled={
+                    TotalStock <= 0 ||
+                    !SelectedColor ||
+                    !SelectedSize ||
+                    isBuyingNow
+                  }
+                  className="flex-1 h-12 font-semibold rounded-lg text-green-600 hover:bg-green-600 hover:text-white transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl bg-white"
+                >
+                  {isBuyingNow ? "Đang xử lý..." : "Mua ngay"}
+                </Button>
+              </div>
+
+              {TotalStock <= 0 && (
+                <div className="text-center py-4 bg-gray-50 rounded-lg">
+                  <p className="text-gray-600 font-medium">
+                    ⚠️ Sản phẩm hiện đã hết hàng
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white rounded-xl p-5 shadow-lg">
+              <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <span className="w-1 h-5 bg-green-600 rounded-full"></span>
+                Mô tả sản phẩm
+              </h3>
+              <div
+                className="text-gray-700 leading-relaxed text-sm prose max-w-none"
+                dangerouslySetInnerHTML={{ __html: description }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-16 space-y-8">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Đánh giá sản phẩm
+            </h2>
+            <div className="flex items-center justify-center gap-8 bg-white rounded-xl p-6 shadow-lg transform hover:scale-[1.01] transition-all duration-300">
+              <div className="text-center">
+                <div className="text-4xl font-bold text-green-600 mb-2">
+                  5.0
+                </div>
+                <Rate
+                  disabled
+                  value={TotalRatings > 30 ? 5 : 4}
+                  className="text-lg mb-2"
+                />
+                <p className="text-gray-600 font-medium">
+                  {feedback.length} đánh giá
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {currentFeedback.map((item) => (
+              <div
+                key={item._id}
+                className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.01]"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    {item.userId.avatar ? (
+                      <img
+                        className="w-12 h-12 rounded-full object-cover shadow-md"
+                        src={item.userId.avatar || "/placeholder.svg"}
+                        alt="User avatar"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center shadow-md">
+                        <span className="text-white font-semibold">
+                          {item.userId.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-semibold text-gray-900">
+                          {item.userId.name}
+                        </h4>
+                        <p className="text-xs text-gray-500">
+                          {moment(item.createdAt).format("DD/MM/YYYY")}
+                        </p>
+                      </div>
                       <Rate
-                        allowHalf={true}
+                        allowHalf
                         defaultValue={item.rating}
                         disabled
+                        className="text-sm"
                       />
                     </div>
-                    <div className="ml-5 flex gap-2 items-center">
-                      <p>{item.review}</p>
-
-                      {item.likes && item.likes.length > 0 ? (
-                        <p className="flex items-center gap-1">
-                          <svg
-                            aria-hidden="true"
-                            focusable="false"
-                            data-prefix="fas"
-                            data-icon="heart"
-                            className={`svg-inline--fa fa-heart w-5 cursor-pointer ${
-                              user?._id && item.likes.includes(user._id)
-                                ? "text-[#ed2b48]"
-                                : ""
-                            }`}
-                            role="img"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 512 512"
-                            onClick={() => hanldetoggleLikeRatingAPI(item._id)}
-                          >
-                            {user?._id && item.likes.includes(user._id) ? (
-                              <path
-                                fill="currentColor"
-                                d="M47.6 300.4L228.3 469.1c7.5 7 17.4 10.9 27.7 10.9s20.2-3.9 27.7-10.9L464.4 300.4c30.4-28.3 47.6-68 47.6-109.5v-5.8c0-69.9-50.5-129.5-119.4-141C347 36.5 300.6 51.4 268 84L256 96 244 84c-32.6-32.6-79-47.5-124.6-39.9C50.5 55.6 0 115.2 0 185.1v5.8c0 41.5 17.2 81.2 47.6 109.5z"
-                              ></path>
-                            ) : (
-                              <path
-                                fill="currentColor"
-                                d="M225.8 468.2l-2.5-2.3L48.1 303.2C17.4 274.7 0 234.7 0 192.8v-3.3c0-70.4 50-130.8 119.2-144C158.6 37.9 198.9 47 231 69.6c9 6.4 17.4 13.8 25 22.3c4.2-4.8 8.7-9.2 13.5-13.3c3.7-3.2 7.5-6.2 11.5-9c0 0 0 0 0 0C313.1 47 353.4 37.9 392.8 45.4C462 58.6 512 119.1 512 189.5v3.3c0 41.9-17.4 81.9-48.1 110.4L288.7 465.9l-2.5 2.3c-8.2 7.6-19 11.9-30.2 11.9s-22-4.2-30.2-11.9zM239.1 145c-.4-.3-.7-.7-1-1.1l-17.8-20c0 0-.1-.1-.1-.1c0 0 0 0 0 0c-23.1-25.9-58-37.7-92-31.2C81.6 101.5 48 142.1 48 189.5v3.3c0 28.5 11.9 55.8 32.8 75.2L256 430.7 431.2 268c20.9-19.4 32.8-46.7 32.8-75.2v-3.3c0-47.3-33.6-88-80.1-96.9c-34-6.5-69 5.4-92 31.2c0 0 0 0-.1 .1s0 0-.1 .1l-17.8 20c-.3 .4-.7 .7-1 1.1c-4.5 4.5-10.6 7-16.9 7s-12.4-2.5-16.9-7z"
-                              ></path>
-                            )}
-                          </svg>
-                          <span>{item.likes.length}</span>
-                        </p>
-                      ) : (
-                        <p>
-                          {" "}
-                          <svg
-                            aria-hidden="true"
-                            focusable="false"
-                            data-prefix="far"
-                            data-icon="heart"
-                            className="svg-inline--fa fa-heart w-5 cursor-pointer"
-                            role="img"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 512 512"
-                            onClick={() => hanldetoggleLikeRatingAPI(item._id)}
-                          >
-                            <path
-                              fill="currentColor"
-                              d="M225.8 468.2l-2.5-2.3L48.1 303.2C17.4 274.7 0 234.7 0 192.8v-3.3c0-70.4 50-130.8 119.2-144C158.6 37.9 198.9 47 231 69.6c9 6.4 17.4 13.8 25 22.3c4.2-4.8 8.7-9.2 13.5-13.3c3.7-3.2 7.5-6.2 11.5-9c0 0 0 0 0 0C313.1 47 353.4 37.9 392.8 45.4C462 58.6 512 119.1 512 189.5v3.3c0 41.9-17.4 81.9-48.1 110.4L288.7 465.9l-2.5 2.3c-8.2 7.6-19 11.9-30.2 11.9s-22-4.2-30.2-11.9zM239.1 145c-.4-.3-.7-.7-1-1.1l-17.8-20c0 0-.1-.1-.1-.1c0 0 0 0 0 0c-23.1-25.9-58-37.7-92-31.2C81.6 101.5 48 142.1 48 189.5v3.3c0 28.5 11.9 55.8 32.8 75.2L256 430.7 431.2 268c20.9-19.4 32.8-46.7 32.8-75.2v-3.3c0-47.3-33.6-88-80.1-96.9c-34-6.5-69 5.4-92 31.2c0 0 0 0-.1 .1s0 0-.1 .1l-17.8 20c-.3 .4-.7 .7-1 1.1c-4.5 4.5-10.6 7-16.9 7s-12.4-2.5-16.9-7z"
-                            ></path>
-                          </svg>
-                        </p>
-                      )}
-                    </div>
-                    <div className="feedback_div">
-                      {item.images &&
-                        item.images.length > 0 &&
-                        item.images.map((url, index) => {
-                          return (
-                            <img
-                              className="feedback_images"
-                              src={url || "/placeholder.svg"}
-                              alt="lỗi"
-                              key={index}
-                            />
-                          );
-                        })}
-                    </div>
-
-                    <div>
-                      {item.replies &&
-                        item.replies.length > 0 &&
-                        item.replies.map((reply, index) => {
-                          return (
-                            <div key={index} className="reply_comment">
-                              <div className="w-full m-4 flex items-center gap-3">
-                                {reply && (
-                                  <img
-                                    className="w-10 h-10 rounded-full"
-                                    src={
-                                      "https://www.coolmate.me/images/logo-circle.svg"
-                                    }
-                                    alt="avatar lỗi"
-                                  />
-                                )}
-                                {reply && (
-                                  <p className="flex items-center text-neutral-900 font-bold">
-                                    Phản hồi từ Dosiin
-                                    <span className="ml-2 time_span">
-                                      {moment(reply.createdAt).format(
-                                        "DD-MM-YY"
-                                      )}
-                                    </span>
-                                  </p>
-                                )}
-                              </div>
-                              <div className="ml-5">
-                                <p className="font-bold">{reply.content}</p>
-                              </div>
-                            </div>
-                          );
-                        })}
+                    <p className="text-gray-700 leading-relaxed text-sm">
+                      {item.review}
+                    </p>
+                    <div className="flex items-center ">
+                      <span>{item.likes.length}</span>
+                      <button
+                        onClick={() => toggleLikeRatingAPIHandler(item._id)}
+                        className="flex items-center gap-1 px-3 py-1 rounded-full hover:bg-green-50 transition-all duration-300 transform hover:scale-110"
+                      >
+                        {user?._id && item.likes.includes(user._id) ? (
+                          <HeartFilled className="text-green-500 text-sm" />
+                        ) : (
+                          <HeartOutlined className="text-gray-400 text-sm" />
+                        )}
+                      </button>
                     </div>
                   </div>
-                );
-              })}
-          <ReactPaginate
-            previousLabel={
-              <svg
-                viewBox="64 64 896 896"
-                focusable="false"
-                data-icon="left"
-                width="1em"
-                height="1em"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M724 218.3V141c0-6.7-7.7-10.4-12.9-6.3L260.3 486.8a31.86 31.86 0 000 50.3l450.8 352.1c5.3 4.1 12.9.4 12.9-6.3v-77.3c0-4.9-2.3-9.6-6.1-12.6l-360-281 360-281.1c3.8-3 6.1-7.7 6.1-12.6z"></path>
-              </svg>
-            }
-            nextLabel={
-              <svg
-                viewBox="64 64 896 896"
-                focusable="false"
-                data-icon="right"
-                width="16px"
-                height="16px"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M765.7 486.8L314.9 134.7A7.97 7.97 0 00302 141v77.3c0 4.9 2.3 9.6 6.1 12.6l360 281.1-360 281.1c-3.9 3-6.1 7.7-6.1 12.6V883c0 6.7 7.7 10.4 12.9 6.3l450.8-352.1a31.96 31.96 0 000-50.4z"></path>
-              </svg>
-            }
-            breakLabel={"..."}
-            pageCount={pageCount}
-            marginPagesDisplayed={2}
-            pageRangeDisplayed={3}
-            onPageChange={handlePageClick}
-            containerClassName={"pagination"}
-            activeClassName={"active"}
-          />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {pageCount > 1 && (
+            <div className="flex justify-center">
+              <ReactPaginate
+                previousLabel="‹"
+                nextLabel="›"
+                breakLabel="..."
+                pageCount={pageCount}
+                marginPagesDisplayed={2}
+                pageRangeDisplayed={5}
+                onPageChange={handlePageClick}
+                containerClassName="flex items-center gap-1"
+                pageClassName="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-green-50 transition-all cursor-pointer font-medium transform hover:scale-110 bg-white shadow-sm"
+                activeClassName="bg-green-600 text-white shadow-lg scale-110"
+                previousClassName="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-green-50 transition-all cursor-pointer font-bold transform hover:scale-110 bg-white shadow-sm"
+                nextClassName="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-green-50 transition-all cursor-pointer font-bold transform hover:scale-110 bg-white shadow-sm"
+                disabledClassName="opacity-50 cursor-not-allowed"
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
