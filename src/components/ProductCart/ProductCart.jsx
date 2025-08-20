@@ -131,11 +131,11 @@ const ProductCart = ({
             <div className="flex gap-2 p-2">
               <img
                 src={images[0]?.images[0]?.url}
-                className="img_cart"
+                className="img_cart w-32 h-32"
                 alt="lỗi"
               />
               <div>
-                <h1 className="whitespace-nowrap">{productname}</h1>
+                <h1 className="whitespace-pre-wrap">{productname}</h1>
                 <h1>{`${color} / ${Size}`}</h1>
                 <h1>{`${costPrice} / ${price}`}</h1>
               </div>

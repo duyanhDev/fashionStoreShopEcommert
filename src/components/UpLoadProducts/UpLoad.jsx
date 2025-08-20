@@ -332,11 +332,6 @@ const UpLoad = () => {
         return;
       }
 
-      if (image.length > 0 && image.length !== color.length) {
-        messageApi.error("Số lượng ảnh phải khớp với số màu đã chọn");
-        return;
-      }
-
       const res = await UpdateProductAPI(
         param.id,
         name,
@@ -546,7 +541,7 @@ const UpLoad = () => {
                     <InputNumber
                       style={{ width: "100%" }}
                       min={1}
-                      max={9000000}
+                      max={90000000}
                       value={price}
                       onChange={onChangePrice}
                       formatter={(value) =>

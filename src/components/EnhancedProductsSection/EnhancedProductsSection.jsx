@@ -1,7 +1,17 @@
+import { notification } from "antd";
 import { useState, useEffect } from "react";
-
+import { useSelector } from "react-redux";
+import {
+  addToWishlistAPI,
+  getWishlistAPI,
+  RemoveToWishListAPI,
+} from "../../service/WishList";
 const ProductsSection = ({ ListProducts }) => {
   const [hoveredProduct, setHoveredProduct] = useState(null);
+  const { user } = useSelector((state) => state.auth);
+  const [api, contextHolder] = notification.useNotification();
+  const [WishList, setWishList] = useState([]);
+
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -180,10 +190,10 @@ const ProductsSection = ({ ListProducts }) => {
   const saleProducts = products
     .filter((p) => p.isOnSale || p.discount > 0)
     .sort((a, b) => (b.discount || 0) - (a.discount || 0))
-    .slice(0, 8);
+    .slice(0, 10);
   const bestsellerProducts = products
     .sort((a, b) => (b.soldCount || 0) - (a.soldCount || 0))
-    .slice(0, 8);
+    .slice(0, 10);
 
   const formatPrice = (price) => {
     return price?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
@@ -212,9 +222,11 @@ const ProductsSection = ({ ListProducts }) => {
   );
 
   const CountdownTimer = () => (
-    <div className="flex justify-center items-center gap-4 mb-8">
-      <div className="text-white text-sm font-medium">Kết thúc sau:</div>
-      <div className="flex gap-2">
+    <div className="flex justify-center items-center gap-2 sm:gap-4 mb-8">
+      <div className="text-white text-xs sm:text-sm font-medium">
+        Kết thúc sau:
+      </div>
+      <div className="flex gap-1 sm:gap-2">
         {[
           { label: "Ngày", value: timeLeft.days },
           { label: "Giờ", value: timeLeft.hours },
@@ -222,8 +234,8 @@ const ProductsSection = ({ ListProducts }) => {
           { label: "Giây", value: timeLeft.seconds },
         ].map((item, index) => (
           <div key={index} className="text-center">
-            <div className="bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 min-w-[48px] border border-green-200">
-              <div className="text-black font-semibold text-lg">
+            <div className="bg-white/90 backdrop-blur-sm rounded-lg px-2 sm:px-3 py-1 sm:py-2 min-w-[32px] sm:min-w-[48px] border border-green-200">
+              <div className="text-black font-semibold text-sm sm:text-lg">
                 {String(item.value).padStart(2, "0")}
               </div>
             </div>
@@ -233,6 +245,68 @@ const ProductsSection = ({ ListProducts }) => {
       </div>
     </div>
   );
+
+  const fetchListWishList = async () => {
+    try {
+      const res = await getWishlistAPI(user?._id);
+      if (res && res.data && res.data.EC === 0) {
+        setWishList(res.data.data.products);
+      }
+    } catch (error) {
+      throw new Error("Lỗi lấy danh sách yêu thích");
+    }
+  };
+
+  const handleRemoveWishList = async (productId) => {
+    try {
+      const res = await RemoveToWishListAPI(user?._id, productId);
+
+      if (res && res.data && res.data.EC === 0) {
+        api["success"]({
+          message: "Đã xóa khỏi danh sách yêu thích",
+        });
+        fetchListWishList();
+      }
+    } catch (error) {
+      api["error"]({
+        message: "Lỗi khi xóa sản phẩm khỏi danh sách yêu thích",
+        description: "Lỗi khi xóa sản phẩm khỏi danh sách yêu thích",
+      });
+    }
+  };
+  useEffect(() => {
+    fetchListWishList();
+  }, [user?._id]);
+
+  const isProductInWishlist = WishList?.map((item) => item.product._id);
+
+  const addWishListProducts = async (productId) => {
+    try {
+      if (!user) {
+        api["error"]({
+          message: "Vui lòng đăng nhập",
+          description: "Khách hàng đăng nhập mới sử dụng được tính năng này",
+        });
+        return;
+      }
+      try {
+        const res = await addToWishlistAPI(user?._id, productId);
+
+        if (res && res.data && res.data.EC === 0) {
+          api["success"]({
+            message: "Đã thêm vào danh sách yêu thích",
+            description: res.data.message,
+          });
+          fetchListWishList();
+        }
+      } catch (error) {
+        api["error"]({
+          message: "Sản phẩm đã tồn tại danh sách yêu thích",
+          description: "Sản phẩm đã tồn tại danh sách yêu thích",
+        });
+      }
+    } catch (error) {}
+  };
 
   const ProductCard = ({ product, index, section }) => (
     <div
@@ -258,39 +332,66 @@ const ProductsSection = ({ ListProducts }) => {
         </div>
 
         {/* Badges */}
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
+        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex flex-col gap-1 sm:gap-2">
           {product.discount > 0 && (
-            <div className="bg-green-600 text-white text-xs font-semibold px-2 py-1 rounded">
+            <div className="bg-green-600 text-white text-xs font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
               -{product.discount}%
             </div>
           )}
           {section === "bestseller" && index < 3 && (
-            <div className="bg-black text-white text-xs font-semibold px-2 py-1 rounded">
+            <div className="bg-black text-white text-xs font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
               TOP {index + 1}
             </div>
           )}
         </div>
 
         {/* Action Buttons */}
-        <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <button className="bg-white p-2 rounded-full shadow-md hover:shadow-lg transition-shadow duration-200">
-            <svg
-              className="w-4 h-4 text-gray-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        <div className="absolute top-2 sm:top-3 right-2 sm:right-3 flex flex-col gap-1 sm:gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          {isProductInWishlist.includes(product._id) ? (
+            <>
+              <button
+                className="bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
+                onClick={() => handleRemoveWishList(product._id)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 text-green-600"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                  />
+                </svg>
+              </button>
+            </>
+          ) : (
+            <button
+              className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
+              onClick={() => addWishListProducts(product._id)}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-              />
-            </svg>
-          </button>
-          <button className="bg-green-600 text-white p-2 rounded-full shadow-md hover:shadow-lg hover:bg-green-700 transition-all duration-200">
+              <svg
+                className="w-4 h-4 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                />
+              </svg>
+            </button>
+          )}
+          <button className="bg-green-600 text-white p-1.5 sm:p-2 rounded-full shadow-md hover:shadow-lg hover:bg-green-700 transition-all duration-200">
             <svg
-              className="w-4 h-4"
+              className="w-3 sm:w-4 h-3 sm:h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -307,19 +408,19 @@ const ProductsSection = ({ ListProducts }) => {
 
         {/* Bestseller sold count */}
         {section === "bestseller" && product.soldCount && (
-          <div className="absolute bottom-3 left-3 bg-green-600 text-white text-xs font-medium px-2 py-1 rounded">
+          <div className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 bg-green-600 text-white text-xs font-medium px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
             Đã bán {product.soldCount?.toLocaleString()}
           </div>
         )}
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-3">
+      <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
         <div className="space-y-1">
           <div className="text-xs font-medium text-green-600 uppercase tracking-wide">
             {product.brand}
           </div>
-          <h3 className="font-medium text-gray-900 line-clamp-2 text-sm leading-tight hover:text-green-600 transition-colors duration-200 cursor-pointer">
+          <h3 className="font-medium text-gray-900 line-clamp-2 text-xs sm:text-sm leading-tight hover:text-green-600 transition-colors duration-200 cursor-pointer">
             {product.name}
           </h3>
         </div>
@@ -330,28 +431,28 @@ const ProductsSection = ({ ListProducts }) => {
         {/* Price */}
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-lg font-semibold text-green-600">
+            <span className="text-sm sm:text-lg font-semibold text-green-600">
               {formatPrice(product.discountedPrice || product.price)}
             </span>
             {product.discount > 0 && (
-              <span className="text-sm text-gray-400 line-through">
-                {formatPrice(product.costPrice || product.price)}
+              <span className="text-xs sm:text-sm text-gray-400 line-through">
+                {formatPrice(product.price || product.costPrice)}
               </span>
             )}
           </div>
           {product.discount > 0 && (
-            <div className="text-sm text-green-600">
+            <div className="text-xs sm:text-sm text-green-600">
               Tiết kiệm{" "}
               {formatPrice(
-                (product.costPrice || product.price) -
-                  (product.discountedPrice || product.price)
+                (product.price || product.costPrice) -
+                  (product.discountedPrice || product.costPrice)
               )}
             </div>
           )}
         </div>
 
         {/* Quick Add Button */}
-        <button className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 rounded-lg transition-colors duration-200 opacity-0 group-hover:opacity-100">
+        <button className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-1.5 sm:py-2 rounded-lg transition-colors duration-200 opacity-0 group-hover:opacity-100 text-xs sm:text-sm">
           Thêm vào giỏ hàng
         </button>
       </div>
@@ -359,21 +460,22 @@ const ProductsSection = ({ ListProducts }) => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50">
-      <div className="space-y-16 px-4 max-w-7xl mx-auto py-12">
+    <div className="w-full min-h-screen">
+      {contextHolder}
+      <div className="w-full space-y-8 sm:space-y-12 lg:space-y-16  sm:py-8 lg:py-12">
         {/* Hero Section */}
-        <section className="text-center py-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+        <section className="text-center py-4 sm:py-6 lg:py-8 w-full">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4 px-2">
             Bộ Sưu Tập <span className="text-green-600">Thời Trang</span>
           </h1>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-8">
+          <p className="text-sm sm:text-base lg:text-lg text-gray-600 max-w-3xl mx-auto mb-6 sm:mb-8 px-2">
             Khám phá những xu hướng thời trang mới nhất với chất lượng cao và
             giá cả hợp lý
           </p>
-          <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500">
-            <span className="flex items-center gap-2">
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500 px-2">
+            <span className="flex items-center gap-1 sm:gap-2">
               <svg
-                className="w-4 h-4 text-green-600"
+                className="w-3 sm:w-4 h-3 sm:h-4 text-green-600"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -385,9 +487,9 @@ const ProductsSection = ({ ListProducts }) => {
               </svg>
               Miễn phí vận chuyển
             </span>
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-1 sm:gap-2">
               <svg
-                className="w-4 h-4 text-green-600"
+                className="w-3 sm:w-4 h-3 sm:h-4 text-green-600"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -399,9 +501,9 @@ const ProductsSection = ({ ListProducts }) => {
               </svg>
               Đổi trả trong 30 ngày
             </span>
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-1 sm:gap-2">
               <svg
-                className="w-4 h-4 text-green-600"
+                className="w-3 sm:w-4 h-3 sm:h-4 text-green-600"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -417,30 +519,30 @@ const ProductsSection = ({ ListProducts }) => {
         </section>
 
         {/* Sale Products Section */}
-        <section className="relative overflow-hidden">
-          <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl">
-            <div className="relative py-12 px-6">
-              <div className="max-w-6xl mx-auto">
+        <section className="w-full relative overflow-hidden">
+          <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl w-full">
+            <div className="relative py-6 sm:py-8 lg:py-12 px-3 sm:px-4 lg:px-6">
+              <div className="w-full">
                 {/* Section Header */}
-                <div className="text-center mb-8">
-                  <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium mb-4">
+                <div className="text-center mb-6 sm:mb-8">
+                  <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium mb-3 sm:mb-4">
                     <span>🔥</span>
                     <span>FLASH SALE</span>
                   </div>
-                  <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">
                     Khuyến Mãi Đặc Biệt
                   </h2>
-                  <p className="text-white/90 text-base max-w-2xl mx-auto mb-2">
+                  <p className="text-white/90 text-sm sm:text-base max-w-2xl mx-auto mb-2 px-2">
                     Giảm giá lên đến 50% cho các sản phẩm chất lượng cao
                   </p>
-                  <p className="text-white/80 text-sm mb-6">
+                  <p className="text-white/80 text-xs sm:text-sm mb-4 sm:mb-6 px-2">
                     ⚡ Số lượng có hạn - Nhanh tay đặt hàng ngay!
                   </p>
                   <CountdownTimer />
                 </div>
 
                 {/* Products Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-4 2xl:grid-cols-5 gap-2 sm:gap-3 md:gap-4 lg:gap-4 w-full">
                   {saleProducts.map((product, index) => (
                     <ProductCard
                       key={product._id}
@@ -452,8 +554,8 @@ const ProductsSection = ({ ListProducts }) => {
                 </div>
 
                 {/* View All Button */}
-                <div className="text-center mt-8">
-                  <button className="bg-white text-green-600 hover:bg-gray-50 font-medium px-8 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
+                <div className="text-center mt-6 sm:mt-8">
+                  <button className="bg-white text-green-600 hover:bg-gray-50 font-medium px-4 sm:px-6 lg:px-8 py-2 sm:py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 text-sm sm:text-base">
                     Xem tất cả sản phẩm khuyến mãi →
                   </button>
                 </div>
@@ -463,50 +565,50 @@ const ProductsSection = ({ ListProducts }) => {
         </section>
 
         {/* Bestseller Products Section */}
-        <section className="relative overflow-hidden">
-          <div className="bg-gradient-to-r from-gray-100 to-gray-200 rounded-2xl shadow-xl border border-gray-200">
-            <div className="relative py-12 px-6">
-              <div className="max-w-6xl mx-auto">
+        <section className="w-full relative overflow-hidden">
+          <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl w-full">
+            <div className="relative py-6 sm:py-8 lg:py-12 px-3 sm:px-4 lg:px-6">
+              <div className="w-full">
                 {/* Section Header */}
-                <div className="text-center mb-8">
-                  <div className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-4">
+                <div className="text-center mb-6 sm:mb-8">
+                  <div className="inline-flex items-center gap-2 bg-green-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium mb-3 sm:mb-4">
                     <span>🏆</span>
                     <span>TOP SELLER</span>
                   </div>
-                  <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">
                     Sản Phẩm Bán Chạy Nhất
                   </h2>
-                  <p className="text-gray-600 text-base max-w-2xl mx-auto mb-2">
+                  <p className="text-white text-sm sm:text-base max-w-2xl mx-auto mb-2 px-2">
                     Những sản phẩm được khách hàng tin tưởng và lựa chọn nhiều
                     nhất
                   </p>
-                  <p className="text-gray-500 text-sm mb-6">
+                  <p className="text-black text-xs sm:text-sm mb-4 sm:mb-6 px-2">
                     ⭐ Được đánh giá cao bởi hàng nghìn khách hàng
                   </p>
 
                   {/* Stats */}
-                  <div className="flex flex-wrap justify-center gap-8 mb-8">
+                  <div className="flex flex-wrap justify-center gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">
+                      <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
                         10,000+
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-xs sm:text-sm text-gray-900">
                         Khách hàng hài lòng
                       </div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">
+                      <div className="text-lg sm:text-xl lg:text-2xl text-white font-bold">
                         50,000+
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-xs sm:text-sm text-gray-900">
                         Sản phẩm đã bán
                       </div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">
+                      <div className="text-lg sm:text-xl lg:text-2xl text-white font-bold">
                         4.8★
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-xs sm:text-sm text-gray-900">
                         Đánh giá trung bình
                       </div>
                     </div>
@@ -514,7 +616,7 @@ const ProductsSection = ({ ListProducts }) => {
                 </div>
 
                 {/* Products Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-4 2xl:grid-cols-5 gap-2 sm:gap-3 md:gap-4 lg:gap-4 w-full">
                   {bestsellerProducts.map((product, index) => (
                     <ProductCard
                       key={product._id}
@@ -526,8 +628,8 @@ const ProductsSection = ({ ListProducts }) => {
                 </div>
 
                 {/* View All Button */}
-                <div className="text-center mt-8">
-                  <button className="bg-green-600 text-white hover:bg-green-700 font-medium px-8 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
+                <div className="text-center mt-6 sm:mt-8">
+                  <button className="bg-green-600 text-white hover:bg-green-700 font-medium px-4 sm:px-6 lg:px-8 py-2 sm:py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 text-sm sm:text-base">
                     Khám phá thêm bestsellers →
                   </button>
                 </div>
@@ -537,21 +639,21 @@ const ProductsSection = ({ ListProducts }) => {
         </section>
 
         {/* Newsletter Section */}
-        <section className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
-          <div className="max-w-4xl mx-auto text-center">
-            <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+        <section className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 w-full">
+          <div className="w-full max-w-4xl mx-auto text-center">
+            <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
               Đăng Ký Nhận Thông Tin
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 px-2">
               Nhận thông báo về các chương trình khuyến mãi và sản phẩm mới nhất
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 max-w-md mx-auto">
               <input
                 type="email"
                 placeholder="Nhập email của bạn"
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="flex-1 px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
               />
-              <button className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors duration-200 font-medium">
+              <button className="bg-green-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg hover:bg-green-700 transition-colors duration-200 font-medium text-sm sm:text-base">
                 Đăng ký
               </button>
             </div>

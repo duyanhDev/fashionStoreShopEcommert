@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-
 import {
   Button,
   Card,
@@ -10,6 +9,7 @@ import {
   Avatar,
   Input,
   Form,
+  Badge,
 } from "antd";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "./Home.css";
@@ -42,7 +42,13 @@ import {
   PhoneIcon,
   MapPinIcon,
   CalendarIcon,
+  HeartIcon,
+  ShoppingBagIcon,
+  EyeIcon,
+  ArrowRightIcon,
+  StarIcon,
 } from "@heroicons/react/24/outline";
+import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
 import EnhancedProductsSection from "../EnhancedProductsSection/EnhancedProductsSection";
 
 const Home = () => {
@@ -205,12 +211,10 @@ const Home = () => {
 
   const SkeletonCard = () => (
     <Card
-      style={{ width: "100%", maxWidth: 265.8 }}
-      cover={
-        <Skeleton.Image active={true} style={{ width: "100%", height: 200 }} />
-      }
+      className="w-full h-full shadow-lg border-0 hover:shadow-xl transition-all duration-300"
+      cover={<Skeleton.Image active={true} className="!h-80 w-full" />}
     >
-      <Skeleton active={true} paragraph={{ rows: 3 }} />
+      <Skeleton active={true} paragraph={{ rows: 4 }} />
     </Card>
   );
 
@@ -301,6 +305,9 @@ const Home = () => {
 
   const isProductInWishlist = WishList?.map((item) => item.product._id);
 
+  // Get featured products (first 4)
+  const featuredProducts = ListProducts?.slice(0, 5) || [];
+
   return (
     <>
       <SliderComponent />
@@ -308,161 +315,210 @@ const Home = () => {
 
       <div className="home_doisin">
         {/* Category Section */}
-        <div className="flex justify-center items-center mt-8 mb-6">
-          <h1 className="responsive-title" data-aos="fade-down-right">
-            BẠN ĐANG TÌM KIẾM?
-          </h1>
-        </div>
-        <div className="dosin_home_hc">
-          {/* ÁO KHOÁC */}
-          <div
-            className="doisin_hc_item fade-in"
-            data-aos="zoom-in-up"
-            data-aos-delay="0"
-            tabIndex={0}
-            role="button"
-            aria-label="Xem ÁO KHOÁC"
-          >
-            <Link
-              className="hc_item"
-              to="/unisex?Category=Áo+Khoác&currentPage=1"
-            >
-              <img
-                src={Aokhoac}
-                alt="ÁO KHOÁC"
-                loading="lazy"
-                className="m-auto"
-              />
-              <span>
-                <span>ÁO KHOÁC</span>
-                <span>Áo khoác thời trang Nam/Nữ</span>
-              </span>
-            </Link>
-          </div>
+        <div className="py-16 bg-white">
+          <div className="w-full mx-auto px-4 sm:px-2 lg:px-4">
+            <div className="text-center mb-12">
+              <h1
+                className="text-4xl md:text-5xl font-bold text-gray-900 mb-4"
+                data-aos="fade-down-right"
+              >
+                BẠN ĐANG TÌM KIẾM?
+              </h1>
+              <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-600 mx-auto rounded-full"></div>
+            </div>
 
-          {/* ĐỒ NAM */}
-          <div
-            className="doisin_hc_item fade-in"
-            data-aos="zoom-in-up"
-            data-aos-delay="100"
-            tabIndex={0}
-            role="button"
-            aria-label="Xem ĐỒ NAM"
-          >
-            <Link className="hc_item" to="/male">
-              <img src={Ao} alt="ĐỒ NAM" loading="lazy" className="m-auto" />
-              <span>
-                <span>ĐỒ NAM</span>
-                <span>Áo thun, sơ mi, quần dài, sort...</span>
-              </span>
-            </Link>
-          </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
+              {/* ÁO KHOÁC */}
+              <div
+                className="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100"
+                data-aos="zoom-in-up"
+                data-aos-delay="0"
+              >
+                <Link
+                  className="block p-6 text-center"
+                  to="/unisex?Category=Áo+Khoác&currentPage=1"
+                >
+                  <div className="relative mb-4">
+                    <img
+                      src={Aokhoac}
+                      alt="ÁO KHOÁC"
+                      loading="lazy"
+                      className="w-20 h-20 mx-auto object-contain group-hover:scale-110 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-blue-500/10 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm mb-1">
+                    ÁO KHOÁC
+                  </h3>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Áo khoác thời trang Nam/Nữ
+                  </p>
+                </Link>
+              </div>
 
-          {/* ĐỒ NỮ */}
-          <div
-            className="doisin_hc_item fade-in"
-            data-aos="zoom-in-up"
-            data-aos-delay="200"
-            tabIndex={0}
-            role="button"
-            aria-label="Xem ĐỒ NỮ"
-          >
-            <Link className="hc_item" to="/female">
-              <img src={Quan} alt="ĐỒ NỮ" loading="lazy" className="m-auto" />
-              <span>
-                <span>ĐỒ NỮ</span>
-                <span>Áo quần, chân váy, đầm, yếm...</span>
-              </span>
-            </Link>
-          </div>
+              {/* ĐỒ NAM */}
+              <div
+                className="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100"
+                data-aos="zoom-in-up"
+                data-aos-delay="100"
+              >
+                <Link className="block p-6 text-center" to="/male">
+                  <div className="relative mb-4">
+                    <img
+                      src={Ao}
+                      alt="ĐỒ NAM"
+                      loading="lazy"
+                      className="w-20 h-20 mx-auto object-contain group-hover:scale-110 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-green-500/10 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm mb-1">
+                    ĐỒ NAM
+                  </h3>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Áo thun, sơ mi, quần dài, sort...
+                  </p>
+                </Link>
+              </div>
 
-          {/* ĐỒ UNISEX */}
-          <div
-            className="doisin_hc_item fade-in"
-            data-aos="zoom-in-up"
-            data-aos-delay="300"
-            tabIndex={0}
-            role="button"
-            aria-label="Xem ĐỒ UNISEX"
-          >
-            <Link className="hc_item" to="/unisex">
-              <img
-                src={Unisex}
-                alt="ĐỒ UNISEX"
-                loading="lazy"
-                className="m-auto"
-              />
-              <span>
-                <span>ĐỒ UNISEX</span>
-                <span>Áo thun, sơ mi, áo khoác UNISEX</span>
-              </span>
-            </Link>
-          </div>
+              {/* ĐỒ NỮ */}
+              <div
+                className="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100"
+                data-aos="zoom-in-up"
+                data-aos-delay="200"
+              >
+                <Link className="block p-6 text-center" to="/female">
+                  <div className="relative mb-4">
+                    <img
+                      src={Quan}
+                      alt="ĐỒ NỮ"
+                      loading="lazy"
+                      className="w-20 h-20 mx-auto object-contain group-hover:scale-110 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-pink-500/10 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm mb-1">
+                    ĐỒ NỮ
+                  </h3>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Áo quần, chân váy, đầm, yếm...
+                  </p>
+                </Link>
+              </div>
 
-          {/* PHỤ KIỆN */}
-          <div
-            className="doisin_hc_item fade-in"
-            data-aos="zoom-in-up"
-            data-aos-delay="400"
-            tabIndex={0}
-            role="button"
-            aria-label="Xem PHỤ KIỆN"
-          >
-            <Link
-              className="hc_item"
-              to="/unisex?Category=Phụ+Kiện&currentPage=1"
-            >
-              <img
-                src={Phukien}
-                alt="PHỤ KIỆN"
-                loading="lazy"
-                className="m-auto"
-              />
-              <span>
-                <span>PHỤ KIỆN</span>
-                <span>Balo, túi xách, nón, thắt lưng, ví...</span>
-              </span>
-            </Link>
-          </div>
+              {/* ĐỒ UNISEX */}
+              <div
+                className="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100"
+                data-aos="zoom-in-up"
+                data-aos-delay="300"
+              >
+                <Link className="block p-6 text-center" to="/unisex">
+                  <div className="relative mb-4">
+                    <img
+                      src={Unisex}
+                      alt="ĐỒ UNISEX"
+                      loading="lazy"
+                      className="w-20 h-20 mx-auto object-contain group-hover:scale-110 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-purple-500/10 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm mb-1">
+                    ĐỒ UNISEX
+                  </h3>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Áo thun, sơ mi, áo khoác UNISEX
+                  </p>
+                </Link>
+              </div>
 
-          {/* #DOSIN */}
-          <div
-            className="doisin_hc_item fade-in"
-            data-aos="zoom-in-up"
-            data-aos-delay="500"
-            tabIndex={0}
-            role="button"
-            aria-label="Xem #DOSIN"
-          >
-            <Link className="hc_item" to="/dosin">
-              <img src={logo} alt="#DOSIN" loading="lazy" className="m-auto" />
-              <span>
-                <span>#DOSIN</span>
-                <span>Sản phẩm được TOTODAY đề xuất</span>
-              </span>
-            </Link>
+              {/* PHỤ KIỆN */}
+              <div
+                className="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100"
+                data-aos="zoom-in-up"
+                data-aos-delay="400"
+              >
+                <Link
+                  className="block p-6 text-center"
+                  to="/unisex?Category=Phụ+Kiện&currentPage=1"
+                >
+                  <div className="relative mb-4">
+                    <img
+                      src={Phukien}
+                      alt="PHỤ KIỆN"
+                      loading="lazy"
+                      className="w-20 h-20 mx-auto object-contain group-hover:scale-110 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-orange-500/10 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm mb-1">
+                    PHỤ KIỆN
+                  </h3>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Balo, túi xách, nón, thắt lưng, ví...
+                  </p>
+                </Link>
+              </div>
+
+              {/* #DOSIN */}
+              <div
+                className="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100"
+                data-aos="zoom-in-up"
+                data-aos-delay="500"
+              >
+                <Link className="block p-6 text-center" to="/dosin">
+                  <div className="relative mb-4">
+                    <img
+                      src={logo}
+                      alt="#DOSIN"
+                      loading="lazy"
+                      className="w-20 h-20 mx-auto object-contain group-hover:scale-110 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-red-500/10 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm mb-1">
+                    #DOSIN
+                  </h3>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Sản phẩm được TOTODAY đề xuất
+                  </p>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Services Section */}
-        <div className="section-padding" data-aos="fade-up">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="responsive-title">DỊCH VỤ CỦA CHÚNG TÔI</h2>
-            <div className="services-grid">
+        <div
+          className="py-16 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl"
+          data-aos="fade-up"
+        >
+          <div className="w-full mx-auto px-4 sm:px-2 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                DỊCH VỤ CỦA CHÚNG TÔI
+              </h2>
+              <p className="text-lg text-black-600 font-bold max-w-2xl mx-auto">
+                Cam kết mang đến trải nghiệm mua sắm tuyệt vời nhất cho khách
+                hàng
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {services.map((service, index) => (
                 <div
                   key={index}
-                  className="text-center p-6 rounded-lg hover:shadow-lg transition-all duration-300 bg-white"
+                  className="text-center p-8 rounded-2xl bg-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100"
                   data-aos="fade-up"
                   data-aos-delay={index * 100}
                 >
-                  <div className="text-blue-600 mb-4 flex justify-center">
+                  <div className="text-blue-600 mb-6 flex justify-center">
                     {service.icon}
                   </div>
-                  <h3 className="font-semibold text-lg mb-2">
+                  <h3 className="font-bold text-xl mb-3 text-gray-900">
                     {service.title}
                   </h3>
-                  <p className="text-gray-600 text-sm">{service.description}</p>
+                  <p className="text-gray-600 leading-relaxed">
+                    {service.description}
+                  </p>
                 </div>
               ))}
             </div>
@@ -470,217 +526,251 @@ const Home = () => {
         </div>
 
         <EnhancedProductsSection ListProducts={ListProducts} />
-        {/* Featured Products */}
-        <div className="section-padding">
-          <h1 className="responsive-subtitle ml-4">SẢN PHẨM NỔI BẬT</h1>
 
-          <div className="category_main px-4">
-            <Swiper
-              modules={[Pagination]}
-              pagination={{ clickable: true }}
-              className="mySwiper"
-              slidesPerView={1}
-              spaceBetween={10}
-              breakpoints={{
-                320: { slidesPerView: 2, spaceBetween: 10 },
-                480: { slidesPerView: 2, spaceBetween: 15 },
-                768: { slidesPerView: 3, spaceBetween: 20 },
-                1024: { slidesPerView: 4, spaceBetween: 25 },
-                1200: { slidesPerView: 5, spaceBetween: 30 },
-              }}
-            >
-              {loading
-                ? [...Array(5)].map((_, index) => (
-                    <SwiperSlide key={`skeleton-${index}`}>
-                      <SkeletonCard />
-                    </SwiperSlide>
-                  ))
-                : ListProducts &&
-                  ListProducts.length > 0 &&
-                  ListProducts.map((item) => {
-                    return (
-                      <SwiperSlide key={item._id} className="w-full">
-                        <div className="product-card rounded-xl overflow-hidden bg-white shadow-md hover:shadow-xl transition-all duration-300">
-                          <div className="relative">
-                            <img
-                              className="w-full h-48 object-cover transition-transform duration-500 hover:scale-105"
-                              src={
-                                item.variants[0]?.images[0]?.url ||
-                                "/placeholder.svg?height=200&width=200" ||
-                                "/placeholder.svg"
-                              }
-                              alt={item.name}
-                              loading="lazy"
-                            />
-                            {typeof item.discount !== "undefined" &&
-                              item.discount > 0 && (
-                                <span className="absolute top-2 right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
-                                  -{item.discount || 0}%
-                                </span>
-                              )}
-                            <div className="absolute bottom-2 right-2 flex gap-2">
-                              {isProductInWishlist.includes(item._id) ? (
-                                <button
-                                  className="p-1.5 rounded-full shadow-md bg-green-100"
-                                  onClick={() => handleRemoveWishList(item._id)}
-                                  aria-label="Xóa khỏi danh sách yêu thích"
-                                >
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-4 w-4 text-green-600"
-                                    fill="currentColor"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                                    />
-                                  </svg>
-                                </button>
-                              ) : (
-                                <button
-                                  className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
-                                  onClick={() => handlAddWishList(item._id)}
-                                  aria-label="Thêm vào danh sách yêu thích"
-                                >
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-4 w-4 text-gray-600"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                                    />
-                                  </svg>
-                                </button>
-                              )}
-                              <button
-                                className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
-                                onClick={() =>
-                                  handelModelProductCart(
-                                    item._id,
-                                    item.variants,
-                                    item.price,
-                                    item.discountedPrice,
-                                    item.name,
-                                    item.discount
-                                  )
-                                }
-                                aria-label="Thêm vào giỏ hàng"
-                              >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="h-4 w-4 text-gray-600"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                                  />
-                                </svg>
-                              </button>
-                            </div>
-                          </div>
-                          <div
-                            className="p-3 cursor-pointer"
-                            onClick={() => handleDetails(item.slug)}
+        {/* Featured Products */}
+        <div className="py-16 bg-white">
+          <div className="w-full mx-auto px-4 sm:px-2 lg:px-4">
+            <div className="flex justify-between items-center mb-12">
+              <div>
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                  SẢN PHẨM NỔI BẬT
+                </h2>
+                <p className="text-lg text-gray-600">
+                  Những sản phẩm được yêu thích nhất
+                </p>
+              </div>
+              <Link
+                to="/products"
+                className="hidden md:flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full hover:shadow-lg transition-all duration-300 group"
+              >
+                Xem tất cả
+                <ArrowRightIcon className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+              </Link>
+            </div>
+
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[...Array(4)].map((_, index) => (
+                  <SkeletonCard key={`skeleton-${index}`} />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                {featuredProducts.map((item, index) => (
+                  <div
+                    key={item._id}
+                    className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 overflow-hidden border border-gray-100"
+                    data-aos="fade-up"
+                    data-aos-delay={index * 100}
+                  >
+                    <div className="relative overflow-hidden">
+                      <img
+                        className="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110"
+                        src={
+                          item.variants[0]?.images[0]?.url ||
+                          "/placeholder.svg?height=320&width=280"
+                        }
+                        alt={item.name}
+                        loading="lazy"
+                      />
+
+                      {/* Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                      {/* Discount Badge */}
+                      {typeof item.discount !== "undefined" &&
+                        item.discount > 0 && (
+                          <Badge.Ribbon
+                            text={`-${item.discount}%`}
+                            color="red"
+                            className="ribbon-custom"
+                          />
+                        )}
+
+                      {/* Action Buttons */}
+                      <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-4 group-hover:translate-x-0">
+                        {isProductInWishlist.includes(item._id) ? (
+                          <button
+                            className="p-3 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors duration-300"
+                            onClick={() => handleRemoveWishList(item._id)}
+                            aria-label="Xóa khỏi danh sách yêu thích"
                           >
-                            <p className="text-xs text-gray-600 uppercase tracking-wider font-medium">
-                              {item.brand}
-                            </p>
-                            <h3 className="text-sm font-semibold text-gray-900 line-clamp-1 mt-1">
-                              {item.name}
-                            </h3>
-                            <div className="mt-2 flex items-center justify-between">
-                              <div>
-                                <span className="text-base font-bold text-red-600">
-                                  {formatPrice(
-                                    item.discountedPrice ||
-                                      item.costPrice ||
-                                      item.price
-                                  )}
-                                </span>
-                                {item.discount > 0 && (
-                                  <span className="text-xs text-gray-500 line-through ml-2">
-                                    {formatPrice(item.costPrice)}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <Flex className="mt-2">
-                              <Rate
-                                tooltips={desc}
-                                onChange={(value) =>
-                                  handleRate(item._id, value)
-                                }
-                                value={ratings[item._id] || 0}
-                                className="text-yellow-400"
-                                size="small"
-                              />
-                            </Flex>
-                          </div>
+                            <HeartSolidIcon className="w-5 h-5" />
+                          </button>
+                        ) : (
+                          <button
+                            className="p-3 bg-white/90 backdrop-blur-sm text-gray-700 rounded-full shadow-lg hover:bg-white hover:text-red-500 transition-all duration-300"
+                            onClick={() => handlAddWishList(item._id)}
+                            aria-label="Thêm vào danh sách yêu thích"
+                          >
+                            <HeartIcon className="w-5 h-5" />
+                          </button>
+                        )}
+
+                        <button
+                          className="p-3 bg-white/90 backdrop-blur-sm text-gray-700 rounded-full shadow-lg hover:bg-white hover:text-blue-500 transition-all duration-300"
+                          onClick={() =>
+                            handelModelProductCart(
+                              item._id,
+                              item.variants,
+                              item.price,
+                              item.discountedPrice,
+                              item.name,
+                              item.discount
+                            )
+                          }
+                          aria-label="Thêm vào giỏ hàng"
+                        >
+                          <ShoppingBagIcon className="w-5 h-5" />
+                        </button>
+
+                        <button
+                          className="p-3 bg-white/90 backdrop-blur-sm text-gray-700 rounded-full shadow-lg hover:bg-white hover:text-green-500 transition-all duration-300"
+                          onClick={() => handleDetails(item.slug)}
+                          aria-label="Xem chi tiết"
+                        >
+                          <EyeIcon className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      {/* Quick View Button */}
+                      <button
+                        className="absolute bottom-4 left-1/2 transform -translate-x-1/2 px-6 py-2 bg-white/90 backdrop-blur-sm text-gray-900 rounded-full font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:shadow-lg"
+                        onClick={() => handleDetails(item.slug)}
+                      >
+                        Xem nhanh
+                      </button>
+                    </div>
+
+                    <div className="p-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-medium text-blue-600 uppercase tracking-wider bg-blue-50 px-2 py-1 rounded-full">
+                          {item.brand}
+                        </span>
+                        <div className="flex items-center">
+                          <StarIcon className="w-4 h-4 text-yellow-400 fill-current" />
+                          <span className="text-sm text-gray-600 ml-1">
+                            4.8
+                          </span>
                         </div>
-                      </SwiperSlide>
-                    );
-                  })}
-            </Swiper>
+                      </div>
+
+                      <h3
+                        className="font-bold text-lg text-gray-900 mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors duration-300"
+                        onClick={() => handleDetails(item.slug)}
+                      >
+                        {item.name}
+                      </h3>
+
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex flex-col">
+                          <span className="text-xl font-bold text-red-500">
+                            {formatPrice(
+                              item.discountedPrice ||
+                                item.costPrice ||
+                                item.price
+                            )}
+                          </span>
+                          {item.discount > 0 && (
+                            <span className="text-sm text-gray-500 line-through">
+                              {formatPrice(item.costPrice)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <Rate
+                          disabled
+                          defaultValue={4.8}
+                          className="text-yellow-400 text-sm"
+                          allowHalf
+                        />
+                        <span className="text-sm text-gray-500">
+                          (24 đánh giá)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* View All Button for Mobile */}
+            <div className="md:hidden text-center mt-8">
+              <Link
+                to="/products"
+                className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full hover:shadow-lg transition-all duration-300"
+              >
+                Xem tất cả sản phẩm
+                <ArrowRightIcon className="w-5 h-5 ml-2" />
+              </Link>
+            </div>
           </div>
         </div>
 
         {/* Customer Testimonials */}
-        <div className="section-padding bg-gray-50" data-aos="fade-up">
-          <div className="max-w-6xl mx-auto px-4">
-            <h2 className="responsive-title">KHÁCH HÀNG NÓI GÌ VỀ CHÚNG TÔI</h2>
+        <div
+          className="py-14 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl w-full"
+          data-aos="fade-up"
+        >
+          <div className="w-full mx-auto px-4 sm:px-2 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                KHÁCH HÀNG NÓI GÌ VỀ CHÚNG TÔI
+              </h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Những phản hồi chân thực từ khách hàng đã tin tưởng DOSIN
+              </p>
+            </div>
+
             <Swiper
               modules={[Pagination, Autoplay]}
-              pagination={{ clickable: true }}
-              autoplay={{ delay: 4000 }}
+              pagination={{ clickable: true, dynamicBullets: true }}
+              autoplay={{ delay: 5000, disableOnInteraction: false }}
               slidesPerView={1}
               spaceBetween={20}
               breakpoints={{
-                768: { slidesPerView: 2, spaceBetween: 25 },
-                1024: { slidesPerView: 3, spaceBetween: 30 },
+                768: { slidesPerView: 2, spaceBetween: 30 },
+                1024: { slidesPerView: 3, spaceBetween: 40 },
               }}
+              className="testimonials-swiper"
             >
-              {testimonials.map((testimonial) => (
+              {testimonials.map((testimonial, index) => (
                 <SwiperSlide key={testimonial.id}>
-                  <Card className="h-full">
-                    <div className="flex items-center mb-4">
-                      <Avatar src={testimonial.avatar} size={50} />
-                      <div className="ml-3">
-                        <h4 className="font-semibold">{testimonial.name}</h4>
-                        <p className="text-sm text-gray-500 flex items-center">
-                          <MapPinIcon className="w-4 h-4 mr-1" />
+                  <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 h-full border border-gray-100">
+                    <div className="flex items-center mb-6">
+                      <Avatar
+                        src={testimonial.avatar}
+                        size={60}
+                        className="shadow-lg"
+                      />
+                      <div className="ml-4">
+                        <h4 className="font-bold text-lg text-gray-900">
+                          {testimonial.name}
+                        </h4>
+                        <p className="text-sm text-gray-600 flex items-center">
+                          <MapPinIcon className="w-4 h-4 mr-1 text-blue-500" />
                           {testimonial.location}
                         </p>
                       </div>
                     </div>
+
                     <Rate
                       disabled
                       defaultValue={testimonial.rating}
-                      className="mb-3"
-                      size="small"
+                      className="mb-4 text-yellow-400"
                     />
-                    <p className="text-gray-700 mb-4">
+
+                    <p className="text-gray-700 mb-6 italic leading-relaxed">
                       "{testimonial.comment}"
                     </p>
-                    <p className="text-xs text-gray-500 flex items-center">
-                      <CalendarIcon className="w-4 h-4 mr-1" />
+
+                    <div className="flex items-center text-sm text-gray-500">
+                      <CalendarIcon className="w-4 h-4 mr-2 text-blue-500" />
                       {new Date(testimonial.date).toLocaleDateString("vi-VN")}
-                    </p>
-                  </Card>
+                    </div>
+                  </div>
                 </SwiperSlide>
               ))}
             </Swiper>
@@ -688,107 +778,97 @@ const Home = () => {
         </div>
 
         {/* Blog Section */}
-        <div className="section-padding" data-aos="fade-up">
-          <div className="max-w-6xl mx-auto px-4">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="responsive-subtitle">TIN TỨC & XU HƯỚNG</h2>
+        <div className="py-16 bg-white" data-aos="fade-up">
+          <div className="w-full mx-auto px-4 sm:px-2 lg:px-4">
+            <div className="flex justify-between items-center mb-12">
+              <div>
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                  TIN TỨC & XU HƯỚNG
+                </h2>
+                <p className="text-lg text-gray-600">
+                  Cập nhật xu hướng thời trang mới nhất
+                </p>
+              </div>
               <Link
                 to="/blog"
-                className="text-blue-600 hover:text-blue-800 text-sm md:text-base"
+                className="hidden md:flex items-center text-blue-600 hover:text-blue-800 font-semibold"
               >
-                Xem tất cả →
+                Xem tất cả
+                <ArrowRightIcon className="w-5 h-5 ml-2" />
               </Link>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-              {blogPosts.map((post) => (
-                <Card
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {blogPosts.map((post, index) => (
+                <article
                   key={post.id}
-                  hoverable
-                  cover={
+                  className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 transform hover:-translate-y-2 overflow-hidden border border-gray-100"
+                  data-aos="fade-up"
+                  data-aos-delay={index * 100}
+                >
+                  <div className="relative overflow-hidden">
                     <img
                       alt={post.title}
                       src={post.image || "/placeholder.svg"}
-                      className="h-48 object-cover"
+                      className="w-full h-48 object-cover transition-transform duration-700 group-hover:scale-110"
                       loading="lazy"
                     />
-                  }
-                  className="h-full"
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                      {post.category}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {new Date(post.date).toLocaleDateString("vi-VN")}
-                    </span>
+                    <div className="absolute top-4 left-4">
+                      <span className="bg-blue-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                        {post.category}
+                      </span>
+                    </div>
                   </div>
-                  <h3 className="font-semibold text-lg mb-2 line-clamp-2">
-                    {post.title}
-                  </h3>
-                  <p className="text-gray-600 text-sm line-clamp-3">
-                    {post.excerpt}
-                  </p>
-                </Card>
+
+                  <div className="p-6">
+                    <div className="flex items-center text-sm text-gray-500 mb-3">
+                      <CalendarIcon className="w-4 h-4 mr-2" />
+                      {new Date(post.date).toLocaleDateString("vi-VN")}
+                    </div>
+
+                    <h3 className="font-bold text-xl text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors duration-300">
+                      {post.title}
+                    </h3>
+
+                    <p className="text-gray-600 line-clamp-3 leading-relaxed">
+                      {post.excerpt}
+                    </p>
+
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                      <Link
+                        to={`/blog/${post.id}`}
+                        className="inline-flex items-center text-blue-600 hover:text-blue-800 font-semibold transition-colors duration-300"
+                      >
+                        Đọc thêm
+                        <ArrowRightIcon className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                      </Link>
+                    </div>
+                  </div>
+                </article>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Newsletter Section */}
-        <div
-          className="section-padding bg-gradient-to-r from-blue-600 to-purple-600 text-white"
-          data-aos="fade-up"
-        >
-          <div className="max-w-4xl mx-auto text-center px-4">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">
-              ĐĂNG KÝ NHẬN TIN
-            </h2>
-            <p className="text-lg md:text-xl mb-8">
-              Nhận thông tin về sản phẩm mới, ưu đãi đặc biệt và xu hướng thời
-              trang
-            </p>
-            <Form
-              form={form}
-              onFinish={handleNewsletterSubmit}
-              className="newsletter-form"
-            >
-              <Form.Item
-                name="email"
-                rules={[
-                  { required: true, message: "Vui lòng nhập email!" },
-                  { type: "email", message: "Email không hợp lệ!" },
-                ]}
-                className="flex-1 mb-0"
-              >
-                <Input
-                  placeholder="Nhập email của bạn"
-                  size="large"
-                  className="rounded-full"
-                />
-              </Form.Item>
-              <Form.Item className="mb-0">
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  size="large"
-                  className="bg-white text-blue-600 border-white hover:bg-gray-100 rounded-full px-8"
-                >
-                  Đăng ký
-                </Button>
-              </Form.Item>
-            </Form>
-          </div>
-        </div>
-
         {/* Brand Partners */}
-        <div className="section-padding" data-aos="fade-up">
-          <div className="max-w-6xl mx-auto px-4">
-            <h2 className="responsive-title">THƯƠNG HIỆU ĐỐI TÁC</h2>
-            <div className="brands-grid">
+        <div className="py-16 bg-gray-50" data-aos="fade-up">
+          <div className="w-full mx-auto px-4 sm:px-2 lg:px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                THƯƠNG HIỆU ĐỐI TÁC
+              </h2>
+              <p className="text-lg text-gray-600">
+                Những thương hiệu uy tín mà chúng tôi hợp tác
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
               {brands.map((brand, index) => (
                 <div
                   key={index}
-                  className="flex justify-center items-center p-4 grayscale hover:grayscale-0 transition-all duration-300"
+                  className="flex justify-center items-center p-6 bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 grayscale hover:grayscale-0 transform hover:scale-105"
+                  data-aos="zoom-in"
+                  data-aos-delay={index * 100}
                 >
                   <img
                     src={brand.logo || "/placeholder.svg"}
@@ -803,9 +883,18 @@ const Home = () => {
         </div>
 
         {/* All Products */}
-        <div className="section-padding">
-          <h1 className="responsive-subtitle ml-4">TẤT CẢ SẢN PHẨM</h1>
-          <Clothing ListProducts={ListProducts} />
+        <div className="py-16 bg-white">
+          <div className="w-full mx-auto px-2 sm:px-2 lg:px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                TẤT CẢ SẢN PHẨM
+              </h2>
+              <p className="text-lg text-gray-600">
+                Khám phá toàn bộ bộ sưu tập của chúng tôi
+              </p>
+            </div>
+            <Clothing ListProducts={ListProducts} />
+          </div>
         </div>
       </div>
 

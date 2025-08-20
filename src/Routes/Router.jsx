@@ -76,7 +76,7 @@ export const RouterLayout = [
     element: <BotChatAI />,
   },
   {
-    path: "/:gender",
+    path: "/clothing/:gender",
     element: <ClothingMale />,
   },
   {
