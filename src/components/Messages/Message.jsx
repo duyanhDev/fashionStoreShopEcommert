@@ -5,21 +5,9 @@ import {
 } from "@ant-design/icons";
 import "./Message.css";
 import { useEffect, useRef, useState } from "react";
-import io from "socket.io-client";
 import { getMessages, sendMessageCutomer } from "../../service/Message";
 import { useSelector } from "react-redux";
-
-const socket = io("https://fashionstoreshopecommertbe.onrender.com", {
-  withCredentials: true,
-  reconnection: true,
-  reconnectionAttempts: 5,
-});
-
-// const socket = io("https://fashionstoreshop.onrender.com/", {
-//   withCredentials: true,
-//   reconnection: true,
-//   reconnectionAttempts: 5,
-// });
+import socket from "../../socket";
 
 const Message = ({ open, setOpen }) => {
   const { user } = useSelector((state) => state.auth);

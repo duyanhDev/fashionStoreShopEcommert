@@ -65,7 +65,34 @@ const createOrder = async (
   }
 };
 
-// giao hàng
+const UpDateConfirmedAPI = async (id) => {
+  const token = localStorage.getItem("token");
+  return await axios.post(
+    `api/v1/check-orderConfirmed`,
+    { id: id },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+};
+
+//  Đơn hàng đang trên đường giao đến bạn
+const UpDateOrderProductAPI = async (id) => {
+  const token = localStorage.getItem("token");
+  return await axios.put(
+    `api/v1/order/${id}`,
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+};
+
+// // Đơn hàng đã được giao cho GHN Express
 
 const updateShipping = async (id) => {
   const token = localStorage.getItem("token");
@@ -119,27 +146,8 @@ const ListOderProductsAll = async () => {
   return await axios.get("api/v1/get-order-all");
 };
 
-// xác nhận đơn hàng
-const UpDateOrderProductAPI = async (id) => {
-  const token = localStorage.getItem("token");
-  return await axios.put(
-    `api/v1/order/${id}`,
-    {},
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-};
-
 const OrderStatusOneProduct = async (id) => {
-  const token = localStorage.getItem("token");
-  return await axios.get(`api/v1/get-order-one/${id}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  return await axios.get(`api/v1/get-order-one/${id}`);
 };
 
 const updateShippingCancelled = async (id, orderStatus) => {
@@ -190,9 +198,10 @@ export {
   listOderUserIdAPI,
   createOrder,
   ListOderProductsAll,
-  UpDateOrderProductAPI,
   ListAllSumProduct,
   OrderStatusOneProduct,
+  UpDateOrderProductAPI,
+  UpDateConfirmedAPI,
   updateShipping,
   UpDateCompleted,
   updateShippingCancelled,

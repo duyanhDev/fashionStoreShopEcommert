@@ -10,7 +10,7 @@ import {
   ClockCircleOutlined,
 } from "@ant-design/icons";
 import { useEffect, useRef, useState } from "react";
-import io from "socket.io-client";
+
 import {
   getMessages,
   sendMessageAdmin,
@@ -20,11 +20,7 @@ import {
 } from "../../service/Message";
 import { useSelector } from "react-redux";
 
-const socket = io("https://fashionstoreshopecommertbe.onrender.com", {
-  withCredentials: true,
-  reconnection: true,
-  reconnectionAttempts: 5,
-});
+import socket from "../../socket";
 
 const ChatSp = () => {
   const { user } = useSelector((state) => state.auth);

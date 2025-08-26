@@ -36,7 +36,7 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
 } from "@ant-design/icons";
-import { io } from "socket.io-client";
+
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 
@@ -44,7 +44,7 @@ const { Title, Text } = Typography;
 const { Search } = Input;
 const { Option } = Select;
 
-const socket = io("https://fashionstoreshopecommertbe.onrender.com");
+import socket from "../../socket";
 
 const AccountAdmin = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);

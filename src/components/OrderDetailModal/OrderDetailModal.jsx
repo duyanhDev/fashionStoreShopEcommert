@@ -10,8 +10,10 @@ import {
   Copy,
   ExternalLink,
 } from "lucide-react";
+import { OrderStatusOneProduct } from "../../service/Oder";
 
-const OrderDetailModal = ({ visible, onClose }) => {
+const OrderDetailModal = ({ visible, onClose, id }) => {
+  const [OrderData, setOrderData] = useState([]);
   const mockOrderData = {
     _id: "66b3f4a5d8e7c9a1b2c3d4e5",
     orderStatus: "Shipping",
@@ -42,44 +44,168 @@ const OrderDetailModal = ({ visible, onClose }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [copiedTrackingCode, setCopiedTrackingCode] = useState(false);
 
-  const trackingCode = `JT${Date.now().toString().slice(-8)}`;
-
   // Fake tracking data
+
+  const handlelAPIDetailOrder = async () => {
+    try {
+      const res = await OrderStatusOneProduct(id);
+      if (res && res.data && res.data.EC === 0) {
+        setOrderData(res.data.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   useEffect(() => {
+    handlelAPIDetailOrder();
+  }, [id]);
+
+  useEffect(() => {
+    const statusOrder = [
+      "Processing",
+      "Confirmed",
+      "Shipping",
+      "Delivered",
+      "Completed",
+    ];
+    const currentIndex = statusOrder.indexOf(OrderData?.orderStatus);
+
     const steps = [
       {
-        title: "Đơn hàng đã được xác nhận",
-        description: "Người bán đã xác nhận đơn hàng",
+        title: "Đơn hàng đang chờ xác nhận",
+        description: "Chờ người bán xác nhận đơn hàng",
         time: "14:30 - 07/08/2025",
-        status: "completed",
+        icon: Clock,
+      },
+      {
+        title: "Người bán đã xác nhận",
+        description: "Người bán chuẩn bị hàng",
+        time: "15:00 - 07/08/2025",
         icon: CheckCircle,
       },
       {
         title: "Đã giao cho đơn vị vận chuyển",
-        description: "Đơn hàng đã được giao cho J&T Express",
+        description: "Đơn hàng đã được giao cho GHN Express",
         time: "16:45 - 07/08/2025",
-        status: "completed",
         icon: Package,
       },
       {
         title: "Đang vận chuyển",
         description: "Đơn hàng đang trên đường giao đến bạn",
         time: "08:20 - 08/08/2025",
-        status: "current",
         icon: Truck,
       },
       {
         title: "Giao hàng thành công",
         description: "Đơn hàng đã được giao thành công",
         time: "Dự kiến 10:00 - 09/08/2025",
-        status: "pending",
         icon: MapPin,
       },
     ];
 
-    setTrackingSteps(steps);
-    setCurrentStep(mockOrderData?.orderStatus === "Completed" ? 3 : 2);
-  }, [mockOrderData]);
+    // Gắn trạng thái completed/current/pending
+    const updatedSteps = steps.map((step, index) => {
+      if (index <= currentIndex) return { ...step, status: "Completed" };
+      if (index === currentIndex) return { ...step, status: "current" };
+      return { ...step, status: "pending" };
+    });
+
+    setTrackingSteps(updatedSteps);
+  }, [OrderData]);
+
+  // Delivery points for map visualization
+  const getDeliveryPoints = () => {
+    const statusOrder = [
+      "Processing",
+      "Confirmed",
+      "Shipping",
+      "Delivered",
+      "Completed",
+    ];
+    const currentIndex = statusOrder.indexOf(OrderData?.orderStatus);
+
+    return [
+      {
+        id: 1,
+        title: "Kho hàng",
+        subtitle: "Đã xuất kho",
+        position: { bottom: 32, left: 60 },
+        status: currentIndex >= 1 ? "completed" : "pending",
+        time: "15:00",
+      },
+      {
+        id: 2,
+        title: "Trung tâm phân loại",
+        subtitle: "Đã qua xử lý",
+        position: { bottom: 120, left: 180 },
+        status:
+          currentIndex >= 2
+            ? "completed"
+            : currentIndex === 1
+            ? "current"
+            : "pending",
+        time: "16:45",
+      },
+      {
+        id: 3,
+        title: "Bưu cục địa phương",
+        subtitle: "Đang xử lý",
+        position: { top: 140, left: 320 },
+        status:
+          currentIndex >= 3
+            ? "completed"
+            : currentIndex === 2
+            ? "current"
+            : "pending",
+        time: "08:20",
+      },
+      {
+        id: 4,
+        title: "Shipper nhận hàng",
+        subtitle: "Đang giao hàng",
+        position: { top: 100, right: 120 },
+        status:
+          currentIndex >= 4
+            ? "completed"
+            : currentIndex === 3
+            ? "current"
+            : "pending",
+        time: "09:30",
+      },
+      {
+        id: 5,
+        title: "Địa chỉ nhận",
+        subtitle:
+          OrderData?.shippingAddress?.fullAddress || "Địa chỉ giao hàng",
+        position: { top: 64, right: 16 },
+        status: currentIndex >= 4 ? "completed" : "pending",
+        time: "10:00",
+      },
+    ];
+  };
+
+  const getPointColor = (status) => {
+    switch (status) {
+      case "completed":
+        return "bg-green-500";
+      case "current":
+        return "bg-orange-500";
+      default:
+        return "bg-gray-400";
+    }
+  };
+
+  const getTooltipBg = (status) => {
+    switch (status) {
+      case "completed":
+        return "bg-green-600";
+      case "current":
+        return "bg-orange-600";
+      default:
+        return "bg-gray-600";
+    }
+  };
 
   const formatPrice = (price) => {
     return price?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
@@ -105,13 +231,15 @@ const OrderDetailModal = ({ visible, onClose }) => {
   const getStatusText = (status) => {
     switch (status) {
       case "Processing":
-        return "Chờ xác nhận";
+        return "Đơn hàng đang chờ shop xác nhận";
+      case "Confirmed":
+        return "Người bán đang chuẩn bị hàng";
       case "Shipping":
-        return "Đang giao";
+        return "Đã giao cho shipper/đơn vị vận chuyển";
       case "Delivered":
-        return "Chờ giao hàng";
+        return "Đơn hàng đang giao hàng đến bạn";
       case "Completed":
-        return "Hoàn thành";
+        return "Đơn hàng giao thành công";
       case "Cancelled":
         return "Đã hủy";
       default:
@@ -121,7 +249,7 @@ const OrderDetailModal = ({ visible, onClose }) => {
 
   const copyTrackingCode = async () => {
     try {
-      await navigator.clipboard.writeText(trackingCode);
+      await navigator.clipboard.writeText(OrderData.order_code);
       setCopiedTrackingCode(true);
       setTimeout(() => setCopiedTrackingCode(false), 2000);
     } catch (err) {
@@ -130,6 +258,16 @@ const OrderDetailModal = ({ visible, onClose }) => {
   };
 
   if (!visible) return null;
+
+  const deliveryPoints = getDeliveryPoints();
+  const statusOrder = [
+    "Processing",
+    "Confirmed",
+    "Shipping",
+    "Delivered",
+    "Completed",
+  ];
+  const currentIndex = statusOrder.indexOf(OrderData?.orderStatus);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -145,9 +283,7 @@ const OrderDetailModal = ({ visible, onClose }) => {
                 <h2 className="text-2xl font-bold text-gray-900">
                   Chi tiết vận chuyển
                 </h2>
-                <p className="text-gray-600">
-                  Mã đơn hàng: #{mockOrderData?._id?.slice(-8).toUpperCase()}
-                </p>
+                <p className="text-gray-600">Mã đơn hàng: {OrderData._id}</p>
               </div>
             </div>
             <button
@@ -168,16 +304,16 @@ const OrderDetailModal = ({ visible, onClose }) => {
                 <div className="flex items-center gap-3">
                   <span
                     className={`px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(
-                      mockOrderData?.orderStatus
+                      OrderData?.orderStatus
                     )}`}
                   >
-                    {getStatusText(mockOrderData?.orderStatus)}
+                    {getStatusText(OrderData?.orderStatus)}
                   </span>
                   <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
                 </div>
                 <p className="text-gray-700 font-medium">
                   Đặt hàng lúc:{" "}
-                  {new Date(mockOrderData?.createdAt).toLocaleString("vi-VN")}
+                  {new Date(OrderData?.createdAt).toLocaleString("vi-VN")}
                 </p>
               </div>
               <div className="text-right">
@@ -202,86 +338,298 @@ const OrderDetailModal = ({ visible, onClose }) => {
                   </h3>
                 </div>
 
-                <div className="p-6">
-                  <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 h-80 rounded-xl relative overflow-hidden border border-gray-200">
-                    {/* Grid pattern */}
-                    <div
-                      className="absolute inset-0 opacity-30"
-                      style={{
-                        backgroundImage: `
-                          linear-gradient(rgba(99,102,241,0.1) 1px, transparent 1px),
-                          linear-gradient(90deg, rgba(99,102,241,0.1) 1px, transparent 1px)
-                        `,
-                        backgroundSize: "24px 24px",
-                      }}
-                    />
+                <div className="p-4">
+                  <div className="bg-gradient-to-br from-slate-100 via-gray-100 to-stone-100 h-96 rounded-xl relative overflow-hidden border-2 border-gray-300 shadow-inner">
+                    {/* Map-like terrain pattern */}
+                    <div className="absolute inset-0 opacity-40">
+                      {/* Road-like grid */}
+                      <div
+                        className="absolute inset-0"
+                        style={{
+                          backgroundImage: `
+                            linear-gradient(rgba(156,163,175,0.3) 2px, transparent 2px),
+                            linear-gradient(90deg, rgba(156,163,175,0.3) 2px, transparent 2px)
+                          `,
+                          backgroundSize: "40px 40px",
+                        }}
+                      />
 
-                    {/* Route Path */}
+                      {/* Map terrain elements */}
+                      <div className="absolute top-8 left-16 w-24 h-16 bg-green-200 rounded-full opacity-60"></div>
+                      <div className="absolute bottom-12 right-20 w-20 h-20 bg-blue-200 rounded-full opacity-50"></div>
+                      <div className="absolute top-32 right-40 w-16 h-12 bg-yellow-200 rounded opacity-40"></div>
+                      <div className="absolute bottom-24 left-32 w-32 h-8 bg-green-300 rounded-full opacity-30"></div>
+                    </div>
+
+                    {/* Main delivery route */}
                     <svg className="absolute inset-0 w-full h-full">
                       <defs>
                         <linearGradient
-                          id="routeGradient"
+                          id="completedRoute"
                           x1="0%"
                           y1="0%"
                           x2="100%"
                           y2="0%"
                         >
-                          <stop offset="0%" stopColor="#f59e0b" />
-                          <stop offset="50%" stopColor="#f97316" />
-                          <stop offset="100%" stopColor="#dc2626" />
+                          <stop offset="0%" stopColor="#059669" />
+                          <stop offset="50%" stopColor="#10b981" />
+                          <stop offset="100%" stopColor="#34d399" />
                         </linearGradient>
+                        <linearGradient
+                          id="currentRoute"
+                          x1="0%"
+                          y1="0%"
+                          x2="100%"
+                          y2="0%"
+                        >
+                          <stop offset="0%" stopColor="#dc2626" />
+                          <stop offset="50%" stopColor="#f59e0b" />
+                          <stop offset="100%" stopColor="#fbbf24" />
+                        </linearGradient>
+                        <linearGradient
+                          id="pendingRoute"
+                          x1="0%"
+                          y1="0%"
+                          x2="100%"
+                          y2="0%"
+                        >
+                          <stop offset="0%" stopColor="#9ca3af" />
+                          <stop offset="100%" stopColor="#d1d5db" />
+                        </linearGradient>
+
+                        {/* Road shadow effect */}
+                        <filter id="roadShadow">
+                          <feDropShadow
+                            dx="0"
+                            dy="2"
+                            stdDeviation="1"
+                            floodColor="#000000"
+                            floodOpacity="0.2"
+                          />
+                        </filter>
                       </defs>
+
+                      {/* Main highway route */}
                       <path
-                        d="M 60 280 Q 200 200 350 220 Q 500 240 640 120"
-                        stroke="url(#routeGradient)"
-                        strokeWidth="4"
+                        d="M 80 340 Q 200 280 350 200 Q 480 120 620 80"
+                        stroke="#6b7280"
+                        strokeWidth="12"
                         fill="none"
-                        strokeDasharray="8,4"
-                        className="animate-pulse"
+                        opacity="0.3"
+                        filter="url(#roadShadow)"
+                      />
+
+                      {/* Active route segments */}
+                      <path
+                        d="M 80 340 Q 140 320 200 280"
+                        stroke={
+                          currentIndex >= 1
+                            ? "url(#completedRoute)"
+                            : "url(#pendingRoute)"
+                        }
+                        strokeWidth="6"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeDasharray={currentIndex >= 1 ? "0" : "12,8"}
+                      />
+
+                      <path
+                        d="M 200 280 Q 275 240 350 200"
+                        stroke={
+                          currentIndex >= 2
+                            ? "url(#completedRoute)"
+                            : currentIndex === 1
+                            ? "url(#currentRoute)"
+                            : "url(#pendingRoute)"
+                        }
+                        strokeWidth="6"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeDasharray={currentIndex >= 2 ? "0" : "12,8"}
+                        className={currentIndex === 1 ? "animate-pulse" : ""}
+                      />
+
+                      <path
+                        d="M 350 200 Q 415 160 480 120"
+                        stroke={
+                          currentIndex >= 3
+                            ? "url(#completedRoute)"
+                            : currentIndex === 2
+                            ? "url(#currentRoute)"
+                            : "url(#pendingRoute)"
+                        }
+                        strokeWidth="6"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeDasharray={currentIndex >= 3 ? "0" : "12,8"}
+                        className={currentIndex === 2 ? "animate-pulse" : ""}
+                      />
+
+                      <path
+                        d="M 480 120 Q 550 100 620 80"
+                        stroke={
+                          currentIndex >= 4
+                            ? "url(#completedRoute)"
+                            : currentIndex === 3
+                            ? "url(#currentRoute)"
+                            : "url(#pendingRoute)"
+                        }
+                        strokeWidth="6"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeDasharray={currentIndex >= 4 ? "0" : "12,8"}
+                        className={currentIndex === 3 ? "animate-pulse" : ""}
                       />
                     </svg>
 
-                    {/* Location Points */}
-                    <div className="absolute bottom-8 left-12">
-                      <div className="relative">
-                        <div className="w-4 h-4 bg-green-500 rounded-full border-3 border-white shadow-lg"></div>
-                        <div className="absolute -top-12 -left-8 bg-gray-900 text-white text-xs px-3 py-1 rounded-lg whitespace-nowrap">
-                          <div className="font-semibold">Kho hàng</div>
-                          <div className="text-gray-300">Đã xuất kho</div>
-                        </div>
-                      </div>
-                    </div>
+                    {/* Realistic location markers */}
+                    {deliveryPoints.map((point) => (
+                      <div
+                        key={point.id}
+                        className="absolute group"
+                        style={point.position}
+                      >
+                        <div className="relative">
+                          {/* Location pin */}
+                          <div
+                            className={`relative w-8 h-10 ${
+                              point.status === "completed"
+                                ? "text-green-500"
+                                : point.status === "current"
+                                ? "text-red-500 animate-bounce"
+                                : "text-gray-400"
+                            }`}
+                          >
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                              className="w-full h-full drop-shadow-lg"
+                            >
+                              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                              <circle cx="12" cy="9" r="2.5" fill="white" />
+                            </svg>
 
-                    <div className="absolute top-24 right-20">
-                      <div className="relative animate-bounce">
-                        <div className="w-6 h-6 bg-orange-500 rounded-full border-3 border-white shadow-lg flex items-center justify-center">
-                          <div className="w-2 h-2 bg-white rounded-full"></div>
-                        </div>
-                        <div className="absolute -top-12 -left-12 bg-orange-600 text-white text-xs px-3 py-1 rounded-lg whitespace-nowrap">
-                          <div className="font-semibold">Đang giao hàng</div>
-                          <div className="text-orange-100">
-                            Shipper: Nguyễn Văn A
+                            {/* Status indicator */}
+                            <div
+                              className={`absolute top-1.5 left-1/2 transform -translate-x-1/2 w-3 h-3 rounded-full ${
+                                point.status === "completed"
+                                  ? "bg-white"
+                                  : point.status === "current"
+                                  ? "bg-white animate-ping"
+                                  : "bg-gray-300"
+                              }`}
+                            ></div>
+                          </div>
+
+                          {/* Information card */}
+                          <div className="absolute -top-20 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-2xl border-2 border-gray-200 px-4 py-3 min-w-max opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none z-20 hover:scale-105">
+                            <div className="text-center">
+                              <div
+                                className={`font-bold text-sm ${
+                                  point.status === "completed"
+                                    ? "text-green-600"
+                                    : point.status === "current"
+                                    ? "text-red-600"
+                                    : "text-gray-600"
+                                }`}
+                              >
+                                {point.title}
+                              </div>
+                              <div className="text-gray-500 text-xs mt-1 max-w-32 truncate">
+                                {point.subtitle}
+                              </div>
+                              <div
+                                className={`text-xs mt-2 px-2 py-1 rounded-full ${
+                                  point.status === "completed"
+                                    ? "bg-green-100 text-green-700"
+                                    : point.status === "current"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-gray-100 text-gray-600"
+                                }`}
+                              >
+                                {point.time}
+                              </div>
+                            </div>
+
+                            {/* Arrow pointer */}
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2">
+                              <div className="w-0 h-0 border-l-4 border-r-4 border-t-8 border-transparent border-t-white"></div>
+                              <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-3 border-r-3 border-t-6 border-transparent border-t-gray-200"></div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    ))}
 
-                    <div className="absolute top-16 right-4">
-                      <div className="relative">
-                        <div className="w-4 h-4 bg-blue-500 rounded-full border-3 border-white shadow-lg"></div>
-                        <div className="absolute -top-12 -left-12 bg-blue-600 text-white text-xs px-3 py-1 rounded-lg whitespace-nowrap">
-                          <div className="font-semibold">Địa chỉ nhận</div>
-                          <div className="text-blue-100">
-                            Gia Nghĩa, Đắk Nông
+                    {/* Realistic moving vehicle */}
+                    {currentIndex >= 1 && currentIndex <= 4 && (
+                      <div
+                        className={`absolute transition-all duration-2000 ease-in-out z-10 ${
+                          currentIndex === 1
+                            ? "bottom-14 left-48"
+                            : currentIndex === 2
+                            ? "top-48 left-80"
+                            : currentIndex === 3
+                            ? "top-28 right-40"
+                            : "top-20 right-16"
+                        }`}
+                      >
+                        <div className="relative">
+                          {/* Vehicle shadow */}
+                          <div className="absolute -bottom-1 left-1 w-12 h-6 bg-black opacity-20 rounded-full blur-sm"></div>
+
+                          {/* Delivery truck */}
+                          <div
+                            className="text-4xl animate-bounce filter drop-shadow-lg"
+                            style={{
+                              transform:
+                                currentIndex <= 2 ? "scaleX(1)" : "scaleX(-1)",
+                            }}
+                          >
+                            🚚
                           </div>
+
+                          {/* Motion lines */}
+                          {currentIndex >= 2 && (
+                            <div className="absolute top-2 -left-8 opacity-60">
+                              <div className="flex space-x-1">
+                                <div className="w-2 h-0.5 bg-gray-400 rounded animate-pulse"></div>
+                                <div className="w-1 h-0.5 bg-gray-400 rounded animate-pulse delay-100"></div>
+                                <div className="w-1 h-0.5 bg-gray-400 rounded animate-pulse delay-200"></div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
+                    )}
 
-                    {/* Animated Truck */}
-                    <div className="absolute top-28 right-24 text-3xl animate-pulse">
-                      🚚
-                    </div>
+                    {/* Delivery person (when near destination) */}
+                    {currentIndex >= 3 && (
+                      <div className="absolute top-16 right-20 z-10">
+                        <div className="relative">
+                          <div className="text-3xl animate-pulse filter drop-shadow-lg">
+                            🏃‍♂️
+                          </div>
+                          <div className="absolute -bottom-1 left-2 w-8 h-4 bg-black opacity-20 rounded-full blur-sm"></div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* GPS-like current location indicator */}
+                    {currentIndex >= 2 && currentIndex <= 3 && (
+                      <div
+                        className={`absolute z-20 ${
+                          currentIndex === 2
+                            ? "top-52 left-84"
+                            : "top-32 right-44"
+                        }`}
+                      >
+                        <div className="relative">
+                          <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg animate-ping"></div>
+                          <div className="absolute inset-0 w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-lg"></div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-4 bg-orange-50 border border-orange-200 rounded-xl p-4">
@@ -290,7 +638,7 @@ const OrderDetailModal = ({ visible, onClose }) => {
                       <span className="font-medium">Đang giao đến:</span>
                     </div>
                     <p className="text-orange-800 font-semibold mt-1">
-                      {mockOrderData?.shippingAddress}
+                      {OrderData?.shippingAddress?.fullAddress}
                     </p>
                   </div>
                 </div>
@@ -309,7 +657,7 @@ const OrderDetailModal = ({ visible, onClose }) => {
                   <div className="space-y-6">
                     {trackingSteps.map((step, index) => {
                       const IconComponent = step.icon;
-                      const isCompleted = step.status === "completed";
+                      const isCompleted = step.status === "Completed";
                       const isCurrent = step.status === "current";
                       const isPending = step.status === "pending";
 
@@ -378,7 +726,10 @@ const OrderDetailModal = ({ visible, onClose }) => {
                 <div className="p-6 space-y-6">
                   <div className="flex items-center justify-between p-4 bg-blue-50 rounded-xl border border-blue-200">
                     <div>
-                      <p className="text-blue-800 font-semibold">J&T Express</p>
+                      <p className="text-blue-800 font-semibold">
+                        {" "}
+                        Giao Hàng Nhanh
+                      </p>
                       <p className="text-blue-600 text-sm">Đơn vị vận chuyển</p>
                     </div>
                     <ExternalLink className="w-5 h-5 text-blue-600" />
@@ -391,7 +742,7 @@ const OrderDetailModal = ({ visible, onClose }) => {
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-semibold text-blue-600">
-                          {trackingCode}
+                          {OrderData.order_code}
                         </span>
                         <button
                           onClick={copyTrackingCode}
@@ -410,7 +761,7 @@ const OrderDetailModal = ({ visible, onClose }) => {
                       <span className="text-gray-600 font-medium">
                         Phí vận chuyển:
                       </span>
-                      <span className="font-semibold">30.000đ</span>
+                      <span className="font-semibold">Miễn phí</span>
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -418,15 +769,17 @@ const OrderDetailModal = ({ visible, onClose }) => {
                         Thời gian giao dự kiến:
                       </span>
                       <span className="font-semibold text-green-600">
-                        1-2 ngày
+                        2-3 ngày
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between">
                       <span className="text-gray-600 font-medium">
-                        Shipper:
+                        Người đặt
                       </span>
-                      <span className="font-semibold">Nguyễn Văn A</span>
+                      <span className="font-semibold">
+                        {OrderData?.username}
+                      </span>
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -434,7 +787,7 @@ const OrderDetailModal = ({ visible, onClose }) => {
                         Số điện thoại:
                       </span>
                       <span className="font-semibold text-blue-600">
-                        0123.456.789
+                        0{OrderData?.phone}
                       </span>
                     </div>
                   </div>
@@ -445,7 +798,7 @@ const OrderDetailModal = ({ visible, onClose }) => {
                         Tổng thanh toán:
                       </span>
                       <span className="font-bold text-2xl text-orange-600">
-                        {formatPrice(mockOrderData?.totalAmount)}
+                        {formatPrice(OrderData?.totalAmount)}
                       </span>
                     </div>
                   </div>
@@ -457,48 +810,49 @@ const OrderDetailModal = ({ visible, onClose }) => {
                 <div className="p-6 border-b border-gray-100">
                   <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
                     <Package className="w-5 h-5 text-orange-500" />
-                    Sản phẩm ({mockOrderData?.items?.length})
+                    Sản phẩm ( {OrderData && OrderData?.items?.length})
                   </h3>
                 </div>
 
                 <div className="p-6">
                   <div className="space-y-4">
-                    {mockOrderData?.items?.map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200 hover:shadow-sm transition-shadow"
-                      >
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-20 h-20 object-cover rounded-xl border border-gray-200"
-                        />
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900 mb-2">
-                            {item.name}
-                          </h4>
-                          <div className="flex flex-wrap gap-2 text-sm">
-                            <span className="px-2 py-1 bg-white rounded-lg border border-gray-200">
-                              Màu: {item.color}
-                            </span>
-                            <span className="px-2 py-1 bg-white rounded-lg border border-gray-200">
-                              Size: {item.size}
-                            </span>
-                            <span className="px-2 py-1 bg-white rounded-lg border border-gray-200">
-                              SL: {item.quantity}
-                            </span>
+                    {OrderData &&
+                      OrderData?.items?.map((item, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200 hover:shadow-sm transition-shadow"
+                        >
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-20 h-20 object-cover rounded-xl border border-gray-200"
+                          />
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900 mb-2">
+                              {item.name}
+                            </h4>
+                            <div className="flex flex-wrap gap-2 text-sm">
+                              <span className="px-2 py-1 bg-white rounded-lg border border-gray-200">
+                                Màu: {item.color}
+                              </span>
+                              <span className="px-2 py-1 bg-white rounded-lg border border-gray-200">
+                                Size: {item.size}
+                              </span>
+                              <span className="px-2 py-1 bg-white rounded-lg border border-gray-200">
+                                SL: {item.quantity}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-lg text-orange-600">
+                              {formatPrice(item.price)}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {formatPrice(item.price * item.quantity)}
+                            </p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-bold text-lg text-orange-600">
-                            {formatPrice(item.price)}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {formatPrice(item.price * item.quantity)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </div>
               </div>

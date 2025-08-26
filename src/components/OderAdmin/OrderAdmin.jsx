@@ -42,6 +42,7 @@ import {
   UpDateCompleted,
   updateShippingCancelledAdmin,
   filterOrdersByStatus,
+  UpDateConfirmedAPI,
 } from "../../service/Oder";
 import { useEffect, useState } from "react";
 import moment from "moment";
@@ -90,8 +91,10 @@ const OrderAdmin = () => {
   const [orderStats, setOrderStats] = useState({
     total: 0,
     completed: 0,
-    processing: 0,
+    delivered: 0,
     shipping: 0,
+    confirmed: 0,
+    processing: 0,
     cancelled: 0,
   });
   const [visible, setVisible] = useState(false);
@@ -110,12 +113,14 @@ const OrderAdmin = () => {
   });
 
   // Map API order statuses to display-friendly text
+
   const statusDisplayMap = {
-    Processing: "Chờ xác nhận",
-    Delivered: "Chờ giao hàng",
-    Shipping: "Đang giao",
-    Completed: "Đơn hàng đã giao thành công",
-    Cancelled: "Đã Hủy",
+    Processing: "Chờ người bán xác nhận",
+    Confirmed: "Người bán đang chuẩn bị hàng",
+    Shipping: "Đã giao cho shipper/đơn vị vận chuyển",
+    Delivered: "Shipper đang giao hàng đến bạn",
+    Completed: "Đã giao hàng thành công",
+    Cancelled: "Đơn hàng đã bị hủy",
   };
 
   // Table column definitions
@@ -145,19 +150,23 @@ const OrderAdmin = () => {
         let color = "";
         let icon = null;
         switch (status) {
-          case "Chờ xác nhận":
+          case "Chờ người bán xác nhận":
             color = "orange";
             icon = <ShoppingOutlined />;
             break;
-          case "Chờ giao hàng":
+          case "Người bán đang chuẩn bị hàng":
+            color = "orange";
+            icon = <ShoppingOutlined />;
+            break;
+          case "Đã giao cho shipper/đơn vị vận chuyển":
             color = "blue";
             icon = <ShoppingOutlined />;
             break;
-          case "Đang giao":
+          case "Shipper đang giao hàng đến bạn":
             color = "cyan";
             icon = <CarOutlined />;
             break;
-          case "Đơn hàng đã giao thành công":
+          case "Đã giao hàng thành công":
             color = "green";
             icon = <CheckCircleOutlined />;
             break;
@@ -309,21 +318,22 @@ const OrderAdmin = () => {
                         size="small"
                         className="btn-action btn-warning"
                         icon={<CheckSquareOutlined />}
-                        onClick={() => handleCheckOrder(item._id)}
+                        onClick={() => handleCheckConfirmed(item._id)}
                       >
                         Duyệt
                       </Button>
                     );
-                  case "Delivered":
+
+                  case "Confirmed":
                     return (
                       <Button
                         type="primary"
                         size="small"
-                        className="btn-action btn-primary"
-                        icon={<CarOutlined />}
+                        className="btn-action btn-warning"
+                        icon={<CheckSquareOutlined />}
                         onClick={() => updateShippingOrder(item._id)}
                       >
-                        Giao hàng
+                        Chờ người bán xác nhận
                       </Button>
                     );
                   case "Shipping":
@@ -333,13 +343,26 @@ const OrderAdmin = () => {
                         size="small"
                         className="btn-action btn-info"
                         icon={<CheckCircleOutlined />}
+                        onClick={() => handleCheckOrder(item._id)}
+                      >
+                        Giao hàng
+                      </Button>
+                    );
+                  case "Delivered":
+                    return (
+                      <Button
+                        type="primary"
+                        size="small"
+                        className="btn-action btn-primary"
+                        icon={<CarOutlined />}
                         onClick={() =>
                           updateCompleteOrder(item._id, item.totalAmount)
                         }
                       >
-                        Hoàn thành
+                        Hoàn Thành
                       </Button>
                     );
+
                   case "Completed":
                     return (
                       <Button
@@ -418,18 +441,33 @@ const OrderAdmin = () => {
       setLoading(false);
     }
   };
+
+  const handleReset = async (value) => {
+    try {
+      setFilterStatus(value);
+
+      if (filterStatus === value) {
+        fetchData();
+      }
+    } catch (error) {
+      setFilterStatus(value);
+    }
+  };
+
   // Update order statistics based on fetched data
   const updateOrderStats = (orders) => {
     const stats = {
       total: orders.length,
-      completed: orders.filter(
-        (order) => order.orderStatus === "Đơn hàng đã giao thành công"
-      ).length,
-      processing: orders.filter((order) => order.orderStatus === "Chờ xác nhận")
+      completed: orders.filter((order) => order.rawStatus === "Completed")
         .length,
-      shipping: orders.filter((order) => order.orderStatus === "Đang giao")
+      processing: orders.filter((order) => order.rawStatus === "Processing")
         .length,
-      cancelled: orders.filter((order) => order.orderStatus === "Đã Hủy")
+      delivered: orders.filter((order) => order.rawStatus === "Delivered")
+        .length,
+      confirmed: orders.filter((order) => order.rawStatus === "Confirmed")
+        .length,
+      shipping: orders.filter((order) => order.rawStatus === "Shipping").length,
+      cancelled: orders.filter((order) => order.rawStatus === "Cancelled")
         .length,
     };
     setOrderStats(stats);
@@ -456,6 +494,27 @@ const OrderAdmin = () => {
   };
 
   // Approve an order (change status to Delivered)
+
+  const handleCheckConfirmed = async (id) => {
+    try {
+      const response = await UpDateConfirmedAPI(id);
+      if (response) {
+        api.success({
+          message: "Đơn hàng đã được xác nhận",
+          description: "Đơn hàng đã người bán xác nhận ",
+          icon: <SmileOutlined style={{ color: "#108ee9" }} />,
+        });
+        fetchData();
+      }
+    } catch (error) {
+      console.error("Error checking order:", error);
+      api.error({
+        message: "Lỗi",
+        description: "Không thể duyệt đơn hàng. Vui lòng thử lại.",
+      });
+    }
+  };
+
   const handleCheckOrder = async (id) => {
     try {
       const response = await UpDateOrderProductAPI(id, {
@@ -482,6 +541,7 @@ const OrderAdmin = () => {
   const updateShippingOrder = async (id) => {
     try {
       const response = await updateShipping(id);
+
       if (response && response.message === "Order updated successfully") {
         api.success({
           message: "Đơn hàng đã được cập nhật",
@@ -651,21 +711,22 @@ const OrderAdmin = () => {
                           size="small"
                           className="btn-action btn-warning"
                           icon={<CheckSquareOutlined />}
-                          onClick={() => handleCheckOrder(item._id)}
+                          onClick={() => handleCheckConfirmed(item._id)}
                         >
                           Duyệt
                         </Button>
                       );
-                    case "Delivered":
+
+                    case "Confirmed":
                       return (
                         <Button
                           type="primary"
                           size="small"
-                          className="btn-action btn-primary"
-                          icon={<CarOutlined />}
+                          className="btn-action btn-warning"
+                          icon={<CheckSquareOutlined />}
                           onClick={() => updateShippingOrder(item._id)}
                         >
-                          Giao hàng
+                          Chờ người bán xác nha
                         </Button>
                       );
                     case "Shipping":
@@ -675,13 +736,26 @@ const OrderAdmin = () => {
                           size="small"
                           className="btn-action btn-info"
                           icon={<CheckCircleOutlined />}
+                          onClick={() => handleCheckOrder(item._id)}
+                        >
+                          Đang giao
+                        </Button>
+                      );
+                    case "Delivered":
+                      return (
+                        <Button
+                          type="primary"
+                          size="small"
+                          className="btn-action btn-primary"
+                          icon={<CarOutlined />}
                           onClick={() =>
                             updateCompleteOrder(item._id, item.totalAmount)
                           }
                         >
-                          Hoàn thành
+                          Hoàn Thành
                         </Button>
                       );
+
                     case "Completed":
                       return (
                         <Button
@@ -786,7 +860,7 @@ const OrderAdmin = () => {
             <Button
               type="primary"
               icon={<ReloadOutlined />}
-              onClick={fetchData}
+              onClick={() => handleReset("all")}
               className="refresh-button"
             >
               Làm mới
@@ -805,20 +879,40 @@ const OrderAdmin = () => {
             />
           </Card>
         </Col>
+
         <Col xs={24} sm={12} md={6}>
           <Card className="stat-card processing-card">
             <Statistic
-              title="Chờ xác nhận"
+              title="Chờ người bán xác nhận"
               value={orderStats.processing}
               prefix={<ShoppingOutlined />}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
+          <Card className="stat-card processing-card">
+            <Statistic
+              title="Người bán đang chuẩn bị hàng"
+              value={orderStats.confirmed}
+              prefix={<ShoppingOutlined />}
+            />
+          </Card>
+        </Col>
+
+        <Col xs={24} sm={12} md={6}>
           <Card className="stat-card shipping-card">
             <Statistic
-              title="Đang giao"
+              title="Đã giao cho shipper/đơn vị vận chuyển"
               value={orderStats.shipping}
+              prefix={<CarOutlined />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card className="stat-card shipping-card">
+            <Statistic
+              title="Shipper đang giao hàng đến bạn"
+              value={orderStats.delivered}
               prefix={<CarOutlined />}
             />
           </Card>
@@ -871,12 +965,16 @@ const OrderAdmin = () => {
               style={{ width: "100%" }}
               className="status-select"
               onChange={handleFilterStatus}
+              value={filterStatus}
             >
               <Option value="all">Tất cả trạng thái</Option>
               <Option value="Processing">Chờ xác nhận</Option>
-              <Option value="Delivered">Chờ giao hàng</Option>
-              <Option value="Shipping">Đang giao</Option>
-              <Option value="Completed">Đã giao thành công</Option>
+              <Option value="Confirmed">Người bán đang chuẩn bị hàng</Option>
+              <Option value="Shipping">
+                Đã giao cho shipper/đơn vị vận chuyển
+              </Option>
+              <Option value="Delivered">Shipper đang giao hàng đến bạn</Option>
+              <Option value="Completed">Đã giao hàng thành côn</Option>
               <Option value="Cancelled">Đã hủy</Option>
             </Select>
           </Col>
@@ -893,7 +991,7 @@ const OrderAdmin = () => {
             <Button
               icon={<FilterOutlined />}
               className="reset-button"
-              onClick={() => {}} // Non-functional: Logic removed as requested
+              onClick={() => handleReset("all")} // Non-functional: Logic removed as requested
             >
               Xóa lọc
             </Button>

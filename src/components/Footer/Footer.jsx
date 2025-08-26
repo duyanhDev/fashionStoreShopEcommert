@@ -1,6 +1,20 @@
+import { useEffect, useState } from "react";
 import { FaFacebook, FaInstagram, FaTiktok } from "react-icons/fa";
+import socket from "../../socket";
 
 const Footer = () => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    socket.on("updateOnlineCount", (num) => {
+      setCount(num);
+    });
+
+    return () => {
+      socket.off("updateOnlineCount");
+    };
+  }, []);
+
   return (
     <footer className="bg-black text-white p-6 mt-0">
       {/* Thông tin chính */}
@@ -45,6 +59,7 @@ const Footer = () => {
               <FaInstagram />
             </a>
           </div>
+          <div>Tổng người online: {count}</div>
         </div>
       </div>
 

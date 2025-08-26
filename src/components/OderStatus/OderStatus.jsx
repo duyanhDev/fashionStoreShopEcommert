@@ -14,22 +14,9 @@ import { FaUser, FaMoneyBill } from "react-icons/fa";
 import { RiBillFill } from "react-icons/ri";
 import { IoIosNotifications } from "react-icons/io";
 import { FaTruck } from "react-icons/fa";
-
-import io from "socket.io-client";
 import FeedBack from "../FeedBack/FeeBack";
 import OrderDetailModal from "../OrderDetailModal/OrderDetailModal";
-
-const socket = io("https://fashionstoreshopecommertbe.onrender.com", {
-  withCredentials: true,
-  reconnection: true,
-  reconnectionAttempts: 5,
-});
-
-// const socket = io("https://fashionstoreshop.onrender.com/", {
-//   withCredentials: true,
-//   reconnection: true,
-//   reconnectionAttempts: 5,
-// });
+import socket from "../../socket";
 
 const OderStatus = () => {
   const param = useParams();
@@ -39,6 +26,7 @@ const OderStatus = () => {
   const { user } = useSelector((state) => state.auth);
   const [modal2Open, setModal2Open] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [OrderId, setOrderId] = useState("");
   const [api, contextHolder] = notification.useNotification();
 
   const Navigate = useNavigate();
@@ -51,7 +39,9 @@ const OderStatus = () => {
         setCreatedAt(res.data.data.createdAt);
         setData(res.data.data);
       }
-    } catch (error) {}
+    } catch (error) {
+      console.log(error);
+    }
   };
   // const description = moment(createdAt).format("DD/MM/YYYY");
 
@@ -106,6 +96,10 @@ const OderStatus = () => {
     }
   };
 
+  const handleDetailsRouter = (id) => {
+    setVisible(true);
+    setOrderId(id);
+  };
   return (
     <div className="main_order ">
       {contextHolder}
@@ -176,16 +170,16 @@ const OderStatus = () => {
                 }`}
               >
                 {" "}
-                Chờ xác nhận
+                Chờ người bán xác nhận
               </li>
               <li
                 className={`${
-                  data.orderStatus === "Delivered"
+                  data.orderStatus === "Confirmed"
                     ? "text-amber-950 border-b-amber-800 border-b-2"
                     : ""
                 }`}
               >
-                Chờ giao hàng
+                Người bán đang chuẩn bị hàng
               </li>
               <li
                 className={`${
@@ -194,8 +188,18 @@ const OderStatus = () => {
                     : ""
                 }`}
               >
-                Đang giao
+                Đã giao cho shipper/đơn vị vận chuyển
               </li>
+              <li
+                className={`${
+                  data.orderStatus === "Delivered"
+                    ? "text-amber-950 border-b-amber-800 border-b-2"
+                    : ""
+                }`}
+              >
+                Đơn hàng đang giao hàng đến bạn
+              </li>
+
               <li
                 className={`${
                   data.orderStatus === "Completed"
@@ -203,7 +207,7 @@ const OderStatus = () => {
                     : ""
                 }`}
               >
-                Hoàn thành
+                Đơn hàng giao thành công
               </li>
               <li
                 className={`${
@@ -227,10 +231,12 @@ const OderStatus = () => {
                     switch (data.orderStatus) {
                       case "Processing":
                         return "Chờ xác nhận";
-                      case "Delivered":
-                        return "Chờ giao hàng";
+                      case "Confirmed":
+                        return "Đơn hàng bạn đã được xác nhận";
                       case "Shipping":
-                        return "Đang giao";
+                        return "Đã giao cho đơn vị vận chuyển";
+                      case "Delivered":
+                        return "Đang vận chuyển";
                       case "Completed":
                         return "Đơn hàng đã giao thành công";
                       case "Cancelled":
@@ -240,7 +246,9 @@ const OderStatus = () => {
                     }
                   })()}
                 </span>
-                <span onClick={() => setVisible(true)}>Xem chi tiết</span>
+                <span onClick={() => handleDetailsRouter(data._id)}>
+                  Xem chi tiết
+                </span>
               </div>
             </div>
             <div className="mt-3">
@@ -313,7 +321,7 @@ const OderStatus = () => {
                   Liên hệ người bán
                 </Button>
 
-                {data.orderStatus === "Processing" && (
+                {data.orderStatus === "Cancelled" && (
                   <Button
                     className="bg-amber-800 text-white"
                     onClick={() => UpdateOderStatusCalled("Cancelled")}
@@ -336,7 +344,11 @@ const OderStatus = () => {
           setData={setData}
         />
       </div>
-      <OrderDetailModal visible={visible} onClose={() => setVisible(false)} />
+      <OrderDetailModal
+        visible={visible}
+        id={OrderId}
+        onClose={() => setVisible(false)}
+      />
     </div>
   );
 };
