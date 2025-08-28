@@ -29,6 +29,7 @@ import { ListCategoryAPI } from "../../service/ApiCategory";
 import { ListAllSumProduct, ListOderProductsAll } from "../../service/Oder";
 import moment from "moment";
 import "./UserChart.css";
+import { getRevenueAPI } from "../../service/APITransaction";
 
 // Sample data for charts
 
@@ -192,12 +193,24 @@ export default function DashboardStats() {
     try {
       const res = await ListOderProductsAll();
       if (res && res.data && res.data.EC === 0) {
+        setCustomerSegment(res.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching order totals:", error);
+    }
+  };
+
+  const listRevenueTotal = async () => {
+    try {
+      const res = await getRevenueAPI();
+      console.log(res);
+
+      if (res && res.data && res.data.EC === 0) {
         const data = res.data.data.reduce((total, acc) => {
           return total + acc.totalAmount;
         }, 0);
 
         setSumTotal(data);
-        setCustomerSegment(res.data.data);
       }
     } catch (error) {
       console.error("Error fetching order totals:", error);
@@ -213,6 +226,7 @@ export default function DashboardStats() {
         getListProductsAPIChar(),
         AllTotalPriceProduct(),
         ListOderProductsTotalSum(),
+        listRevenueTotal(),
       ]);
       setIsLoading(false);
     };
@@ -228,6 +242,17 @@ export default function DashboardStats() {
       : 0;
 
   const totalProfit = sumTotal - priceTotalProduct;
+
+  function calculateGrossProfitMargin(revenue, costOfGoods) {
+    const grossProfit = revenue - costOfGoods;
+
+    if (revenue === 0) return 0;
+
+    const grossProfitMargin = (grossProfit / revenue) * 100;
+
+    // Làm tròn thành số nguyên (không có .00)
+    return Math.round(grossProfitMargin);
+  }
 
   // Data for pie chart
   const pieData = [
@@ -595,7 +620,7 @@ export default function DashboardStats() {
               subtext="Tổng doanh thu"
               color="border-emerald-600"
               icon={<IncomeIcon />}
-              change="+8.3% so với tháng trước"
+              // change="+8.3% so với chi phí nhập hàng"
             />
 
             <StatCard
@@ -604,7 +629,10 @@ export default function DashboardStats() {
               subtext="Lợi nhuận ròng"
               color="border-blue-600"
               icon={<ProfitIcon />}
-              change="+12.7% so với tháng trước"
+              change={`${calculateGrossProfitMargin(
+                sumTotal,
+                priceTotalProduct
+              )}% so với tháng trước`}
             />
           </div>
 

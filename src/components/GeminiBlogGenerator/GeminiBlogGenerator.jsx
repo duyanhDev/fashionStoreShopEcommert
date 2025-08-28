@@ -117,6 +117,8 @@ const GeminiBlogGenerator = () => {
   };
 
   const handleSave = async (values) => {
+    console.log(values);
+
     if (!values.title || !values.content) {
       message.error("Tiêu đề và nội dung không được để trống.");
       return;
@@ -124,18 +126,19 @@ const GeminiBlogGenerator = () => {
 
     try {
       const formData = new FormData();
-      formData.append("title", values.title);
-      formData.append("tip", values.tip || "");
-      formData.append("content", values.content);
-      formData.append("slug", values.title.toLowerCase().replace(/\s+/g, "-"));
-      formData.append("regex", values.keywords || "");
+      formData.append("title", title);
+      formData.append("tip", tip);
+      formData.append("content", content);
+      formData.append("slug", title.toLowerCase().replace(/\s+/g, "-"));
+      formData.append("regex", keywords || "");
       formData.append("userId", "673017dde4526bd79cc61fa6");
-      formData.append("readTime", values.readTime);
-      formData.append("featured", values.featured);
+      formData.append("readTime", readTime);
+      formData.append("featured", featured);
 
       if (images.length > 0) {
         images.forEach((img) => formData.append("img", img));
       }
+      console.log(formData);
 
       const res = await CreateBlog(formData);
 
@@ -195,6 +198,8 @@ const GeminiBlogGenerator = () => {
       setImagePreviews(previews);
     },
   };
+
+  console.log(title);
 
   return (
     <>

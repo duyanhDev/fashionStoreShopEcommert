@@ -26,6 +26,13 @@ const menuItems = [
     to: "",
     color: "text-blue-500",
   },
+
+  {
+    icon: <FcFeedback className="text-xl " />,
+    label: "Quản lí doanh thu",
+    to: "/admin/revenue",
+    color: "text-gray-500",
+  },
   {
     icon: <FiUsers className="text-xl" />,
     label: "Khách hàng",
@@ -40,7 +47,7 @@ const menuItems = [
   },
   {
     icon: <SettingOutlined className="text-xl" />,
-    label: "Hộ trợ tài khoản",
+    label: "Hỗ trợ tài khoản",
     to: "/admin/adminAccountManagement",
     color: "text-purple-500",
   },
@@ -176,7 +183,7 @@ const Admin = () => {
         </div>
 
         {/* Menu Items */}
-        <div className="overflow-y-auto h-full pb-20">
+        <div className="overflow-y-auto h-full pb-20 ">
           <nav className="p-4">
             <ul className="space-y-2">
               {menuItems.map((item, index) => {
@@ -211,7 +218,7 @@ const Admin = () => {
         </div>
 
         {/* Bottom Gradient */}
-        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white via-white/90 to-transparent pointer-events-none" />
+        {/* <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white via-white/90 to-transparent pointer-events-none" /> */}
       </aside>
 
       {/* Main Content */}

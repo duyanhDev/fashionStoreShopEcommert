@@ -40,6 +40,8 @@ import AdminAccountManagement from "../components/AdminAccountManagement/AdminAc
 import Banner from "../components/Banner/Banner";
 import CreateBannerForm from "../components/Banner/CreateBannerForm/CreateBannerForm";
 import UpdateBannerForm from "../components/Banner/UpdateBannerForm/UpdateBannerForm";
+import Transactions from "../components/Transactions/Transactions";
+import BlogPostPage from "../components/BlogPostPage/BlogPostPage";
 
 export const RouterLayout = [
   {
@@ -94,6 +96,10 @@ export const RouterLayout = [
   {
     path: "/blog",
     element: <Blog />,
+  },
+  {
+    path: "/blog/:slug",
+    element: <BlogPostPage />,
   },
   {
     path: "/wishlist",
@@ -259,6 +265,15 @@ export const RouterAdmin = [
         element: (
           <PermissionRoute allowedPermissions={["admin"]}>
             <ManageStore />
+          </PermissionRoute>
+        ),
+      },
+
+      {
+        path: "revenue",
+        element: (
+          <PermissionRoute allowedPermissions={["admin"]}>
+            <Transactions />
           </PermissionRoute>
         ),
       },

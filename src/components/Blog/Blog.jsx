@@ -13,31 +13,46 @@ import { Button } from "antd";
 import { useNavigate } from "react-router-dom";
 import { getAllBlog } from "../../service/Blog";
 import moment from "moment";
+import ReactPaginate from "react-paginate";
 
 const Blog = () => {
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [categories, setCategories] = useState([]);
   const [viewMode, setViewMode] = useState("grid");
-  const [blogPosts, setBlogPosts] = useState([]);
+  const [allBlogPosts, setAllBlogPosts] = useState([]); // dữ liệu gốc
+  const [blogPosts, setBlogPosts] = useState([]); // dữ liệu hiển thị
+  const [sortType, setSortType] = useState("newest");
+
+  // FIX: Sửa lỗi typo currentPapge -> currentPage
+  const [currentPage, setCurrentPage] = useState(0);
+  const ITEMS_PER_PAGE = 6;
+
+  // lấy dữ liệu hiện tại
+  const offset = currentPage * ITEMS_PER_PAGE;
+  const currentItems = blogPosts.slice(offset, offset + ITEMS_PER_PAGE);
+  const pageCount = Math.ceil(blogPosts.length / ITEMS_PER_PAGE);
+
+  const handlePageClick = ({ selected }) => {
+    setCurrentPage(selected);
+  };
+
   const navigate = useNavigate();
 
-  const categories = [
-    { id: "all", name: "Tất cả", count: blogPosts.length },
-    { id: "fashion", name: "Thời trang", count: 2 },
-    { id: "styling", name: "Phối đồ", count: 1 },
-    { id: "care", name: "Chăm sóc", count: 1 },
-    { id: "trend", name: "Xu hướng", count: 1 },
-    { id: "lifestyle", name: "Lifestyle", count: 1 },
-  ];
-
-  const featuredPost = blogPosts.find((post) => post.regex);
-  const otherPosts = blogPosts.filter((post) => !post.featured);
+  const featuredPost = currentItems.find((post) => post.regex);
+  const otherPosts = currentItems.filter((post) => !post.featured);
 
   const fetchApiBlog = async () => {
     try {
       const res = await getAllBlog();
 
       if (res && res.data && res.data.EC === 0) {
-        setBlogPosts(res.data.data);
+        setAllBlogPosts(res.data.data); // giữ nguyên dữ liệu gốc
+        setBlogPosts(res.data.data); // dữ liệu hiển thị mặc định
+        // tạo danh mục (nếu cần unique)
+        const uniqueCategories = [
+          ...new Set(res.data.data.map((item) => item.regex)),
+        ];
+        setCategories(uniqueCategories);
       }
     } catch (error) {
       console.log(error);
@@ -47,8 +62,42 @@ const Blog = () => {
   useEffect(() => {
     fetchApiBlog();
   }, []);
+
+  const filterCategories = (regex) => {
+    setSelectedCategory(regex);
+    setCurrentPage(0); // FIX: Reset về trang đầu khi filter
+
+    if (regex) {
+      const data = allBlogPosts.filter(
+        (blog) => blog.regex.toString() === regex.toString()
+      );
+      setBlogPosts(data);
+    } else {
+      setBlogPosts(allBlogPosts); // nếu bỏ chọn category -> hiển thị tất cả
+    }
+  };
+
+  const handleSort = (type) => {
+    console.log(type);
+    setSortType(type);
+    setCurrentPage(0); // FIX: Reset về trang đầu khi sort
+
+    let sortedPosts = [...blogPosts]; // FIX: Sort từ dữ liệu đã filter, không phải allBlogPosts
+
+    if (type === "newest") {
+      sortedPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    } else if (type === "oldest") {
+      sortedPosts.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    } else if (type === "popular") {
+      // ví dụ dựa theo lượt xem (viewCount) hoặc lượt like
+      sortedPosts.sort((a, b) => b.view - a.view);
+    }
+
+    setBlogPosts(sortedPosts);
+  };
+
   return (
-    <div className="min-h-screen  text-white mt-28">
+    <div className="min-h-screen text-white mt-28">
       {/* Header */}
       <div className="bg-gradient-to-r from-green-800 to-green-600 py-16">
         <div className="max-w-7xl mx-auto px-4">
@@ -77,10 +126,14 @@ const Blog = () => {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <Filter className="w-5 h-5 text-gray-400" />
-                <select className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-green-500">
-                  <option>Mới nhất</option>
-                  <option>Phổ biến</option>
-                  <option>Cũ nhất</option>
+                <select
+                  className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-green-500"
+                  value={sortType}
+                  onChange={(e) => handleSort(e.target.value)}
+                >
+                  <option value="newest">Mới nhất</option>
+                  <option value="popular">Phổ biến</option>
+                  <option value="oldest">Cũ nhất</option>
                 </select>
               </div>
               <div className="flex bg-gray-800 rounded-lg border border-gray-700">
@@ -119,22 +172,27 @@ const Blog = () => {
                 Danh mục
               </h3>
               <div className="space-y-2">
-                {categories.map((category) => (
+                {categories.map((category, index) => (
                   <button
-                    key={category.id}
-                    onClick={() => setSelectedCategory(category.id)}
+                    key={index}
+                    onClick={() => filterCategories(category)}
                     className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${
-                      selectedCategory === category.id
+                      selectedCategory === category
                         ? "bg-green-600 text-white"
                         : "text-gray-300 hover:bg-gray-800"
                     }`}
                   >
-                    <span>{category.name}</span>
-                    <span className="text-sm bg-gray-700 px-2 py-1 rounded">
-                      {category.count}
-                    </span>
+                    <span>{category}</span>
                   </button>
                 ))}
+
+                {/* nút để bỏ lọc */}
+                <button
+                  onClick={() => filterCategories("")}
+                  className="mt-4 w-full p-3 rounded-lg bg-gray-700 text-white"
+                >
+                  Tất cả
+                </button>
               </div>
 
               {/* Newsletter Signup */}
@@ -232,6 +290,7 @@ const Blog = () => {
                     <article
                       key={post._id}
                       className="bg-gray-900 rounded-xl overflow-hidden hover:transform hover:scale-105 transition-all duration-300 group"
+                      onClick={() => navigate(post.slug)}
                     >
                       <div className="relative">
                         <img
@@ -248,7 +307,9 @@ const Blog = () => {
                       <div className="p-6">
                         <div className="flex items-center gap-2 text-sm text-gray-400 mb-3">
                           <Calendar className="w-4 h-4" />
-                          <span>{post.date}</span>
+                          <span>
+                            {moment(post.createdAt).format("DD/MM/YYYY")}
+                          </span>
                           <span>•</span>
                           <span>{post.readTime}</span>
                         </div>
@@ -256,7 +317,7 @@ const Blog = () => {
                           {post.title}
                         </h3>
                         <p className="text-gray-300 text-sm mb-4 line-clamp-3">
-                          {moment(post.createdAt).format("DD/MM/YYYY")}
+                          {post.content}
                         </p>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 text-sm text-gray-400">
@@ -281,7 +342,7 @@ const Blog = () => {
                       <div className="md:flex">
                         <div className="md:w-1/3">
                           <img
-                            src={post.image}
+                            src={post.img[0]?.url}
                             alt={post.title}
                             className="w-full h-48 md:h-full object-cover"
                           />
@@ -289,21 +350,23 @@ const Blog = () => {
                         <div className="md:w-2/3 p-6">
                           <div className="flex items-center gap-4 mb-3">
                             <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm">
-                              {post.category}
+                              {post.regex}
                             </span>
                             <span className="text-gray-400 text-sm flex items-center gap-1">
                               <Calendar className="w-4 h-4" />
-                              {post.date}
+                              {moment(post.createdAt).format("DD/MM/YYYY")}
                             </span>
                           </div>
-                          <h3 className="text-xl font-semibold mb-3 group-hover:text-green-400 transition-colors cursor-pointer">
+                          <h3 className="text-lg font-semibold mb-3 group-hover:text-green-400 transition-colors cursor-pointer line-clamp-2">
                             {post.title}
                           </h3>
-                          <p className="text-gray-300 mb-4">{post.excerpt}</p>
+                          <p className="text-gray-300 mb-4 line-clamp-3">
+                            {post.content}
+                          </p>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-sm text-gray-400">
                               <User className="w-4 h-4" />
-                              <span>{post.author}</span>
+                              <span>{post.userId.name}</span>
                               <span>•</span>
                               <span>{post.readTime}</span>
                             </div>
@@ -320,28 +383,36 @@ const Blog = () => {
               )}
             </div>
 
-            {/* Pagination */}
-            <div className="flex justify-center items-center gap-2 mt-12">
-              <button className="px-4 py-2 bg-gray-800 text-gray-400 rounded-lg hover:bg-gray-700 transition-colors">
-                Trước
-              </button>
-              <button className="px-4 py-2 bg-green-600 text-white rounded-lg">
-                1
-              </button>
-              <button className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors">
-                2
-              </button>
-              <button className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors">
-                3
-              </button>
-              <span className="px-2 text-gray-500">...</span>
-              <button className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors">
-                10
-              </button>
-              <button className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors">
-                Sau
-              </button>
-            </div>
+            {/* Pagination - FIX: Thêm CSS styling và điều kiện hiển thị */}
+            {pageCount > 1 && (
+              <div className="flex justify-center items-center mt-12">
+                <ReactPaginate
+                  previousLabel={"← Trước"}
+                  nextLabel={"Sau →"}
+                  pageCount={pageCount}
+                  onPageChange={handlePageClick}
+                  containerClassName={"flex items-center gap-2"}
+                  pageClassName={"page-item"}
+                  pageLinkClassName={
+                    "px-3 py-2 rounded-lg bg-gray-800 text-white hover:bg-green-600 transition-colors"
+                  }
+                  activeClassName={"active"}
+                  activeLinkClassName={"bg-green-600 text-white"}
+                  previousClassName={"page-item"}
+                  previousLinkClassName={
+                    "px-4 py-2 rounded-lg bg-gray-800 text-white hover:bg-green-600 transition-colors"
+                  }
+                  nextClassName={"page-item"}
+                  nextLinkClassName={
+                    "px-4 py-2 rounded-lg bg-gray-800 text-white hover:bg-green-600 transition-colors"
+                  }
+                  disabledClassName={"opacity-50 cursor-not-allowed"}
+                  pageRangeDisplayed={3}
+                  marginPagesDisplayed={2}
+                  forcePage={currentPage}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

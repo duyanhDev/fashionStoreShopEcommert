@@ -11,4 +11,8 @@ const CreateBlog = async (formData) => {
 const getAllBlog = async () => {
   return await axios.get("api/v1/all-blog");
 };
-export { CreateBlog, getAllBlog };
+
+const getDetaillBlog = async (slug) => {
+  return await axios.get(`api/v1/blog/${slug}`);
+};
+export { CreateBlog, getAllBlog, getDetaillBlog };
