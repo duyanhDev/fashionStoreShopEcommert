@@ -298,7 +298,7 @@
   }
 }
 
-/* Desktop Styles - 4 columns với 267.2px */
+/* Desktop Styles - 3 columns với 267.2px cho màn hình < 1450px */
 @media (min-width: 1024px) {
   .clothing-male-wrapper {
     padding: 1rem;
@@ -314,7 +314,7 @@
   }
 
   .clothing-male-grid {
-    grid-template-columns: repeat(4, 267.2px);
+    grid-template-columns: repeat(3, 267.2px);
     gap: 1.2rem;
     justify-content: center;
     padding: 2rem 0;
@@ -356,8 +356,8 @@
   }
 }
 
-/* Large Desktop - Tăng gap một chút */
-@media (min-width: 1200px) {
+/* Large Desktop - 4 columns chỉ khi >= 1450px */
+@media (min-width: 1450px) {
   .clothing-male-wrapper {
     padding: 2rem;
     max-width: 1500px;
@@ -369,6 +369,7 @@
   }
 
   .clothing-male-grid {
+    grid-template-columns: repeat(4, 267.2px);
     gap: 1rem;
   }
 
@@ -377,22 +378,15 @@
   }
 }
 
-/* Extra Large Desktop */
-@media (min-width: 1400px) {
-  /* .clothing-male-grid {
-    gap: 2rem;
-  } */
-}
-
 /* Mobile nhỏ - 1 column */
 @media (max-width: 480px) {
   .clothing-male-wrapper {
-    padding: 1rem;
+    padding: 10px;
   }
 
   .clothing-male-grid {
-    grid-template-columns: (2, 1fr);
-    gap: 1rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
     justify-items: center;
   }
 

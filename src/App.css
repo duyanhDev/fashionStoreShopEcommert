@@ -2,9 +2,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
 @import "highlight.js/styles/github.css";
 /* Sử dụng trong component */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind directives removed. Make sure to include Tailwind styles via your build process or main CSS entry file. */
 
 * {
   margin: 0;
@@ -78,7 +76,7 @@ body {
   right: 0;
   position: absolute;
   margin: auto;
-  width: 1300px;
+  width: 1400px;
   left: 0;
   margin-top: 8px;
   background-color: #fff;

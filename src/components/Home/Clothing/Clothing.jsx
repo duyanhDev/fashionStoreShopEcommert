@@ -367,7 +367,7 @@ export default function Clothing({ ListProducts }) {
 
         {/* Products Grid */}
         <div
-          className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 lg:gap-2"
+          className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 lg:gap-2 "
           data-aos="fade-up"
         >
           {loading
@@ -432,7 +432,7 @@ export default function Clothing({ ListProducts }) {
         <div className="relative max-w-full md:max-w-[768px] lg:max-w-[1024px] xl:max-w-[1280px] 2xl:max-w-[1536px] lg:px-8">
           {/* Featured Products Grid */}
           <div
-            className="grid grid-cols-2 sm:grid-cols-2  md:grid-cols-3 lg:grid-cols-4 gap-2 lg:gap-4"
+            className="grid grid-cols-2 sm:grid-cols-2  md:grid-cols-3 lg:grid-cols-5 gap-2 lg:gap-2"
             data-aos="fade-up"
           >
             {loading

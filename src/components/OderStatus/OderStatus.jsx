@@ -104,7 +104,7 @@ const OderStatus = () => {
     <div className="main_order ">
       {contextHolder}
       <div className="main_ranking__status">
-        <h1 className="m-auto font-bold text-4xl" style={{ width: "1300px" }}>
+        <h1 className="m-auto font-bold text-4xl" style={{ width: "1400px" }}>
           Đơn Mua
         </h1>
       </div>

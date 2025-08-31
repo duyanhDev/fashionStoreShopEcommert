@@ -519,7 +519,7 @@ const ProductsSection = ({ ListProducts }) => {
         </section>
 
         {/* Sale Products Section */}
-        <section className="w-full relative overflow-hidden">
+        <section className="sm: px-3 lg:px-0 w-full relative overflow-hidden">
           <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl w-full">
             <div className="relative py-6 sm:py-8 lg:py-12 px-3 sm:px-4 lg:px-6">
               <div className="w-full">
@@ -565,8 +565,8 @@ const ProductsSection = ({ ListProducts }) => {
         </section>
 
         {/* Bestseller Products Section */}
-        <section className="w-full relative overflow-hidden">
-          <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl w-full">
+        <section className="sm: px-3 lg:px-0 w-full relative overflow-hidden">
+          <div className=" bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl w-full">
             <div className="relative py-6 sm:py-8 lg:py-12 px-3 sm:px-4 lg:px-6">
               <div className="w-full">
                 {/* Section Header */}

@@ -9,7 +9,7 @@
 .info-name {
   position: relative;
   width: 100%;
-  max-width: 1300px;
+  max-width: 1400px;
   margin: 0 auto;
   background-color: #fff;
   border-radius: 10px;
@@ -89,7 +89,7 @@
 .profile_username {
   position: relative;
   width: 100%;
-  max-width: 1300px;
+  max-width: 1400px;
   margin: 2rem auto 0;
   min-height: auto;
   display: flex;

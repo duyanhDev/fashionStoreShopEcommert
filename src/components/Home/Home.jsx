@@ -20,12 +20,12 @@ import { Link, useNavigate, useOutletContext } from "react-router-dom";
 import Clothing from "./Clothing/Clothing";
 
 import SliderComponent from "../Slider/Slider";
-import Ao from "./../../assets/Image/Home/Ao.png";
-import Quan from "./../../assets/Image/Home/Quan.png";
-import Aokhoac from "./../../assets/Image/Home/Aok.png";
-import Phukien from "./../../assets/Image/Home/Mu.png";
-import logo from "./../../assets/Image/Home/Dosin.png";
-import Unisex from "./../../assets/Image/Home/Unisex.png";
+import Ao from "./../../assets/Image/Home/image-ao-thun-1_18_1.avif";
+import quan_thun_nam from "./../../assets/Image/Home/quan_thun_nam.avif";
+import ao_thun_nu from "./../../assets/Image/Home/image-ao-thun-1_18_8.avif";
+import ao_the_thao_nu from "./../../assets/Image/Home/image-ao-thun-1_18_9.avif";
+import Phukien from "./../../assets/Image/Home/phu-kien.avif";
+import Phukien_nu from "./../../assets/Image/Home/phu_kien_nu.avif";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import ProductCart from "../ProductCart/ProductCart";
@@ -50,6 +50,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
 import EnhancedProductsSection from "../EnhancedProductsSection/EnhancedProductsSection";
+import { GiftIcon } from "lucide-react";
 
 const Home = () => {
   const { ListProducts } = useOutletContext();
@@ -163,7 +164,7 @@ const Home = () => {
     {
       icon: <TruckIcon className="w-8 h-8" />,
       title: "Miễn phí vận chuyển",
-      description: "Miễn phí ship toàn quốc cho đơn hàng từ 299K",
+      description: "Miễn phí ship toàn quốc cho tất cả đơn hàng",
     },
     {
       icon: <ShieldCheckIcon className="w-8 h-8" />,
@@ -179,6 +180,11 @@ const Home = () => {
       icon: <PhoneIcon className="w-8 h-8" />,
       title: "Hỗ trợ 24/7",
       description: "Tư vấn và hỗ trợ khách hàng mọi lúc mọi nơi",
+    },
+    {
+      icon: <GiftIcon className="w-8 h-8" />,
+      title: "Ưu đãi hấp dẫn",
+      description: "Nhận ngay nhiều khuyến mãi và quà tặng độc quyền",
     },
   ];
 
@@ -211,10 +217,10 @@ const Home = () => {
 
   const SkeletonCard = () => (
     <Card
-      className="w-full h-full shadow-lg border-0 hover:shadow-xl transition-all duration-300"
-      cover={<Skeleton.Image active={true} className="!h-80 w-full" />}
+      className="w-full max-w-sm mx-auto bg-white rounded-2xl shadow-lg overflow-hidden"
+      cover={<Skeleton.Image active style={{ width: "100%", height: 200 }} />}
     >
-      <Skeleton active={true} paragraph={{ rows: 4 }} />
+      <Skeleton active paragraph={{ rows: 4 }} />
     </Card>
   );
 
@@ -327,160 +333,140 @@ const Home = () => {
               <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-600 mx-auto rounded-full"></div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-4">
               {/* ÁO KHOÁC */}
-              <div
-                className="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100"
-                data-aos="zoom-in-up"
-                data-aos-delay="0"
-              >
+              <div>
                 <Link
-                  className="block p-6 text-center"
-                  to="/unisex?Category=Áo+Khoác&currentPage=1"
+                  className="block text-center"
+                  to="/clothing/male?currentPage=1&care=Áo+thun"
                 >
-                  <div className="relative mb-4">
-                    <img
-                      src={Aokhoac}
-                      alt="ÁO KHOÁC"
-                      loading="lazy"
-                      className="w-20 h-20 mx-auto object-contain group-hover:scale-110 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-blue-500/10 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  </div>
-                  <h3 className="font-bold text-gray-900 text-sm mb-1">
-                    ÁO KHOÁC
-                  </h3>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    Áo khoác thời trang Nam/Nữ
-                  </p>
-                </Link>
-              </div>
-
-              {/* ĐỒ NAM */}
-              <div
-                className="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100"
-                data-aos="zoom-in-up"
-                data-aos-delay="100"
-              >
-                <Link className="block p-6 text-center" to="/male">
                   <div className="relative mb-4">
                     <img
                       src={Ao}
                       alt="ĐỒ NAM"
                       loading="lazy"
-                      className="w-20 h-20 mx-auto object-contain group-hover:scale-110 transition-transform duration-300"
+                      width="280"
+                      height="380"
+                      className=" mx-auto object-contain group-hover:scale-110 transition-transform duration-300 rounded-lg"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-blue-500/10 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm mb-1 uppercase">
+                    Áo thun nam
+                  </h3>
+                </Link>
+              </div>
+
+              {/* ĐỒ NAM */}
+
+              <div>
+                <Link
+                  className="block text-center"
+                  to="/clothing/unisex?care=Quần+Thun&currentPage=1"
+                >
+                  <div className="relative mb-4">
+                    <img
+                      src={quan_thun_nam}
+                      alt="ĐỒ NAM"
+                      loading="lazy"
+                      width="280"
+                      height="380"
+                      className=" mx-auto object-contain group-hover:scale-110 transition-transform duration-300 rounded-lg"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-green-500/10 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
-                  <h3 className="font-bold text-gray-900 text-sm mb-1">
-                    ĐỒ NAM
+                  <h3 className="font-bold text-gray-900 text-sm mb-1 uppercase">
+                    Quần thun nam
                   </h3>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    Áo thun, sơ mi, quần dài, sort...
-                  </p>
                 </Link>
               </div>
 
-              {/* ĐỒ NỮ */}
-              <div
-                className="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100"
-                data-aos="zoom-in-up"
-                data-aos-delay="200"
-              >
-                <Link className="block p-6 text-center" to="/female">
-                  <div className="relative mb-4">
-                    <img
-                      src={Quan}
-                      alt="ĐỒ NỮ"
-                      loading="lazy"
-                      className="w-20 h-20 mx-auto object-contain group-hover:scale-110 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-pink-500/10 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  </div>
-                  <h3 className="font-bold text-gray-900 text-sm mb-1">
-                    ĐỒ NỮ
-                  </h3>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    Áo quần, chân váy, đầm, yếm...
-                  </p>
-                </Link>
-              </div>
-
-              {/* ĐỒ UNISEX */}
-              <div
-                className="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100"
-                data-aos="zoom-in-up"
-                data-aos-delay="300"
-              >
-                <Link className="block p-6 text-center" to="/unisex">
-                  <div className="relative mb-4">
-                    <img
-                      src={Unisex}
-                      alt="ĐỒ UNISEX"
-                      loading="lazy"
-                      className="w-20 h-20 mx-auto object-contain group-hover:scale-110 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-purple-500/10 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  </div>
-                  <h3 className="font-bold text-gray-900 text-sm mb-1">
-                    ĐỒ UNISEX
-                  </h3>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    Áo thun, sơ mi, áo khoác UNISEX
-                  </p>
-                </Link>
-              </div>
-
-              {/* PHỤ KIỆN */}
-              <div
-                className="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100"
-                data-aos="zoom-in-up"
-                data-aos-delay="400"
-              >
+              <div>
                 <Link
-                  className="block p-6 text-center"
-                  to="/unisex?Category=Phụ+Kiện&currentPage=1"
+                  className="block text-center"
+                  to="/clothing/male?Category=Phụ+Kiện&currentPage=1"
                 >
                   <div className="relative mb-4">
                     <img
                       src={Phukien}
-                      alt="PHỤ KIỆN"
+                      alt="ĐỒ NAM"
                       loading="lazy"
-                      className="w-20 h-20 mx-auto object-contain group-hover:scale-110 transition-transform duration-300"
+                      width="280"
+                      height="380"
+                      className=" mx-auto object-contain group-hover:scale-110 transition-transform duration-300 rounded-lg"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-orange-500/10 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
                   <h3 className="font-bold text-gray-900 text-sm mb-1">
                     PHỤ KIỆN
                   </h3>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    Balo, túi xách, nón, thắt lưng, ví...
-                  </p>
                 </Link>
               </div>
+              {/* ĐỒ NỮ */}
 
-              {/* #DOSIN */}
-              <div
-                className="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100"
-                data-aos="zoom-in-up"
-                data-aos-delay="500"
-              >
-                <Link className="block p-6 text-center" to="/dosin">
+              <div>
+                <Link
+                  className="block text-center"
+                  to="/clothing/female?currentPage=1&care=Áo+thun"
+                >
                   <div className="relative mb-4">
                     <img
-                      src={logo}
-                      alt="#DOSIN"
+                      src={ao_the_thao_nu}
+                      alt="ĐỒ NAM"
                       loading="lazy"
-                      className="w-20 h-20 mx-auto object-contain group-hover:scale-110 transition-transform duration-300"
+                      width="280"
+                      height="380"
+                      className=" mx-auto object-contain group-hover:scale-110 transition-transform duration-300 rounded-lg"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-red-500/10 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
-                  <h3 className="font-bold text-gray-900 text-sm mb-1">
-                    #DOSIN
+                  <h3 className="font-bold text-gray-900 text-sm mb-1 uppercase">
+                    Áo Thun Nữ
                   </h3>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    Sản phẩm được TOTODAY đề xuất
-                  </p>
+                </Link>
+              </div>
+              <div>
+                <Link
+                  className="block  text-center"
+                  to="/clothing/female?currentPage=1&Category=Quần"
+                >
+                  <div className="relative mb-4">
+                    <img
+                      src={ao_thun_nu}
+                      alt="ĐỒ NAM"
+                      loading="lazy"
+                      width="280"
+                      height="380"
+                      className=" mx-auto object-contain group-hover:scale-110 transition-transform duration-300 rounded-lg"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-pink-500/10 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm mb-1">
+                    ĐỒ NỮ BRA & LEGGINGS
+                  </h3>
+                </Link>
+              </div>
+
+              {/* ĐỒ UNISEX */}
+              <div>
+                <Link
+                  className="block  text-center"
+                  to="clothing/female?currentPage=1&Category=Phụ+Kiện"
+                >
+                  <div className="relative mb-4">
+                    <img
+                      src={Phukien_nu}
+                      alt="ĐỒ NAM"
+                      loading="lazy"
+                      width="280"
+                      height="380"
+                      className=" mx-auto object-contain group-hover:scale-110 transition-transform duration-300 rounded-lg"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-purple-500/10 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm mb-1 uppercase">
+                    Phụ Kiện Nữ
+                  </h3>
                 </Link>
               </div>
             </div>
@@ -489,20 +475,20 @@ const Home = () => {
 
         {/* Services Section */}
         <div
-          className="py-16 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl"
+          className=" py-16 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl"
           data-aos="fade-up"
         >
           <div className="w-full mx-auto px-4 sm:px-2 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
                 DỊCH VỤ CỦA CHÚNG TÔI
               </h2>
-              <p className="text-lg text-black-600 font-bold max-w-2xl mx-auto">
+              <p className="text-lg text-white font-bold max-w-2xl mx-auto">
                 Cam kết mang đến trải nghiệm mua sắm tuyệt vời nhất cho khách
                 hàng
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               {services.map((service, index) => (
                 <div
                   key={index}
@@ -550,7 +536,7 @@ const Home = () => {
 
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[...Array(4)].map((_, index) => (
+                {[...Array(5)].map((_, index) => (
                   <SkeletonCard key={`skeleton-${index}`} />
                 ))}
               </div>

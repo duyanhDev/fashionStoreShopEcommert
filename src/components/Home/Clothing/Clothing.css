@@ -83,7 +83,7 @@
 
   .clothing_main_bg .grid {
     grid-template-columns: repeat(2, 1fr); /* 2 cột trên điện thoại */
-    gap: 10px; /* Khoảng cách nhỏ hơn để tiết kiệm không gian */
+    gap: 2px; /* Khoảng cách nhỏ hơn để tiết kiệm không gian */
   }
 }
 
@@ -102,7 +102,7 @@
 @media (min-width: 641px) and (max-width: 1024px) {
   .product-card .grid {
     grid-template-columns: repeat(3, 1fr); /* 3 cột trên tablet */
-    gap: 16px;
+    gap: 8px;
   }
 
   .product-card img {
