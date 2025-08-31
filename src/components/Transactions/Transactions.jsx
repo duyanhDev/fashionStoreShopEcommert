@@ -2,37 +2,30 @@ import {
   Table,
   Button,
   Tag,
-  Flex,
   Typography,
   Tooltip,
   Card,
   Row,
   Col,
-  Statistic,
   Input,
   Select,
   Space,
   DatePicker,
   message,
   Popconfirm,
+  Modal,
 } from "antd";
 import {
   EyeOutlined,
-  EditOutlined,
-  DeleteOutlined,
   SearchOutlined,
-  FilterOutlined,
   DollarOutlined,
   TrophyOutlined,
   AppstoreOutlined,
   UnorderedListOutlined,
-  BarChartOutlined,
   RiseOutlined,
   FallOutlined,
   FileTextOutlined,
-  CalendarOutlined,
   ShoppingCartOutlined,
-  UserOutlined,
   CreditCardOutlined,
   BankOutlined,
   WalletOutlined,
@@ -40,10 +33,12 @@ import {
   PrinterOutlined,
   DownloadOutlined,
 } from "@ant-design/icons";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import "./Transactions.css";
+import { getRevenueAPI } from "../../service/APITransaction";
+import { generateInvoicePDF, InvoiceTemplate } from "../InvoiceTemplate";
 
 const { Text, Title } = Typography;
 const { Search } = Input;
@@ -62,138 +57,227 @@ const Transactions = () => {
   const [periodFilter, setPeriodFilter] = useState("all");
   const [viewMode, setViewMode] = useState("table");
   const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [printLoading, setPrintLoading] = useState(false);
+  const invoiceRef = useRef();
+
   const pageSize = 10;
   const hasSelected = selectedRowKeys.length > 0;
   const navigate = useNavigate();
-
-  // Mock data - trong thực tế sẽ gọi API
-  const mockTransactions = [
-    {
-      _id: "1",
-      transactionId: "TXN001",
-      customerName: "Nguyễn Văn A",
-      customerEmail: "nguyenvana@email.com",
-      products: ["Áo thun", "Quần jean"],
-      totalAmount: 599000,
-      paymentMethod: "credit_card",
-      status: "completed",
-      createdAt: "2024-12-15",
-      updatedAt: "2024-12-15",
-      discount: 50000,
-      tax: 59900,
-      shippingFee: 30000,
-    },
-    {
-      _id: "2",
-      transactionId: "TXN002",
-      customerName: "Trần Thị B",
-      customerEmail: "tranthib@email.com",
-      products: ["Váy dự tiệc"],
-      totalAmount: 899000,
-      paymentMethod: "bank_transfer",
-      status: "pending",
-      createdAt: "2024-12-14",
-      updatedAt: "2024-12-14",
-      discount: 0,
-      tax: 89900,
-      shippingFee: 25000,
-    },
-    {
-      _id: "3",
-      transactionId: "TXN003",
-      customerName: "Lê Văn C",
-      customerEmail: "levanc@email.com",
-      products: ["Giày thể thao", "Tất"],
-      totalAmount: 1299000,
-      paymentMethod: "cash",
-      status: "completed",
-      createdAt: "2024-12-13",
-      updatedAt: "2024-12-13",
-      discount: 100000,
-      tax: 129900,
-      shippingFee: 0,
-    },
-    {
-      _id: "4",
-      transactionId: "TXN004",
-      customerName: "Phạm Thị D",
-      customerEmail: "phamthid@email.com",
-      products: ["Áo khoác"],
-      totalAmount: 459000,
-      paymentMethod: "e_wallet",
-      status: "cancelled",
-      createdAt: "2024-12-12",
-      updatedAt: "2024-12-12",
-      discount: 20000,
-      tax: 45900,
-      shippingFee: 30000,
-    },
-    {
-      _id: "5",
-      transactionId: "TXN005",
-      customerName: "Hoàng Văn E",
-      customerEmail: "hoangvane@email.com",
-      products: ["Quần short", "Áo polo"],
-      totalAmount: 749000,
-      paymentMethod: "credit_card",
-      status: "completed",
-      createdAt: "2024-12-11",
-      updatedAt: "2024-12-11",
-      discount: 30000,
-      tax: 74900,
-      shippingFee: 25000,
-    },
-  ];
 
   const onSelectChange = (newSelectedRowKeys) => {
     setSelectedRowKeys(newSelectedRowKeys);
   };
 
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const res = await getRevenueAPI();
+
+      if (res && res.data && res.data.EC === 0) {
+        // Loại bỏ setTimeout không cần thiết
+        if (res.data.data) {
+          const processedTransactions = res.data.data.map(
+            (transaction, index) => ({
+              key: transaction._id,
+              index: index + 1,
+              transactionInfo: (
+                <div className="space-y-1">
+                  <Text strong className="text-gray-900 text-sm block">
+                    {transaction.orderId?._id || "N/A"}
+                  </Text>
+                  <Text className="text-gray-500 text-xs block">
+                    {dayjs(transaction.createdAt).format("DD/MM/YYYY HH:mm")}
+                  </Text>
+                </div>
+              ),
+              customer: (
+                <div className="space-y-1">
+                  <Text strong className="text-gray-900 text-sm block">
+                    {truncateText(transaction?.userId?.name || "N/A", 20)}
+                  </Text>
+                  <Text className="text-gray-500 text-xs block">
+                    {truncateText(transaction?.userId?.email || "N/A", 25)}
+                  </Text>
+                </div>
+              ),
+              products: (
+                <div className="max-w-[150px]">
+                  <Text className="text-gray-700 text-sm">
+                    {transaction?.orderId?.items?.map((item, idx) => (
+                      <span key={idx}>
+                        {item.name}
+                        {idx < transaction.orderId.items.length - 1 ? ", " : ""}
+                      </span>
+                    )) || "N/A"}
+                  </Text>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {transaction?.orderId?.items?.length || 0} sản phẩm
+                  </div>
+                </div>
+              ),
+              amount: (
+                <div className="text-right">
+                  <Text strong className="text-green-600 text-sm block">
+                    {formatPrice(transaction.totalAmount)}
+                  </Text>
+                  <Text className="text-gray-500 text-xs">
+                    Giảm: {formatPrice(transaction.discount || 0)}
+                  </Text>
+                </div>
+              ),
+              paymentMethod: (
+                <div className="flex items-center space-x-2">
+                  {getPaymentMethodIcon(transaction.paymentMethod)}
+                  <Text className="text-sm">
+                    {getPaymentMethodText(transaction.paymentMethod)}
+                  </Text>
+                </div>
+              ),
+              orderStatus: (
+                <Tag
+                  color={getStatusColor(transaction.orderId?.orderStatus)}
+                  className="px-3 py-1 text-xs rounded-full font-medium text-wrap text-center"
+                >
+                  {getStatusText(transaction.orderId?.orderStatus)}
+                </Tag>
+              ),
+              action: (
+                <Space size="small">
+                  <Tooltip title="Xem chi tiết">
+                    <Button
+                      size="small"
+                      icon={<EyeOutlined />}
+                      onClick={() => handlePreviewInvoice(transaction)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white border-none rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+                    />
+                  </Tooltip>
+                  <Tooltip title="In hóa đơn">
+                    <Button
+                      size="small"
+                      icon={<PrinterOutlined />}
+                      onClick={() => handlePreviewInvoice(transaction)} // ✅ gọi hàm in // ✅ gọi hàm in(transaction)}
+                      className="bg-green-500 hover:bg-green-600 text-white border-none rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+                    />
+                  </Tooltip>
+                  {transaction.orderId?.orderStatus === "Completed" && (
+                    <Popconfirm
+                      title="Hoàn tiền"
+                      description={`Bạn có chắc chắn muốn hoàn tiền cho giao dịch "${transaction._id}" không?`}
+                      onConfirm={() => handleRefund(transaction._id)}
+                      okText="Hoàn tiền"
+                      cancelText="Hủy"
+                    >
+                      <Tooltip title="Hoàn tiền">
+                        <Button
+                          size="small"
+                          icon={<RiseOutlined />}
+                          className="bg-orange-500 hover:bg-orange-600 text-white border-none rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+                        />
+                      </Tooltip>
+                    </Popconfirm>
+                  )}
+                </Space>
+              ),
+              rawTransaction: transaction,
+              // Thêm các fields để search
+              customerName: transaction?.userId?.name || "",
+              email: transaction?.userId?.email || "",
+              productName:
+                transaction?.orderId?.items
+                  ?.map((item) => item.name)
+                  .join(", ") || "",
+              status: transaction.orderId?.orderStatus,
+              createdAt: transaction.createdAt,
+              totalAmount: transaction.totalAmount || 0,
+            })
+          );
+
+          setDataTransactions(processedTransactions);
+          setFilteredTransactions(processedTransactions);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      message.error("Không thể tải dữ liệu giao dịch");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   const getStatusColor = (status) => {
     const statusColors = {
-      completed: "success",
-      pending: "warning",
-      cancelled: "error",
+      Completed: "success",
+      Processing: "warning",
+      Confirmed: "processing",
+      Shipping: "processing",
+      Delivered: "success",
+      Cancelled: "error",
       refunded: "default",
     };
     return statusColors[status] || "default";
   };
 
   const getStatusText = (status) => {
-    const statusTexts = {
-      completed: "Hoàn thành",
-      pending: "Đang xử lý",
-      cancelled: "Đã hủy",
-      refunded: "Đã hoàn tiền",
-    };
-    return statusTexts[status] || status;
+    switch (status) {
+      case "Processing":
+        return "Đơn hàng đang chờ shop xác nhận";
+      case "Confirmed":
+        return "Người bán đang chuẩn bị hàng";
+      case "Shipping":
+        return "Đã giao cho shipper/đơn vị vận chuyển";
+      case "Delivered":
+        return "Đơn hàng đang giao hàng đến bạn";
+      case "Completed":
+        return "Đơn hàng giao thành công";
+      case "Cancelled":
+        return "Đã hủy";
+      default:
+        return "Không xác định";
+    }
   };
 
   const getPaymentMethodIcon = (method) => {
     const icons = {
+      vnpay: <WalletOutlined />,
+      momo: <WalletOutlined />,
+      cod: <WalletOutlined />,
+      ZaloPay: <WalletOutlined />,
       credit_card: <CreditCardOutlined />,
       bank_transfer: <BankOutlined />,
-      cash: <WalletOutlined />,
-      e_wallet: <WalletOutlined />,
     };
     return icons[method] || <CreditCardOutlined />;
   };
 
   const getPaymentMethodText = (method) => {
     const texts = {
+      vnpay: "VNPay",
+      momo: "MoMo",
+      cod: "Tiền mặt",
+      ZaloPay: "ZaloPay",
       credit_card: "Thẻ tín dụng",
       bank_transfer: "Chuyển khoản",
-      cash: "Tiền mặt",
-      e_wallet: "Ví điện tử",
     };
     return texts[method] || method;
   };
 
   const formatPrice = (price) => {
-    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
+    if (!price && price !== 0) return "0đ";
+    const numericPrice =
+      typeof price === "string"
+        ? parseInt(price.replace(/[^\d]/g, ""), 10)
+        : price;
+    if (isNaN(numericPrice)) return "0đ";
+    return numericPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
   };
 
   const truncateText = (text, maxLength = 30) => {
+    if (!text) return "";
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + "...";
   };
@@ -214,40 +298,44 @@ const Transactions = () => {
     }
   };
 
-  // Statistics calculations
+  // Statistics calculations - sửa lại để tính toán đúng
   const totalTransactions = filteredTransactions.length;
   const completedTransactions = filteredTransactions.filter(
-    (t) => t.status === "completed"
+    (t) => t.status === "Completed"
   ).length;
   const pendingTransactions = filteredTransactions.filter(
-    (t) => t.status === "pending"
+    (t) => t.status === "Processing"
   ).length;
   const totalRevenue = filteredTransactions
-    .filter((t) => t.status === "completed")
-    .reduce((sum, t) => sum + t.totalAmount, 0);
+    .filter((t) => t.status === "Completed")
+    .reduce((sum, t) => sum + (t.totalAmount || 0), 0);
   const avgOrderValue =
     completedTransactions > 0
       ? Math.round(totalRevenue / completedTransactions)
       : 0;
 
-  // Filter transactions
+  // Filter transactions - sửa lại logic filter
   const applyFilters = () => {
-    let filtered = [...mockTransactions];
+    let filtered = [...dataTransactions];
 
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (transaction) =>
-          transaction.transactionId
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          transaction.customerName
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          transaction.customerEmail
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())
-      );
+    // 1. Lọc theo từ khóa (searchTerm)
+    if (searchTerm && searchTerm.trim() !== "") {
+      const keyword = searchTerm.toLowerCase();
+      filtered = filtered.filter((txn) => {
+        const customerName = txn.customerName
+          ? txn.customerName.toLowerCase()
+          : "";
+        const productName = txn.productName
+          ? txn.productName.toLowerCase()
+          : "";
+        const email = txn.email ? txn.email.toLowerCase() : "";
+
+        return (
+          customerName.includes(keyword) ||
+          productName.includes(keyword) ||
+          email.includes(keyword)
+        );
+      });
     }
 
     // Status filter
@@ -258,7 +346,7 @@ const Transactions = () => {
     // Payment method filter
     if (paymentMethodFilter !== "all") {
       filtered = filtered.filter(
-        (t) => t.paymentMethod === paymentMethodFilter
+        (t) => t.rawTransaction?.paymentMethod === paymentMethodFilter
       );
     }
 
@@ -302,126 +390,35 @@ const Transactions = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [searchTerm, statusFilter, paymentMethodFilter, dateRange, periodFilter]);
+  }, [
+    searchTerm,
+    statusFilter,
+    paymentMethodFilter,
+    dateRange,
+    periodFilter,
+    dataTransactions,
+  ]);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+  const handlePreviewInvoice = (transaction) => {
+    console.log(transaction);
 
-      const processedTransactions = mockTransactions.map(
-        (transaction, index) => ({
-          key: transaction._id,
-          index: index + 1,
-          transactionInfo: (
-            <div className="space-y-1">
-              <Text strong className="text-gray-900 text-sm block">
-                {transaction.transactionId}
-              </Text>
-              <Text className="text-gray-500 text-xs block">
-                {dayjs(transaction.createdAt).format("DD/MM/YYYY HH:mm")}
-              </Text>
-            </div>
-          ),
-          customer: (
-            <div className="space-y-1">
-              <Text strong className="text-gray-900 text-sm block">
-                {truncateText(transaction.customerName, 20)}
-              </Text>
-              <Text className="text-gray-500 text-xs block">
-                {truncateText(transaction.customerEmail, 25)}
-              </Text>
-            </div>
-          ),
-          products: (
-            <div className="max-w-[150px]">
-              <Text className="text-gray-700 text-sm">
-                {transaction.products.join(", ")}
-              </Text>
-              <div className="text-xs text-gray-500 mt-1">
-                {transaction.products.length} sản phẩm
-              </div>
-            </div>
-          ),
-          amount: (
-            <div className="text-right">
-              <Text strong className="text-green-600 text-sm block">
-                {formatPrice(transaction.totalAmount)}
-              </Text>
-              <Text className="text-gray-500 text-xs">
-                Giảm: {formatPrice(transaction.discount)}
-              </Text>
-            </div>
-          ),
-          paymentMethod: (
-            <div className="flex items-center space-x-2">
-              {getPaymentMethodIcon(transaction.paymentMethod)}
-              <Text className="text-sm">
-                {getPaymentMethodText(transaction.paymentMethod)}
-              </Text>
-            </div>
-          ),
-          status: (
-            <Tag
-              color={getStatusColor(transaction.status)}
-              className="px-3 py-1 text-xs rounded-full font-medium"
-            >
-              {getStatusText(transaction.status)}
-            </Tag>
-          ),
-          action: (
-            <Space size="small">
-              <Tooltip title="Xem chi tiết">
-                <Button
-                  size="small"
-                  icon={<EyeOutlined />}
-                  onClick={() => handleViewTransaction(transaction._id)}
-                  className="bg-blue-500 hover:bg-blue-600 text-white border-none rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
-                />
-              </Tooltip>
-              <Tooltip title="In hóa đơn">
-                <Button
-                  size="small"
-                  icon={<PrinterOutlined />}
-                  className="bg-green-500 hover:bg-green-600 text-white border-none rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
-                />
-              </Tooltip>
-              {transaction.status === "completed" && (
-                <Popconfirm
-                  title="Hoàn tiền"
-                  description={`Bạn có chắc chắn muốn hoàn tiền cho giao dịch "${transaction.transactionId}" không?`}
-                  onConfirm={() => handleRefund(transaction._id)}
-                  okText="Hoàn tiền"
-                  cancelText="Hủy"
-                >
-                  <Tooltip title="Hoàn tiền">
-                    <Button
-                      size="small"
-                      icon={<RiseOutlined />}
-                      className="bg-orange-500 hover:bg-orange-600 text-white border-none rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
-                    />
-                  </Tooltip>
-                </Popconfirm>
-              )}
-            </Space>
-          ),
-          rawTransaction: transaction,
-        })
-      );
-
-      setDataTransactions(processedTransactions);
-      setFilteredTransactions(processedTransactions);
-    } catch (error) {
-      console.error("Error fetching transactions:", error);
-    } finally {
-      setLoading(false);
-    }
+    setSelectedInvoice(transaction);
+    setIsModalOpen(true);
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // Hàm xử lý in hóa đơn
+  const handlePrintInvoice = async (transaction) => {
+    console.log(transaction);
+
+    setPrintLoading(true);
+    try {
+      await generateInvoicePDF(transaction);
+    } catch (error) {
+      console.error("Error printing invoice:", error);
+    } finally {
+      setPrintLoading(false);
+    }
+  };
 
   const columns = [
     {
@@ -471,8 +468,8 @@ const Transactions = () => {
     },
     {
       title: "Trạng Thái",
-      dataIndex: "status",
-      key: "status",
+      dataIndex: "orderStatus",
+      key: "orderStatus",
       width: 100,
     },
     {
@@ -538,7 +535,7 @@ const Transactions = () => {
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div>{transaction.transactionInfo}</div>
-          {transaction.status}
+          {transaction.orderStatus}
         </div>
 
         {/* Customer Info */}
@@ -718,9 +715,9 @@ const Transactions = () => {
                   placeholder="Trạng thái"
                 >
                   <Option value="all">Tất cả</Option>
-                  <Option value="completed">Hoàn thành</Option>
-                  <Option value="pending">Đang xử lý</Option>
-                  <Option value="cancelled">Đã hủy</Option>
+                  <Option value="Completed">Hoàn thành</Option>
+                  <Option value="Processing">Đang xử lý</Option>
+                  <Option value="Cancelled">Đã hủy</Option>
                 </Select>
 
                 <Select
@@ -731,10 +728,10 @@ const Transactions = () => {
                   placeholder="Phương thức"
                 >
                   <Option value="all">Tất cả</Option>
-                  <Option value="credit_card">Thẻ tín dụng</Option>
-                  <Option value="bank_transfer">Chuyển khoản</Option>
-                  <Option value="cash">Tiền mặt</Option>
-                  <Option value="e_wallet">Ví điện tử</Option>
+                  <Option value="vnpay">VNPay</Option>
+                  <Option value="momo">MoMo</Option>
+                  <Option value="cod">Tiền mặt</Option>
+                  <Option value="ZaloPay">ZaloPay</Option>
                 </Select>
               </div>
             </div>
@@ -860,6 +857,36 @@ const Transactions = () => {
           </Card>
         )}
       </div>
+
+      <Modal
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        footer={null}
+        width={925}
+        style={{ minWidth: "none" }}
+        title="Xem Hóa Đơn"
+      >
+        {selectedInvoice && (
+          <div>
+            <InvoiceTemplate
+              transaction={selectedInvoice}
+              isVisible={true}
+              ref={invoiceRef}
+            />
+
+            <div style={{ marginTop: 20, textAlign: "right" }}>
+              <Button
+                type="primary"
+                onClick={() =>
+                  generateInvoicePDF(invoiceRef.current, selectedInvoice)
+                }
+              >
+                In hóa đơn
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

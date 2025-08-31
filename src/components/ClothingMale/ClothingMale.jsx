@@ -23,6 +23,7 @@ import {
   getWishlistAPI,
   RemoveToWishListAPI,
 } from "../../service/WishList";
+import { getListProductsAPI } from "../../service/ApiProduct";
 
 const ClothingMale = () => {
   const { user } = useSelector((state) => state.auth);
@@ -39,10 +40,7 @@ const ClothingMale = () => {
   const [costPrice, setCostPrice] = useState(0);
   const [productname, setProductname] = useState("");
   const [discount, setDiscount] = useState(0);
-
-  const [ratings, setRatings] = useState({});
   const [WishList, setWishList] = useState([]);
-
   const [hidden, setHidden] = useState(false);
   const [checkFilter, setCheckFilter] = useState(false);
   const [listCategory, setListCategory] = useState([]);
@@ -50,19 +48,21 @@ const ClothingMale = () => {
   const [size, setSize] = useState([]);
   const [priceRange, setPriceRange] = useState([0, 1000000]);
   const [selectedCare, setSelectedCare] = useState("");
+  const [selectedBrand, setSelectedBrand] = useState("");
+  const [dataProducts, setDataProducts] = useState([]);
   const [color, setColor] = useState("");
 
   const menuRef = useRef(null);
-  const { products, loading, totalPages } = useSelector(
+  const { products, data, loading, totalPages } = useSelector(
     (state) => state.filter
   );
 
-  // Parse URL parameters
   const queryParams = new URLSearchParams(location.search);
   const careParams = queryParams.get("care") || "";
   const sizeParams = queryParams.get("size")?.split(",").filter(Boolean) || [];
   const colorParms = queryParams.get("color") || "";
   const viewParams = queryParams.get("view") || "";
+  const brandParams = queryParams.get("brand" || "");
   const savedSortPrice = queryParams.get("sortPrice") || "";
   const savedCategory = queryParams.get("Category") || "";
   const savedCurrentPage = Number.parseInt(queryParams.get("currentPage")) || 1;
@@ -90,6 +90,7 @@ const ClothingMale = () => {
       color: colorParms,
       currentPage: savedCurrentPage,
       view: viewParams,
+      brand: brandParams,
     };
   }, [
     param.gender,
@@ -105,10 +106,21 @@ const ClothingMale = () => {
     sizeParams,
     colorParms,
     viewParams,
+    brandParams,
     savedCurrentPage,
   ]);
 
-  // Initial category fetch and URL sync
+  const fetchgetListProductsAPI = async () => {
+    try {
+      const res = await getListProductsAPI();
+      if (res && res.data && res.data.EC === 0) {
+        setDataProducts(res.data.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   useEffect(() => {
     const fetchListCategoryAndInitialize = async () => {
       try {
@@ -151,6 +163,10 @@ const ClothingMale = () => {
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    fetchgetListProductsAPI();
   }, []);
 
   const handlePageClick = (page) => {
@@ -227,6 +243,7 @@ const ClothingMale = () => {
     setValueId("");
     setSelectedCare("");
     setSize([]);
+    setSelectedBrand("");
     setPriceRange([0, 1000000]);
     setHidden(false);
     navigate(`${location.pathname}`);
@@ -275,6 +292,17 @@ const ClothingMale = () => {
     setCheckFilter(false);
   };
 
+  const filterBrand = (e) => {
+    const brandItem = e.target.value;
+    setSelectedBrand(brandItem);
+    const queryParams = new URLSearchParams(location.search);
+    queryParams.set("brand", brandItem);
+    queryParams.set("currentPage", "1");
+    navigate(`${location.pathname}?${queryParams.toString()}`);
+    setHidden(true);
+    setCheckFilter(false);
+  };
+
   const SkeletonCard = () => (
     <Card
       className="w-full max-w-sm mx-auto bg-white rounded-2xl shadow-lg overflow-hidden"
@@ -316,10 +344,6 @@ const ClothingMale = () => {
     setModalCartOpen(true);
     setProductname(name);
     setDiscount(discount);
-  };
-
-  const handleRate = (productId, value) => {
-    setRatings((prev) => ({ ...prev, [productId]: value }));
   };
 
   const handlAddWishList = async (productId) => {
@@ -419,8 +443,8 @@ const ClothingMale = () => {
           className="w-full"
         >
           <Space direction="vertical" className="w-full">
-            {products &&
-              products
+            {dataProducts &&
+              dataProducts
                 .filter(
                   (item, index, self) =>
                     index === self.findIndex((t) => t.care === item.care)
@@ -432,6 +456,38 @@ const ClothingMale = () => {
                     className="text-gray-700 hover:text-green-600"
                   >
                     {item.care}
+                  </Radio>
+                ))}
+          </Space>
+        </Radio.Group>
+      </div>
+
+      {/* filter theo brand */}
+
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">
+          Thương hiệu
+        </h3>
+        <Radio.Group
+          onChange={filterBrand}
+          value={selectedBrand}
+          className="w-full"
+        >
+          <Space direction="vertical" className="w-full">
+            {dataProducts &&
+              dataProducts
+                .filter((item) => item.gender === param.gender)
+                .filter(
+                  (item, index, self) =>
+                    index === self.findIndex((t) => t.brand === item.brand)
+                )
+                .map((item) => (
+                  <Radio
+                    key={item.brand}
+                    value={item.brand}
+                    className="text-gray-700 hover:text-green-600"
+                  >
+                    {item.brand}
                   </Radio>
                 ))}
           </Space>

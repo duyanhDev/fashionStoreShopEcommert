@@ -42,6 +42,7 @@ import CreateBannerForm from "../components/Banner/CreateBannerForm/CreateBanner
 import UpdateBannerForm from "../components/Banner/UpdateBannerForm/UpdateBannerForm";
 import Transactions from "../components/Transactions/Transactions";
 import BlogPostPage from "../components/BlogPostPage/BlogPostPage";
+import BrandAboutPage from "../components/BrandAboutPage/BrandAboutPage";
 
 export const RouterLayout = [
   {
@@ -116,6 +117,10 @@ export const RouterLayout = [
   {
     path: "/create/blog",
     element: <AdminPostCreator />,
+  },
+  {
+    path: "/about",
+    element: <BrandAboutPage />,
   },
 ];
 

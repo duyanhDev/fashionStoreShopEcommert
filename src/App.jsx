@@ -556,7 +556,9 @@ function App() {
               </Link>
             </li>
             <li className="name_product_app">
-              <Link target="_top">Thương hiệu</Link>
+              <Link to="/about" target="_top">
+                Thương hiệu
+              </Link>
             </li>
             <li className="name_product_app">
               <Link to="/ranking">Xếp hạng</Link>

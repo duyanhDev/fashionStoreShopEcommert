@@ -353,6 +353,8 @@ const Order = () => {
     "Giao hàng thành công",
   ];
 
+  console.log(orderProducts);
+
   return (
     <ConfigProvider
       theme={{

@@ -33,6 +33,7 @@ export const fetchProducts = (params) => async (dispatch) => {
       params.size,
       params.color,
       params.view,
+      params.brand,
       params.currentPage
     );
 

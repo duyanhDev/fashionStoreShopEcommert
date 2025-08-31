@@ -201,8 +201,8 @@ const Products = () => {
         ),
         size: (
           <div className="flex flex-wrap gap-1 max-w-[100px] overflow-x-auto">
-            {product.variants.slice(0, 3).map((variant, variantIndex) =>
-              variant.sizes.slice(0, 3).map((sizeItem, sizeIndex) => (
+            {product.variants.slice(0, 6).map((variant, variantIndex) =>
+              variant.sizes.slice(0, 6).map((sizeItem, sizeIndex) => (
                 <Tag
                   key={`${variantIndex}-${sizeIndex}-${sizeItem.size}`}
                   color={getRandomColor()}

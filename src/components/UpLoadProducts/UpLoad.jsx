@@ -17,8 +17,17 @@ import {
   Table,
   Modal,
   Switch,
+  Image,
+  Popconfirm,
+  Collapse,
 } from "antd";
-import { InfoCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import {
+  InfoCircleOutlined,
+  PlusOutlined,
+  DeleteOutlined,
+  EyeOutlined,
+  ExclamationCircleOutlined,
+} from "@ant-design/icons";
 import ImgCrop from "antd-img-crop";
 import { useEffect, useState } from "react";
 import ReactQuill from "react-quill";
@@ -28,6 +37,8 @@ import { ListOneProductAPI, UpdateProductAPI } from "../../service/ApiProduct";
 import { ListCategoryAPI } from "../../service/ApiCategory";
 import { useSelector } from "react-redux";
 import { FindAllSupplierAPI } from "../../service/Supplier";
+
+const { Panel } = Collapse;
 
 const UpLoad = () => {
   const [name, setName] = useState("");
@@ -49,14 +60,21 @@ const UpLoad = () => {
   const [fileList, setFileList] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
   const { user } = useSelector((state) => state.auth);
-  const [isAddStock, setIsAddStock] = useState(true); // Biến này để xác định có đang ở chế độ thêm tồn kho hay không
+  const [isAddStock, setIsAddStock] = useState(true);
   const [supplierId, setSupplierId] = useState("");
   const [supplierName, setSupplierName] = useState([]);
 
   // Thêm state mới cho việc quản lý variants
   const [currentVariants, setCurrentVariants] = useState([]);
-  const [stockUpdateMode, setStockUpdateMode] = useState("all"); // "all" | "specific"
+  const [stockUpdateMode, setStockUpdateMode] = useState("all");
   const [showVariantsTable, setShowVariantsTable] = useState(false);
+
+  // State mới cho việc quản lý xóa ảnh
+  const [showImageManager, setShowImageManager] = useState(false);
+  const [selectedImagesForDelete, setSelectedImagesForDelete] = useState([]);
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState(false);
+  const [imagePreviewModal, setImagePreviewModal] = useState(false);
+  const [previewImage, setPreviewImage] = useState("");
 
   const Navigate = useNavigate();
   const param = useParams();
@@ -82,13 +100,267 @@ const UpLoad = () => {
     });
   };
 
+  // API function để xóa ảnh (bạn cần implement này)
+  const DeleteProductImageAPI = async (
+    productId,
+    deleteImages,
+    deleteAllImagesForColor
+  ) => {
+    try {
+      const response = await fetch(`/api/products/${productId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          // Add your auth headers here
+        },
+        body: JSON.stringify({
+          deleteImages,
+          deleteAllImagesForColor,
+        }),
+      });
+      return response.json();
+    } catch (error) {
+      console.error("Error deleting images:", error);
+      throw error;
+    }
+  };
+
+  // Xử lý xóa ảnh đơn lẻ
+  const handleDeleteSingleImage = async (color, imageUrl) => {
+    try {
+      const deleteData = [
+        {
+          color: color,
+          imageUrl: imageUrl,
+        },
+      ];
+
+      messageApi.loading({ content: "Đang xóa ảnh...", key: "deleteImage" });
+
+      const response = await DeleteProductImageAPI(param.id, deleteData, null);
+
+      if (response.success) {
+        messageApi.success({
+          content: "Xóa ảnh thành công!",
+          key: "deleteImage",
+        });
+
+        // Cập nhật lại currentVariants
+        setCurrentVariants((prev) =>
+          prev.map((variant) => {
+            if (variant.color === color) {
+              return {
+                ...variant,
+                images: variant.images.filter((img) => img.url !== imageUrl),
+              };
+            }
+            return variant;
+          })
+        );
+
+        // Cập nhật fileList nếu cần
+        setFileList((prev) => prev.filter((file) => file.url !== imageUrl));
+      } else {
+        messageApi.error({
+          content: response.message || "Xóa ảnh thất bại!",
+          key: "deleteImage",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting image:", error);
+      messageApi.error({
+        content: "Có lỗi xảy ra khi xóa ảnh!",
+        key: "deleteImage",
+      });
+    }
+  };
+
+  // Xử lý xóa tất cả ảnh của một màu
+  const handleDeleteAllImagesForColor = async (color) => {
+    try {
+      messageApi.loading({
+        content: `Đang xóa tất cả ảnh màu ${color}...`,
+        key: "deleteColorImages",
+      });
+
+      const response = await DeleteProductImageAPI(param.id, null, [color]);
+
+      if (response.success) {
+        messageApi.success({
+          content: `Xóa tất cả ảnh màu ${color} thành công!`,
+          key: "deleteColorImages",
+        });
+
+        // Cập nhật lại currentVariants
+        setCurrentVariants((prev) =>
+          prev.map((variant) => {
+            if (variant.color === color) {
+              return {
+                ...variant,
+                images: [],
+              };
+            }
+            return variant;
+          })
+        );
+
+        // Cập nhật fileList
+        setFileList((prev) =>
+          prev.filter((file) => {
+            const variant = currentVariants.find((v) => v.color === color);
+            return !variant?.images.some((img) => img.url === file.url);
+          })
+        );
+      } else {
+        messageApi.error({
+          content: response.message || "Xóa ảnh thất bại!",
+          key: "deleteColorImages",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting color images:", error);
+      messageApi.error({
+        content: "Có lỗi xảy ra khi xóa ảnh!",
+        key: "deleteColorImages",
+      });
+    }
+  };
+
+  // Component hiển thị ảnh theo màu
+  const ImagesByColorComponent = () => {
+    if (!currentVariants || currentVariants.length === 0) {
+      return <div>Chưa có ảnh nào</div>;
+    }
+
+    return (
+      <div>
+        <Collapse>
+          {currentVariants.map((variant, variantIndex) => (
+            <Panel
+              header={
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <span>
+                    <Tag color="blue">{variant.color}</Tag>
+                    <span>{variant.images.length} ảnh</span>
+                  </span>
+                  {variant.images.length > 0 && (
+                    <Popconfirm
+                      title={`Xóa tất cả ảnh màu ${variant.color}?`}
+                      description="Hành động này không thể hoàn tác!"
+                      onConfirm={(e) => {
+                        e.stopPropagation();
+                        handleDeleteAllImagesForColor(variant.color);
+                      }}
+                      onCancel={(e) => e.stopPropagation()}
+                      okText="Xóa"
+                      cancelText="Hủy"
+                      okButtonProps={{ danger: true }}
+                    >
+                      <Button
+                        danger
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Xóa tất cả
+                      </Button>
+                    </Popconfirm>
+                  )}
+                </div>
+              }
+              key={variantIndex}
+            >
+              {variant.images.length > 0 ? (
+                <Row gutter={[12, 12]}>
+                  {variant.images.map((img, imgIndex) => (
+                    <Col xs={12} sm={8} md={6} lg={4} key={imgIndex}>
+                      <div
+                        style={{
+                          position: "relative",
+                          border: "1px solid #d9d9d9",
+                          borderRadius: "6px",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <Image
+                          src={img.url}
+                          style={{
+                            width: "100%",
+                            height: "100px",
+                            objectFit: "cover",
+                          }}
+                          preview={{
+                            mask: <EyeOutlined />,
+                          }}
+                        />
+
+                        {/* Overlay với nút xóa */}
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: 4,
+                            right: 4,
+                            display: "flex",
+                            gap: "4px",
+                          }}
+                        >
+                          <Popconfirm
+                            title="Xóa ảnh này?"
+                            description="Hành động này không thể hoàn tác!"
+                            onConfirm={() =>
+                              handleDeleteSingleImage(variant.color, img.url)
+                            }
+                            okText="Xóa"
+                            cancelText="Hủy"
+                            okButtonProps={{ danger: true }}
+                          >
+                            <Button
+                              danger
+                              size="small"
+                              shape="circle"
+                              icon={<DeleteOutlined />}
+                              style={{
+                                backgroundColor: "rgba(255, 255, 255, 0.9)",
+                                borderColor: "#ff4d4f",
+                              }}
+                            />
+                          </Popconfirm>
+                        </div>
+                      </div>
+                    </Col>
+                  ))}
+                </Row>
+              ) : (
+                <div
+                  style={{
+                    textAlign: "center",
+                    color: "#999",
+                    padding: "20px",
+                  }}
+                >
+                  Chưa có ảnh nào cho màu {variant.color}
+                </div>
+              )}
+            </Panel>
+          ))}
+        </Collapse>
+      </div>
+    );
+  };
+
+  // Các hàm xử lý khác giữ nguyên...
   const handleNameChange = (e) => setName(e.target.value);
   const handleDescriptionChange = (e) => setDescription(e.target.value);
   const handleChangeCatogry = (value) => setCategoryId(value);
   const onChangePrice = (value) => setPrice(value);
   const onChangeStock = (value) => {
     setStock(value);
-    // Tự động chuyển sang mode specific nếu có chọn size/color
     if ((size.length > 0 || color.length > 0) && value > 0) {
       setStockUpdateMode("specific");
     }
@@ -96,14 +368,12 @@ const UpLoad = () => {
   const onChangeSold = (value) => setSold(value);
   const handleChangeColor = (value) => {
     setColor(value);
-    // Tự động chuyển sang mode specific nếu có stock
     if (value.length > 0 && stock > 0) {
       setStockUpdateMode("specific");
     }
   };
   const handleChangeSize = (value) => {
     setSize(value);
-    // Tự động chuyển sang mode specific nếu có stock
     if (value.length > 0 && stock > 0) {
       setStockUpdateMode("specific");
     }
@@ -111,6 +381,7 @@ const UpLoad = () => {
   const onChangeGender = (value) => setGender(value);
   const onChangeDiscount = (value) => setDisscount(value);
 
+  // Các useEffect giữ nguyên...
   useEffect(() => {
     const FetchCategory = async () => {
       try {
@@ -274,15 +545,6 @@ const UpLoad = () => {
     },
   ];
 
-  // Reset các field khi chuyển đổi mode
-  const handleStockModeChange = (mode) => {
-    setStockUpdateMode(mode);
-    if (mode === "all") {
-      setSize([]);
-      setColor([]);
-    }
-  };
-
   const getStockUpdateMessage = () => {
     if (!stock || stock <= 0) return null;
 
@@ -377,6 +639,7 @@ const UpLoad = () => {
       messageApi.error("Có lỗi xảy ra khi cập nhật sản phẩm");
     }
   };
+
   const handleChangeSupper = (value) => {
     setSupplierId(value);
   };
@@ -445,6 +708,7 @@ const UpLoad = () => {
                   size="large"
                 />
               </div>
+
               <div>
                 <Typography.Title level={5}>
                   Lượt xem
@@ -486,6 +750,34 @@ const UpLoad = () => {
                 />
               </div>
             </Space>
+          </Card>
+
+          {/* Card mới cho quản lý ảnh */}
+          <Card
+            title="Quản lý ảnh hiện tại"
+            extra={
+              <Button
+                type="primary"
+                ghost
+                onClick={() => setShowImageManager(!showImageManager)}
+              >
+                {showImageManager ? "Ẩn" : "Xem ảnh"}
+              </Button>
+            }
+            style={{ marginBottom: 16 }}
+          >
+            {showImageManager && (
+              <div>
+                <Alert
+                  message="Quản lý ảnh sản phẩm"
+                  description="Bạn có thể xem và xóa ảnh theo từng màu. Việc xóa ảnh sẽ được thực hiện ngay lập tức và không thể hoàn tác."
+                  type="info"
+                  icon={<InfoCircleOutlined />}
+                  style={{ marginBottom: 16 }}
+                />
+                <ImagesByColorComponent />
+              </div>
+            )}
           </Card>
         </Col>
 
@@ -577,7 +869,7 @@ const UpLoad = () => {
                 </Row>
 
                 <div>
-                  <span> hệ thống sẽ cộng thêm số lượng (stock) vào kho</span>
+                  <span>Hệ thống sẽ cộng thêm số lượng (stock) vào kho</span>
                   <div>
                     <Switch
                       defaultChecked
@@ -653,7 +945,7 @@ const UpLoad = () => {
                 </div>
 
                 <div>
-                  <Typography.Title level={5}>Hình ảnh</Typography.Title>
+                  <Typography.Title level={5}>Thêm ảnh mới</Typography.Title>
                   <Typography.Text
                     type="secondary"
                     style={{ fontSize: 12, display: "block", marginBottom: 8 }}

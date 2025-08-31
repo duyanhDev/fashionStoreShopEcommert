@@ -63,6 +63,74 @@ const Details = () => {
 
   const navigagte = useNavigate();
 
+  // Mock data cho sản phẩm gợi ý
+  const suggestedProducts = [
+    {
+      id: 1,
+      name: "Áo Thun Nam Cotton Premium Basic Tee",
+      description:
+        "Áo thun nam cao cấp làm từ 100% cotton tự nhiên, thoáng mát, thấm hút mồ hôi tốt. Thiết kế basic dễ phối đồ với form dáng slim fit ôm nhẹ cơ thể.",
+      price: 299000,
+      discountPrice: 199000,
+      discount: 33,
+      image:
+        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop",
+      rating: 4.8,
+      sold: 150,
+      colors: ["Trắng", "Đen", "Xám", "Navy"],
+      sizes: ["S", "M", "L", "XL"],
+      brand: "Basic Wear",
+    },
+    {
+      id: 2,
+      name: "Quần Jean Nam Slim Fit Dark Blue Wash",
+      description:
+        "Quần jean nam form slim fit với công nghệ co giãn 4 chiều, thoải mái vận động. Chất denim cao cấp bền đẹp, không phai màu sau nhiều lần giặt.",
+      price: 599000,
+      discountPrice: 449000,
+      discount: 25,
+      image:
+        "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=400&fit=crop",
+      rating: 4.9,
+      sold: 89,
+      colors: ["Dark Blue", "Black", "Light Blue"],
+      sizes: ["29", "30", "31", "32", "33", "34"],
+      brand: "Denim Co",
+    },
+    {
+      id: 3,
+      name: "Áo Hoodie Unisex Oversize Korean Style",
+      description:
+        "Áo hoodie unisex phong cách Hàn Quốc với form dáng oversize trendy. Chất nỉ bông cao cấp mềm mại, giữ ấm tốt. Thiết kế túi kangaroo tiện lợi.",
+      price: 449000,
+      discountPrice: 359000,
+      discount: 20,
+      image:
+        "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&h=400&fit=crop",
+      rating: 4.7,
+      sold: 203,
+      colors: ["Đen", "Trắng", "Xám", "Be", "Navy"],
+      sizes: ["S", "M", "L", "XL", "XXL"],
+      brand: "Korean Style",
+    },
+    {
+      id: 4,
+      name: "Giày Sneaker Nam Sport Running Comfort",
+      description:
+        "Giày sneaker thể thao với công nghệ đệm khí tiên tiến, hỗ trợ tối đa khi vận động. Chất liệu mesh thoáng khí, đế cao su chống trượt an toàn.",
+      price: 899000,
+      discountPrice: 699000,
+      discount: 22,
+      image:
+        "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop",
+      rating: 4.9,
+      sold: 124,
+      colors: ["Trắng/Đen", "Xám/Cam", "Navy/Trắng"],
+      sizes: ["39", "40", "41", "42", "43", "44"],
+      brand: "Sport Pro",
+    },
+  ];
+
   const pageCount = Math.ceil(feedback.length / itemsPerPage);
   const offset = currentPage * itemsPerPage;
   const currentFeedback = feedback
@@ -410,7 +478,7 @@ const Details = () => {
     }
   };
 
-  const totalPrice = price && count && price * count;
+  const totalPrice = pricediscount ? pricediscount * count : price * count;
 
   return (
     <div className="mt-28 min-h-screen bg-gradient-to-br from-white via-green-50/20 to-gray-50/30 relative overflow-hidden">
@@ -769,6 +837,79 @@ const Details = () => {
           </div>
         </div>
 
+        {/* Suggested Products Section */}
+        <div className="mt-16 space-y-8">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center justify-center gap-3">
+              <span className="w-2 h-6 bg-green-600 rounded-full"></span>
+              Sản phẩm gợi ý
+              <span className="w-2 h-6 bg-green-600 rounded-full"></span>
+            </h2>
+            <p className="text-gray-600">
+              Những sản phẩm tương tự mà bạn có thể quan tâm
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {suggestedProducts.map((product) => (
+              <div
+                key={product.id}
+                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-[1.02] overflow-hidden group"
+              >
+                <div className="relative aspect-square overflow-hidden">
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  {product.discount && (
+                    <div className="absolute top-3 left-3 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold animate-pulse">
+                      -{product.discount}%
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300"></div>
+                </div>
+
+                <div className="p-4 space-y-3">
+                  <h3 className="font-bold text-gray-900 text-sm leading-tight line-clamp-2 group-hover:text-green-600 transition-colors">
+                    {product.name}
+                  </h3>
+
+                  <div className="flex items-center gap-2">
+                    <Rate disabled value={product.rating} className="text-xs" />
+                    <span className="text-xs text-gray-500">
+                      ({product.sold})
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-bold text-green-600">
+                        {formatPrice(product.discountPrice)}
+                      </span>
+                      {product.discount && (
+                        <span className="text-sm text-gray-500 line-through">
+                          {formatPrice(product.price)}
+                        </span>
+                      )}
+                    </div>
+                    {product.discount && (
+                      <p className="text-xs text-green-700">
+                        Tiết kiệm{" "}
+                        {formatPrice(product.price - product.discountPrice)}
+                      </p>
+                    )}
+                  </div>
+
+                  <button className="w-full py-2 bg-green-600 text-white rounded-lg font-semibold text-sm hover:bg-green-700 transition-all duration-300 transform hover:scale-[1.02] shadow-md hover:shadow-lg">
+                    Xem chi tiết
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="mt-16 space-y-8">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
@@ -845,6 +986,40 @@ const Details = () => {
                           <HeartOutlined className="text-gray-400 text-sm" />
                         )}
                       </button>
+                    </div>
+                    <div>
+                      {item.replies &&
+                        item.replies.length > 0 &&
+                        item.replies.map((reply, index) => {
+                          return (
+                            <div key={index} className="reply_comment">
+                              <div className="w-full m-4 flex items-center gap-3">
+                                {reply && (
+                                  <img
+                                    className="w-10 h-10 rounded-full"
+                                    src={
+                                      "https://www.coolmate.me/images/logo-circle.svg"
+                                    }
+                                    alt="avatar lỗi"
+                                  />
+                                )}
+                                {reply && (
+                                  <p className="flex items-center text-neutral-900 font-bold">
+                                    Phản hồi từ Dosiin
+                                    <span className="ml-2 time_span">
+                                      {moment(reply.createdAt).format(
+                                        "DD-MM-YY"
+                                      )}
+                                    </span>
+                                  </p>
+                                )}
+                              </div>
+                              <div className="ml-5">
+                                <p className="font-bold">{reply.content}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
                 </div>

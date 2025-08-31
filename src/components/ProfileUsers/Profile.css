@@ -186,7 +186,7 @@
 }
 
 /* Modal responsive styles */
-.ant-modal.css-dev-only-do-not-override-apn68 {
+.main_profile .ant-modal.css-dev-only-do-not-override-apn68 {
   width: 90% !important;
   max-width: 800px;
 }
@@ -318,7 +318,7 @@
     font-size: 0.9rem;
   }
 
-  .ant-modal.css-dev-only-do-not-override-apn68 {
+  .main_profile .ant-modal.css-dev-only-do-not-override-apn68 {
     width: 95% !important;
     margin: 0 auto;
   }

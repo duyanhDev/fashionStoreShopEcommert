@@ -12,10 +12,12 @@ const initialState = {
   selectedColor: "",
   priceRange: 0,
   products: [],
+  data: [],
   care: "",
   setsize: "",
   color: "",
   view: "",
+  brand: "",
   totalPages: 1,
   loading: false,
 };
@@ -59,7 +61,12 @@ export const filterReducer = (state = initialState, action) => {
         view: action.payload,
         currentPage: 1,
       };
-
+    case FILTER_TYPES.SET_BRAND:
+      return {
+        ...state,
+        brand: action.payload,
+        currentPage: 1,
+      };
     case FILTER_TYPES.SET_CATEGORY:
       return {
         ...state,
