@@ -416,13 +416,13 @@ export default function Clothing({ ListProducts }) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+    <div className="min-h-screen ">
       {contextHolder}
 
       {/* Main Hero Section */}
       <section className="py-12 relative overflow-hidden">
         {/* Animated Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50"></div>
+        <div className=""></div>
         <div className="absolute top-0 left-0 w-full h-full opacity-10">
           <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-r from-emerald-400 to-blue-400 rounded-full animate-pulse"></div>
           <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full animate-bounce"></div>

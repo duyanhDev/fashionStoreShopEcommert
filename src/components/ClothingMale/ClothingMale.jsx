@@ -26,8 +26,8 @@ import {
 import { getListProductsAPI } from "../../service/ApiProduct";
 
 const ClothingMale = () => {
-  const { user } = useSelector((state) => state.auth);
   const param = useParams();
+  const { user } = useSelector((state) => state.auth);
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -53,7 +53,7 @@ const ClothingMale = () => {
   const [color, setColor] = useState("");
 
   const menuRef = useRef(null);
-  const { products, data, loading, totalPages } = useSelector(
+  const { products, loading, totalPages } = useSelector(
     (state) => state.filter
   );
 
@@ -169,13 +169,19 @@ const ClothingMale = () => {
     fetchgetListProductsAPI();
   }, []);
 
-  const handlePageClick = (page) => {
-    const pageNumber = page.selected + 1;
-    const newParams = new URLSearchParams(location.search);
-    newParams.set("currentPage", pageNumber);
-    navigate(`${location.pathname}?${newParams.toString()}`);
-    // window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  const handlePageClick = useCallback(
+    (page) => {
+      const pageNumber = page.selected + 1;
+      const newParams = new URLSearchParams(location.search);
+      newParams.set("currentPage", pageNumber);
+
+      // Sử dụng setTimeout để tránh gọi navigate trong render cycle
+      setTimeout(() => {
+        navigate(`${location.pathname}?${newParams.toString()}`);
+      }, 0);
+    },
+    [location.search, location.pathname, navigate]
+  );
 
   const formatPrice = (price) => {
     if (price === null || price === undefined || isNaN(price)) return "0đ";
@@ -195,7 +201,9 @@ const ClothingMale = () => {
       const newParams = new URLSearchParams(location.search);
       newParams.set("Category", selectedCategory.name);
       newParams.set("currentPage", "1");
-      navigate(`${location.pathname}?${newParams.toString()}`);
+      setTimeout(() => {
+        navigate(`${location.pathname}?${newParams.toString()}`);
+      }, 0);
     }
   };
 
@@ -207,7 +215,9 @@ const ClothingMale = () => {
     const queryParams = new URLSearchParams(location.search);
     queryParams.set("size", updatedSizes.join(","));
     queryParams.set("currentPage", "1");
-    navigate(`${location.pathname}?${queryParams.toString()}`);
+    setTimeout(() => {
+      navigate(`${location.pathname}?${queryParams.toString()}`);
+    }, 0);
     setHidden(true);
     setCheckFilter(false);
   };
@@ -216,7 +226,9 @@ const ClothingMale = () => {
     const queryParams = new URLSearchParams(location.search);
     queryParams.set("sortPrice", value);
     queryParams.set("currentPage", "1");
-    navigate(`${location.pathname}?${queryParams.toString()}`);
+    setTimeout(() => {
+      navigate(`${location.pathname}?${queryParams.toString()}`);
+    }, 0);
     setHidden(true);
     setCheckFilter(false);
   };
@@ -225,7 +237,9 @@ const ClothingMale = () => {
     const queryParams = new URLSearchParams(location.search);
     queryParams.set("sortDate", value);
     queryParams.set("currentPage", "1");
-    navigate(`${location.pathname}?${queryParams.toString()}`);
+    setTimeout(() => {
+      navigate(`${location.pathname}?${queryParams.toString()}`);
+    }, 0);
     setHidden(true);
     setCheckFilter(false);
   };
@@ -246,7 +260,9 @@ const ClothingMale = () => {
     setSelectedBrand("");
     setPriceRange([0, 1000000]);
     setHidden(false);
-    navigate(`${location.pathname}`);
+    setTimeout(() => {
+      navigate(`${location.pathname}?${queryParams.toString()}`);
+    }, 0);
   };
 
   const handleRangeChange = (value) => {
@@ -256,7 +272,9 @@ const ClothingMale = () => {
     queryParams.set("minPrice", min);
     queryParams.set("maxPrice", max);
     queryParams.set("currentPage", "1");
-    navigate(`${location.pathname}?${queryParams.toString()}`);
+    setTimeout(() => {
+      navigate(`${location.pathname}?${queryParams.toString()}`);
+    }, 0);
     setHidden(true);
     setCheckFilter(false);
   };
@@ -267,7 +285,9 @@ const ClothingMale = () => {
     const queryParams = new URLSearchParams(location.search);
     queryParams.set("color", color);
     queryParams.set("currentPage", "1");
-    navigate(`${location.pathname}?${queryParams.toString()}`);
+    setTimeout(() => {
+      navigate(`${location.pathname}?${queryParams.toString()}`);
+    }, 0);
     setHidden(true);
     setCheckFilter(false);
   };
@@ -276,7 +296,9 @@ const ClothingMale = () => {
     const queryParams = new URLSearchParams(location.search);
     queryParams.set("view", value);
     queryParams.set("currentPage", "1");
-    navigate(`${location.pathname}?${queryParams.toString()}`);
+    setTimeout(() => {
+      navigate(`${location.pathname}?${queryParams.toString()}`);
+    }, 0);
     setHidden(true);
     setCheckFilter(false);
   };
@@ -287,7 +309,9 @@ const ClothingMale = () => {
     const queryParams = new URLSearchParams(location.search);
     queryParams.set("care", careItem);
     queryParams.set("currentPage", "1");
-    navigate(`${location.pathname}?${queryParams.toString()}`);
+    setTimeout(() => {
+      navigate(`${location.pathname}?${queryParams.toString()}`);
+    }, 0);
     setHidden(true);
     setCheckFilter(false);
   };
@@ -298,7 +322,9 @@ const ClothingMale = () => {
     const queryParams = new URLSearchParams(location.search);
     queryParams.set("brand", brandItem);
     queryParams.set("currentPage", "1");
-    navigate(`${location.pathname}?${queryParams.toString()}`);
+    setTimeout(() => {
+      navigate(`${location.pathname}?${queryParams.toString()}`);
+    }, 0);
     setHidden(true);
     setCheckFilter(false);
   };
@@ -870,6 +896,7 @@ const ClothingMale = () => {
             {products && products.length > 0 && (
               <div className="mt-8 flex justify-center">
                 <ReactPaginate
+                  key={`${param.gender}-${savedCurrentPage}-${totalPages}`} // Thêm key
                   previousLabel={
                     <svg
                       className="w-5 h-5"

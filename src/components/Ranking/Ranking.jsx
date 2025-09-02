@@ -108,60 +108,6 @@ const Ranking = () => {
 
   return (
     <>
-      <style jsx>{`
-        @keyframes float {
-          0%,
-          100% {
-            transform: translateY(0px) rotate(0deg);
-            opacity: 0.6;
-          }
-          50% {
-            transform: translateY(-10px) rotate(180deg);
-            opacity: 1;
-          }
-        }
-
-        @keyframes pulse-glow {
-          0%,
-          100% {
-            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
-          }
-          50% {
-            box-shadow: 0 0 30px rgba(59, 130, 246, 0.8),
-              0 0 40px rgba(59, 130, 246, 0.6);
-          }
-        }
-
-        @keyframes shimmer {
-          0% {
-            transform: translateX(-100%);
-          }
-          100% {
-            transform: translateX(100%);
-          }
-        }
-
-        .pulse-glow {
-          animation: pulse-glow 2s ease-in-out infinite;
-        }
-
-        .shimmer::before {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(255, 255, 255, 0.2),
-            transparent
-          );
-          animation: shimmer 2s infinite;
-        }
-      `}</style>
-
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
         {/* Animated Background */}
         <div className="absolute inset-0">
@@ -395,7 +341,7 @@ const Ranking = () => {
                       </div>
 
                       {/* User details */}
-                      <div className="flex-grow w-full sm:ml-4">
+                      <div className="flex-grow w-full sm:ml-4 lg:ml-12">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <div>
                             <h3 className="font-bold text-lg lg:text-xl text-white group-hover:text-yellow-300 transition-colors duration-300">

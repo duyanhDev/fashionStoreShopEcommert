@@ -474,10 +474,7 @@ const Home = () => {
         </div>
 
         {/* Services Section */}
-        <div
-          className=" py-16 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl"
-          data-aos="fade-up"
-        >
+        <div className=" py-16 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl">
           <div className="w-full mx-auto px-4 sm:px-2 lg:px-8">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
@@ -493,8 +490,6 @@ const Home = () => {
                 <div
                   key={index}
                   className="text-center p-8 rounded-2xl bg-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100"
-                  data-aos="fade-up"
-                  data-aos-delay={index * 100}
                 >
                   <div className="text-blue-600 mb-6 flex justify-center">
                     {service.icon}
@@ -515,7 +510,7 @@ const Home = () => {
 
         {/* Featured Products */}
         <div className="py-16 bg-white">
-          <div className="w-full mx-auto px-4 sm:px-2 lg:px-4">
+          <div className="w-full mx-auto px-4 sm:px-0 lg:px-4">
             <div className="flex justify-between items-center mb-12">
               <div>
                 <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -551,7 +546,7 @@ const Home = () => {
                   >
                     <div className="relative overflow-hidden">
                       <img
-                        className="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110"
+                        className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110"
                         src={
                           item.variants[0]?.images[0]?.url ||
                           "/placeholder.svg?height=320&width=280"
@@ -700,7 +695,7 @@ const Home = () => {
           className="py-14 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl w-full"
           data-aos="fade-up"
         >
-          <div className="w-full mx-auto px-4 sm:px-2 lg:px-8">
+          <div className="w-full mx-auto px-4 sm:px-0 lg:px-8">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                 KHÁCH HÀNG NÓI GÌ VỀ CHÚNG TÔI
@@ -765,7 +760,7 @@ const Home = () => {
 
         {/* Blog Section */}
         <div className="py-16 bg-white" data-aos="fade-up">
-          <div className="w-full mx-auto px-4 sm:px-2 lg:px-4">
+          <div className="w-full mx-auto px-4 sm:px-0 lg:px-4">
             <div className="flex justify-between items-center mb-12">
               <div>
                 <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -869,8 +864,8 @@ const Home = () => {
         </div>
 
         {/* All Products */}
-        <div className="py-16 bg-white">
-          <div className="w-full mx-auto px-2 sm:px-2 lg:px-4">
+        <div className="py-16">
+          <div className="w-full mx-auto px-2 sm:px-0 lg:px-4">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                 TẤT CẢ SẢN PHẨM

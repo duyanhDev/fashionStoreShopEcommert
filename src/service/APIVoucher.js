@@ -14,7 +14,7 @@ const createVoucherAPI = async (formdata) => {
       discountValue: formdata.discountValue,
       minOrderValue: formdata.minOrderValue,
       startDate: formdata.startDate,
-      endDate: formdata.startDate,
+      endDate: formdata.endDate,
       usageLimit: formdata.usageLimit,
       userGroup: formdata.userGroup,
       content: formdata.description,

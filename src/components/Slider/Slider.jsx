@@ -37,10 +37,8 @@ const SliderComponent = () => {
     const fetchAPIBanner = async () => {
       try {
         const res = await getListBannerAPI();
-        console.log("API Response:", res);
 
         if (res && res.data && res.data.EC === 0) {
-          console.log("Slides data:", res.data.data);
           setSlides(res.data.data);
         }
       } catch (error) {
@@ -120,7 +118,6 @@ const SliderComponent = () => {
               className="w-full h-full object-cover"
               loading={index === 0 ? "eager" : "lazy"}
               onError={(e) => {
-                console.log("Image load error:", slide.imageUrl);
                 e.target.src = "/path/to/fallback-image.jpg"; // Fallback image
               }}
             />

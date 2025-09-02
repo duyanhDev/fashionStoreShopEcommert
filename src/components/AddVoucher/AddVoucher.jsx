@@ -19,25 +19,32 @@ import { createVoucherAPI } from "../../service/APIVoucher.js";
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
-const AddVoucher = ({ visible, onClose, onSuccess }) => {
+const AddVoucher = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [discountType, setDiscountType] = useState("PERCENTAGE");
 
   const handleSubmit = async (values) => {
+    console.log("Form values:", values);
+
     setLoading(true);
     try {
+      const submitData = {
+        startDate: values.dateRange[0].format("YYYY-MM-DD"),
+        endDate: values.dateRange[1].format("YYYY-MM-DD"),
+      };
+
       const formData = {
         code: values.code,
         discountType: values.discountType.toLowerCase(),
         discountValue: values.discountValue,
         minOrderValue: values.minOrderValue || 0,
-        startDate: values.dateRange[0].format("YYYY-MM-DD"),
-        endDate: values.dateRange[1].format("YYYY-MM-DD"),
+        startDate: submitData.startDate ? submitData.startDate : null,
+        endDate: submitData.endDate ? submitData.endDate : null,
         usageLimit: values.usageLimit || null,
-        status: values.status || true,
+        status: values.status ?? true,
         description: values.description || "",
-        userGroup: values.userGroup || "ALL",
+        userGroup: values.userGroup || "all",
         maxDiscountAmount: values.maxDiscountAmount || null,
       };
 
@@ -46,8 +53,6 @@ const AddVoucher = ({ visible, onClose, onSuccess }) => {
       if (response.data && response.data.EC === 0) {
         message.success("Tạo voucher thành công!");
         form.resetFields();
-        onSuccess && onSuccess();
-        onClose();
       } else {
         message.error(response.data?.EM || "Tạo voucher thất bại!");
       }
@@ -61,24 +66,31 @@ const AddVoucher = ({ visible, onClose, onSuccess }) => {
 
   const handleCancel = () => {
     form.resetFields();
-    onClose();
   };
 
   const validateDateRange = (_, value) => {
-    if (!value || value.length !== 2) {
+    if (!value || !Array.isArray(value) || value.length !== 2) {
       return Promise.reject(new Error("Vui lòng chọn thời gian hiệu lực!"));
     }
 
     const [startDate, endDate] = value;
-    const now = moment();
 
-    if (startDate.isBefore(now, "day")) {
+    console.log(
+      "startDate:",
+      startDate?.format("DD/MM/YYYY"),
+      "endDate:",
+      endDate?.format("DD/MM/YYYY")
+    );
+
+    const now = moment().startOf("day");
+
+    if (startDate && startDate.isBefore(now)) {
       return Promise.reject(
         new Error("Ngày bắt đầu không thể là ngày trong quá khứ!")
       );
     }
 
-    if (endDate.isBefore(startDate)) {
+    if (endDate && startDate && endDate.isBefore(startDate)) {
       return Promise.reject(new Error("Ngày kết thúc phải sau ngày bắt đầu!"));
     }
 
@@ -111,7 +123,7 @@ const AddVoucher = ({ visible, onClose, onSuccess }) => {
       initialValues={{
         discountType: "PERCENTAGE",
         status: true,
-        userGroup: "ALL",
+        userGroup: "all",
       }}
     >
       <Row gutter={16}>
@@ -122,10 +134,7 @@ const AddVoucher = ({ visible, onClose, onSuccess }) => {
             rules={[
               { required: true, message: "Vui lòng nhập mã voucher!" },
               { min: 3, message: "Mã voucher phải có ít nhất 3 ký tự!" },
-              {
-                max: 50,
-                message: "Mã voucher không được vượt quá 50 ký tự!",
-              },
+              { max: 50, message: "Mã voucher không được vượt quá 50 ký tự!" },
               {
                 pattern: /^[A-Z0-9_-]+$/,
                 message:
@@ -245,9 +254,6 @@ const AddVoucher = ({ visible, onClose, onSuccess }) => {
           style={{ width: "100%" }}
           format="DD-MM-YYYY"
           placeholder={["Ngày bắt đầu", "Ngày kết thúc"]}
-          disabledDate={(current) =>
-            current && current < moment().startOf("day")
-          }
         />
       </Form.Item>
 

@@ -33,6 +33,7 @@ import {
   FaUser,
 } from "react-icons/fa";
 import { RiAdminLine } from "react-icons/ri";
+import Logo from "./../../assets/Image/Home/logo.png";
 
 const Header = ({ user, ListCart, CartListProductsUser }) => {
   const dispatch = useDispatch();
@@ -509,13 +510,15 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
             {/* Logo Section */}
             <div className="flex items-center space-x-4 flex-shrink-0">
               <Link to="/" className="flex items-center space-x-2 group">
-                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg">
-                  <img
-                    src="https://dosi-in.com/images/assets/icons/logo.svg"
-                    alt="Logo"
-                    className="w-6 h-6 lg:w-8 lg:h-8 filter brightness-0 invert"
-                  />
-                </div>
+                <img
+                  src={
+                    Logo
+                      ? Logo
+                      : "https://dosi-in.com/images/assets/icons/logo.svg"
+                  }
+                  alt="Logo"
+                  className="w-12 h-12 lg:w-12 lg:h-12 object-cover "
+                />
                 <div className="hidden sm:block">
                   <span className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                     Shopping

@@ -1,17 +1,19 @@
 import { notification } from "antd";
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
+
 import {
   addToWishlistAPI,
   getWishlistAPI,
   RemoveToWishListAPI,
 } from "../../service/WishList";
+import { useNavigate } from "react-router-dom";
 const ProductsSection = ({ ListProducts }) => {
   const [hoveredProduct, setHoveredProduct] = useState(null);
   const { user } = useSelector((state) => state.auth);
   const [api, contextHolder] = notification.useNotification();
   const [WishList, setWishList] = useState([]);
-
+  const navigate = useNavigate();
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -316,7 +318,10 @@ const ProductsSection = ({ ListProducts }) => {
     >
       {/* Image Container */}
       <div className="relative overflow-hidden">
-        <div className="aspect-square relative bg-gray-50">
+        <div
+          className="aspect-square relative bg-gray-50 cursor-pointer"
+          onClick={() => navigate(`/product/${product.slug}`)}
+        >
           <img
             src={
               product.variants?.[0]?.images?.[0]?.url ||
@@ -452,9 +457,6 @@ const ProductsSection = ({ ListProducts }) => {
         </div>
 
         {/* Quick Add Button */}
-        <button className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-1.5 sm:py-2 rounded-lg transition-colors duration-200 opacity-0 group-hover:opacity-100 text-xs sm:text-sm">
-          Thêm vào giỏ hàng
-        </button>
       </div>
     </div>
   );
@@ -519,9 +521,9 @@ const ProductsSection = ({ ListProducts }) => {
         </section>
 
         {/* Sale Products Section */}
-        <section className="sm: px-3 lg:px-0 w-full relative overflow-hidden">
+        <section className="sm:px-0 lg:px-0 w-full relative overflow-hidden">
           <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl w-full">
-            <div className="relative py-6 sm:py-8 lg:py-12 px-3 sm:px-4 lg:px-6">
+            <div className="relative py-6 sm:py-8 lg:py-12 px-3 sm:px-1 lg:px-6">
               <div className="w-full">
                 {/* Section Header */}
                 <div className="text-center mb-6 sm:mb-8">
@@ -542,7 +544,7 @@ const ProductsSection = ({ ListProducts }) => {
                 </div>
 
                 {/* Products Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-4 2xl:grid-cols-5 gap-2 sm:gap-3 md:gap-4 lg:gap-4 w-full">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-4 2xl:grid-cols-5 gap-2 sm:gap-2 md:gap-4 lg:gap-4 w-full">
                   {saleProducts.map((product, index) => (
                     <ProductCard
                       key={product._id}
@@ -565,9 +567,9 @@ const ProductsSection = ({ ListProducts }) => {
         </section>
 
         {/* Bestseller Products Section */}
-        <section className="sm: px-3 lg:px-0 w-full relative overflow-hidden">
+        <section className="sm: px-0 lg:px-0 w-full relative overflow-hidden">
           <div className=" bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl w-full">
-            <div className="relative py-6 sm:py-8 lg:py-12 px-3 sm:px-4 lg:px-6">
+            <div className="relative py-6 sm:py-8 lg:py-12  sm:px-0 lg:px-6">
               <div className="w-full">
                 {/* Section Header */}
                 <div className="text-center mb-6 sm:mb-8">
@@ -616,7 +618,7 @@ const ProductsSection = ({ ListProducts }) => {
                 </div>
 
                 {/* Products Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-4 2xl:grid-cols-5 gap-2 sm:gap-3 md:gap-4 lg:gap-4 w-full">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-4 2xl:grid-cols-5 gap-2 sm:gap-2 px-1 md:gap-4 lg:gap-4 w-full">
                   {bestsellerProducts.map((product, index) => (
                     <ProductCard
                       key={product._id}
@@ -651,7 +653,7 @@ const ProductsSection = ({ ListProducts }) => {
               <input
                 type="email"
                 placeholder="Nhập email của bạn"
-                className="flex-1 px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
+                className="flex-1 px-3 sm:px-2 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
               />
               <button className="bg-green-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg hover:bg-green-700 transition-colors duration-200 font-medium text-sm sm:text-base">
                 Đăng ký
