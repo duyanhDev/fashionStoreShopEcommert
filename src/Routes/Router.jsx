@@ -43,6 +43,7 @@ import UpdateBannerForm from "../components/Banner/UpdateBannerForm/UpdateBanner
 import Transactions from "../components/Transactions/Transactions";
 import BlogPostPage from "../components/BlogPostPage/BlogPostPage";
 import BrandAboutPage from "../components/BrandAboutPage/BrandAboutPage";
+import UserVoucherWallet from "../components/UserVoucherWallet/UserVoucherWallet";
 
 export const RouterLayout = [
   {
@@ -121,6 +122,10 @@ export const RouterLayout = [
   {
     path: "/about",
     element: <BrandAboutPage />,
+  },
+  {
+    path: "/voucher-wallet",
+    element: <UserVoucherWallet />,
   },
 ];
 

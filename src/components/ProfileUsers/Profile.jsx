@@ -1,5 +1,3 @@
-"use client";
-
 import "./Profile.css";
 import logo_user from "./../../assets/Image/mceclip0_92.png";
 import silver from "./../../assets/Image/mceclip0_56.png";
@@ -41,6 +39,7 @@ const PersonalInfoForm = ({ id }) => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassWord, setNewPassword] = useState("");
   const [confirmPassWord, setConfirmPassword] = useState("");
+  console.log(user);
 
   const [api, contextHolder] = notification.useNotification();
 
@@ -192,6 +191,8 @@ const PersonalInfoForm = ({ id }) => {
 const Profile = () => {
   const { user } = useSelector((state) => state.auth);
 
+  console.log(user);
+
   const id = user._id;
 
   const [points, setPoints] = useState(0);
@@ -210,13 +211,12 @@ const Profile = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [ImageUpLoad, SetImageUpLoad] = useState("");
-  const [permissions, setPermissions] = useState("");
 
   const [openResponsive, setOpenResponsive] = useState(false);
   const [password, setPassword] = useState("");
   const bac = 1000000;
-  const vang = 30000000;
-  const bachkim = 100000000;
+  const vang = 3000000;
+  const bachkim = 10000000;
 
   const inputDate = moment(dateBrith);
   const formattedDate = moment(dateBrith).format("DD-MM-YYYY");
@@ -307,7 +307,6 @@ const Profile = () => {
         setWeight(res.data.data.weight || "");
         setPhone(res.data.data.phone || "");
         setImage(res.data.data.avatar || null);
-        setPermissions(res.data.data.permissions || "");
       }
     } catch (error) {}
   };
@@ -320,8 +319,10 @@ const Profile = () => {
     console.log(key);
   };
 
+  console.log(selectedImage);
+
   const FetchDataProvince = async () => {
-    const url = "https://vietnamlabs.com/api/vietnamprovince";
+    const url = "https://esgoo.net/api-tinhthanh/1/0.htm";
 
     const res = await axios.get(url);
 
@@ -331,19 +332,19 @@ const Profile = () => {
     }
   };
 
-  // const FeachDataDistrict = async () => {
-  //   const url = `https://esgoo.net/api-tinhthanh/2/${SeletectIdProvine}.htm`;
+  const FeachDataDistrict = async () => {
+    const url = `https://esgoo.net/api-tinhthanh/2/${SeletectIdProvine}.htm`;
 
-  //   const res = await axios.get(url);
+    const res = await axios.get(url);
 
-  //   if (res && res.data && res.data.data) {
-  //     const data = res.data.data;
-  //     SetDistrictData(data);
-  //   }
-  // };
+    if (res && res.data && res.data.data) {
+      const data = res.data.data;
+      SetDistrictData(data);
+    }
+  };
 
   const FeachDataWarn = async () => {
-    const url = `https://vietnamlabs.com/api/vietnamprovince?province=${city}`;
+    const url = `https://esgoo.net/api-tinhthanh/3/${SeletectIdDistrict}.htm`;
     const res = await axios.get(url);
 
     if (res && res.data && res.data.data) {
@@ -352,10 +353,22 @@ const Profile = () => {
     }
   };
 
+  useEffect(() => {
+    FetchDataProvince();
+  }, []);
+
+  useEffect(() => {
+    FeachDataDistrict();
+  }, [SeletectIdProvine]);
+
+  useEffect(() => {
+    FeachDataWarn();
+  }, [SeletectIdDistrict]);
+
   const handleOnChangeProvine = (value, name) => {
-    const selected = ProvineData.find((item) => item.province === value);
+    const selected = ProvineData.find((item) => item.id === value);
     SetSeletectIdProvine(value);
-    setCity(selected?.province || "");
+    setCity(selected?.name || "");
   };
 
   const handleOnChangeDistrict = (value, name) => {
@@ -365,36 +378,10 @@ const Profile = () => {
   };
 
   const handleOnChangeWarm = (value, name) => {
-    // Tìm tỉnh hiện tại được chọn
-    const selectedProvince = ProvineData.find(
-      (province) => province.province === SeletectIdProvine
-    );
-
-    if (!selectedProvince) {
-      console.warn("Không tìm thấy tỉnh:", SeletectIdProvine);
-      return;
-    }
-
-    // Tìm ward trong tỉnh đã chọn
-    const selectedWard = selectedProvince.wards.find(
-      (ward) => ward.name === value
-    );
-
+    const selected = WarmData.find((item) => item.id === value);
     SetSeletectIdWarm(value);
-    setward(selectedWard?.name || "");
+    setward(selected?.name || "");
   };
-
-  useEffect(() => {
-    FetchDataProvince();
-  }, []);
-
-  // useEffect(() => {
-  //   FeachDataDistrict();
-  // }, [SeletectIdProvine]);
-
-  useEffect(() => {
-    FeachDataWarn();
-  }, [city]);
 
   const items = [
     {
@@ -503,14 +490,14 @@ const Profile = () => {
                 {ProvineData &&
                   ProvineData?.map((provine) => {
                     return (
-                      <Option key={provine.province} value={provine.province}>
-                        {provine.province}
+                      <Option key={provine.id} value={provine.id}>
+                        {provine.name}
                       </Option>
                     );
                   })}
               </Select>
             </div>
-            {/* 
+
             <div className="profile-form-item">
               <label>Quận/Huyện</label>
               <Select
@@ -528,7 +515,7 @@ const Profile = () => {
                     );
                   })}
               </Select>
-            </div> */}
+            </div>
 
             <div className="profile-form-item">
               <label>Phường/Xã</label>
@@ -538,16 +525,14 @@ const Profile = () => {
                 value={ward}
                 onChange={handleOnChangeWarm}
               >
-                {ProvineData &&
-                  ProvineData.filter(
-                    (province) => province.province === SeletectIdProvine
-                  ).flatMap((province) =>
-                    province.wards.map((ward) => (
-                      <Option key={ward.name} value={ward.name}>
+                {WarmData &&
+                  WarmData?.map((ward) => {
+                    return (
+                      <Option key={ward.id} value={ward.id}>
                         {ward.name}
                       </Option>
-                    ))
-                  )}
+                    );
+                  })}
               </Select>
             </div>
           </div>
@@ -677,6 +662,8 @@ const Profile = () => {
     },
   ];
 
+  console.log(selectedImage);
+
   const handleUpdateProfileUser = async () => {
     try {
       const res = await update_profileUser(
@@ -691,12 +678,11 @@ const Profile = () => {
         height,
         weight,
         user.role,
-        permissions,
-
+        user.permissions,
         selectedImage
       );
       if (res) {
-        message.success("Bạn đã cập nhật thành công thông tin cá nhân");
+        message.success("Profile updated successfully");
         setOpenResponsive(false);
       }
     } catch (error) {

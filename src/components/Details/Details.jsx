@@ -49,7 +49,6 @@ const Details = () => {
   const [CheckSelectedSize, setCheckSelectedSize] = useState(false);
   const [feedback, setFeedBack] = useState([]);
   const [variants, setVariants] = useState([]);
-  const ratings = 5;
   const [review, setReivew] = useState("");
   const { user } = useSelector((state) => state.auth);
   const [sumProducts, setSumProducts] = useState(0);

@@ -8,8 +8,8 @@ import { useEffect, useRef, useState } from "react";
 import { getMessages, sendMessageCutomer } from "../../service/Message";
 import { useSelector } from "react-redux";
 import socket from "../../socket";
-
-const Message = ({ open, setOpen }) => {
+import LogoMess from "../../assets/Image/Home/logo_mess.png";
+const Message = ({ open, setOpen, assignedAdmin }) => {
   const { user } = useSelector((state) => state.auth);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -102,7 +102,7 @@ const Message = ({ open, setOpen }) => {
     if (!user?._id) return;
 
     try {
-      let res = await getMessages(user._id, "673017dde4526bd79cc61fa6");
+      let res = await getMessages(user._id, assignedAdmin);
       if (res?.data) {
         setMessages(res.data);
         scrollToBottom();
@@ -296,8 +296,9 @@ const Message = ({ open, setOpen }) => {
                       <img
                         className="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm flex-shrink-0"
                         src={
-                          message?.sender?.avatar ||
-                          "https://via.placeholder.com/32"
+                          message.sender._id === user?._id
+                            ? message?.sender?.avatar
+                            : LogoMess
                         }
                         alt="avatar"
                       />
@@ -317,7 +318,9 @@ const Message = ({ open, setOpen }) => {
                               : "text-gray-500"
                           }`}
                         >
-                          {message?.sender?.name}
+                          {message.sender._id === user?._id
+                            ? message?.sender?.name
+                            : "TrendHunter"}
                         </div>
 
                         {/* Message Content */}

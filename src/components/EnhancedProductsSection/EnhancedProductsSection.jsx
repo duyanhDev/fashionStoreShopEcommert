@@ -8,11 +8,21 @@ import {
   RemoveToWishListAPI,
 } from "../../service/WishList";
 import { useNavigate } from "react-router-dom";
+import ProductCart from "../ProductCart/ProductCart";
 const ProductsSection = ({ ListProducts }) => {
   const [hoveredProduct, setHoveredProduct] = useState(null);
   const { user } = useSelector((state) => state.auth);
   const [api, contextHolder] = notification.useNotification();
   const [WishList, setWishList] = useState([]);
+
+  const [modalCartOpen, setModalCartOpen] = useState(false);
+  const [IdProduct, setIdProducts] = useState("");
+  const [listItems, setListItems] = useState();
+  const [price, setPrice] = useState(0);
+  const [costPrice, setCostPrice] = useState(0);
+  const [productname, setProductname] = useState("");
+  const [discount, setDiscount] = useState(0);
+
   const navigate = useNavigate();
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
@@ -310,6 +320,25 @@ const ProductsSection = ({ ListProducts }) => {
     } catch (error) {}
   };
 
+  // product cart
+
+  const handelModelProductCart = (
+    id,
+    items,
+    price,
+    costPrice,
+    name,
+    discount
+  ) => {
+    setIdProducts(id);
+    setListItems(items);
+    setPrice(price);
+    setCostPrice(costPrice);
+    setModalCartOpen(true);
+    setProductname(name);
+    setDiscount(discount);
+  };
+
   const ProductCard = ({ product, index, section }) => (
     <div
       className="group relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden"
@@ -394,7 +423,19 @@ const ProductsSection = ({ ListProducts }) => {
               </svg>
             </button>
           )}
-          <button className="bg-green-600 text-white p-1.5 sm:p-2 rounded-full shadow-md hover:shadow-lg hover:bg-green-700 transition-all duration-200">
+          <button
+            className="bg-green-600 text-white p-1.5 sm:p-2 rounded-full shadow-md hover:shadow-lg hover:bg-green-700 transition-all duration-200"
+            onClick={() =>
+              handelModelProductCart(
+                product._id,
+                product.variants,
+                product.price,
+                product.discountedPrice,
+                product.name,
+                product.discount
+              )
+            }
+          >
             <svg
               className="w-3 sm:w-4 h-3 sm:h-4"
               fill="none"
@@ -425,13 +466,16 @@ const ProductsSection = ({ ListProducts }) => {
           <div className="text-xs font-medium text-green-600 uppercase tracking-wide">
             {product.brand}
           </div>
-          <h3 className="font-medium text-gray-900 line-clamp-2 text-xs sm:text-sm leading-tight hover:text-green-600 transition-colors duration-200 cursor-pointer">
+          <h3
+            className="font-medium text-gray-900 line-clamp-2 text-xs sm:text-sm leading-tight hover:text-green-600 transition-colors duration-200 cursor-pointer
+            whitespace-nowrap overflow-hidden text-ellipsis
+          "
+          >
             {product.name}
           </h3>
         </div>
 
         {/* Rating */}
-        <StarRating rating={product.rating || 4.5} reviews={product.reviews} />
 
         {/* Price */}
         <div className="space-y-1">
@@ -661,6 +705,16 @@ const ProductsSection = ({ ListProducts }) => {
             </div>
           </div>
         </section>
+        <ProductCart
+          modalCartOpen={modalCartOpen}
+          setModalCartOpen={setModalCartOpen}
+          IdProduct={IdProduct}
+          listItems={listItems}
+          price={price}
+          costPrice={costPrice}
+          productname={productname}
+          discount={discount}
+        />
       </div>
     </div>
   );

@@ -58,8 +58,6 @@ const Home = () => {
   const [api, contextHolder] = notification.useNotification();
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const desc = ["terrible", "bad", "normal", "good", "wonderful"];
-  const [ratings, setRatings] = useState({});
   const [modalCartOpen, setModalCartOpen] = useState(false);
   const [IdProduct, setIdProducts] = useState("");
   const [listItems, setListItems] = useState();
@@ -70,7 +68,6 @@ const Home = () => {
   const [WishList, setWishList] = useState([]);
   const [form] = Form.useForm();
 
-  // Sample data for new sections
   const testimonials = [
     {
       id: 1,
@@ -91,6 +88,16 @@ const Home = () => {
         "Thiết kế đẹp, chất liệu tốt, giá cả hợp lý. Sẽ tiếp tục ủng hộ shop!",
       avatar: "https://randomuser.me/api/portraits/men/2.jpg",
       date: "2024-12-10",
+    },
+    {
+      id: 3,
+      name: "Lê Thị Hương",
+      location: "Đà Nẵng",
+      rating: 5,
+      comment:
+        "Shop phục vụ tận tình, tư vấn nhiệt tình. Quần áo đẹp và chất lượng cao!",
+      avatar: "https://randomuser.me/api/portraits/women/3.jpg",
+      date: "2024-12-08",
     },
     {
       id: 3,
@@ -190,13 +197,6 @@ const Home = () => {
 
   const formatPrice = (price) => {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
-  };
-
-  const handleRate = (productId, value) => {
-    setRatings((prev) => ({
-      ...prev,
-      [productId]: value,
-    }));
   };
 
   const handleNewsletterSubmit = (values) => {
@@ -312,7 +312,17 @@ const Home = () => {
   const isProductInWishlist = WishList?.map((item) => item.product._id);
 
   // Get featured products (first 4)
-  const featuredProducts = ListProducts?.slice(0, 5) || [];
+  const featuredProducts =
+    ListProducts?.filter((item) => {
+      return item.ratings?.reduce((sum, acc) => sum + acc.rating, 0) || 0 >= 5;
+    })?.slice(0, 5) || [];
+
+  const reviewsData =
+    ListProducts?.map((item) => {
+      const total =
+        item.ratings?.reduce((sum, acc) => sum + acc.rating, 0) || 0;
+      return item.ratings?.length ? total / item.ratings.length : 0;
+    }) || [];
 
   return (
     <>
@@ -537,143 +547,161 @@ const Home = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
-                {featuredProducts.map((item, index) => (
-                  <div
-                    key={item._id}
-                    className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 overflow-hidden border border-gray-100"
-                    data-aos="fade-up"
-                    data-aos-delay={index * 100}
-                  >
-                    <div className="relative overflow-hidden">
-                      <img
-                        className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110"
-                        src={
-                          item.variants[0]?.images[0]?.url ||
-                          "/placeholder.svg?height=320&width=280"
-                        }
-                        alt={item.name}
-                        loading="lazy"
-                      />
-
-                      {/* Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-                      {/* Discount Badge */}
-                      {typeof item.discount !== "undefined" &&
-                        item.discount > 0 && (
-                          <Badge.Ribbon
-                            text={`-${item.discount}%`}
-                            color="red"
-                            className="ribbon-custom"
-                          />
-                        )}
-
-                      {/* Action Buttons */}
-                      <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-4 group-hover:translate-x-0">
-                        {isProductInWishlist.includes(item._id) ? (
-                          <button
-                            className="p-3 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors duration-300"
-                            onClick={() => handleRemoveWishList(item._id)}
-                            aria-label="Xóa khỏi danh sách yêu thích"
-                          >
-                            <HeartSolidIcon className="w-5 h-5" />
-                          </button>
-                        ) : (
-                          <button
-                            className="p-3 bg-white/90 backdrop-blur-sm text-gray-700 rounded-full shadow-lg hover:bg-white hover:text-red-500 transition-all duration-300"
-                            onClick={() => handlAddWishList(item._id)}
-                            aria-label="Thêm vào danh sách yêu thích"
-                          >
-                            <HeartIcon className="w-5 h-5" />
-                          </button>
-                        )}
-
-                        <button
-                          className="p-3 bg-white/90 backdrop-blur-sm text-gray-700 rounded-full shadow-lg hover:bg-white hover:text-blue-500 transition-all duration-300"
-                          onClick={() =>
-                            handelModelProductCart(
-                              item._id,
-                              item.variants,
-                              item.price,
-                              item.discountedPrice,
-                              item.name,
-                              item.discount
-                            )
+                {featuredProducts.map((item, index) => {
+                  const isOutOfStock = item.stock === 0;
+                  return (
+                    <div
+                      key={item._id}
+                      className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 overflow-hidden border border-gray-100"
+                      data-aos="fade-up"
+                      data-aos-delay={index * 100}
+                    >
+                      <div className="relative overflow-hidden">
+                        <img
+                          className="w-full h-52 object-cover transition-transform duration-700 group-hover:scale-110"
+                          src={
+                            item.variants[0]?.images[0]?.url ||
+                            "/placeholder.svg?height=320&width=280"
                           }
-                          aria-label="Thêm vào giỏ hàng"
-                        >
-                          <ShoppingBagIcon className="w-5 h-5" />
-                        </button>
-
-                        <button
-                          className="p-3 bg-white/90 backdrop-blur-sm text-gray-700 rounded-full shadow-lg hover:bg-white hover:text-green-500 transition-all duration-300"
-                          onClick={() => handleDetails(item.slug)}
-                          aria-label="Xem chi tiết"
-                        >
-                          <EyeIcon className="w-5 h-5" />
-                        </button>
-                      </div>
-
-                      {/* Quick View Button */}
-                      <button
-                        className="absolute bottom-4 left-1/2 transform -translate-x-1/2 px-6 py-2 bg-white/90 backdrop-blur-sm text-gray-900 rounded-full font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:shadow-lg"
-                        onClick={() => handleDetails(item.slug)}
-                      >
-                        Xem nhanh
-                      </button>
-                    </div>
-
-                    <div className="p-6">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-blue-600 uppercase tracking-wider bg-blue-50 px-2 py-1 rounded-full">
-                          {item.brand}
-                        </span>
-                        <div className="flex items-center">
-                          <StarIcon className="w-4 h-4 text-yellow-400 fill-current" />
-                          <span className="text-sm text-gray-600 ml-1">
-                            4.8
-                          </span>
-                        </div>
-                      </div>
-
-                      <h3
-                        className="font-bold text-lg text-gray-900 mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors duration-300"
-                        onClick={() => handleDetails(item.slug)}
-                      >
-                        {item.name}
-                      </h3>
-
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex flex-col">
-                          <span className="text-xl font-bold text-red-500">
-                            {formatPrice(
-                              item.discountedPrice ||
-                                item.costPrice ||
-                                item.price
-                            )}
-                          </span>
-                          {item.discount > 0 && (
-                            <span className="text-sm text-gray-500 line-through">
-                              {formatPrice(item.costPrice)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <Rate
-                          disabled
-                          defaultValue={4.8}
-                          className="text-yellow-400 text-sm"
-                          allowHalf
+                          alt={item.name}
+                          loading="lazy"
                         />
-                        <span className="text-sm text-gray-500">
-                          (24 đánh giá)
-                        </span>
+
+                        {isOutOfStock && (
+                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                            <div className="bg-red-600 text-white px-6 py-3 rounded-xl font-bold text-lg transform rotate-12 shadow-lg">
+                              SOLD OUT
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                        {/* Discount Badge */}
+                        {typeof item.discount !== "undefined" &&
+                          item.discount > 0 && (
+                            <Badge.Ribbon
+                              text={`-${item.discount}%`}
+                              color="red"
+                              className="ribbon-custom"
+                            />
+                          )}
+
+                        {/* Action Buttons */}
+                        <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-4 group-hover:translate-x-0">
+                          {isProductInWishlist.includes(item._id) ? (
+                            <button
+                              className="p-3 bg-green-500 text-white rounded-full shadow-lg hover:bg-green-600 transition-colors duration-300"
+                              onClick={() => handleRemoveWishList(item._id)}
+                              aria-label="Xóa khỏi danh sách yêu thích"
+                            >
+                              <HeartSolidIcon className="w-5 h-5" />
+                            </button>
+                          ) : (
+                            <button
+                              className="p-3 bg-white/90 backdrop-blur-sm text-gray-700 rounded-full shadow-lg hover:bg-white hover:text-red-500 transition-all duration-300"
+                              onClick={() => handlAddWishList(item._id)}
+                              aria-label="Thêm vào danh sách yêu thích"
+                            >
+                              <HeartIcon className="w-5 h-5" />
+                            </button>
+                          )}
+
+                          <button
+                            className="p-3 bg-white/90 backdrop-blur-sm text-gray-700 rounded-full shadow-lg hover:bg-white hover:text-blue-500 transition-all duration-300"
+                            onClick={() =>
+                              handelModelProductCart(
+                                item._id,
+                                item.variants,
+                                item.price,
+                                item.discountedPrice,
+                                item.name,
+                                item.discount
+                              )
+                            }
+                            aria-label="Thêm vào giỏ hàng"
+                          >
+                            <ShoppingBagIcon className="w-5 h-5" />
+                          </button>
+
+                          <button
+                            className="p-3 bg-white/90 backdrop-blur-sm text-gray-700 rounded-full shadow-lg hover:bg-white hover:text-green-500 transition-all duration-300"
+                            onClick={() => handleDetails(item.slug)}
+                            aria-label="Xem chi tiết"
+                          >
+                            <EyeIcon className="w-5 h-5" />
+                          </button>
+                        </div>
+
+                        {/* Quick View Button */}
+                        <button
+                          className="absolute bottom-4 left-1/2 transform -translate-x-1/2 px-6 py-2 bg-white/90 backdrop-blur-sm text-gray-900 rounded-full font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:shadow-lg"
+                          onClick={() => handleDetails(item.slug)}
+                        >
+                          Xem nhanh
+                        </button>
+                      </div>
+
+                      <div className="p-6">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="inline-block px-3 py-1 text-xs font-semibold text-emerald-600 bg-emerald-50 rounded-full border border-emerald-200 tracking-wider uppercase">
+                            {item.brand}
+                          </span>
+                          <div className="flex items-center">
+                            <StarIcon className="w-4 h-4 text-yellow-400 fill-current" />
+                            <span className="text-sm text-gray-600 ml-1">
+                              {item.ratings?.length
+                                ? item.ratings.reduce(
+                                    (total, acc) => total + acc.rating,
+                                    0
+                                  ) / item.ratings.length
+                                : 5}
+                            </span>
+                          </div>
+                        </div>
+
+                        <h3
+                          className="font-bold text-lg text-gray-900 mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors duration-300"
+                          onClick={() => handleDetails(item.slug)}
+                        >
+                          {item.name}
+                        </h3>
+
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm sm:text-lg font-semibold text-green-600">
+                              {formatPrice(item.discountedPrice || item.price)}
+                            </span>
+                            {item.discount > 0 && (
+                              <span className="text-xs sm:text-sm text-gray-400 line-through">
+                                {formatPrice(item.price || item.costPrice)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <Rate
+                            disabled
+                            defaultValue={
+                              item.ratings?.length
+                                ? item.ratings.reduce(
+                                    (total, acc) => total + acc.rating,
+                                    0
+                                  ) / item.ratings.length
+                                : 5
+                            }
+                          />
+
+                          <span className="text-sm text-gray-500">
+                            ( {item.ratings.length} đánh giá)
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 

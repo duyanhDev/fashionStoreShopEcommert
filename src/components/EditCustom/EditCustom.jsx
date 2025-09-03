@@ -194,6 +194,7 @@ const EditCustom = () => {
       message.error("Bạn không có quyền chỉnh sửa thông tin này");
       return;
     }
+
     try {
       const res = await update_profileAdmin(
         id,

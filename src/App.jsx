@@ -19,6 +19,7 @@ import Footer from "./components/Footer/Footer";
 import Message from "./components/Messages/Message";
 import { getMessagesList, UpdateIsReadAPI } from "./service/Message";
 import { getListProductsAPI } from "./service/ApiProduct";
+import { getRandomAdminAPI } from "./service/Auth";
 
 // Memoize các components con để tránh re-render
 const MemoizedHeader = memo(Header);
@@ -33,6 +34,8 @@ function App() {
   const [ListCart, setListCard] = useState([]);
   const [open, setOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [admins, setAdmins] = useState([]);
+  const [assignedAdmin, setAssignedAdmin] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -114,13 +117,13 @@ function App() {
     setIsMenuOpen((prev) => !prev);
   }, []);
 
-  const handleChatClick = useCallback(() => {
+  const handleChatClick = () => {
     if (user?.role === "customer") {
       setOpen((prev) => !prev);
       handelUpdateIsReadMess();
     }
     setIsMenuOpen(false);
-  }, [user?.role]);
+  };
 
   const handleAIClick = useCallback(() => {
     navigate("/ChatAi");
@@ -143,22 +146,52 @@ function App() {
     fetchAPIMessasge();
   }, [fetchAPIMessasge]);
 
-  const handelUpdateIsReadMess = useCallback(async () => {
-    if (!user?._id) return;
+  const fetchAPIGetAdminRandom = async () => {
     try {
-      const res = await UpdateIsReadAPI("673017dde4526bd79cc61fa6", user._id);
-      if (res) {
-        // Handle success
+      const res = await getRandomAdminAPI();
+      if (res && res.data && res.data.EC === 0) {
+        const adminsData = res.data.data;
+        setAdmins(adminsData);
+
+        // Chỉ random một lần ngay sau khi fetch xong
+        if (adminsData.length > 0) {
+          const randomAdmin =
+            adminsData[Math.floor(Math.random() * adminsData.length)];
+          setAssignedAdmin(randomAdmin);
+        }
       }
     } catch (error) {
       console.log(error);
     }
-  }, [user?._id]);
+  };
+
+  // Gọi fetch 1 lần khi component mount
+  useEffect(() => {
+    fetchAPIGetAdminRandom();
+  }, []);
+
+  const handelUpdateIsReadMess = useCallback(async () => {
+    if (!user?._id || !assignedAdmin?._id) return;
+    try {
+      const res = await UpdateIsReadAPI(assignedAdmin._id, user._id);
+      if (res) {
+        fetchAPIMessasge();
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }, [user?._id, assignedAdmin?._id]);
 
   // Memoize unread messages calculation
   const unreadMessages = useMemo(() => {
-    return unread && unread.length > 0 && unread.filter((item) => !item.isRead);
+    return (
+      unread &&
+      unread.length > 0 &&
+      unread.filter((item) => !item.isRead && user?._id === item.recipient)
+    );
   }, [unread]);
+
+  console.log(unreadMessages);
 
   // Memoize menu items để tránh re-create mỗi lần render
   const menuItems = useMemo(() => {
@@ -178,7 +211,7 @@ function App() {
         ? [
             {
               icon: (
-                <div className="relative">
+                <div className="relative" onClick={handleChatClick}>
                   <BsChatDots className="text-white text-xl" />
                   {unreadMessages && unreadMessages.length > 0 ? (
                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
@@ -192,7 +225,7 @@ function App() {
                 </div>
               ),
               label: "Chat Support",
-              onClick: handleChatClick,
+
               color:
                 "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700",
               glow: "shadow-emerald-500/30",
@@ -655,7 +688,11 @@ function App() {
 
       {open && (
         <div className="fixed bottom-0 right-0 message_users">
-          <MemoizedMessage open={open} setOpen={setOpen} />
+          <MemoizedMessage
+            open={open}
+            setOpen={setOpen}
+            assignedAdmin={assignedAdmin}
+          />
         </div>
       )}
 

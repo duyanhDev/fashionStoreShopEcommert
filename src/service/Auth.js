@@ -1,3 +1,4 @@
+import { User } from "lucide-react";
 import axios from "./../untils/axios";
 
 const LoginAuth = async (email, password) => {
@@ -216,6 +217,11 @@ const AdminChangleProfileAPI = async (
     );
   } catch (error) {}
 };
+
+const getRandomAdminAPI = async () => {
+  return await axios.get(`api/v1/admins`);
+};
+
 export {
   LoginAuth,
   UserAuth,
@@ -230,4 +236,5 @@ export {
   RefreshTokenUser,
   DeleteUserAPI,
   AdminChangleProfileAPI,
+  getRandomAdminAPI,
 };
