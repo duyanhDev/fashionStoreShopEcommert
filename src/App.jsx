@@ -211,7 +211,7 @@ function App() {
         ? [
             {
               icon: (
-                <div className="relative" onClick={handleChatClick}>
+                <div className="relative">
                   <BsChatDots className="text-white text-xl" />
                   {unreadMessages && unreadMessages.length > 0 ? (
                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
@@ -225,7 +225,7 @@ function App() {
                 </div>
               ),
               label: "Chat Support",
-
+              onClick: () => handleChatClick(),
               color:
                 "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700",
               glow: "shadow-emerald-500/30",

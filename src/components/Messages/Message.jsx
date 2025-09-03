@@ -9,6 +9,7 @@ import { getMessages, sendMessageCutomer } from "../../service/Message";
 import { useSelector } from "react-redux";
 import socket from "../../socket";
 import LogoMess from "../../assets/Image/Home/logo_mess.png";
+
 const Message = ({ open, setOpen, assignedAdmin }) => {
   const { user } = useSelector((state) => state.auth);
   const [messages, setMessages] = useState([]);
@@ -80,10 +81,14 @@ const Message = ({ open, setOpen, assignedAdmin }) => {
       // Gửi tin nhắn với ảnh
       await sendMessageCutomer(user?._id, newMessage, selectedImages, sentTime);
 
-      // Thêm tin nhắn vào state
+      // Thêm tin nhắn vào state - Make sure to include proper sender structure
       const newMsg = {
         _id: new Date().getTime(),
-        sender: user?._id,
+        sender: {
+          _id: user?._id,
+          name: user?.name,
+          avatar: user?.avatar,
+        },
         content: newMessage,
         images: selectedImages,
         sentAt: sentTime,
@@ -135,7 +140,7 @@ const Message = ({ open, setOpen, assignedAdmin }) => {
       socket.off("disconnect");
       socket.off("newMessage");
     };
-  }, [user?._id]);
+  }, [user?._id, assignedAdmin]);
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -277,105 +282,109 @@ const Message = ({ open, setOpen, assignedAdmin }) => {
               </div>
 
               {Array.isArray(messages) &&
-                messages.map((message, index) => (
-                  <div
-                    key={message?._id || index}
-                    className={`flex ${
-                      message.sender?._id === user?._id
-                        ? "justify-end"
-                        : "justify-start"
-                    }`}
-                  >
+                messages.map((message, index) => {
+                  // Add null checks for message and sender
+                  if (!message) return null;
+
+                  const isCurrentUser = message.sender?._id === user?._id;
+                  const senderName =
+                    message.sender?.name && isCurrentUser
+                      ? user?.name
+                      : "TrendHunter";
+                  const senderAvatar = isCurrentUser
+                    ? message.sender?.avatar || user?.avatar
+                    : LogoMess;
+
+                  return (
                     <div
-                      className={`flex items-end space-x-2 max-w-xs ${
-                        message.sender?._id === user?._id
-                          ? "flex-row-reverse space-x-reverse"
-                          : ""
+                      key={message?._id || index}
+                      className={`flex ${
+                        isCurrentUser ? "justify-end" : "justify-start"
                       }`}
                     >
-                      <img
-                        className="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm flex-shrink-0"
-                        src={
-                          message.sender._id === user?._id
-                            ? message?.sender?.avatar
-                            : LogoMess
-                        }
-                        alt="avatar"
-                      />
-
                       <div
-                        className={`relative px-4 py-3 rounded-2xl shadow-sm ${
-                          message.sender?._id === user?._id
-                            ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-br-md"
-                            : "bg-white text-gray-800 border border-gray-200 rounded-bl-md"
+                        className={`flex items-end space-x-2 max-w-xs ${
+                          isCurrentUser
+                            ? "flex-row-reverse space-x-reverse"
+                            : ""
                         }`}
                       >
-                        {/* Sender Name */}
+                        <img
+                          className="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm flex-shrink-0"
+                          src={senderAvatar}
+                          alt="avatar"
+                        />
+
                         <div
-                          className={`text-xs font-medium mb-1 ${
-                            message.sender?._id === user?._id
-                              ? "text-blue-100"
-                              : "text-gray-500"
+                          className={`relative px-4 py-3 rounded-2xl shadow-sm ${
+                            isCurrentUser
+                              ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-br-md"
+                              : "bg-white text-gray-800 border border-gray-200 rounded-bl-md"
                           }`}
                         >
-                          {message.sender._id === user?._id
-                            ? message?.sender?.name
-                            : "TrendHunter"}
-                        </div>
-
-                        {/* Message Content */}
-                        {message.content && (
-                          <p className="whitespace-pre-wrap leading-relaxed">
-                            {message.content}
-                          </p>
-                        )}
-
-                        {/* Images */}
-                        {message.images && message.images.length > 0 && (
-                          <div className="mt-2 grid grid-cols-2 gap-2">
-                            {message.images.map((imageUrl, imgIndex) => (
-                              <img
-                                key={imgIndex}
-                                src={imageUrl}
-                                alt={`Message image ${imgIndex + 1}`}
-                                className="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity border border-white/20"
-                                onClick={() => window.open(imageUrl, "_blank")}
-                              />
-                            ))}
+                          {/* Sender Name */}
+                          <div
+                            className={`text-xs font-medium mb-1 ${
+                              isCurrentUser ? "text-blue-100" : "text-gray-500"
+                            }`}
+                          >
+                            {senderName}
                           </div>
-                        )}
 
-                        {/* Timestamp */}
-                        <div
-                          className={`flex items-center justify-between mt-2 ${
-                            message.sender?._id === user?._id
-                              ? "text-blue-100"
-                              : "text-gray-500"
-                          }`}
-                        >
-                          <span className="text-xs">
-                            {formatTime(message.sentAt)}
-                          </span>
-                          {message.sender?._id === user?._id && (
-                            <div className="ml-2">
-                              <svg
-                                className="w-3 h-3"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                  clipRule="evenodd"
+                          {/* Message Content */}
+                          {message.content && (
+                            <p className="whitespace-pre-wrap leading-relaxed">
+                              {message.content}
+                            </p>
+                          )}
+
+                          {/* Images */}
+                          {message.images && message.images.length > 0 && (
+                            <div className="mt-2 grid grid-cols-2 gap-2">
+                              {message.images.map((imageUrl, imgIndex) => (
+                                <img
+                                  key={imgIndex}
+                                  src={imageUrl}
+                                  alt={`Message image ${imgIndex + 1}`}
+                                  className="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity border border-white/20"
+                                  onClick={() =>
+                                    window.open(imageUrl, "_blank")
+                                  }
                                 />
-                              </svg>
+                              ))}
                             </div>
                           )}
+
+                          {/* Timestamp */}
+                          <div
+                            className={`flex items-center justify-between mt-2 ${
+                              isCurrentUser ? "text-blue-100" : "text-gray-500"
+                            }`}
+                          >
+                            <span className="text-xs">
+                              {formatTime(message.sentAt)}
+                            </span>
+                            {isCurrentUser && (
+                              <div className="ml-2">
+                                <svg
+                                  className="w-3 h-3"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
             </div>
 
             {/* Input Area */}
