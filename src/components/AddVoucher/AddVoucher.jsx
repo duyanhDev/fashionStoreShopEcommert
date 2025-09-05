@@ -25,8 +25,6 @@ const AddVoucher = () => {
   const [discountType, setDiscountType] = useState("PERCENTAGE");
 
   const handleSubmit = async (values) => {
-    console.log("Form values:", values);
-
     setLoading(true);
     try {
       const submitData = {

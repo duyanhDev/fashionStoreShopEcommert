@@ -287,8 +287,6 @@ const ChatSp = () => {
       index === self.findIndex((t) => t.recipient?._id === item.recipient?._id)
   ).length;
 
-  console.log(MessFriends);
-
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       {/* Sidebar */}

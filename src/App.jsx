@@ -191,8 +191,6 @@ function App() {
     );
   }, [unread]);
 
-  console.log(unreadMessages);
-
   // Memoize menu items để tránh re-create mỗi lần render
   const menuItems = useMemo(() => {
     const baseItems = [
@@ -581,10 +579,7 @@ function App() {
               <Link to="clothing/female">Nữ</Link>
             </li>
             <li>
-              <Link
-                to="/clothing/unisex?Category=Phụ+Kiện&currentPage=1"
-                target="_top"
-              >
+              <Link to="/clothing/unisex?Category=Phụ+Kiện&currentPage=1">
                 Phụ kiện
               </Link>
             </li>
@@ -607,7 +602,7 @@ function App() {
         <Outlet context={outletContext} />
       </div>
 
-      <div className="fixed right-6 bottom-6 z-50">
+      <div className="fixed right-0 bottom-6 mr-7  z-50">
         {/* Menu Items */}
         <div
           className={`absolute bottom-20 right-0 transition-all duration-500 ${

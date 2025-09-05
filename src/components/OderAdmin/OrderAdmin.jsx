@@ -87,7 +87,16 @@ const OrderAdmin = () => {
   const { styles } = useStyle();
   const [api, contextHolder] = notification.useNotification();
   const { user } = useSelector((state) => state.auth);
-  const [filterStatus, setFilterStatus] = useState("all"); // Lưu trạng thái lọc, mặc định là "all"
+  const [filterStatus, setFilterStatus] = useState("all");
+
+  // Enhanced search filters
+  const [searchFilters, setSearchFilters] = useState({
+    customerName: "",
+    productName: "",
+    address: "",
+    dateRange: null,
+  });
+
   const [orderStats, setOrderStats] = useState({
     total: 0,
     completed: 0,
@@ -97,10 +106,13 @@ const OrderAdmin = () => {
     processing: 0,
     cancelled: 0,
   });
+
   const [visible, setVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [data, setData] = useState([]);
+  const [originalData, setOriginalData] = useState([]);
   const [loading, setLoading] = useState(false);
+
   const [tableParams, setTableParams] = useState({
     pagination: {
       current: 1,
@@ -113,7 +125,6 @@ const OrderAdmin = () => {
   });
 
   // Map API order statuses to display-friendly text
-
   const statusDisplayMap = {
     Processing: "Chờ người bán xác nhận",
     Confirmed: "Người bán đang chuẩn bị hàng",
@@ -123,6 +134,162 @@ const OrderAdmin = () => {
     Cancelled: "Đơn hàng đã bị hủy",
   };
 
+  // Enhanced search functions
+  const handleInstantSearch = (value, type) => {
+    const newFilters = {
+      ...searchFilters,
+      [type]: value,
+    };
+
+    setSearchFilters(newFilters);
+
+    // Apply all filters
+    let filtered = originalData;
+
+    if (newFilters.customerName) {
+      filtered = filtered.filter((item) =>
+        item.username
+          ?.toLowerCase()
+          .includes(newFilters.customerName.toLowerCase())
+      );
+    }
+
+    if (newFilters.productName) {
+      filtered = filtered.filter((item) =>
+        item.name?.toLowerCase().includes(newFilters.productName.toLowerCase())
+      );
+    }
+
+    if (newFilters.address) {
+      filtered = filtered.filter((item) => {
+        const fullAddress = `${item.fullAddress} ${item.ward} ${item.district} ${item.city}`;
+        return fullAddress
+          .toLowerCase()
+          .includes(newFilters.address.toLowerCase());
+      });
+    }
+
+    if (newFilters.dateRange && newFilters.dateRange.length === 2) {
+      const [startDate, endDate] = newFilters.dateRange;
+      filtered = filtered.filter((item) => {
+        const itemDate = moment(item.createdAt, "DD/MM/YYYY");
+        return itemDate.isBetween(startDate, endDate, "day", "[]");
+      });
+    }
+
+    // Apply status filter if not "all"
+    if (filterStatus !== "all") {
+      filtered = filtered.filter((item) => item.rawStatus === filterStatus);
+    }
+
+    const formattedFiltered = filtered.map((item, index) => ({
+      ...item,
+      index: index + 1,
+    }));
+
+    setData(formattedFiltered);
+    updateOrderStats(formattedFiltered);
+
+    setTableParams((prev) => ({
+      ...prev,
+      pagination: {
+        ...prev.pagination,
+        current: 1,
+        total: formattedFiltered.length,
+      },
+    }));
+  };
+
+  const handleDateRangeChange = (dates) => {
+    const newFilters = {
+      ...searchFilters,
+      dateRange: dates,
+    };
+
+    setSearchFilters(newFilters);
+
+    let filtered = originalData;
+
+    // Apply all existing filters
+    if (newFilters.customerName) {
+      filtered = filtered.filter((item) =>
+        item.username
+          ?.toLowerCase()
+          .includes(newFilters.customerName.toLowerCase())
+      );
+    }
+
+    if (newFilters.productName) {
+      filtered = filtered.filter((item) =>
+        item.name?.toLowerCase().includes(newFilters.productName.toLowerCase())
+      );
+    }
+
+    if (newFilters.address) {
+      filtered = filtered.filter((item) => {
+        const fullAddress = `${item.fullAddress} ${item.ward} ${item.district} ${item.city}`;
+        return fullAddress
+          .toLowerCase()
+          .includes(newFilters.address.toLowerCase());
+      });
+    }
+
+    if (dates && dates.length === 2) {
+      const [startDate, endDate] = dates;
+
+      const start = startDate.startOf("day").toDate();
+      const end = endDate.endOf("day").toDate();
+
+      filtered = filtered.filter((item) => {
+        const itemDate = moment(item.createdAt, "DD/MM/YYYY").toDate();
+        return itemDate >= start && itemDate <= end;
+      });
+    }
+    // Apply status filter
+    if (filterStatus !== "all") {
+      filtered = filtered.filter((item) => item.rawStatus === filterStatus);
+    }
+
+    const formattedFiltered = filtered.map((item, index) => ({
+      ...item,
+      index: index + 1,
+    }));
+
+    setData(formattedFiltered);
+    updateOrderStats(formattedFiltered);
+
+    setTableParams((prev) => ({
+      ...prev,
+      pagination: {
+        ...prev.pagination,
+        current: 1,
+        total: formattedFiltered.length,
+      },
+    }));
+  };
+
+  const handleResetFilters = () => {
+    setSearchFilters({
+      customerName: "",
+      productName: "",
+      address: "",
+      dateRange: null,
+    });
+
+    setFilterStatus("all");
+    setData(originalData);
+    updateOrderStats(originalData);
+
+    setTableParams((prev) => ({
+      ...prev,
+      pagination: {
+        ...prev.pagination,
+        current: 1,
+        total: originalData.length,
+      },
+    }));
+  };
+
   // Table column definitions
   const columns = [
     {
@@ -130,6 +297,17 @@ const OrderAdmin = () => {
       dataIndex: "index",
       width: 60,
       fixed: "left",
+    },
+    {
+      title: "Tên khách hàng",
+      dataIndex: "username",
+      sorter: (a, b) => a.username.localeCompare(b.username),
+      width: 200,
+      render: (text) => (
+        <Tooltip title={text}>
+          <div className="product-name-cell">{text}</div>
+        </Tooltip>
+      ),
     },
     {
       title: "Tên sản phẩm",
@@ -213,6 +391,140 @@ const OrderAdmin = () => {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
   };
 
+  // Create action buttons for each order
+  const createActionButtons = (item) => (
+    <Space className="action-buttons-wrapper" size="small">
+      <Button
+        type="default"
+        size="small"
+        icon={<EyeOutlined />}
+        className="btn-action btn-view"
+        onClick={() => {
+          const shippingAddress = item.shippingAddress || {};
+          setSelectedOrder({
+            name: item.items.map((item) => item.name).join(", "),
+            quantity: item.items.map((item) => item.quantity).join(", "),
+            size: item.items.map((item) => item.size).join(", "),
+            color: item.items.map((item) => item.color).join(", "),
+            price: formatPrice(item.items.map((item) => item.price).join(", ")),
+            fullAddress: shippingAddress.fullAddress
+              ? `${shippingAddress.fullAddress}, ${shippingAddress.ward}, ${shippingAddress.district}, ${shippingAddress.city}`
+              : "N/A",
+            paymentMethod: item.paymentMethod || "N/A",
+            paymentStatus:
+              item.paymentStatus === "Completed"
+                ? "Đã thanh toán"
+                : "Chờ thanh toán",
+            orderStatus:
+              statusDisplayMap[item.orderStatus] || "Trạng thái không xác định",
+            totalAmount: formatPrice(item.totalAmount),
+            createdAt: moment(item.createdAt).format("DD/MM/YYYY"),
+            id: item._id,
+            rawStatus: item.orderStatus,
+          });
+          setVisible(true);
+        }}
+      >
+        Xem chi tiết
+      </Button>
+      {(() => {
+        switch (item.orderStatus) {
+          case "Processing":
+            return (
+              <Button
+                type="primary"
+                size="small"
+                className="btn-action btn-warning"
+                icon={<CheckSquareOutlined />}
+                onClick={() => handleCheckConfirmed(item._id)}
+              >
+                Duyệt
+              </Button>
+            );
+
+          case "Confirmed":
+            return (
+              <Button
+                type="primary"
+                size="small"
+                className="btn-action btn-warning"
+                icon={<CheckSquareOutlined />}
+                onClick={() => updateShippingOrder(item._id)}
+              >
+                Chờ người bán xác nhận
+              </Button>
+            );
+          case "Shipping":
+            return (
+              <Button
+                type="primary"
+                size="small"
+                className="btn-action btn-info"
+                icon={<CheckCircleOutlined />}
+                onClick={() => handleCheckOrder(item._id)}
+              >
+                Giao hàng
+              </Button>
+            );
+          case "Delivered":
+            return (
+              <Button
+                type="primary"
+                size="small"
+                className="btn-action btn-primary"
+                icon={<CarOutlined />}
+                onClick={() => updateCompleteOrder(item._id, item.totalAmount)}
+              >
+                Hoàn Thành
+              </Button>
+            );
+
+          case "Completed":
+            return (
+              <Button
+                type="primary"
+                size="small"
+                className="btn-action btn-success"
+                icon={<CheckCircleOutlined />}
+                disabled
+              >
+                Đã giao
+              </Button>
+            );
+          case "Cancelled":
+            return (
+              <Button
+                danger
+                size="small"
+                className="btn-action btn-danger"
+                icon={<CloseCircleOutlined />}
+                disabled
+              >
+                Đã Hủy
+              </Button>
+            );
+          default:
+            return (
+              <Button className="btn-action btn-secondary" size="small">
+                Không xác định
+              </Button>
+            );
+        }
+      })()}
+      {item.orderStatus === "Processing" && (
+        <Button
+          danger
+          size="small"
+          icon={<DeleteOutlined />}
+          className="btn-action btn-cancel"
+          onClick={() => handleCancelOrder(item._id, "Cancelled")}
+        >
+          Hủy
+        </Button>
+      )}
+    </Space>
+  );
+
   // Fetch all orders from the API
   const fetchData = async () => {
     setLoading(true);
@@ -252,6 +564,7 @@ const OrderAdmin = () => {
               tableParams.pagination.pageSize +
             index +
             1,
+          username: item.username,
           name: item.items.map((item) => item.name).join(", "),
           quantity: item.items.map((item) => item.quantity).join(", "),
           size: item.items.map((item) => item.size).join(", "),
@@ -270,149 +583,15 @@ const OrderAdmin = () => {
             statusDisplayMap[item.orderStatus] || "Trạng thái không xác định",
           totalAmount: formatPrice(item.totalAmount),
           createdAt: moment(item.createdAt).format("DD/MM/YYYY"),
-          check: (
-            <Space className="action-buttons-wrapper" size="small">
-              <Button
-                type="default"
-                size="small"
-                icon={<EyeOutlined />}
-                className="btn-action btn-view"
-                onClick={() => {
-                  setSelectedOrder({
-                    name: item.items.map((item) => item.name).join(", "),
-                    quantity: item.items
-                      .map((item) => item.quantity)
-                      .join(", "),
-                    size: item.items.map((item) => item.size).join(", "),
-                    color: item.items.map((item) => item.color).join(", "),
-                    price: formatPrice(
-                      item.items.map((item) => item.price).join(", ")
-                    ),
-                    fullAddress: shippingAddress.fullAddress
-                      ? `${shippingAddress.fullAddress}, ${shippingAddress.ward}, ${shippingAddress.district}, ${shippingAddress.city}`
-                      : "N/A",
-                    paymentMethod: item.paymentMethod || "N/A",
-                    paymentStatus:
-                      item.paymentStatus === "Completed"
-                        ? "Đã thanh toán"
-                        : "Chờ thanh toán",
-                    orderStatus:
-                      statusDisplayMap[item.orderStatus] ||
-                      "Trạng thái không xác định",
-                    totalAmount: formatPrice(item.totalAmount),
-                    createdAt: moment(item.createdAt).format("DD/MM/YYYY"),
-                    id: item._id,
-                    rawStatus: item.orderStatus,
-                  });
-                  setVisible(true);
-                }}
-              >
-                Xem chi tiết
-              </Button>
-              {(() => {
-                switch (item.orderStatus) {
-                  case "Processing":
-                    return (
-                      <Button
-                        type="primary"
-                        size="small"
-                        className="btn-action btn-warning"
-                        icon={<CheckSquareOutlined />}
-                        onClick={() => handleCheckConfirmed(item._id)}
-                      >
-                        Duyệt
-                      </Button>
-                    );
-
-                  case "Confirmed":
-                    return (
-                      <Button
-                        type="primary"
-                        size="small"
-                        className="btn-action btn-warning"
-                        icon={<CheckSquareOutlined />}
-                        onClick={() => updateShippingOrder(item._id)}
-                      >
-                        Chờ người bán xác nhận
-                      </Button>
-                    );
-                  case "Shipping":
-                    return (
-                      <Button
-                        type="primary"
-                        size="small"
-                        className="btn-action btn-info"
-                        icon={<CheckCircleOutlined />}
-                        onClick={() => handleCheckOrder(item._id)}
-                      >
-                        Giao hàng
-                      </Button>
-                    );
-                  case "Delivered":
-                    return (
-                      <Button
-                        type="primary"
-                        size="small"
-                        className="btn-action btn-primary"
-                        icon={<CarOutlined />}
-                        onClick={() =>
-                          updateCompleteOrder(item._id, item.totalAmount)
-                        }
-                      >
-                        Hoàn Thành
-                      </Button>
-                    );
-
-                  case "Completed":
-                    return (
-                      <Button
-                        type="primary"
-                        size="small"
-                        className="btn-action btn-success"
-                        icon={<CheckCircleOutlined />}
-                        disabled
-                      >
-                        Đã giao
-                      </Button>
-                    );
-                  case "Cancelled":
-                    return (
-                      <Button
-                        danger
-                        size="small"
-                        className="btn-action btn-danger"
-                        icon={<CloseCircleOutlined />}
-                        disabled
-                      >
-                        Đã Hủy
-                      </Button>
-                    );
-                  default:
-                    return (
-                      <Button className="btn-action btn-secondary" size="small">
-                        Không xác định
-                      </Button>
-                    );
-                }
-              })()}
-              {item.orderStatus === "Processing" && (
-                <Button
-                  danger
-                  size="small"
-                  icon={<DeleteOutlined />}
-                  className="btn-action btn-cancel"
-                  onClick={() => handleCancelOrder(item._id, "Cancelled")}
-                >
-                  Hủy
-                </Button>
-              )}
-            </Space>
-          ),
+          check: createActionButtons(item),
           rawStatus: item.orderStatus,
+          // Store original item for action buttons
+          originalItem: item,
         };
       });
 
       setData(formattedData);
+      setOriginalData(formattedData); // Store original data
       updateOrderStats(formattedData);
       setTableParams({
         ...tableParams,
@@ -429,6 +608,7 @@ const OrderAdmin = () => {
         description: `Không thể tải dữ liệu đơn hàng: ${error.message}. Vui lòng thử lại sau.`,
       });
       setData([]);
+      setOriginalData([]);
       setTableParams({
         ...tableParams,
         pagination: {
@@ -445,12 +625,10 @@ const OrderAdmin = () => {
   const handleReset = async (value) => {
     try {
       setFilterStatus(value);
-
-      if (filterStatus === value) {
-        fetchData();
-      }
+      handleResetFilters();
+      await fetchData();
     } catch (error) {
-      setFilterStatus(value);
+      console.error("Error resetting:", error);
     }
   };
 
@@ -481,8 +659,8 @@ const OrderAdmin = () => {
     tableParams.pagination.pageSize,
     tableParams.sortField,
     tableParams.sortOrder,
-    filterStatus, // Thêm filterStatus để gọi lại fetchData khi trạng thái lọc thay đổi
   ]);
+
   // Handle table pagination and sorting changes
   const handleTableChange = (pagination, filters, sorter) => {
     setTableParams({
@@ -493,8 +671,7 @@ const OrderAdmin = () => {
     });
   };
 
-  // Approve an order (change status to Delivered)
-
+  // Order action handlers
   const handleCheckConfirmed = async (id) => {
     try {
       const response = await UpDateConfirmedAPI(id);
@@ -537,7 +714,6 @@ const OrderAdmin = () => {
     }
   };
 
-  // Update order to Shipping status
   const updateShippingOrder = async (id) => {
     try {
       const response = await updateShipping(id);
@@ -560,7 +736,6 @@ const OrderAdmin = () => {
     }
   };
 
-  // Complete an order (change status to Completed)
   const updateCompleteOrder = async (id, totalPrice) => {
     try {
       const response = await UpDateCompleted(id, totalPrice);
@@ -586,7 +761,6 @@ const OrderAdmin = () => {
     }
   };
 
-  // Cancel an order
   const handleCancelOrder = async (id, orderStatus) => {
     try {
       const response = await updateShippingCancelledAdmin(id, orderStatus);
@@ -607,7 +781,70 @@ const OrderAdmin = () => {
     }
   };
 
-  // tổng doanh thu
+  // Enhanced status filter with search integration
+  const handleFilterStatus = async (value) => {
+    setFilterStatus(value);
+
+    let filtered = originalData;
+
+    // Apply status filter
+    if (value !== "all") {
+      filtered = filtered.filter((item) => item.rawStatus === value);
+    }
+
+    // Apply existing search filters
+    if (searchFilters.customerName) {
+      filtered = filtered.filter((item) =>
+        item.username
+          ?.toLowerCase()
+          .includes(searchFilters.customerName.toLowerCase())
+      );
+    }
+
+    if (searchFilters.productName) {
+      filtered = filtered.filter((item) =>
+        item.name
+          ?.toLowerCase()
+          .includes(searchFilters.productName.toLowerCase())
+      );
+    }
+
+    if (searchFilters.address) {
+      filtered = filtered.filter((item) => {
+        const fullAddress = `${item.fullAddress} ${item.ward} ${item.district} ${item.city}`;
+        return fullAddress
+          .toLowerCase()
+          .includes(searchFilters.address.toLowerCase());
+      });
+    }
+
+    if (searchFilters.dateRange && searchFilters.dateRange.length === 2) {
+      const [startDate, endDate] = searchFilters.dateRange;
+      filtered = filtered.filter((item) => {
+        const itemDate = moment(item.createdAt, "DD/MM/YYYY");
+        return itemDate.isBetween(startDate, endDate, "day", "[]");
+      });
+    }
+
+    const formattedFiltered = filtered.map((item, index) => ({
+      ...item,
+      index: index + 1,
+    }));
+
+    setData(formattedFiltered);
+    updateOrderStats(formattedFiltered);
+
+    setTableParams((prev) => ({
+      ...prev,
+      pagination: {
+        ...prev.pagination,
+        current: 1,
+        total: formattedFiltered.length,
+      },
+    }));
+  };
+
+  // Calculate total revenue
   const totalRevenue =
     data && data.length > 0
       ? data.reduce((total, item) => {
@@ -619,226 +856,6 @@ const OrderAdmin = () => {
         }, 0)
       : 0;
 
-  // lọc sản phẩm theo trạng thái
-
-  // Sửa handleFilterStatus
-  const handleFilterStatus = async (value) => {
-    try {
-      setFilterStatus(value);
-      setLoading(true);
-      let formattedData = [];
-      let totalRecords = 0;
-
-      if (value === "all") {
-        await fetchData();
-        return;
-      }
-
-      const res = await filterOrdersByStatus(value, {
-        page: 1,
-        pageSize: tableParams.pagination.pageSize,
-      });
-
-      if (res && res.data && res.data.data) {
-        formattedData = res.data.data.map((item, index) => {
-          const shippingAddress = item.shippingAddress || {};
-          return {
-            key: item._id,
-            index: index + 1,
-            name: item.items.map((item) => item.name).join(", "),
-            quantity: item.items.map((item) => item.quantity).join(", "),
-            size: item.items.map((item) => item.size).join(", "),
-            color: item.items.map((item) => item.color).join(", "),
-            price: formatPrice(item.items.map((item) => item.price).join(", ")),
-            fullAddress: shippingAddress.fullAddress || "",
-            city: shippingAddress.city || "",
-            district: shippingAddress.district || "",
-            ward: shippingAddress.ward || "",
-            paymentMethod: item.paymentMethod || "N/A",
-            paymentStatus:
-              item.paymentStatus === "Completed"
-                ? "Đã thanh toán"
-                : "Chờ thanh toán",
-            orderStatus:
-              statusDisplayMap[item.orderStatus] || "Trạng thái không xác định",
-            totalAmount: formatPrice(item.totalAmount),
-            createdAt: moment(item.createdAt).format("DD/MM/YYYY"),
-            check: (
-              <Space className="action-buttons-wrapper" size="small">
-                <Button
-                  type="default"
-                  size="small"
-                  icon={<EyeOutlined />}
-                  className="btn-action btn-view"
-                  onClick={() => {
-                    setSelectedOrder({
-                      name: item.items.map((item) => item.name).join(", "),
-                      quantity: item.items
-                        .map((item) => item.quantity)
-                        .join(", "),
-                      size: item.items.map((item) => item.size).join(", "),
-                      color: item.items.map((item) => item.color).join(", "),
-                      price: formatPrice(
-                        item.items.map((item) => item.price).join(", ")
-                      ),
-                      fullAddress: shippingAddress.fullAddress
-                        ? `${shippingAddress.fullAddress}, ${shippingAddress.ward}, ${shippingAddress.district}, ${shippingAddress.city}`
-                        : "N/A",
-                      paymentMethod: item.paymentMethod || "N/A",
-                      paymentStatus:
-                        item.paymentStatus === "Completed"
-                          ? "Đã thanh toán"
-                          : "Chờ thanh toán",
-                      orderStatus:
-                        statusDisplayMap[item.orderStatus] ||
-                        "Trạng thái không xác định",
-                      totalAmount: formatPrice(item.totalAmount),
-                      createdAt: moment(item.createdAt).format("DD/MM/YYYY"),
-                      id: item._id,
-                      rawStatus: item.orderStatus,
-                    });
-                    setVisible(true);
-                  }}
-                >
-                  Xem chi tiết
-                </Button>
-                {(() => {
-                  switch (item.orderStatus) {
-                    case "Processing":
-                      return (
-                        <Button
-                          type="primary"
-                          size="small"
-                          className="btn-action btn-warning"
-                          icon={<CheckSquareOutlined />}
-                          onClick={() => handleCheckConfirmed(item._id)}
-                        >
-                          Duyệt
-                        </Button>
-                      );
-
-                    case "Confirmed":
-                      return (
-                        <Button
-                          type="primary"
-                          size="small"
-                          className="btn-action btn-warning"
-                          icon={<CheckSquareOutlined />}
-                          onClick={() => updateShippingOrder(item._id)}
-                        >
-                          Chờ người bán xác nha
-                        </Button>
-                      );
-                    case "Shipping":
-                      return (
-                        <Button
-                          type="primary"
-                          size="small"
-                          className="btn-action btn-info"
-                          icon={<CheckCircleOutlined />}
-                          onClick={() => handleCheckOrder(item._id)}
-                        >
-                          Đang giao
-                        </Button>
-                      );
-                    case "Delivered":
-                      return (
-                        <Button
-                          type="primary"
-                          size="small"
-                          className="btn-action btn-primary"
-                          icon={<CarOutlined />}
-                          onClick={() =>
-                            updateCompleteOrder(item._id, item.totalAmount)
-                          }
-                        >
-                          Hoàn Thành
-                        </Button>
-                      );
-
-                    case "Completed":
-                      return (
-                        <Button
-                          type="primary"
-                          size="small"
-                          className="btn-action btn-success"
-                          icon={<CheckCircleOutlined />}
-                          disabled
-                        >
-                          Đã giao
-                        </Button>
-                      );
-                    case "Cancelled":
-                      return (
-                        <Button
-                          danger
-                          size="small"
-                          className="btn-action btn-danger"
-                          icon={<CloseCircleOutlined />}
-                          disabled
-                        >
-                          Đã Hủy
-                        </Button>
-                      );
-                    default:
-                      return (
-                        <Button
-                          className="btn-action btn-secondary"
-                          size="small"
-                        >
-                          Không xác định
-                        </Button>
-                      );
-                  }
-                })()}
-                {item.orderStatus === "Processing" && (
-                  <Button
-                    danger
-                    size="small"
-                    icon={<DeleteOutlined />}
-                    className="btn-action btn-cancel"
-                    onClick={() => handleCancelOrder(item._id, "Cancelled")}
-                  >
-                    Hủy
-                  </Button>
-                )}
-              </Space>
-            ),
-            rawStatus: item.orderStatus,
-          };
-        });
-        totalRecords = res.data.total || formattedData.length;
-      }
-
-      setData(formattedData);
-      updateOrderStats(formattedData);
-      setTableParams({
-        ...tableParams,
-        pagination: {
-          ...tableParams.pagination,
-          current: 1,
-          total: totalRecords,
-        },
-      });
-    } catch (error) {
-      console.error("Error filtering status:", error);
-      api.error({
-        message: "Lỗi",
-        description: "Không thể lọc đơn hàng. Vui lòng thử lại.",
-      });
-      setData([]);
-      setTableParams({
-        ...tableParams,
-        pagination: {
-          ...tableParams.pagination,
-          current: 1,
-          total: 0,
-        },
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
   return (
     <div className="order-admin-container">
       {contextHolder}
@@ -948,17 +965,46 @@ const OrderAdmin = () => {
         </Col>
       </Row>
 
+      {/* Enhanced Filter Section */}
       <Card className="order-admin-filters">
         <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} md={8}>
+          <Col xs={24} md={6}>
             <Input
-              placeholder="Tìm theo tên sản phẩm hoặc địa chỉ"
+              placeholder="Tìm theo tên khách hàng"
               prefix={<SearchOutlined />}
               allowClear
-              className="search-input"
-              onChange={() => {}} // Non-functional: Logic removed as requested
+              className="customer-search-input"
+              value={searchFilters.customerName}
+              onChange={(e) =>
+                handleInstantSearch(e.target.value, "customerName")
+              }
             />
           </Col>
+
+          <Col xs={24} md={6}>
+            <Input
+              placeholder="Tìm theo tên sản phẩm"
+              prefix={<SearchOutlined />}
+              allowClear
+              className="product-search-input"
+              value={searchFilters.productName}
+              onChange={(e) =>
+                handleInstantSearch(e.target.value, "productName")
+              }
+            />
+          </Col>
+
+          <Col xs={24} md={6}>
+            <Input
+              placeholder="Tìm theo địa chỉ"
+              prefix={<SearchOutlined />}
+              allowClear
+              className="address-search-input"
+              value={searchFilters.address}
+              onChange={(e) => handleInstantSearch(e.target.value, "address")}
+            />
+          </Col>
+
           <Col xs={24} md={6}>
             <Select
               placeholder="Lọc theo trạng thái"
@@ -966,6 +1012,7 @@ const OrderAdmin = () => {
               className="status-select"
               onChange={handleFilterStatus}
               value={filterStatus}
+              allowClear
             >
               <Option value="all">Tất cả trạng thái</Option>
               <Option value="Processing">Chờ xác nhận</Option>
@@ -974,27 +1021,38 @@ const OrderAdmin = () => {
                 Đã giao cho shipper/đơn vị vận chuyển
               </Option>
               <Option value="Delivered">Shipper đang giao hàng đến bạn</Option>
-              <Option value="Completed">Đã giao hàng thành côn</Option>
+              <Option value="Completed">Đã giao hàng thành công</Option>
               <Option value="Cancelled">Đã hủy</Option>
             </Select>
           </Col>
-          <Col xs={24} md={7}>
+        </Row>
+
+        <Row gutter={[16, 16]} align="middle" style={{ marginTop: 16 }}>
+          <Col xs={24} md={12}>
             <RangePicker
               style={{ width: "100%" }}
               format="DD/MM/YYYY"
               placeholder={["Từ ngày", "Đến ngày"]}
               className="date-picker"
-              onChange={() => {}} // Non-functional: Logic removed as requested
+              value={searchFilters.dateRange}
+              onChange={handleDateRangeChange}
             />
           </Col>
-          <Col xs={24} md={3}>
+
+          <Col xs={24} md={6}>
             <Button
               icon={<FilterOutlined />}
-              className="reset-button"
-              onClick={() => handleReset("all")} // Non-functional: Logic removed as requested
+              onClick={handleResetFilters}
+              style={{ width: "100%" }}
             >
-              Xóa lọc
+              Xóa tất cả bộ lọc
             </Button>
+          </Col>
+
+          <Col xs={24} md={6}>
+            <Text strong>
+              Hiển thị: {data.length} / {originalData.length} đơn hàng
+            </Text>
           </Col>
         </Row>
       </Card>
@@ -1017,11 +1075,11 @@ const OrderAdmin = () => {
               scroll={{ x: 1000 }}
               className={styles.customTable}
               rowClassName={(record) => {
-                if (record.orderStatus === "Chờ xác nhận")
+                if (record.orderStatus === "Chờ người bán xác nhận")
                   return "order-row-waiting";
-                if (record.orderStatus === "Đơn hàng đã giao thành công")
+                if (record.orderStatus === "Đã giao hàng thành công")
                   return "order-row-completed";
-                if (record.orderStatus === "Đang giao")
+                if (record.orderStatus === "Shipper đang giao hàng đến bạn")
                   return "order-row-shipping";
                 if (record.orderStatus === "Đã Hủy")
                   return "order-row-cancelled";
@@ -1051,6 +1109,7 @@ const OrderAdmin = () => {
         </Spin>
       </Card>
 
+      {/* Order Detail Modal */}
       <Modal
         title="Chi tiết đơn hàng"
         visible={visible}
@@ -1061,6 +1120,7 @@ const OrderAdmin = () => {
           </Button>,
         ]}
         className="order-detail-modal"
+        width={800}
       >
         {selectedOrder && (
           <Descriptions
@@ -1103,14 +1163,18 @@ const OrderAdmin = () => {
             <Descriptions.Item label="Trạng thái đơn hàng">
               <Tag
                 color={
-                  selectedOrder.orderStatus === "Chờ xác nhận"
+                  selectedOrder.orderStatus === "Chờ người bán xác nhận"
                     ? "orange"
-                    : selectedOrder.orderStatus === "Chờ giao hàng"
+                    : selectedOrder.orderStatus ===
+                      "Người bán đang chuẩn bị hàng"
                     ? "blue"
-                    : selectedOrder.orderStatus === "Đang giao"
+                    : selectedOrder.orderStatus ===
+                      "Đã giao cho shipper/đơn vị vận chuyển"
                     ? "cyan"
                     : selectedOrder.orderStatus ===
-                      "Đơn hàng đã giao thành công"
+                      "Shipper đang giao hàng đến bạn"
+                    ? "purple"
+                    : selectedOrder.orderStatus === "Đã giao hàng thành công"
                     ? "green"
                     : "red"
                 }
@@ -1119,7 +1183,9 @@ const OrderAdmin = () => {
               </Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Tổng tiền">
-              {selectedOrder.totalAmount}
+              <Text strong style={{ fontSize: "16px", color: "#1890ff" }}>
+                {selectedOrder.totalAmount}
+              </Text>
             </Descriptions.Item>
             <Descriptions.Item label="Ngày đặt hàng">
               {selectedOrder.createdAt}

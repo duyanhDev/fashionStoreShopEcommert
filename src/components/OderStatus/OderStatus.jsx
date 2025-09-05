@@ -346,7 +346,7 @@ const OderStatus = () => {
       </div>
       <OrderDetailModal
         visible={visible}
-        id={OrderId}
+        id={param.id}
         onClose={() => setVisible(false)}
       />
     </div>

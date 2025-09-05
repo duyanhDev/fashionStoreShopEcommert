@@ -662,7 +662,7 @@ const Home = () => {
                         </div>
 
                         <h3
-                          className="font-bold text-lg text-gray-900 mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors duration-300"
+                          className="font-bold sm:text-sm lg:text-lg text-gray-900 mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors duration-300"
                           onClick={() => handleDetails(item.slug)}
                         >
                           {item.name}
@@ -670,11 +670,11 @@ const Home = () => {
 
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm sm:text-lg font-semibold text-green-600">
+                            <span className=" sm:text-sm lg:text-lg font-semibold text-green-600">
                               {formatPrice(item.discountedPrice || item.price)}
                             </span>
                             {item.discount > 0 && (
-                              <span className="text-xs sm:text-sm text-gray-400 line-through">
+                              <span className="sm:text-sm lg:text-lg text-gray-400 line-through">
                                 {formatPrice(item.price || item.costPrice)}
                               </span>
                             )}

@@ -368,12 +368,12 @@ const ProductsSection = ({ ListProducts }) => {
         {/* Badges */}
         <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex flex-col gap-1 sm:gap-2">
           {product.discount > 0 && (
-            <div className="bg-green-600 text-white text-xs font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
+            <div className="bg-green-600 text-white lg:text-lg font-semibold px-1.5 sm:px-2 sm:text-sm py-0.5 sm:py-1 rounded">
               -{product.discount}%
             </div>
           )}
           {section === "bestseller" && index < 3 && (
-            <div className="bg-black text-white text-xs font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
+            <div className="bg-black text-white lg:text-lg sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
               TOP {index + 1}
             </div>
           )}
@@ -463,11 +463,11 @@ const ProductsSection = ({ ListProducts }) => {
       {/* Content */}
       <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
         <div className="space-y-1">
-          <div className="text-xs font-medium text-green-600 uppercase tracking-wide">
+          <div className="lg:text-lg sm:text-xs font-medium text-green-600 uppercase tracking-wide">
             {product.brand}
           </div>
           <h3
-            className="font-medium text-gray-900 line-clamp-2 text-xs sm:text-sm leading-tight hover:text-green-600 transition-colors duration-200 cursor-pointer
+            className="font-medium text-gray-900 line-clamp-2 lg:text-lg sm:text-xs leading-tight hover:text-green-600 transition-colors duration-200 cursor-pointer
             whitespace-nowrap overflow-hidden text-ellipsis
           "
           >
@@ -480,17 +480,17 @@ const ProductsSection = ({ ListProducts }) => {
         {/* Price */}
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm sm:text-lg font-semibold text-green-600">
+            <span className="lg:text-lg sm:text-xs font-semibold text-green-600">
               {formatPrice(product.discountedPrice || product.price)}
             </span>
             {product.discount > 0 && (
-              <span className="text-xs sm:text-sm text-gray-400 line-through">
+              <span className="lg:text-lg sm:text-xs text-gray-400 line-through">
                 {formatPrice(product.price || product.costPrice)}
               </span>
             )}
           </div>
           {product.discount > 0 && (
-            <div className="text-xs sm:text-sm text-green-600">
+            <div className="lg:text-lg sm:text-xs text-green-600">
               Tiết kiệm{" "}
               {formatPrice(
                 (product.price || product.costPrice) -

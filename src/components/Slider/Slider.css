@@ -12,7 +12,7 @@
 @media (max-width: 640px) {
   .slider-container {
     height: 60vh;
-    min-height: 350px;
+    min-height: 250px;
     margin-top: 4rem;
   }
 }

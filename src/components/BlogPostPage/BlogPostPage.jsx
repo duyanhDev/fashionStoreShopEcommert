@@ -15,7 +15,6 @@ const BlogPostPage = () => {
     try {
       const res = await getDetaillBlog(slug);
 
-      console.log(res);
       SetblogPost(res.data.data);
     } catch (error) {}
   };

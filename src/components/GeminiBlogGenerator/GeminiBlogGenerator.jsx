@@ -138,7 +138,6 @@ const GeminiBlogGenerator = () => {
       if (images.length > 0) {
         images.forEach((img) => formData.append("img", img));
       }
-      console.log(formData);
 
       const res = await CreateBlog(formData);
 

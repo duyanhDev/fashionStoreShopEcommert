@@ -400,16 +400,12 @@ const Transactions = () => {
   ]);
 
   const handlePreviewInvoice = (transaction) => {
-    console.log(transaction);
-
     setSelectedInvoice(transaction);
     setIsModalOpen(true);
   };
 
   // Hàm xử lý in hóa đơn
   const handlePrintInvoice = async (transaction) => {
-    console.log(transaction);
-
     setPrintLoading(true);
     try {
       await generateInvoicePDF(transaction);

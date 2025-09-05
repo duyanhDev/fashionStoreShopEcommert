@@ -34,7 +34,7 @@ export const fetchProducts = (params) => async (dispatch) => {
       params.color,
       params.view,
       params.brand,
-      params.currentPage
+      params.currentPage // ⬅️ fallback mặc định = 1
     );
 
     if (response?.data?.EC === 0) {

@@ -63,7 +63,6 @@ const LoginForm = () => {
 
     try {
       const res = await LoginAuth(email, password);
-      console.log(res);
 
       if (res && res.data.EC === 0) {
         // Đăng nhập thành công

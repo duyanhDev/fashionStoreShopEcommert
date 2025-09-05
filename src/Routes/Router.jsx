@@ -44,6 +44,8 @@ import Transactions from "../components/Transactions/Transactions";
 import BlogPostPage from "../components/BlogPostPage/BlogPostPage";
 import BrandAboutPage from "../components/BrandAboutPage/BrandAboutPage";
 import UserVoucherWallet from "../components/UserVoucherWallet/UserVoucherWallet";
+import path from "path";
+import ResetPasswordForm from "../components/ResetPasswordForm/ResetPasswordForm";
 
 export const RouterLayout = [
   {
@@ -126,6 +128,10 @@ export const RouterLayout = [
   {
     path: "/voucher-wallet",
     element: <UserVoucherWallet />,
+  },
+  {
+    path: "/reset-password",
+    element: <ResetPasswordForm />,
   },
 ];
 

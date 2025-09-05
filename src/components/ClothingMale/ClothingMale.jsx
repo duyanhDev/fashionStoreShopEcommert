@@ -62,7 +62,7 @@ const ClothingMale = () => {
   const sizeParams = queryParams.get("size")?.split(",").filter(Boolean) || [];
   const colorParms = queryParams.get("color") || "";
   const viewParams = queryParams.get("view") || "";
-  const brandParams = queryParams.get("brand" || "");
+  const brandParams = queryParams.get("brand") || "";
   const savedSortPrice = queryParams.get("sortPrice") || "";
   const savedCategory = queryParams.get("Category") || "";
   const savedCurrentPage = Number.parseInt(queryParams.get("currentPage")) || 1;
@@ -71,7 +71,7 @@ const ClothingMale = () => {
   const urlMinPrice = Number(queryParams.get("minPrice")) || undefined;
   const urlMaxPrice = Number(queryParams.get("maxPrice")) || undefined;
 
-  // Fetch params function
+  // Tối ưu hóa getFetchParams để memo hóa:
   const getFetchParams = useCallback(() => {
     return {
       gender: param.gender,
@@ -88,7 +88,7 @@ const ClothingMale = () => {
       care: careParams,
       size: sizeParams,
       color: colorParms,
-      currentPage: savedCurrentPage,
+      currentPage: Number(queryParams.get("currentPage")) || 1,
       view: viewParams,
       brand: brandParams,
     };
@@ -107,8 +107,27 @@ const ClothingMale = () => {
     colorParms,
     viewParams,
     brandParams,
-    savedCurrentPage,
+    // Loại bỏ savedCurrentPage khỏi dependency vì nó không được sử dụng trong function
   ]);
+
+  // Thêm một useEffect riêng để xử lý reset filters:
+  useEffect(() => {
+    if (location.search === "" && location.pathname.includes(param.gender)) {
+      const resetStates = () => {
+        setValueId("");
+        setSelectedCare("");
+        setSize([]);
+        setSelectedBrand("");
+        setPriceRange([0, 1000000]);
+        setColor("");
+        setHidden(false);
+      };
+      resetStates();
+
+      // ép URL có ?currentPage=1 khi xoá hết filter
+      navigate(`${location.pathname}?currentPage=1`, { replace: true });
+    }
+  }, [location.search, location.pathname, param.gender]);
 
   const fetchgetListProductsAPI = async () => {
     try {
@@ -147,23 +166,19 @@ const ClothingMale = () => {
   }, []);
 
   useEffect(() => {
-    // Chỉ fetch khi đang ở đúng route
-    if (listCategory.length > 0 && location.pathname.includes(param.gender)) {
-      const params = getFetchParams();
-      dispatch(fetchProducts(params));
-    }
-  }, [param.gender, location.search, listCategory.length, dispatch]);
+    // Thêm flag để tránh gọi API khi component đang mount
+    if (!listCategory.length) return;
 
-  // Handle click outside for filter menu
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setCheckFilter(false);
+    // Thêm debounce để tránh gọi API liên tiếp
+    const timeoutId = setTimeout(() => {
+      if (location.pathname.includes(param.gender)) {
+        const params = getFetchParams();
+        dispatch(fetchProducts(params));
       }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    }, 100); // Debounce 100ms
+
+    return () => clearTimeout(timeoutId);
+  }, [param.gender, location.search, listCategory.length]);
 
   useEffect(() => {
     fetchgetListProductsAPI();
@@ -201,47 +216,53 @@ const ClothingMale = () => {
       const newParams = new URLSearchParams(location.search);
       newParams.set("Category", selectedCategory.name);
       newParams.set("currentPage", "1");
-      setTimeout(() => {
-        navigate(`${location.pathname}?${newParams.toString()}`);
-      }, 0);
+      navigate(`${location.pathname}?${newParams.toString()}`, {
+        replace: true,
+      });
     }
   };
 
+  // Tối ưu hóa tất cả các hàm filter khác bằng cách loại bỏ setTimeout:
   const handleCheckboxChange = (value) => {
     const updatedSizes = size.includes(value)
       ? size.filter((s) => s !== value)
       : [...size, value];
+
     setSize(updatedSizes);
+    setHidden(true);
+    setCheckFilter(false);
+
     const queryParams = new URLSearchParams(location.search);
     queryParams.set("size", updatedSizes.join(","));
     queryParams.set("currentPage", "1");
-    setTimeout(() => {
-      navigate(`${location.pathname}?${queryParams.toString()}`);
-    }, 0);
-    setHidden(true);
-    setCheckFilter(false);
+
+    navigate(`${location.pathname}?${queryParams.toString()}`, {
+      replace: true,
+    });
   };
 
   const handleSortDesAndAsc = (value) => {
+    setHidden(true);
+    setCheckFilter(false);
+
     const queryParams = new URLSearchParams(location.search);
     queryParams.set("sortPrice", value);
     queryParams.set("currentPage", "1");
-    setTimeout(() => {
-      navigate(`${location.pathname}?${queryParams.toString()}`);
-    }, 0);
-    setHidden(true);
-    setCheckFilter(false);
+
+    navigate(`${location.pathname}?${queryParams.toString()}`, {
+      replace: true,
+    });
   };
 
   const handleSortDate = (value) => {
     const queryParams = new URLSearchParams(location.search);
     queryParams.set("sortDate", value);
     queryParams.set("currentPage", "1");
-    setTimeout(() => {
-      navigate(`${location.pathname}?${queryParams.toString()}`);
-    }, 0);
     setHidden(true);
     setCheckFilter(false);
+    navigate(`${location.pathname}?${queryParams.toString()}`, {
+      replace: true,
+    });
   };
 
   const handleSortSold = (value) => {
@@ -254,53 +275,61 @@ const ClothingMale = () => {
   };
 
   const handleFilterProduct = () => {
-    setValueId("");
-    setSelectedCare("");
-    setSize([]);
-    setSelectedBrand("");
-    setPriceRange([0, 1000000]);
-    setHidden(false);
-    setTimeout(() => {
-      navigate(`${location.pathname}?${queryParams.toString()}`);
-    }, 0);
+    const resetStates = () => {
+      setValueId("");
+      setSelectedCare("");
+      setSize([]);
+      setSelectedBrand("");
+      setPriceRange([0, 1000000]);
+      setHidden(false);
+      setColor("");
+    };
+
+    resetStates();
+
+    // luôn reset về page 1 khi xoá filter
+    navigate(`${location.pathname}?currentPage=1`, { replace: true });
   };
 
   const handleRangeChange = (value) => {
     setPriceRange(value);
+    setHidden(true);
+    setCheckFilter(false);
+
     const [min, max] = value;
     const queryParams = new URLSearchParams(location.search);
     queryParams.set("minPrice", min);
     queryParams.set("maxPrice", max);
     queryParams.set("currentPage", "1");
-    setTimeout(() => {
-      navigate(`${location.pathname}?${queryParams.toString()}`);
-    }, 0);
-    setHidden(true);
-    setCheckFilter(false);
+
+    navigate(`${location.pathname}?${queryParams.toString()}`, {
+      replace: true,
+    });
   };
 
   const handleOnClickColor = (value) => {
-    const color = value;
     setColor(value);
-    const queryParams = new URLSearchParams(location.search);
-    queryParams.set("color", color);
-    queryParams.set("currentPage", "1");
-    setTimeout(() => {
-      navigate(`${location.pathname}?${queryParams.toString()}`);
-    }, 0);
     setHidden(true);
     setCheckFilter(false);
+
+    const queryParams = new URLSearchParams(location.search);
+    queryParams.set("color", value);
+    queryParams.set("currentPage", "1");
+
+    navigate(`${location.pathname}?${queryParams.toString()}`, {
+      replace: true,
+    });
   };
 
   const handleSortView = (value) => {
+    setHidden(true);
+    setCheckFilter(false);
     const queryParams = new URLSearchParams(location.search);
     queryParams.set("view", value);
     queryParams.set("currentPage", "1");
-    setTimeout(() => {
-      navigate(`${location.pathname}?${queryParams.toString()}`);
-    }, 0);
-    setHidden(true);
-    setCheckFilter(false);
+    navigate(`${location.pathname}?${queryParams.toString()}`, {
+      replace: true,
+    });
   };
 
   const onChangeCare = (e) => {
@@ -309,9 +338,9 @@ const ClothingMale = () => {
     const queryParams = new URLSearchParams(location.search);
     queryParams.set("care", careItem);
     queryParams.set("currentPage", "1");
-    setTimeout(() => {
-      navigate(`${location.pathname}?${queryParams.toString()}`);
-    }, 0);
+    navigate(`${location.pathname}?${queryParams.toString()}`, {
+      replace: true,
+    });
     setHidden(true);
     setCheckFilter(false);
   };
@@ -319,14 +348,14 @@ const ClothingMale = () => {
   const filterBrand = (e) => {
     const brandItem = e.target.value;
     setSelectedBrand(brandItem);
+    setHidden(true);
+    setCheckFilter(false);
     const queryParams = new URLSearchParams(location.search);
     queryParams.set("brand", brandItem);
     queryParams.set("currentPage", "1");
-    setTimeout(() => {
-      navigate(`${location.pathname}?${queryParams.toString()}`);
-    }, 0);
-    setHidden(true);
-    setCheckFilter(false);
+    navigate(`${location.pathname}?${queryParams.toString()}`, {
+      replace: true,
+    });
   };
 
   const SkeletonCard = () => (

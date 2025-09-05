@@ -280,31 +280,31 @@ export default function Clothing({ ListProducts }) {
       >
         {/* Brand */}
         <div className="flex items-center mb-3">
-          <span className="inline-block px-3 py-1 text-xs font-semibold text-emerald-600 bg-emerald-50 rounded-full border border-emerald-200 tracking-wider uppercase">
+          <span className="inline-block px-3 py-1 lg:text-xs sm:text-sm  font-semibold text-emerald-600 bg-emerald-50 rounded-full border border-emerald-200 tracking-wider uppercase">
             {product.brand}
           </span>
         </div>
 
         {/* Product Name */}
-        <h3 className="font-bold text-gray-900 text-lg leading-tight mb-3 line-clamp-2 group-hover:text-emerald-600 transition-colors duration-300">
+        <h3 className="font-bold text-gray-900 lg:text-lg sm:text-sm leading-tight mb-3 line-clamp-2 group-hover:text-emerald-600 transition-colors duration-300">
           {product.name}
         </h3>
 
         {/* Price Section */}
         <div className="flex items-end justify-between mb-4">
-          <div className="flex flex-col">
-            <span className="text-xl font-bold text-emerald-600 mb-1">
+          <div className="flex lg:flex-col sm:justify-between gap-2">
+            <span className="lg:text-xl sm:text-sm font-bold text-emerald-600 mb-1">
               {formatPrice(product.discountedPrice)}
             </span>
             {product.discount > 0 && (
-              <span className="text-sm text-gray-500 line-through">
+              <span className="sm:text-sm lg:text-lg text-gray-500 line-through">
                 {formatPrice(product.price)}
               </span>
             )}
           </div>
           {product.discount > 0 && (
             <div className="text-right">
-              <span className="text-sm text-red-500 font-medium">
+              <span className="sm:text-sm sm:hidden lg:flex lg:text-lg text-red-500 font-medium">
                 Tiết kiệm {formatPrice(product.price - product.discountedPrice)}
               </span>
             </div>

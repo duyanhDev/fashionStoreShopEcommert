@@ -135,6 +135,17 @@ const Forgotpassword = async (email) => {
   });
 };
 
+const ResetPassword = async (token, newPassword) => {
+  return await axios.post(
+    "/api/v1/reset-password",
+    { token, newPassword },
+    { headers: { "Content-Type": "application/json" } }
+  );
+};
+
+const checkRestToken = async (token) => {
+  return await axios.get(`api/v1/check-reset-token/${token}`);
+};
 const RegisterUser = async (name, email, password, avatar, isAdmin) => {
   const data = new FormData();
 
@@ -230,6 +241,7 @@ export {
   update_profileAdmin,
   ChanglePasswordAPI,
   Forgotpassword,
+  ResetPassword,
   RegisterUser,
   SendverifyOTP,
   verifyOTP,
@@ -237,4 +249,5 @@ export {
   DeleteUserAPI,
   AdminChangleProfileAPI,
   getRandomAdminAPI,
+  checkRestToken,
 };
