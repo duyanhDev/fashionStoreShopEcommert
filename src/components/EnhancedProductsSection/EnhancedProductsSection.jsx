@@ -262,7 +262,7 @@ const ProductsSection = ({ ListProducts }) => {
     try {
       const res = await getWishlistAPI(user?._id);
       if (res && res.data && res.data.EC === 0) {
-        setWishList(res.data.data.products);
+        setWishList(res?.data?.data?.products || []);
       }
     } catch (error) {
       throw new Error("Lỗi lấy danh sách yêu thích");
