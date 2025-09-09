@@ -34,7 +34,9 @@ const getWishlistAPI = async (userId) => {
         data: {
           EC: 0,
           EM: "Success - Empty wishlist",
-          data: [],
+          data: {
+            products: [], // 👈 phải có key products
+          },
         },
       };
     }

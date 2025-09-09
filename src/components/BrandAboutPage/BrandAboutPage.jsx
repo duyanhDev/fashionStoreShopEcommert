@@ -132,7 +132,7 @@ const BrandAboutPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white mt-16">
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-green-50 via-white to-green-100">
         <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-green-600/5"></div>

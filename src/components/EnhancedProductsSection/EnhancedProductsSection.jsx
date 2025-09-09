@@ -204,7 +204,7 @@ const ProductsSection = ({ ListProducts }) => {
     .sort((a, b) => (b.discount || 0) - (a.discount || 0))
     .slice(0, 10);
   const bestsellerProducts = products
-    .sort((a, b) => (b.soldCount || 0) - (a.soldCount || 0))
+    .sort((a, b) => (b.sold || 0) - (a.sold || 0))
     .slice(0, 10);
 
   const formatPrice = (price) => {
@@ -600,11 +600,6 @@ const ProductsSection = ({ ListProducts }) => {
                 </div>
 
                 {/* View All Button */}
-                <div className="text-center mt-6 sm:mt-8">
-                  <button className="bg-white text-green-600 hover:bg-gray-50 font-medium px-4 sm:px-6 lg:px-8 py-2 sm:py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 text-sm sm:text-base">
-                    Xem tất cả sản phẩm khuyến mãi →
-                  </button>
-                </div>
               </div>
             </div>
           </div>
@@ -674,37 +669,13 @@ const ProductsSection = ({ ListProducts }) => {
                 </div>
 
                 {/* View All Button */}
-                <div className="text-center mt-6 sm:mt-8">
-                  <button className="bg-green-600 text-white hover:bg-green-700 font-medium px-4 sm:px-6 lg:px-8 py-2 sm:py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 text-sm sm:text-base">
-                    Khám phá thêm bestsellers →
-                  </button>
-                </div>
               </div>
             </div>
           </div>
         </section>
 
         {/* Newsletter Section */}
-        <section className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 w-full">
-          <div className="w-full max-w-4xl mx-auto text-center">
-            <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
-              Đăng Ký Nhận Thông Tin
-            </h3>
-            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 px-2">
-              Nhận thông báo về các chương trình khuyến mãi và sản phẩm mới nhất
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="Nhập email của bạn"
-                className="flex-1 px-3 sm:px-2 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
-              />
-              <button className="bg-green-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg hover:bg-green-700 transition-colors duration-200 font-medium text-sm sm:text-base">
-                Đăng ký
-              </button>
-            </div>
-          </div>
-        </section>
+
         <ProductCart
           modalCartOpen={modalCartOpen}
           setModalCartOpen={setModalCartOpen}

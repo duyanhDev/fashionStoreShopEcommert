@@ -25,6 +25,16 @@ import {
 } from "../../service/WishList";
 import { getListProductsAPI } from "../../service/ApiProduct";
 
+import {
+  ClockCircleOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
+  FireOutlined,
+  EyeOutlined,
+} from "@ant-design/icons";
+import { Select } from "antd";
+const { Option } = Select;
+
 const ClothingMale = () => {
   const param = useParams();
   const { user } = useSelector((state) => state.auth);
@@ -256,6 +266,11 @@ const ClothingMale = () => {
 
   const handleSortDate = (value) => {
     const queryParams = new URLSearchParams(location.search);
+
+    queryParams.delete("sortSold");
+    queryParams.delete("view");
+    queryParams.delete("sortPrice");
+
     queryParams.set("sortDate", value);
     queryParams.set("currentPage", "1");
     setHidden(true);
@@ -267,6 +282,9 @@ const ClothingMale = () => {
 
   const handleSortSold = (value) => {
     const queryParams = new URLSearchParams(location.search);
+    queryParams.delete("sortPrice");
+    queryParams.delete("sortDate");
+    queryParams.delete("view");
     queryParams.set("sortSold", value);
     queryParams.set("currentPage", "1");
     navigate(`${location.pathname}?${queryParams.toString()}`);
@@ -325,6 +343,10 @@ const ClothingMale = () => {
     setHidden(true);
     setCheckFilter(false);
     const queryParams = new URLSearchParams(location.search);
+
+    queryParams.delete("sortPrice");
+    queryParams.delete("sortDate");
+    queryParams.delete("sortSold");
     queryParams.set("view", value);
     queryParams.set("currentPage", "1");
     navigate(`${location.pathname}?${queryParams.toString()}`, {
@@ -465,179 +487,249 @@ const ClothingMale = () => {
 
   // Filter Component
   const FilterContent = () => (
-    <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-3">
-        Bộ lọc sản phẩm
-      </h2>
+    <div className="">
+      {/* Header */}
+      <div className="flex items-center space-x-3 pb-4 border-b border-gray-100">
+        <div className="w-5 h-5 bg-gradient-to-r from-green-500 to-blue-500 rounded-md"></div>
+        <h2 className="text-xl font-medium text-gray-900">Bộ lọc sản phẩm</h2>
+      </div>
 
       {/* Category Filter */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-800 mb-3">
-          Loại sản phẩm
-        </h3>
-        <Radio.Group onChange={onChange} value={valueId} className="w-full">
-          <Space direction="vertical" className="w-full">
-            {listCategory.length > 0 &&
-              listCategory.map((category) => (
-                <Radio
-                  key={category._id}
-                  value={category._id}
-                  className="text-gray-700 hover:text-green-600"
-                >
-                  {category.name}
-                </Radio>
-              ))}
-          </Space>
-        </Radio.Group>
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          <h3 className="text-lg font-semibold text-gray-800">Loại sản phẩm</h3>
+        </div>
+        <div className="bg-gray-50 rounded-lg p-4">
+          <Radio.Group onChange={onChange} value={valueId} className="w-full">
+            <Space direction="vertical" className="w-full space-y-2">
+              {listCategory.length > 0 &&
+                listCategory.map((category) => (
+                  <Radio
+                    key={category._id}
+                    value={category._id}
+                    className="flex items-center p-2 rounded-md hover:bg-white hover:shadow-sm transition-all duration-200 text-gray-700 hover:text-green-600"
+                  >
+                    <span className="ml-2 font-medium">{category.name}</span>
+                  </Radio>
+                ))}
+            </Space>
+          </Radio.Group>
+        </div>
       </div>
 
       {/* Care Collection Filter */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-800 mb-3">Bộ sưu tập</h3>
-        <Radio.Group
-          onChange={onChangeCare}
-          value={selectedCare}
-          className="w-full"
-        >
-          <Space direction="vertical" className="w-full">
-            {dataProducts &&
-              dataProducts
-                .filter(
-                  (item, index, self) =>
-                    index === self.findIndex((t) => t.care === item.care)
-                )
-                .map((item) => (
-                  <Radio
-                    key={item.care}
-                    value={item.care}
-                    className="text-gray-700 hover:text-green-600"
-                  >
-                    {item.care}
-                  </Radio>
-                ))}
-          </Space>
-        </Radio.Group>
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+          <h3 className="text-lg font-semibold text-gray-800">Bộ sưu tập</h3>
+        </div>
+        <div className="bg-gray-50 rounded-lg p-4">
+          <Radio.Group
+            onChange={onChangeCare}
+            value={selectedCare}
+            className="w-full"
+          >
+            <Space direction="vertical" className="w-full space-y-2">
+              {dataProducts &&
+                dataProducts
+                  .filter(
+                    (item, index, self) =>
+                      index === self.findIndex((t) => t.care === item.care)
+                  )
+                  .map((item) => (
+                    <Radio
+                      key={item.care}
+                      value={item.care}
+                      className="flex items-center p-2 rounded-md hover:bg-white hover:shadow-sm transition-all duration-200 text-gray-700 hover:text-green-600"
+                    >
+                      <span className="ml-2 font-medium">{item.care}</span>
+                    </Radio>
+                  ))}
+            </Space>
+          </Radio.Group>
+        </div>
       </div>
 
-      {/* filter theo brand */}
-
-      <div>
-        <h3 className="text-lg font-semibold text-gray-800 mb-3">
-          Thương hiệu
-        </h3>
-        <Radio.Group
-          onChange={filterBrand}
-          value={selectedBrand}
-          className="w-full"
-        >
-          <Space direction="vertical" className="w-full">
-            {dataProducts &&
-              dataProducts
-                .filter((item) => item.gender === param.gender)
-                .filter(
-                  (item, index, self) =>
-                    index === self.findIndex((t) => t.brand === item.brand)
-                )
-                .map((item) => (
-                  <Radio
-                    key={item.brand}
-                    value={item.brand}
-                    className="text-gray-700 hover:text-green-600"
-                  >
-                    {item.brand}
-                  </Radio>
-                ))}
-          </Space>
-        </Radio.Group>
+      {/* Brand Filter */}
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+          <h3 className="text-lg font-semibold text-gray-800">Thương hiệu</h3>
+        </div>
+        <div className="bg-gray-50 rounded-lg p-4">
+          <Radio.Group
+            onChange={filterBrand}
+            value={selectedBrand}
+            className="w-full"
+          >
+            <Space direction="vertical" className="w-full space-y-2">
+              {dataProducts &&
+                dataProducts
+                  .filter((item) => item.gender === param.gender)
+                  .filter(
+                    (item, index, self) =>
+                      index === self.findIndex((t) => t.brand === item.brand)
+                  )
+                  .map((item) => (
+                    <Radio
+                      key={item.brand}
+                      value={item.brand}
+                      className="flex items-center p-2 rounded-md hover:bg-white hover:shadow-sm transition-all duration-200 text-gray-700 hover:text-green-600"
+                    >
+                      <span className="ml-2 font-medium">{item.brand}</span>
+                    </Radio>
+                  ))}
+            </Space>
+          </Radio.Group>
+        </div>
       </div>
 
       {/* Size Filter */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-800 mb-3">Kích cỡ</h3>
-        <div className="grid grid-cols-5 gap-2">
-          {["S", "M", "L", "XL", "XXL", "28", "29", "30", "31", "32"].map(
-            (sizeOption) => (
-              <label
-                key={sizeOption}
-                className={`flex items-center justify-center w-10 h-10 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
-                  size.includes(sizeOption)
-                    ? "border-green-500 bg-green-500 text-white"
-                    : "border-gray-300 hover:border-green-400 text-gray-700"
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  value={sizeOption}
-                  checked={size.includes(sizeOption)}
-                  onChange={() => handleCheckboxChange(sizeOption)}
-                  className="hidden"
-                />
-                <span className="text-sm font-medium">{sizeOption}</span>
-              </label>
-            )
-          )}
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+          <h3 className="text-lg font-semibold text-gray-800">Kích cỡ</h3>
+        </div>
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg -p-4">
+          <div className="grid grid-cols-5 gap-3">
+            {["S", "M", "L", "XL", "XXL", "28", "29", "30", "31", "32"].map(
+              (sizeOption) => (
+                <label
+                  key={sizeOption}
+                  className={`relative flex items-center justify-center w-12 h-12 border-2 rounded-xl cursor-pointer transition-all duration-300 transform hover:scale-105 ${
+                    size.includes(sizeOption)
+                      ? "border-green-500 bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-200"
+                      : "border-gray-300 bg-white hover:border-green-400 hover:shadow-md text-gray-700"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    value={sizeOption}
+                    checked={size.includes(sizeOption)}
+                    onChange={() => handleCheckboxChange(sizeOption)}
+                    className="hidden"
+                  />
+                  <span className="text-sm font-bold">{sizeOption}</span>
+                  {size.includes(sizeOption) && (
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                    </div>
+                  )}
+                </label>
+              )
+            )}
+          </div>
         </div>
       </div>
 
       {/* Color Filter */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-800 mb-3">Màu sắc</h3>
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { value: "vàng", label: "Vàng", color: "bg-yellow-400" },
-            { value: "xanh lá cây", label: "Xanh lá", color: "bg-green-500" },
-            { value: "đen", label: "Đen", color: "bg-black" },
-            { value: "đỏ", label: "Đỏ", color: "bg-red-500" },
-            {
-              value: "trắng",
-              label: "Trắng",
-              color: "bg-white border-2 border-gray-300",
-            },
-          ].map((colorOption) => (
-            <label
-              key={colorOption.value}
-              className="flex flex-col items-center cursor-pointer group"
-            >
-              <input
-                type="radio"
-                name="color"
-                value={colorOption.value}
-                onChange={() => handleOnClickColor(colorOption.value)}
-                className="hidden"
-              />
-              <div
-                className={`w-8 h-8 rounded-full ${colorOption.color} group-hover:scale-110 transition-transform duration-200 shadow-md`}
-              />
-              <span className="text-xs text-gray-600 mt-1">
-                {colorOption.label}
-              </span>
-            </label>
-          ))}
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+          <h3 className="text-lg font-semibold text-gray-800">Màu sắc</h3>
+        </div>
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4">
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { value: "vàng", label: "Vàng", color: "bg-yellow-400" },
+              { value: "xanh lá cây", label: "Xanh lá", color: "bg-green-500" },
+              { value: "đen", label: "Đen", color: "bg-black" },
+              { value: "đỏ", label: "Đỏ", color: "bg-red-500" },
+              {
+                value: "trắng",
+                label: "Trắng",
+                color: "bg-white border-2 border-gray-300",
+              },
+            ].map((colorOption) => (
+              <label
+                key={colorOption.value}
+                className="flex flex-col items-center cursor-pointer group"
+              >
+                <input
+                  type="radio"
+                  name="color"
+                  value={colorOption.value}
+                  onChange={() => handleOnClickColor(colorOption.value)}
+                  className="hidden"
+                />
+                <div className="relative">
+                  <div
+                    className={`w-10 h-10 rounded-full ${colorOption.color} group-hover:scale-110 transition-transform duration-300 shadow-lg border-4 border-white ring-2 ring-gray-200 group-hover:ring-green-300`}
+                  />
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent to-white opacity-20"></div>
+                </div>
+                <span className="text-xs font-medium text-gray-600 mt-2 group-hover:text-green-600 transition-colors duration-200">
+                  {colorOption.label}
+                </span>
+              </label>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Price Range Filter */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-800 mb-3">
-          Lọc theo giá
-        </h3>
-        <Slider
-          range
-          marks={marks}
-          value={priceRange}
-          min={0}
-          max={1000000}
-          step={50000}
-          onChange={handleRangeChange}
-          className="mb-4"
-        />
-        <div className="flex justify-between text-sm text-gray-600">
-          <span>{formatPrice(priceRange[0])}</span>
-          <span>{formatPrice(priceRange[1])}</span>
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+          <h3 className="text-lg font-semibold text-gray-800">Lọc theo giá</h3>
+        </div>
+        <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-lg p-5">
+          <Slider
+            range
+            marks={marks}
+            value={priceRange}
+            min={0}
+            max={1000000}
+            step={50000}
+            onChange={handleRangeChange}
+            className="mb-6"
+            trackStyle={[{ backgroundColor: "#6366f1", height: 6 }]}
+            handleStyle={[
+              {
+                borderColor: "#6366f1",
+                backgroundColor: "#6366f1",
+                width: 20,
+                height: 20,
+                marginTop: -7,
+                boxShadow: "0 4px 12px rgba(99, 102, 241, 0.3)",
+              },
+              {
+                borderColor: "#6366f1",
+                backgroundColor: "#6366f1",
+                width: 20,
+                height: 20,
+                marginTop: -7,
+                boxShadow: "0 4px 12px rgba(99, 102, 241, 0.3)",
+              },
+            ]}
+            railStyle={{ backgroundColor: "#e2e8f0", height: 6 }}
+          />
+          <div className="flex justify-between items-center">
+            <div className="bg-white px-3 py-2 rounded-lg shadow-sm border border-indigo-200">
+              <span className="text-sm font-bold text-indigo-600">
+                {formatPrice(priceRange[0])}
+              </span>
+            </div>
+            <div className="flex-1 h-px bg-gradient-to-r from-indigo-200 to-indigo-200 mx-4"></div>
+            <div className="bg-white px-3 py-2 rounded-lg shadow-sm border border-indigo-200">
+              <span className="text-sm font-bold text-indigo-600">
+                {formatPrice(priceRange[1])}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Clear Filters */}
+      {/* Clear Filters Button */}
+      <div
+        className="pt-4 border-t border-gray-100"
+        onClick={handleFilterProduct}
+      >
+        <button className="w-full bg-gradient-to-r from-gray-100 to-gray-200 hover:from-red-500 hover:to-red-600 text-gray-700 hover:text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-lg">
+          Xóa tất cả bộ lọc
+        </button>
+      </div>
     </div>
   );
 
@@ -652,6 +744,51 @@ const ClothingMale = () => {
       return num.toString();
     }
   }
+
+  const sortOptions = [
+    {
+      value: "newest",
+      label: "Mới nhất",
+      icon: <ClockCircleOutlined className="text-blue-500" />,
+      color: "from-blue-500 to-cyan-500",
+      handler: () => handleSortDate("newest"),
+    },
+    {
+      value: "price-asc",
+      label: "Giá: thấp - cao",
+      icon: <ArrowUpOutlined className="text-green-500" />,
+      color: "from-green-500 to-emerald-500",
+      handler: () => handleSortDesAndAsc("asc"),
+    },
+    {
+      value: "price-desc",
+      label: "Giá: cao - thấp",
+      icon: <ArrowDownOutlined className="text-red-500" />,
+      color: "from-red-500 to-pink-500",
+      handler: () => handleSortDesAndAsc("desc"),
+    },
+    {
+      value: "hot-selling",
+      label: "Bán chạy nhất",
+      icon: <FireOutlined className="text-orange-500" />,
+      color: "from-orange-500 to-yellow-500",
+      handler: () => handleSortSold("hot"),
+    },
+    {
+      value: "most-viewed",
+      label: "Lượt xem nhiều nhất",
+      icon: <EyeOutlined className="text-purple-500" />,
+      color: "from-purple-500 to-indigo-500",
+      handler: () => handleSortView("asc"),
+    },
+  ];
+
+  const handleSortChange = (value) => {
+    const selectedOption = sortOptions.find((option) => option.value === value);
+    if (selectedOption) {
+      selectedOption.handler();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -721,6 +858,43 @@ const ClothingMale = () => {
                     >
                       Sắp xếp theo
                     </Button>
+                    <Select
+                      defaultValue="newest"
+                      placeholder="Sắp xếp theo"
+                      onChange={handleSortChange}
+                      className="min-w-[200px] md:min-w-[240px]"
+                      size="large"
+                      dropdownClassName="custom-sort-dropdown"
+                      dropdownStyle={{
+                        borderRadius: "16px",
+                        boxShadow:
+                          "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                        border: "1px solid rgba(0, 0, 0, 0.05)",
+                        overflow: "hidden",
+                      }}
+                      style={{
+                        borderRadius: "12px",
+                      }}
+                    >
+                      {sortOptions.map((option) => (
+                        <Option
+                          key={option.value}
+                          value={option.value}
+                          className="custom-option"
+                        >
+                          <div className="flex items-center space-x-3 py-1">
+                            <div
+                              className={`w-8 h-8 rounded-lg bg-gradient-to-r ${option.color} flex items-center justify-center shadow-sm`}
+                            >
+                              {option.icon}
+                            </div>
+                            <span className="font-medium text-gray-700">
+                              {option.label}
+                            </span>
+                          </div>
+                        </Option>
+                      ))}
+                    </Select>
 
                     {hidden && (
                       <Button
@@ -731,41 +905,6 @@ const ClothingMale = () => {
                       </Button>
                     )}
                   </div>
-                  {checkFilter && (
-                    <div className="absolute top-12 right-0 z-50 bg-white rounded-xl shadow-xl border border-gray-200 py-2 min-w-48">
-                      <button
-                        onClick={() => handleSortDate("newest")}
-                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-gray-700"
-                      >
-                        Mới nhất
-                      </button>
-                      <button
-                        onClick={() => handleSortDesAndAsc("asc")}
-                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-gray-700"
-                      >
-                        Giá: thấp - cao
-                      </button>
-                      <button
-                        onClick={() => handleSortDesAndAsc("desc")}
-                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-gray-700"
-                      >
-                        Giá: cao - thấp
-                      </button>
-                      <button
-                        onClick={() => handleSortSold("hot")}
-                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-gray-700"
-                      >
-                        Bán chạy nhất
-                      </button>
-
-                      <button
-                        onClick={() => handleSortView("asc")}
-                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-gray-700"
-                      >
-                        Lượt xem nhiều nhất
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -795,7 +934,7 @@ const ClothingMale = () => {
                         </span>
                       )}
                       <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        {isProductInWishlist.includes(product._id) ? (
+                        {isProductInWishlist?.includes(product._id) ? (
                           <>
                             <button
                               className="bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 transition-colors"

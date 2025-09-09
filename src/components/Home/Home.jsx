@@ -269,7 +269,7 @@ const Home = () => {
 
       // Xử lý response
       if (response.data && response.data.EC === 0) {
-        setWishList(response.data.data.products || []);
+        setWishList(response.data?.data?.products || []);
       } else {
         setWishList([]); // Danh sách trống - không phải lỗi
       }
