@@ -483,10 +483,7 @@ const ClothingMale = () => {
     }
   }, [user?._id]);
 
-  const isProductInWishlist =
-    WishList &&
-    WishList.length > 0 &&
-    WishList?.map((item) => item.product._id);
+  const isProductInWishlist = WishList?.map((item) => item.product._id);
 
   // Filter Component
   const FilterContent = () => (
@@ -937,7 +934,7 @@ const ClothingMale = () => {
                         </span>
                       )}
                       <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        {isProductInWishlist?.includes(product._id) ? (
+                        {isProductInWishlist.includes(product._id) ? (
                           <>
                             <button
                               className="bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 transition-colors"

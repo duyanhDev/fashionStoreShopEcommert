@@ -149,10 +149,7 @@ export default function Clothing({ ListProducts }) {
     }
   }, [user?._id]);
 
-  const isProductInWishlist =
-    WishList &&
-    WishList.length > 0 &&
-    WishList?.map((item) => item.product._id);
+  const isProductInWishlist = WishList?.map((item) => item.product._id);
 
   function formatNumberToShort(num) {
     if (num >= 1_000_000_000) {
