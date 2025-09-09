@@ -163,6 +163,19 @@ const updateShippingCancelled = async (id, orderStatus) => {
   }
 };
 
+const createRepurchaseOrder = async (id, orderStatus) => {
+  try {
+    return await axios.put(`api/v1/update-order-repurchase/${id}`, {
+      orderStatus,
+    });
+  } catch (error) {
+    console.log(
+      "Error updating shipping status:",
+      error.response?.data || error.message
+    );
+  }
+};
+
 const updateShippingCancelledAdmin = async (id, orderStatus) => {
   const token = localStorage.getItem("token");
   try {

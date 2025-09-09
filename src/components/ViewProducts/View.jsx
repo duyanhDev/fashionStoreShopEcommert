@@ -402,7 +402,7 @@ const View = () => {
                 <Typography.Title level={5}>Mô tả</Typography.Title>
                 <Input.TextArea
                   showCount
-                  maxLength={500}
+                  maxLength={1500}
                   value={description}
                   onChange={handleDescriptionChange}
                   placeholder="Nhập mô tả sản phẩm"

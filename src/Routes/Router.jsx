@@ -30,7 +30,6 @@ import FavoritesList from "../components/FavoritesList/FavoritesList";
 import ProductReviewAdmin from "../components/ProductReviewAdmin/ProductReviewAdmin";
 import LoginForm from "../components/Login/Login";
 import RegisterForm from "../components/Register/Register";
-import GeminiBlogGenerator from "../components/GeminiBlogGenerator/GeminiBlogGenerator";
 import AdminPostCreator from "../components/AdminPostCreator/AdminPostCreator";
 import AccountAdmin from "../components/AccountAdmin/AccountAdmin";
 import AddVoucher from "../components/AddVoucher/AddVoucher";
@@ -44,8 +43,8 @@ import Transactions from "../components/Transactions/Transactions";
 import BlogPostPage from "../components/BlogPostPage/BlogPostPage";
 import BrandAboutPage from "../components/BrandAboutPage/BrandAboutPage";
 import UserVoucherWallet from "../components/UserVoucherWallet/UserVoucherWallet";
-import path from "path";
 import ResetPasswordForm from "../components/ResetPasswordForm/ResetPasswordForm";
+import PrivateRoute from "../PrivateRoute/PrivateRoute";
 
 export const RouterLayout = [
   {
@@ -127,7 +126,11 @@ export const RouterLayout = [
   },
   {
     path: "/voucher-wallet",
-    element: <UserVoucherWallet />,
+    element: (
+      <PrivateRoute>
+        <UserVoucherWallet />
+      </PrivateRoute>
+    ),
   },
   {
     path: "/reset-password",

@@ -1,5 +1,5 @@
 // src/redux/reducers/authReducer.jsx
-import { LOGIN, LOGOUT } from "../actions/Auth";
+import { LOGIN, LOGOUT, UPDATE_USER } from "../actions/Auth";
 
 const initialState = {
   token: null,
@@ -30,6 +30,12 @@ const authReducer = (state = initialState, action) => {
         refreshToken: null,
         accessTokenExpiredTime: null,
         refreshTokenExpiredTime: null,
+      };
+
+    case UPDATE_USER:
+      return {
+        ...state,
+        user: { ...state.user, ...action.payload },
       };
     default:
       return state;

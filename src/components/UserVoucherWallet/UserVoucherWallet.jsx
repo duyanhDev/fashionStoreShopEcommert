@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Wallet,
   Search,
@@ -13,139 +13,85 @@ import {
   ShoppingBag,
   ArrowRight,
 } from "lucide-react";
+import {
+  getListVoucherByUserId,
+  getVoucherAPI,
+} from "../../service/APIVoucher";
+import { useSelector } from "react-redux";
 
 const UserVoucherWallet = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const { user } = useSelector((state) => state.auth);
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [copiedCode, setCopiedCode] = useState("");
-
+  const [userVouchers, setUserVouchers] = useState([]);
   // Mock data vouchers cho user
-  const userVouchers = [
-    {
-      id: "UV001",
-      name: "Giảm giá Mùa hè",
-      code: "SUMMER2024",
-      type: "percentage",
-      value: 20,
-      status: "available",
-      expiryDate: "2024-12-31",
-      minOrder: 500000,
-      maxDiscount: 200000,
-      description: "Giảm 20% tối đa 200K cho đơn hàng từ 500K",
-      category: "fashion",
-      brand: "Fashion Store",
-      isNew: true,
-      daysLeft: 15,
-    },
-    {
-      id: "UV002",
-      name: "Freeship Toàn quốc",
-      code: "FREESHIP50",
-      type: "shipping",
-      value: 50000,
-      status: "available",
-      expiryDate: "2024-11-30",
-      minOrder: 300000,
-      description: "Miễn phí vận chuyển cho đơn hàng từ 300K",
-      category: "shipping",
-      brand: "All Stores",
-      isNew: false,
-      daysLeft: 45,
-    },
-    {
-      id: "UV003",
-      name: "Voucher VIP 100K",
-      code: "VIP100K",
-      type: "fixed",
-      value: 100000,
-      status: "available",
-      expiryDate: "2024-12-15",
-      minOrder: 1000000,
-      description: "Giảm 100K cho đơn hàng từ 1 triệu - Khách VIP",
-      category: "premium",
-      brand: "Premium Store",
-      isNew: false,
-      daysLeft: 8,
-    },
-    {
-      id: "UV004",
-      name: "Combo Ăn uống",
-      code: "FOOD30",
-      type: "percentage",
-      value: 30,
-      status: "available",
-      expiryDate: "2024-10-20",
-      minOrder: 200000,
-      maxDiscount: 100000,
-      description: "Giảm 30% tối đa 100K cho đồ ăn & thức uống",
-      category: "food",
-      brand: "Food Court",
-      isNew: true,
-      daysLeft: 2,
-    },
-    {
-      id: "UV005",
-      name: "Tech Gadgets",
-      code: "TECH15",
-      type: "percentage",
-      value: 15,
-      status: "used",
-      expiryDate: "2024-08-15",
-      minOrder: 800000,
-      maxDiscount: 300000,
-      description: "Giảm 15% cho thiết bị công nghệ",
-      category: "tech",
-      brand: "Tech World",
-      isNew: false,
-      usedDate: "2024-08-10",
-    },
-    {
-      id: "UV006",
-      name: "Beauty & Care",
-      code: "BEAUTY25",
-      type: "percentage",
-      value: 25,
-      status: "expired",
-      expiryDate: "2024-09-01",
-      minOrder: 400000,
-      maxDiscount: 150000,
-      description: "Giảm 25% cho mỹ phẩm & chăm sóc cá nhân",
-      category: "beauty",
-      brand: "Beauty Store",
-      isNew: false,
-    },
-  ];
 
-  const categories = [
-    { id: "all", name: "Tất cả", icon: "🏷️" },
-    { id: "fashion", name: "Thời trang", icon: "👕" },
-    { id: "food", name: "Ăn uống", icon: "🍕" },
-    { id: "tech", name: "Công nghệ", icon: "📱" },
-    { id: "beauty", name: "Làm đẹp", icon: "💄" },
-    { id: "shipping", name: "Vận chuyển", icon: "🚚" },
-    { id: "premium", name: "VIP", icon: "⭐" },
-  ];
+  console.log(filterStatus);
 
-  // Filter vouchers
+  const fetchDataVoucher = async () => {
+    try {
+      const res = await getVoucherAPI();
+
+      if (res && res.data && res.data.EC === 0) {
+        setUserVouchers(res.data.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchDataVoucher();
+  }, []);
+
   const filteredVouchers = userVouchers.filter((voucher) => {
-    const matchesSearch =
-      voucher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      voucher.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      voucher.brand.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter =
-      filterStatus === "all" || voucher.status === filterStatus;
+    // 1. Tìm kiếm
+    const matchesSearch = voucher.code
+      ?.toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
+    // 2. Lọc theo trạng thái
+    let matchesFilter = true;
+    if (filterStatus === "available") {
+      matchesFilter =
+        (voucher.userGroup === "all" ||
+          voucher.userGroup === user?.userGroup) &&
+        !voucher.appliedUsers.some((used) => used.user === user._id);
+    } else if (filterStatus === "used") {
+      matchesFilter = voucher.appliedUsers.some(
+        (used) => used.user === user._id
+      );
+    } else if (filterStatus === "expired") {
+      const now = new Date();
+      const end = new Date(voucher.endDate);
+      console.log(end);
+
+      matchesFilter = now > end;
+    } else if (filterStatus !== "all") {
+      matchesFilter = voucher.status === filterStatus;
+    }
+
+    // 3. Lọc theo danh mục
     const matchesCategory =
-      selectedCategory === "all" || voucher.category === selectedCategory;
+      selectedCategory === "all" || voucher.category === selectedCategory; // tuỳ bạn định nghĩa category thế nào
+
     return matchesSearch && matchesFilter && matchesCategory;
   });
 
-  const availableVouchers = userVouchers.filter(
-    (v) => v.status === "available"
-  );
-  const expiringSoon = availableVouchers.filter(
-    (v) => v.daysLeft && v.daysLeft <= 7
-  );
+  const expiringSoon = userVouchers.filter((voucher) => {
+    const start = new Date();
+    const end = new Date(voucher.endDate);
+
+    // Lấy số mili giây chênh lệch
+    const diffMs = end - start;
+
+    // Đổi sang ngày
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    return diffDays > 0 && diffDays < 30;
+  });
 
   const copyToClipboard = (code) => {
     navigator.clipboard.writeText(code);
@@ -178,6 +124,8 @@ const UserVoucherWallet = () => {
         return "Không xác định";
     }
   };
+
+  console.log(user?._id);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -244,7 +192,14 @@ const UserVoucherWallet = () => {
               <div>
                 <p className="text-sm text-gray-600">Tổng voucher</p>
                 <p className="text-xl font-bold text-blue-600">
-                  {userVouchers.length}
+                  {
+                    userVouchers.filter(
+                      (voucher) =>
+                        voucher.userGroup === "all" ||
+                        (voucher.userGroup === user?.userGroup &&
+                          !voucher.appliedUsers.includes(user?._id))
+                    ).length
+                  }
                 </p>
               </div>
             </div>
@@ -256,7 +211,16 @@ const UserVoucherWallet = () => {
               <div>
                 <p className="text-sm text-gray-600">Có thể dùng</p>
                 <p className="text-xl font-bold text-green-600">
-                  {availableVouchers.length}
+                  {
+                    userVouchers.filter(
+                      (voucher) =>
+                        (voucher.userGroup === "all" ||
+                          voucher.userGroup === user?.userGroup) &&
+                        !voucher.appliedUsers.some(
+                          (used) => used.user === user._id
+                        )
+                    ).length
+                  }
                 </p>
               </div>
             </div>
@@ -299,14 +263,24 @@ const UserVoucherWallet = () => {
             Bạn có {expiringSoon.length} voucher sẽ hết hạn trong 7 ngày tới
           </p>
           <div className="flex flex-wrap gap-2">
-            {expiringSoon.slice(0, 3).map((voucher) => (
-              <span
-                key={voucher.id}
-                className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm font-medium"
-              >
-                {voucher.name} - {voucher.daysLeft} ngày
-              </span>
-            ))}
+            {expiringSoon.slice(0, 3).map((voucher) => {
+              const start = new Date();
+              const end = new Date(voucher.endDate);
+
+              // Lấy số mili giây chênh lệch
+              const diffMs = end - start;
+
+              // Đổi sang ngày
+              const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+              return (
+                <span
+                  key={voucher._id}
+                  className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm font-medium"
+                >
+                  {voucher.content} - {diffDays} ngày
+                </span>
+              );
+            })}
           </div>
         </div>
       )}
@@ -323,27 +297,6 @@ const UserVoucherWallet = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-gray-700"
           />
-        </div>
-
-        {/* Category Filter */}
-        <div className="mb-4">
-          <p className="text-sm font-medium text-gray-700 mb-3">Danh mục:</p>
-          <div className="flex flex-wrap gap-2">
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${
-                  selectedCategory === category.id
-                    ? "bg-purple-600 text-white shadow-lg"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                <span>{category.icon}</span>
-                <span>{category.name}</span>
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Status Filter */}
@@ -396,145 +349,154 @@ const UserVoucherWallet = () => {
 
       {/* Voucher Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredVouchers.map((voucher) => (
-          <div
-            key={voucher.id}
-            className={`bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border overflow-hidden ${
-              voucher.status === "available"
-                ? "border-purple-200"
-                : "border-gray-200"
-            }`}
-          >
-            {/* Voucher Header */}
-            <div
-              className={`bg-gradient-to-r ${getTypeColor(
-                voucher.type
-              )} p-6 text-white relative`}
-            >
-              {voucher.isNew && (
-                <div className="absolute top-4 right-4 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold">
-                  MỚI
-                </div>
-              )}
+        {filteredVouchers
+          .filter((voucher) => {
+            return (
+              voucher.userGroup === "all" ||
+              voucher.userGroup === user?.userGroup
+            );
+          })
+          .map((voucher) => {
+            const start = new Date();
+            const end = new Date(voucher.endDate);
 
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-white bg-opacity-20 rounded-xl">
-                    {getVoucherIcon(voucher.type)}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-xl">{voucher.name}</h3>
-                    <p className="opacity-90 text-sm">{voucher.brand}</p>
-                  </div>
-                </div>
-              </div>
+            // Lấy số mili giây chênh lệch
+            const diffMs = end - start;
 
-              {/* Voucher Value */}
-              <div className="bg-white bg-opacity-20 p-4 rounded-xl text-center">
-                <p className="text-3xl font-bold mb-1">
-                  {voucher.type === "percentage"
-                    ? `${voucher.value}%`
-                    : voucher.type === "shipping"
-                    ? "FREE SHIP"
-                    : formatCurrency(voucher.value)}
-                </p>
-                {voucher.maxDiscount && voucher.type === "percentage" && (
-                  <p className="text-sm opacity-90">
-                    Tối đa {formatCurrency(voucher.maxDiscount)}
-                  </p>
-                )}
-              </div>
-            </div>
+            // Đổi sang ngày
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-            {/* Voucher Body */}
-            <div className="p-6">
-              {/* Status Badge */}
-              <div className="flex items-center justify-between mb-4">
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                    voucher.status
-                  )}`}
+            return (
+              <div
+                key={voucher._id}
+                className={`bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border overflow-hidden ${
+                  voucher.status === "available"
+                    ? "border-purple-200"
+                    : "border-gray-200"
+                }`}
+              >
+                {/* Voucher Header */}
+                <div
+                  className={`bg-gradient-to-r ${getTypeColor(
+                    voucher.discountType
+                  )} p-6 text-white relative`}
                 >
-                  {getStatusText(voucher.status)}
-                </span>
-                {voucher.daysLeft && voucher.status === "available" && (
-                  <span
-                    className={`text-xs font-medium ${
-                      voucher.daysLeft <= 7 ? "text-red-600" : "text-gray-600"
-                    }`}
-                  >
-                    <Clock className="w-3 h-3 inline mr-1" />
-                    Còn {voucher.daysLeft} ngày
-                  </span>
-                )}
-              </div>
+                  {voucher.isNew && (
+                    <div className="absolute top-4 right-4 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold">
+                      MỚI
+                    </div>
+                  )}
 
-              <p className="text-gray-600 mb-4">{voucher.description}</p>
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-white bg-opacity-20 rounded-xl">
+                        {getVoucherIcon(voucher.discountType)}
+                      </div>
+                      <h1> {voucher.content}</h1>
+                    </div>
+                  </div>
 
-              {/* Voucher Code */}
-              <div className="bg-gray-50 p-4 rounded-xl mb-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">Mã voucher:</p>
-                    <p className="font-mono text-lg font-bold text-gray-900">
-                      {voucher.code}
+                  {/* Voucher Value */}
+                  <div className="bg-white bg-opacity-20 p-4 rounded-xl text-center">
+                    <p className="text-3xl font-bold mb-1">
+                      {voucher.discountType === "percentage"
+                        ? `${voucher.discountValue}%`
+                        : voucher.type === "shipping"
+                        ? "FREE SHIP"
+                        : formatCurrency(voucher.discountValue)}
                     </p>
+                    {voucher.minOrderValue &&
+                      voucher.discountType === "percentage" && (
+                        <p className="text-sm opacity-90">
+                          Tối đa {formatCurrency(voucher.minOrderValue)}
+                        </p>
+                      )}
                   </div>
-                  <button
-                    onClick={() => copyToClipboard(voucher.code)}
-                    className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-                    disabled={voucher.status !== "available"}
-                  >
-                    {copiedCode === voucher.code ? (
-                      <>
-                        <Check className="w-4 h-4" />
-                        <span className="text-sm">Đã sao chép</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-4 h-4" />
-                        <span className="text-sm">Sao chép</span>
-                      </>
+                </div>
+
+                {/* Voucher Body */}
+                <div className="p-6">
+                  {/* Status Badge */}
+                  <div className="flex items-center justify-between mb-4">
+                    {diffDays && (
+                      <span
+                        className={`text-xs font-medium ${
+                          diffDays <= 7 ? "text-red-600" : "text-gray-600"
+                        }`}
+                      >
+                        <Clock className="w-3 h-3 inline mr-1" />
+                        {diffDays > 0 ? ` còn ${diffDays}  ngày` : "Đã hết hạn"}
+                      </span>
                     )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Voucher Details */}
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Đơn tối thiểu:</span>
-                  <span className="font-medium">
-                    {formatCurrency(voucher.minOrder)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Hạn sử dụng:</span>
-                  <span className="font-medium">
-                    {formatDate(voucher.expiryDate)}
-                  </span>
-                </div>
-                {voucher.usedDate && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Đã dùng ngày:</span>
-                    <span className="font-medium">
-                      {formatDate(voucher.usedDate)}
-                    </span>
                   </div>
-                )}
-              </div>
 
-              {/* Action Button */}
-              {voucher.status === "available" && (
-                <button className="w-full mt-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl font-bold hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2">
-                  <ShoppingBag className="w-5 h-5" />
-                  Sử dụng ngay
-                  <ArrowRight className="w-5 h-5" />
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
+                  {/* Voucher Code */}
+                  <div className="bg-gray-50 p-4 rounded-xl mb-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">
+                          Mã voucher:
+                        </p>
+                        <p className="font-mono text-lg font-bold text-gray-900">
+                          {voucher.code}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => copyToClipboard(voucher.code)}
+                        className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                        disabled={voucher.status !== "available"}
+                      >
+                        {copiedCode === voucher.code ? (
+                          <>
+                            <Check className="w-4 h-4" />
+                            <span className="text-sm">Đã sao chép</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            <span className="text-sm">Sao chép</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Voucher Details */}
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Đơn tối thiểu:</span>
+                      <span className="font-medium">
+                        {formatCurrency(voucher.minOrderValue)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Hạn sử dụng:</span>
+                      <span className="font-medium">
+                        {formatDate(voucher.endDate)}
+                      </span>
+                    </div>
+                    {voucher.usedDate && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600">Đã dùng ngày:</span>
+                        <span className="font-medium">
+                          {formatDate(voucher.usedDate)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Button */}
+                  {voucher.status === "available" && (
+                    <button className="w-full mt-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl font-bold hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2">
+                      <ShoppingBag className="w-5 h-5" />
+                      Sử dụng ngay
+                      <ArrowRight className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
       </div>
 
       {/* Empty State */}

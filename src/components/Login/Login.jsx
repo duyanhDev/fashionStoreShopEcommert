@@ -1,5 +1,6 @@
 import { FcGoogle } from "react-icons/fc";
-import { Button, notification, Input } from "antd";
+import { Button, notification, Spin, Input } from "antd";
+import { LoadingOutlined } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
 import { useEffect, useRef, useState } from "react";
 import { LoginAuth, SendverifyOTP, verifyOTP } from "../../service/Auth";
@@ -49,7 +50,6 @@ const LoginForm = () => {
     setErrors(newErrors);
     return isValid;
   };
-
   const handleLogin = async () => {
     if (!validateForm()) {
       api.error({
@@ -63,6 +63,7 @@ const LoginForm = () => {
 
     try {
       const res = await LoginAuth(email, password);
+      console.log(res);
 
       if (res && res.data.EC === 0) {
         // Đăng nhập thành công
@@ -111,9 +112,9 @@ const LoginForm = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href =
-      "https://fashionstoreshopecommertbe.onrender.com/auth/google";
+    window.location.href = "http://localhost:9000/auth/google";
   };
+  // App.js hoặc component gốc
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const inputRefs = useRef([]);

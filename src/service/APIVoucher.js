@@ -39,4 +39,13 @@ const updateVoucherAPI = async (id, formdata) => {
     }
   );
 };
-export { getVoucherAPI, createVoucherAPI, updateVoucherAPI };
+
+const getListVoucherByUserId = async (userId) => {
+  return await axios.get(`api/v1/voucher-user/:${userId}`);
+};
+export {
+  getVoucherAPI,
+  createVoucherAPI,
+  updateVoucherAPI,
+  getListVoucherByUserId,
+};

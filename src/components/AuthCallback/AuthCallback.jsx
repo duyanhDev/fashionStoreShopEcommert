@@ -35,11 +35,11 @@ const AuthCallback = () => {
             const userData = await response.json();
 
             // Store in localStorage
-            localStorage.setItem("authToken", token);
 
             // Dispatch to Redux store
             dispatch(login(token, userData));
-
+            localStorage.setItem("authToken", token);
+            localStorage.setItem("token", token);
             // Redirect to home
             navigate("/");
           } else {

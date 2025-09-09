@@ -287,7 +287,9 @@ const ProductsSection = ({ ListProducts }) => {
     }
   };
   useEffect(() => {
-    fetchListWishList();
+    if (user?._id) {
+      fetchListWishList();
+    }
   }, [user?._id]);
 
   const isProductInWishlist = WishList?.map((item) => item.product._id);
@@ -344,13 +346,11 @@ const ProductsSection = ({ ListProducts }) => {
       className="group relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden"
       onMouseEnter={() => setHoveredProduct(product._id)}
       onMouseLeave={() => setHoveredProduct(null)}
+      onClick={() => navigate(`/product/${product.slug}`)}
     >
       {/* Image Container */}
       <div className="relative overflow-hidden">
-        <div
-          className="aspect-square relative bg-gray-50 cursor-pointer"
-          onClick={() => navigate(`/product/${product.slug}`)}
-        >
+        <div className="aspect-square relative bg-gray-50 cursor-pointer">
           <img
             src={
               product.variants?.[0]?.images?.[0]?.url ||
@@ -591,7 +591,7 @@ const ProductsSection = ({ ListProducts }) => {
                 <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-4 2xl:grid-cols-5 gap-2 sm:gap-2 md:gap-4 lg:gap-4 w-full">
                   {saleProducts.map((product, index) => (
                     <ProductCard
-                      key={product._id}
+                      key={index}
                       product={product}
                       index={index}
                       section="sale"

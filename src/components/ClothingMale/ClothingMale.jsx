@@ -456,7 +456,9 @@ const ClothingMale = () => {
     }
   };
   useEffect(() => {
-    fetchListWishList();
+    if (user?._id) {
+      fetchListWishList();
+    }
   }, [user?._id]);
 
   const isProductInWishlist = WishList?.map((item) => item.product._id);

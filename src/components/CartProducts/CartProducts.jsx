@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import axios from "./../../untils/axios";
 import "./Cart.css";
-import { Input, Select, Radio, Button, Table, notification } from "antd";
+import { Input, Select, Radio, Button, Table, notification, Modal } from "antd";
 import { useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { createOrder } from "../../service/Oder";
@@ -9,6 +9,8 @@ import { SmileOutlined } from "@ant-design/icons";
 import ClipLoader from "react-spinners/ClipLoader";
 import { getVoucherAPI } from "../../service/APIVoucher.js";
 import moment from "moment";
+
+import socket from "../../socket";
 
 const CartProducts = ({}) => {
   const { ListCart, user, CartListProductsUser } = useOutletContext();
@@ -45,7 +47,10 @@ const CartProducts = ({}) => {
   const [ghnDistrictId, setGhnDistrictId] = useState("");
   const [ghnWardCode, setGhnWardCode] = useState("");
   const [ghnPickStationId, setGhnPickStationId] = useState(1442);
-
+  const [isCheckSepay, setIsCheckSepay] = useState(false);
+  const [qrnUrl, setQrnUrl] = useState("");
+  const [orderId, setOrderId] = useState(null);
+  const navigate = useNavigate();
   const formatPrice = (price) => {
     const numericPrice =
       typeof price === "string"
@@ -581,20 +586,33 @@ const CartProducts = ({}) => {
           ghnResponse.data.data.order_code,
           idItems
         );
-
+        console.log(res);
         if (res && res.data.EC === 0) {
           await CartListProductsUser();
           setTimeout(() => {
             setLoadingSpin(false);
-            api.open({
-              message: "Đặt Hàng",
-              description:
-                "Chúc mừng quý khách đã đặt hàng thành công tại shop",
-              icon: <SmileOutlined style={{ color: "#108ee9" }} />,
-            });
-            if (res.data.orderUrl) window.location.href = res.data.orderUrl;
-            else if (res.data.vnpUrl) window.location.href = res.data.vnpUrl;
-            else if (res.data.data.shortLink)
+
+            if (res.data.orderUrl) {
+              api.open({
+                message: "Đặt Hàng",
+                description:
+                  "Chúc mừng quý khách đã đặt hàng thành công tại shop",
+                icon: <SmileOutlined style={{ color: "#108ee9" }} />,
+              });
+              window.location.href = res.data.orderUrl;
+            } else if (res.data.vnpUrl) {
+              window.location.href = res.data.vnpUrl;
+              api.open({
+                message: "Đặt Hàng",
+                description:
+                  "Chúc mừng quý khách đã đặt hàng thành công tại shop",
+                icon: <SmileOutlined style={{ color: "#108ee9" }} />,
+              });
+            } else if (res.data.qrCodeUrl) {
+              setIsCheckSepay(true);
+              setQrnUrl(res.data.qrCodeUrl);
+              setOrderId(res.data.orderId);
+            } else if (res.data.data.shortLink)
               window.location.href = res.data.data.payUrl;
           }, 3000);
         } else {
@@ -646,10 +664,45 @@ const CartProducts = ({}) => {
     return (amount / 1000).toLocaleString() + "k";
   }
 
+  useEffect(() => {
+    if (!orderId) return;
+
+    socket.emit("joinRoom", orderId);
+
+    const handleOrderPaid = (data) => {
+      if (data.orderId === orderId && data.status === "paid") {
+        setIsCheckSepay(false);
+        api.open({
+          message: "Đặt Hàng",
+          description: "Chúc mừng quý khách đã đặt hàng thành công tại shop",
+          icon: <SmileOutlined style={{ color: "#108ee9" }} />,
+        });
+        navigate("/vnpay_return");
+      }
+    };
+
+    socket.on("orderPaid", handleOrderPaid);
+
+    return () => {
+      socket.off("orderPaid", handleOrderPaid);
+    };
+  }, [orderId]);
+
   return (
     <div className="min-h-screen w-full mt-16 md:mt-28 pb-32 md:pb-24">
       <div className="cart-container px-4 md:px-8 lg:px-0">
         <div className="flex flex-col lg:flex-row lg:justify-between gap-6 lg:gap-8">
+          {qrnUrl && isCheckSepay && (
+            <Modal
+              title="Basic Modal"
+              closable={{ "aria-label": "Custom Close Button" }}
+              open={isCheckSepay}
+              onOk={() => setIsCheckSepay(false)}
+              onCancel={() => setIsCheckSepay(false)}
+            >
+              <img src={qrnUrl} alt="QR Code" className="w-full h-auto" />
+            </Modal>
+          )}
           {/* Form Section */}
           <div className="w-full lg:w-1/2">
             <h1 className="text-2xl md:text-3xl font-semibold mb-4 md:mb-6">
@@ -819,6 +872,19 @@ const CartProducts = ({}) => {
                   </div>
 
                   <div className="payment-option">
+                    <Radio value={"sepay"}>
+                      <div className="flex gap-3 items-center">
+                        <img
+                          src="https://sepay.vn//assets/img/logo/sepay-blue-154x50.png"
+                          alt="MoMo"
+                          className="w-8 h-8 md:w-11 md:h-11"
+                        />
+                        <p className="font-bold text-sm">Ví Sepay</p>
+                      </div>
+                    </Radio>
+                  </div>
+
+                  <div className="payment-option">
                     <Radio value={"vnpay"}>
                       <div className="flex gap-3 items-start">
                         <img
@@ -960,7 +1026,9 @@ const CartProducts = ({}) => {
 
               <div className="price-row border-b border-gray-200 pb-3">
                 <span className="text-sm font-bold">Phí giao hàng</span>
-                <span className="text-sm">Miễn phí</span>
+                <span className="text-sm">
+                  {finalPrice > 290000 ? "Miễn phí" : formatPrice(35000)}
+                </span>
               </div>
 
               <div className="price-row pt-3">
@@ -968,7 +1036,9 @@ const CartProducts = ({}) => {
                 <div className="text-right">
                   <span className="text-sm font-bold">
                     {checkedItems.length > 0
-                      ? formatPrice(finalPrice)
+                      ? formatPrice(
+                          finalPrice > 290000 ? finalPrice : finalPrice + 0
+                        )
                       : formatPrice(0)}
                   </span>
                   <i className="block text-red-500 text-xs mt-1">
@@ -1047,6 +1117,19 @@ const CartProducts = ({}) => {
                         </span>
                       </div>
                     );
+                  case "sepay":
+                    return (
+                      <div className="flex items-center gap-2">
+                        <img
+                          src="https://sepay.vn//assets/img/logo/sepay-blue-154x50.png"
+                          alt="VNPay"
+                          className="w-8 h-8"
+                        />
+                        <span className="text-sm font-medium text-blue-600 hidden sm:inline">
+                          Sepay
+                        </span>
+                      </div>
+                    );
                   default:
                     return (
                       <span className="text-sm text-gray-500">
@@ -1070,7 +1153,9 @@ const CartProducts = ({}) => {
                 <span className="text-sm">Thành tiền</span>
                 <span className="text-lg md:text-xl text-blue-600 font-bold ml-2">
                   {checkedItems.length > 0
-                    ? formatPrice(finalPrice)
+                    ? formatPrice(
+                        finalPrice > 290000 ? finalPrice : finalPrice + 0
+                      )
                     : formatPrice(0)}
                 </span>
               </div>

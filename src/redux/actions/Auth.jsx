@@ -2,6 +2,7 @@
 export const LOGIN = "LOGIN";
 export const LOGOUT = "LOGOUT";
 export const SEARCH = "SEARCH";
+export const UPDATE_USER = "UPDATE_USER";
 export const login = (
   token,
   user,
@@ -26,4 +27,9 @@ export const logout = () => ({
 export const Search = (data, totalpage) => ({
   type: SEARCH,
   payload: { data, totalpage },
+});
+
+export const updateUser = (user) => ({
+  type: UPDATE_USER,
+  payload: user,
 });

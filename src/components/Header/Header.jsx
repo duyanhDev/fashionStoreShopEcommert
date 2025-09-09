@@ -8,7 +8,7 @@ import {
   IoCloseOutline,
 } from "react-icons/io5";
 import { Dropdown, Button, Drawer, Modal, message, Badge } from "antd";
-import { LogoutOutlined } from "@ant-design/icons";
+import { LogoutOutlined, WalletOutlined } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
 import { logout, Search as SearchAction } from "../../redux/actions/Auth";
 import { useEffect, useState, useCallback } from "react";
@@ -155,6 +155,20 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
           { type: "divider" },
         ]
       : []),
+    {
+      key: "settings",
+      icon: (
+        <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-pink-600 rounded-lg flex items-center justify-center">
+          <WalletOutlined size={16} className="text-white" />
+        </div>
+      ),
+      label: <span className="text-gray-700 font-medium">Ví Voucher</span>,
+      onClick: () => {
+        navigate("/voucher-wallet");
+        setMobileMenuOpen(false);
+      },
+      style: { ...itemStyle, padding: "12px 16px" },
+    },
     {
       key: "settings",
       icon: (

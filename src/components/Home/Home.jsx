@@ -1,16 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Button,
-  Card,
-  Flex,
-  notification,
-  Rate,
-  Skeleton,
-  Avatar,
-  Input,
-  Form,
-  Badge,
-} from "antd";
+import { Card, notification, Rate, Skeleton, Avatar, Form, Badge } from "antd";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "./Home.css";
 // Import Swiper styles
@@ -26,8 +15,7 @@ import ao_thun_nu from "./../../assets/Image/Home/image-ao-thun-1_18_8.avif";
 import ao_the_thao_nu from "./../../assets/Image/Home/image-ao-thun-1_18_9.avif";
 import Phukien from "./../../assets/Image/Home/phu-kien.avif";
 import Phukien_nu from "./../../assets/Image/Home/phu_kien_nu.avif";
-import AOS from "aos";
-import "aos/dist/aos.css";
+
 import ProductCart from "../ProductCart/ProductCart";
 import {
   addToWishlistAPI,
@@ -67,6 +55,7 @@ const Home = () => {
   const [discount, setDiscount] = useState(0);
   const [WishList, setWishList] = useState([]);
   const [form] = Form.useForm();
+  const [error, setError] = useState("");
 
   const testimonials = [
     {
@@ -100,7 +89,7 @@ const Home = () => {
       date: "2024-12-08",
     },
     {
-      id: 3,
+      id: 4,
       name: "Lê Thị Hương",
       location: "Đà Nẵng",
       rating: 5,
@@ -171,7 +160,8 @@ const Home = () => {
     {
       icon: <TruckIcon className="w-8 h-8" />,
       title: "Miễn phí vận chuyển",
-      description: "Miễn phí ship toàn quốc cho tất cả đơn hàng",
+      description:
+        "Miễn phí vận chuyển cho đơn hàng từ 299k cho tất cả đơn hàng",
     },
     {
       icon: <ShieldCheckIcon className="w-8 h-8" />,
@@ -220,7 +210,7 @@ const Home = () => {
       className="w-full max-w-sm mx-auto bg-white rounded-2xl shadow-lg overflow-hidden"
       cover={<Skeleton.Image active style={{ width: "100%", height: 200 }} />}
     >
-      <Skeleton active paragraph={{ rows: 4 }} />
+      <Skeleton active paragraph={{ rows: 5 }} />
     </Card>
   );
 
@@ -244,13 +234,6 @@ const Home = () => {
     setProductname(name);
     setDiscount(discount);
   };
-
-  useEffect(() => {
-    AOS.init({
-      duration: 1000,
-      once: true,
-    });
-  }, []);
 
   const handlAddWishList = async (productId) => {
     if (!user) {
@@ -279,12 +262,32 @@ const Home = () => {
 
   const fetchListWishList = async () => {
     try {
-      const res = await getWishlistAPI(user?._id);
-      if (res && res.data && res.data.EC === 0) {
-        setWishList(res.data.data.products);
+      setLoading(true);
+      setError(null);
+
+      const response = await getWishlistAPI(user?._id);
+
+      // Xử lý response
+      if (response.data && response.data.EC === 0) {
+        setWishList(response.data.data.products || []);
+      } else {
+        setWishList([]); // Danh sách trống - không phải lỗi
       }
     } catch (error) {
-      throw new Error("Lỗi lấy danh sách yêu thích");
+      console.error("Error fetching wishlist:", error);
+
+      if (error.response?.status === 401) {
+        setError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+        // Redirect to login
+      } else if (error.response?.status === 403) {
+        setError("Bạn không có quyền truy cập danh sách này.");
+      } else if (error.response?.status === 404) {
+        setWishList([]); // User chưa có wishlist - OK
+      } else {
+        setError("Không thể tải danh sách yêu thích. Vui lòng thử lại.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -306,7 +309,9 @@ const Home = () => {
   };
 
   useEffect(() => {
-    fetchListWishList();
+    if (user?._id) {
+      fetchListWishList();
+    }
   }, [user?._id]);
 
   const isProductInWishlist = WishList?.map((item) => item.product._id);
@@ -334,10 +339,7 @@ const Home = () => {
         <div className="py-16 bg-white">
           <div className="w-full mx-auto px-4 sm:px-2 lg:px-4">
             <div className="text-center mb-12">
-              <h1
-                className="text-4xl md:text-5xl font-bold text-gray-900 mb-4"
-                data-aos="fade-down-right"
-              >
+              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
                 BẠN ĐANG TÌM KIẾM?
               </h1>
               <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-600 mx-auto rounded-full"></div>
@@ -530,17 +532,10 @@ const Home = () => {
                   Những sản phẩm được yêu thích nhất
                 </p>
               </div>
-              <Link
-                to="/products"
-                className="hidden md:flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full hover:shadow-lg transition-all duration-300 group"
-              >
-                Xem tất cả
-                <ArrowRightIcon className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
-              </Link>
             </div>
 
             {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                 {[...Array(5)].map((_, index) => (
                   <SkeletonCard key={`skeleton-${index}`} />
                 ))}
@@ -551,10 +546,8 @@ const Home = () => {
                   const isOutOfStock = item.stock === 0;
                   return (
                     <div
-                      key={item._id}
+                      key={`featured-${index}`}
                       className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 overflow-hidden border border-gray-100"
-                      data-aos="fade-up"
-                      data-aos-delay={index * 100}
                     >
                       <div className="relative overflow-hidden">
                         <img
@@ -719,10 +712,7 @@ const Home = () => {
         </div>
 
         {/* Customer Testimonials */}
-        <div
-          className="py-14 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl w-full"
-          data-aos="fade-up"
-        >
+        <div className="py-14 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl w-full">
           <div className="w-full mx-auto px-4 sm:px-0 lg:px-8">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -787,7 +777,7 @@ const Home = () => {
         </div>
 
         {/* Blog Section */}
-        <div className="py-16 bg-white" data-aos="fade-up">
+        <div className="py-16 bg-white">
           <div className="w-full mx-auto px-4 sm:px-0 lg:px-4">
             <div className="flex justify-between items-center mb-12">
               <div>
@@ -810,10 +800,8 @@ const Home = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {blogPosts.map((post, index) => (
                 <article
-                  key={post.id}
+                  key={`${post.id}-${index}`}
                   className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 transform hover:-translate-y-2 overflow-hidden border border-gray-100"
-                  data-aos="fade-up"
-                  data-aos-delay={index * 100}
                 >
                   <div className="relative overflow-hidden">
                     <img
@@ -860,7 +848,7 @@ const Home = () => {
         </div>
 
         {/* Brand Partners */}
-        <div className="py-16 bg-gray-50" data-aos="fade-up">
+        <div className="py-16 bg-gray-50">
           <div className="w-full mx-auto px-4 sm:px-2 lg:px-4">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -876,8 +864,6 @@ const Home = () => {
                 <div
                   key={index}
                   className="flex justify-center items-center p-6 bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 grayscale hover:grayscale-0 transform hover:scale-105"
-                  data-aos="zoom-in"
-                  data-aos-delay={index * 100}
                 >
                   <img
                     src={brand.logo || "/placeholder.svg"}

@@ -10,7 +10,7 @@ import img4 from "./../../assets/Image/mceclip5_85.png";
 import img5 from "./../../assets/Image/mceclip6_34.png";
 import img6 from "./../../assets/Image/mceclip1_37.png";
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import axios from "./../../untils/axios";
 
 import {
@@ -30,6 +30,7 @@ import {
   Tabs,
 } from "antd";
 import moment from "moment";
+import { login, updateUser } from "../../redux/actions/Auth";
 
 const { Option } = Select;
 
@@ -39,6 +40,7 @@ const PersonalInfoForm = ({ id }) => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassWord, setNewPassword] = useState("");
   const [confirmPassWord, setConfirmPassword] = useState("");
+  console.log(user);
 
   const [api, contextHolder] = notification.useNotification();
 
@@ -208,6 +210,7 @@ const Profile = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [ImageUpLoad, SetImageUpLoad] = useState("");
+  const dispatch = useDispatch();
 
   const [openResponsive, setOpenResponsive] = useState(false);
   const [password, setPassword] = useState("");
@@ -315,6 +318,8 @@ const Profile = () => {
   const onChange = (key) => {
     console.log(key);
   };
+
+  console.log(selectedImage);
 
   const FetchDataProvince = async () => {
     const url = "https://esgoo.net/api-tinhthanh/1/0.htm";
@@ -677,7 +682,10 @@ const Profile = () => {
         selectedImage
       );
       if (res) {
+        console.log(res);
+
         message.success("Profile updated successfully");
+        dispatch(updateUser(res.user)); // avatar + info khác sẽ cập nhật ngay
         setOpenResponsive(false);
       }
     } catch (error) {

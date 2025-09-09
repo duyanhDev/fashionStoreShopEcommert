@@ -77,12 +77,12 @@ function App() {
       if (res && res.data && res.data.EC === 0) {
         setListCard(res.data.data);
       } else {
-        console.log("Failed to fetch cart products");
+        setListCard([]);
       }
     } catch (error) {
       console.log(error);
     }
-  }, [user]);
+  }, [user?._id]);
 
   useEffect(() => {
     if (user && user._id) {

@@ -17,6 +17,9 @@ import { FaTruck } from "react-icons/fa";
 import FeedBack from "../FeedBack/FeeBack";
 import OrderDetailModal from "../OrderDetailModal/OrderDetailModal";
 import socket from "../../socket";
+import { useOutletContext } from "react-router-dom";
+
+import { addMultipleToCart } from "../../service/Cart";
 
 const OderStatus = () => {
   const param = useParams();
@@ -28,6 +31,8 @@ const OderStatus = () => {
   const [visible, setVisible] = useState(false);
   const [OrderId, setOrderId] = useState("");
   const [api, contextHolder] = notification.useNotification();
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const { CartListProductsUser } = useOutletContext();
 
   const Navigate = useNavigate();
   const fetchAPIOrderStatus = async () => {
@@ -77,6 +82,39 @@ const OderStatus = () => {
 
   const ModelFeedBack = () => {
     setModal2Open(true);
+  };
+  const handleAddCart = async (items) => {
+    setIsAddingToCart(true);
+
+    try {
+      const res = await addMultipleToCart(user._id, items);
+
+      if (res && res.data && res.data.cart) {
+        // Hiển thị toast và lấy Promise resolve sau duration
+        await new Promise((resolve) => {
+          api.open({
+            message: "Đã thêm vào giỏ hàng",
+            description: "Sản phẩm đã được thêm vào giỏ hàng của bạn.",
+            duration: 3, // thời gian hiển thị toast (giây)
+            onClose: resolve, // khi toast đóng, resolve promise
+          });
+        });
+        await CartListProductsUser();
+        // Chuyển hướng đến trang giỏ hàng
+        Navigate("/cart");
+      }
+    } catch (error) {
+      console.error("Error adding product to cart:", error);
+      api.open({
+        message: "Lỗi",
+        description:
+          "Đã xảy ra lỗi khi thêm sản phẩm vào giỏ hàng. Vui lòng thử lại.",
+        duration: 3,
+        type: "error",
+      });
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
   const UpdateOderStatusCalled = async (orderStatus) => {
@@ -312,16 +350,16 @@ const OderStatus = () => {
                 {data.orderStatus === "Cancelled" && (
                   <Button
                     className="bg-amber-800 text-white"
-                    onClick={() => UpdateOderStatusCalled("Processing")}
+                    onClick={() => handleAddCart(data.items)}
                   >
-                    Mua lại
+                    {isAddingToCart ? "Đang thêm..." : "Mua lại"}
                   </Button>
                 )}
                 <Button className="bg-amber-800 text-white">
                   Liên hệ người bán
                 </Button>
 
-                {data.orderStatus === "Cancelled" && (
+                {data.orderStatus === "Processing" && (
                   <Button
                     className="bg-amber-800 text-white"
                     onClick={() => UpdateOderStatusCalled("Cancelled")}

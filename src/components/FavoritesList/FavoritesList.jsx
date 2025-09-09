@@ -80,19 +80,25 @@ const FavoritesList = () => {
     const inStockItems = favorites.filter(
       (item) => getTotalStock(item.product) > 0
     );
+
     if (inStockItems.length === 0) {
       alert("Không có sản phẩm nào còn hàng để thêm vào giỏ!");
       return;
     }
 
-    const res = await addMultipleToCart(user._id, inStockItems);
+    setActionLoading((prev) => ({ ...prev, all: true }));
 
-    if (res) {
-      setActionLoading((prev) => ({ ...prev, all: true }));
-      setTimeout(() => {
+    try {
+      const res = await addMultipleToCart(user._id, inStockItems);
+
+      if (res) {
         alert(`Đã thêm ${inStockItems.length} sản phẩm vào giỏ hàng!`);
-        setActionLoading((prev) => ({ ...prev, all: false }));
-      }, 2000);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Thêm vào giỏ hàng thất bại!");
+    } finally {
+      setActionLoading((prev) => ({ ...prev, all: false }));
     }
   };
 

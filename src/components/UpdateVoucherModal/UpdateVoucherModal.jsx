@@ -229,7 +229,7 @@ const UpdateVoucherModal = ({ visible, onCancel, onSuccess, voucherData }) => {
           <Select placeholder="Chọn nhóm khách hàng">
             <Option value="all">Tất cả khách hàng</Option>
             <Option value="vip">Khách hàng VIP</Option>
-            <Option value="new">Khách hàng mới</Option>
+            <Option value="newUser">Khách hàng mới</Option>
             <Option value="loyal">Khách hàng thân thiết</Option>
           </Select>
         </Form.Item>
