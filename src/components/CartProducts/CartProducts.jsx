@@ -586,11 +586,19 @@ const CartProducts = ({}) => {
           ghnResponse.data.data.order_code,
           idItems
         );
-        console.log(res);
+
         if (res && res.data.EC === 0) {
           await CartListProductsUser();
           setTimeout(() => {
             setLoadingSpin(false);
+
+            if (
+              res.data &&
+              res.data.EC === 0 &&
+              res.data.paymentMethod === "cod"
+            ) {
+              navigate(`/vnpay_return/${res.data.order_id}`);
+            }
 
             if (res.data.orderUrl) {
               api.open({
@@ -677,7 +685,7 @@ const CartProducts = ({}) => {
           description: "Chúc mừng quý khách đã đặt hàng thành công tại shop",
           icon: <SmileOutlined style={{ color: "#108ee9" }} />,
         });
-        navigate("/vnpay_return");
+        navigate(`/vnpay_return/${orderId}`); // Chuyển hướng sau khi thanh toán thành công
       }
     };
 

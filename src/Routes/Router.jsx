@@ -23,7 +23,7 @@ import ChatSp from "../components/SupportChat/ChatSp";
 import UpLoad from "../components/UpLoadProducts/UpLoad";
 import UserStatsCard from "../components/UserChar/UserChart";
 import UsersCustom from "../components/Users/Usercustom";
-import VNpay from "../components/VNpay/VNpay";
+
 import Voucher from "../components/Voucher/Voucher";
 import View from "../components/ViewProducts/View";
 import FavoritesList from "../components/FavoritesList/FavoritesList";
@@ -45,6 +45,7 @@ import BrandAboutPage from "../components/BrandAboutPage/BrandAboutPage";
 import UserVoucherWallet from "../components/UserVoucherWallet/UserVoucherWallet";
 import ResetPasswordForm from "../components/ResetPasswordForm/ResetPasswordForm";
 import PrivateRoute from "../PrivateRoute/PrivateRoute";
+import PaymentSuccessPage from "../components/PaymentSuccessPage/PaymentSuccessPage";
 
 export const RouterLayout = [
   {
@@ -61,8 +62,8 @@ export const RouterLayout = [
     element: <CartProducts />,
   },
   {
-    path: "/vnpay_return",
-    element: <VNpay />,
+    path: "/vnpay_return/:id",
+    element: <PaymentSuccessPage />,
   },
   {
     path: "/order",

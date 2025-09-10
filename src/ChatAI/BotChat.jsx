@@ -232,6 +232,7 @@ const BotChatAI = () => {
         "sáng lập",
         "creator",
         "thông tin tác giả",
+        "ceo",
       ],
       warranty: ["bảo hành", "chính sách", "đổi trả", "warranty"],
     };
@@ -245,6 +246,7 @@ const BotChatAI = () => {
             name: product.name,
             price: product.price,
             index: index + 1,
+            stock: product.stock,
           }));
 
           botResponse = {
@@ -255,12 +257,13 @@ Chúng tôi có **${productList.length} sản phẩm** đang có sẵn:
 
 ${productList
   .map(
-    (product) =>
-      `**${product.index}. ${product.name}**  
+    (product, index) =>
+      `**${index + 1}. ${product.name}**  
 💰 Giá: ${product.price.toLocaleString()}đ  
-📦 Tình trạng: Còn hàng`
+📦 Tình trạng: ${product.stock > 0 ? "Còn hàng" : "Hết hàng"}`
   )
   .join("\n\n")}
+
 
 ---
 *Nhấn vào sản phẩm để xem chi tiết hoặc liên hệ để được tư vấn thêm.*`,

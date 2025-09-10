@@ -220,4 +220,5 @@ export {
   updateShippingCancelled,
   updateShippingCancelledAdmin,
   filterOrdersByStatus,
+  createRepurchaseOrder,
 };

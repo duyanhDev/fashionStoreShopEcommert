@@ -400,47 +400,90 @@ const BrandAboutPage = () => {
           </div>
         </div>
       </section>
+      {/* Testimonials Section - Enhanced Green Background */}
+      <section className="py-20 bg-gradient-to-br from-emerald-600 via-green-600 to-teal-600 relative overflow-hidden">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0">
+          <div className="absolute top-10 left-10 w-32 h-32 bg-white/20 rounded-full blur-2xl animate-pulse"></div>
+          <div
+            className="absolute top-20 right-20 w-48 h-48 bg-emerald-300/20 rounded-full blur-3xl animate-pulse"
+            style={{ animationDelay: "1s" }}
+          ></div>
+          <div
+            className="absolute bottom-20 left-1/4 w-40 h-40 bg-white/15 rounded-full blur-2xl animate-pulse"
+            style={{ animationDelay: "2s" }}
+          ></div>
+          <div
+            className="absolute bottom-10 right-10 w-56 h-56 bg-green-300/25 rounded-full blur-3xl animate-pulse"
+            style={{ animationDelay: "0.5s" }}
+          ></div>
+        </div>
 
-      {/* Testimonials Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Mesh Pattern Overlay */}
+        <div className="absolute inset-0 opacity-10">
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `radial-gradient(circle at 25px 25px, white 2px, transparent 2px)`,
+              backgroundSize: "50px 50px",
+            }}
+          ></div>
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <div className="inline-block mb-4 px-6 py-2 bg-white/20 backdrop-blur-sm text-white rounded-full text-sm font-medium border border-white/30">
+              ⭐ Phản hồi từ khách hàng
+            </div>
+            <h2 className="text-4xl font-bold text-white mb-4 drop-shadow-lg">
               Khách hàng nói về chúng tôi
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-green-100 max-w-3xl mx-auto">
               Những phản hồi chân thật từ cộng đồng khách hàng yêu thích thương
               hiệu
             </p>
           </div>
 
           <div className="relative max-w-4xl mx-auto">
-            <div className="bg-gradient-to-br from-green-50 to-white rounded-3xl p-8 md:p-12 shadow-xl">
-              <div className="text-center mb-8">
+            <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-8 md:p-12 shadow-2xl border border-white/50 relative overflow-hidden">
+              {/* Card Accent */}
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-400 to-green-400"></div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-green-100/30 to-transparent rounded-bl-3xl"></div>
+
+              <div className="relative z-10 text-center mb-8">
                 <div className="flex justify-center mb-4">
                   {[...Array(testimonials[currentTestimonial].rating)].map(
                     (_, i) => (
                       <Star
                         key={i}
-                        className="w-6 h-6 text-yellow-400 fill-current"
+                        className="w-6 h-6 text-yellow-400 fill-current mx-0.5"
                       />
                     )
                   )}
                 </div>
-                <blockquote className="text-2xl text-gray-900 font-medium italic leading-relaxed mb-8">
-                  "{testimonials[currentTestimonial].content}"
+                <blockquote className="text-2xl text-gray-900 font-medium italic leading-relaxed mb-8 relative">
+                  <span className="text-green-300 text-5xl absolute -top-2 -left-2 font-serif opacity-40">
+                    "
+                  </span>
+                  {testimonials[currentTestimonial].content}
+                  <span className="text-green-300 text-5xl absolute -bottom-6 -right-2 font-serif opacity-40">
+                    "
+                  </span>
                 </blockquote>
                 <div className="flex items-center justify-center gap-4">
-                  <img
-                    src={testimonials[currentTestimonial].avatar}
-                    alt={testimonials[currentTestimonial].name}
-                    className="w-16 h-16 rounded-full object-cover"
-                  />
+                  <div className="relative">
+                    <img
+                      src={testimonials[currentTestimonial].avatar}
+                      alt={testimonials[currentTestimonial].name}
+                      className="w-16 h-16 rounded-full object-cover ring-4 ring-green-200/50"
+                    />
+                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></div>
+                  </div>
                   <div className="text-left">
                     <div className="font-semibold text-gray-900">
                       {testimonials[currentTestimonial].name}
                     </div>
-                    <div className="text-gray-600">
+                    <div className="text-green-600 font-medium">
                       {testimonials[currentTestimonial].role}
                     </div>
                   </div>
@@ -450,16 +493,16 @@ const BrandAboutPage = () => {
 
             <button
               onClick={prevTestimonial}
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-green-50 transition-colors duration-300"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center hover:bg-green-50 transition-all duration-300 transform hover:scale-110 border border-white/50"
             >
-              <ChevronLeft className="w-6 h-6 text-gray-600" />
+              <ChevronLeft className="w-6 h-6 text-green-600" />
             </button>
 
             <button
               onClick={nextTestimonial}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-green-50 transition-colors duration-300"
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center hover:bg-green-50 transition-all duration-300 transform hover:scale-110 border border-white/50"
             >
-              <ChevronRight className="w-6 h-6 text-gray-600" />
+              <ChevronRight className="w-6 h-6 text-green-600" />
             </button>
 
             <div className="flex justify-center mt-8 gap-2">
@@ -467,10 +510,10 @@ const BrandAboutPage = () => {
                 <button
                   key={index}
                   onClick={() => setCurrentTestimonial(index)}
-                  className={`w-3 h-3 rounded-full transition-colors duration-300 ${
+                  className={`w-3 h-3 rounded-full transition-all duration-300 transform hover:scale-125 ${
                     index === currentTestimonial
-                      ? "bg-green-600"
-                      : "bg-gray-300"
+                      ? "bg-white shadow-lg ring-2 ring-white/50"
+                      : "bg-white/60 hover:bg-white/80"
                   }`}
                 />
               ))}
@@ -479,29 +522,80 @@ const BrandAboutPage = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-green-600 to-green-700 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/10"></div>
+      {/* CTA Section - Enhanced Green Background */}
+      <section className="py-20 bg-gradient-to-br from-green-700 via-emerald-700 to-teal-700 relative overflow-hidden">
+        {/* Enhanced Background Effects */}
         <div className="absolute inset-0">
-          <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
+          <div className="absolute top-0 left-0 w-80 h-80 bg-gradient-radial from-white/25 to-transparent rounded-full blur-3xl animate-pulse"></div>
+          <div
+            className="absolute top-20 right-0 w-96 h-96 bg-gradient-radial from-emerald-300/20 to-transparent rounded-full blur-2xl animate-pulse"
+            style={{ animationDelay: "1s" }}
+          ></div>
+          <div
+            className="absolute bottom-0 left-1/3 w-72 h-72 bg-gradient-radial from-green-300/30 to-transparent rounded-full blur-3xl animate-pulse"
+            style={{ animationDelay: "2s" }}
+          ></div>
+          <div
+            className="absolute bottom-20 right-20 w-64 h-64 bg-gradient-radial from-white/20 to-transparent rounded-full blur-2xl animate-pulse"
+            style={{ animationDelay: "0.5s" }}
+          ></div>
+        </div>
+
+        {/* Floating Particles */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div
+            className="absolute top-1/4 left-10 w-2 h-2 bg-white/50 rounded-full animate-bounce"
+            style={{ animationDelay: "0s", animationDuration: "3s" }}
+          ></div>
+          <div
+            className="absolute top-1/3 right-20 w-3 h-3 bg-emerald-200/60 rounded-full animate-bounce"
+            style={{ animationDelay: "1s", animationDuration: "4s" }}
+          ></div>
+          <div
+            className="absolute bottom-1/4 left-1/4 w-2 h-2 bg-white/40 rounded-full animate-bounce"
+            style={{ animationDelay: "2s", animationDuration: "3.5s" }}
+          ></div>
+          <div
+            className="absolute bottom-1/3 right-1/3 w-3 h-3 bg-green-200/50 rounded-full animate-bounce"
+            style={{ animationDelay: "0.5s", animationDuration: "4.5s" }}
+          ></div>
+        </div>
+
+        {/* Grid Pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)`,
+              backgroundSize: "60px 60px",
+            }}
+          ></div>
         </div>
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Sẵn sàng trải nghiệm?
+          <div className="inline-block mb-6 px-6 py-2 bg-white/20 backdrop-blur-sm text-white rounded-full text-sm font-medium border border-white/30">
+            🚀 Cơ hội đặc biệt
+          </div>
+
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 drop-shadow-xl">
+            <span className="bg-gradient-to-r from-white to-green-100 bg-clip-text text-transparent">
+              Sẵn sàng trải nghiệm?
+            </span>
           </h2>
-          <p className="text-xl text-green-100 mb-8 max-w-2xl mx-auto">
+
+          <p className="text-xl text-green-100 mb-8 max-w-2xl mx-auto leading-relaxed drop-shadow-sm">
             Tham gia cùng hàng triệu khách hàng đã tin tưởng và lựa chọn chúng
             tôi. Khám phá bộ sưu tập mới nhất ngay hôm nay!
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-white text-green-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg">
-              Mua sắm ngay
+            <button className="group bg-white text-green-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-green-50 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 shadow-2xl relative overflow-hidden">
+              <span className="relative z-10">Mua sắm ngay</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-white to-green-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </button>
-            <button className="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-green-600 transition-all duration-300 transform hover:scale-105">
-              Tìm hiểu thêm
+            <button className="group border-2 border-white text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-green-600 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 backdrop-blur-sm relative overflow-hidden">
+              <span className="relative z-10">Tìm hiểu thêm</span>
+              <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </button>
           </div>
         </div>

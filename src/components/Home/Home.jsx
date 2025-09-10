@@ -322,12 +322,12 @@ const Home = () => {
       return item.ratings?.reduce((sum, acc) => sum + acc.rating, 0) || 0 >= 5;
     })?.slice(0, 5) || [];
 
-  const reviewsData =
-    ListProducts?.map((item) => {
-      const total =
-        item.ratings?.reduce((sum, acc) => sum + acc.rating, 0) || 0;
-      return item.ratings?.length ? total / item.ratings.length : 0;
-    }) || [];
+  const feedbackImages =
+    ListProducts.length > 0
+      ? ListProducts?.flatMap((item) =>
+          item?.ratings.filter((rating) => rating.rating === 5)
+        )
+      : [];
 
   return (
     <>
@@ -520,7 +520,6 @@ const Home = () => {
 
         <EnhancedProductsSection ListProducts={ListProducts} />
 
-        {/* Featured Products */}
         <div className="py-16 bg-white">
           <div className="w-full mx-auto px-4 sm:px-0 lg:px-4">
             <div className="flex justify-between items-center mb-12">
@@ -535,7 +534,7 @@ const Home = () => {
             </div>
 
             {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
                 {[...Array(5)].map((_, index) => (
                   <SkeletonCard key={`skeleton-${index}`} />
                 ))}
@@ -547,18 +546,22 @@ const Home = () => {
                   return (
                     <div
                       key={`featured-${index}`}
-                      className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 overflow-hidden border border-gray-100"
+                      className="group relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden"
+                      onClick={() => handleDetails(item.slug)}
                     >
+                      {/* Image Container */}
                       <div className="relative overflow-hidden">
-                        <img
-                          className="w-full h-52 object-cover transition-transform duration-700 group-hover:scale-110"
-                          src={
-                            item.variants[0]?.images[0]?.url ||
-                            "/placeholder.svg?height=320&width=280"
-                          }
-                          alt={item.name}
-                          loading="lazy"
-                        />
+                        <div className="aspect-square relative bg-gray-50 cursor-pointer">
+                          <img
+                            src={
+                              item.variants?.[0]?.images?.[0]?.url ||
+                              "/placeholder.svg?height=320&width=280"
+                            }
+                            alt={item.name}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            loading="lazy"
+                          />
+                        </div>
 
                         {isOutOfStock && (
                           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
@@ -568,42 +571,48 @@ const Home = () => {
                           </div>
                         )}
 
-                        {/* Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-                        {/* Discount Badge */}
-                        {typeof item.discount !== "undefined" &&
-                          item.discount > 0 && (
-                            <Badge.Ribbon
-                              text={`-${item.discount}%`}
-                              color="red"
-                              className="ribbon-custom"
-                            />
+                        {/* Badges */}
+                        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex flex-col gap-1 sm:gap-2">
+                          {typeof item.discount !== "undefined" &&
+                            item.discount > 0 && (
+                              <div className="bg-green-600 text-white lg:text-lg font-semibold px-1.5 sm:px-2 sm:text-sm py-0.5 sm:py-1 rounded">
+                                -{item.discount}%
+                              </div>
+                            )}
+                          {index < 3 && (
+                            <div className="bg-black text-white lg:text-lg sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
+                              TOP {index + 1}
+                            </div>
                           )}
+                        </div>
 
                         {/* Action Buttons */}
-                        <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-4 group-hover:translate-x-0">
+                        <div className="absolute top-2 sm:top-3 right-2 sm:right-3 flex flex-col gap-1 sm:gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                           {isProductInWishlist.includes(item._id) ? (
                             <button
-                              className="p-3 bg-green-500 text-white rounded-full shadow-lg hover:bg-green-600 transition-colors duration-300"
-                              onClick={() => handleRemoveWishList(item._id)}
-                              aria-label="Xóa khỏi danh sách yêu thích"
+                              className="bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveWishList(item._id);
+                              }}
                             >
-                              <HeartSolidIcon className="w-5 h-5" />
+                              <HeartSolidIcon className="h-4 w-4 text-green-600" />
                             </button>
                           ) : (
                             <button
-                              className="p-3 bg-white/90 backdrop-blur-sm text-gray-700 rounded-full shadow-lg hover:bg-white hover:text-red-500 transition-all duration-300"
-                              onClick={() => handlAddWishList(item._id)}
-                              aria-label="Thêm vào danh sách yêu thích"
+                              className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlAddWishList(item._id);
+                              }}
                             >
-                              <HeartIcon className="w-5 h-5" />
+                              <HeartIcon className="w-4 h-4 text-gray-600" />
                             </button>
                           )}
-
                           <button
-                            className="p-3 bg-white/90 backdrop-blur-sm text-gray-700 rounded-full shadow-lg hover:bg-white hover:text-blue-500 transition-all duration-300"
-                            onClick={() =>
+                            className="bg-green-600 text-white p-1.5 sm:p-2 rounded-full shadow-md hover:shadow-lg hover:bg-green-700 transition-all duration-200"
+                            onClick={(e) => {
+                              e.stopPropagation();
                               handelModelProductCart(
                                 item._id,
                                 item.variants,
@@ -611,69 +620,38 @@ const Home = () => {
                                 item.discountedPrice,
                                 item.name,
                                 item.discount
-                              )
-                            }
-                            aria-label="Thêm vào giỏ hàng"
+                              );
+                            }}
                           >
-                            <ShoppingBagIcon className="w-5 h-5" />
+                            <ShoppingBagIcon className="w-3 sm:w-4 h-3 sm:h-4" />
                           </button>
-
                           <button
-                            className="p-3 bg-white/90 backdrop-blur-sm text-gray-700 rounded-full shadow-lg hover:bg-white hover:text-green-500 transition-all duration-300"
-                            onClick={() => handleDetails(item.slug)}
-                            aria-label="Xem chi tiết"
+                            className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDetails(item.slug);
+                            }}
                           >
-                            <EyeIcon className="w-5 h-5" />
+                            <EyeIcon className="w-4 h-4 text-gray-600" />
                           </button>
                         </div>
-
-                        {/* Quick View Button */}
-                        <button
-                          className="absolute bottom-4 left-1/2 transform -translate-x-1/2 px-6 py-2 bg-white/90 backdrop-blur-sm text-gray-900 rounded-full font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:shadow-lg"
-                          onClick={() => handleDetails(item.slug)}
-                        >
-                          Xem nhanh
-                        </button>
                       </div>
 
-                      <div className="p-6">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="inline-block px-3 py-1 text-xs font-semibold text-emerald-600 bg-emerald-50 rounded-full border border-emerald-200 tracking-wider uppercase">
+                      {/* Content */}
+                      <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
+                        <div className="space-y-1">
+                          <div className="lg:text-lg sm:text-xs font-medium text-green-600 uppercase tracking-wide">
                             {item.brand}
-                          </span>
-                          <div className="flex items-center">
-                            <StarIcon className="w-4 h-4 text-yellow-400 fill-current" />
-                            <span className="text-sm text-gray-600 ml-1">
-                              {item.ratings?.length
-                                ? item.ratings.reduce(
-                                    (total, acc) => total + acc.rating,
-                                    0
-                                  ) / item.ratings.length
-                                : 5}
-                            </span>
                           </div>
+                          <h3
+                            className="font-medium text-gray-900 line-clamp-2 lg:text-lg sm:text-xs leading-tight hover:text-green-600 transition-colors duration-200 cursor-pointer
+                            whitespace-nowrap overflow-hidden text-ellipsis"
+                          >
+                            {item.name}
+                          </h3>
                         </div>
 
-                        <h3
-                          className="font-bold sm:text-sm lg:text-lg text-gray-900 mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors duration-300"
-                          onClick={() => handleDetails(item.slug)}
-                        >
-                          {item.name}
-                        </h3>
-
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-2">
-                            <span className=" sm:text-sm lg:text-lg font-semibold text-green-600">
-                              {formatPrice(item.discountedPrice || item.price)}
-                            </span>
-                            {item.discount > 0 && (
-                              <span className="sm:text-sm lg:text-lg text-gray-400 line-through">
-                                {formatPrice(item.price || item.costPrice)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
+                        {/* Rating */}
                         <div className="flex items-center justify-between">
                           <Rate
                             disabled
@@ -685,11 +663,34 @@ const Home = () => {
                                   ) / item.ratings.length
                                 : 5
                             }
+                            style={{ fontSize: "12px" }}
                           />
-
                           <span className="text-sm text-gray-500">
-                            ( {item.ratings.length} đánh giá)
+                            ({item.ratings.length} đánh giá)
                           </span>
+                        </div>
+
+                        {/* Price */}
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="lg:text-lg sm:text-xs font-semibold text-green-600">
+                              {formatPrice(item.discountedPrice || item.price)}
+                            </span>
+                            {item.discount > 0 && (
+                              <span className="lg:text-lg sm:text-xs text-gray-400 line-through">
+                                {formatPrice(item.price || item.costPrice)}
+                              </span>
+                            )}
+                          </div>
+                          {item.discount > 0 && (
+                            <div className="lg:text-lg sm:text-xs text-green-600">
+                              Tiết kiệm{" "}
+                              {formatPrice(
+                                (item.price || item.costPrice) -
+                                  (item.discountedPrice || item.costPrice)
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -702,7 +703,7 @@ const Home = () => {
             <div className="md:hidden text-center mt-8">
               <Link
                 to="/products"
-                className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full hover:shadow-lg transition-all duration-300"
+                className="inline-flex items-center px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl"
               >
                 Xem tất cả sản phẩm
                 <ArrowRightIcon className="w-5 h-5 ml-2" />
@@ -712,67 +713,193 @@ const Home = () => {
         </div>
 
         {/* Customer Testimonials */}
-        <div className="py-14 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl w-full">
-          <div className="w-full mx-auto px-4 sm:px-0 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                KHÁCH HÀNG NÓI GÌ VỀ CHÚNG TÔI
+        {/* Customer Testimonials */}
+        <div className="py-20 bg-white relative overflow-hidden">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-green-50/30"></div>
+          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-green-200 to-transparent"></div>
+
+          <div className="w-full mx-auto px-4 sm:px-0 lg:px-8 relative z-10">
+            {/* Enhanced Header */}
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-6">
+                <svg
+                  className="w-8 h-8 text-green-600"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h4v10h-10z" />
+                </svg>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+                KHÁCH HÀNG NÓI GÌ VỀ
+                <span className="text-green-600"> CHÚNG TÔI</span>
               </h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Những phản hồi chân thực từ khách hàng đã tin tưởng DOSIN
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                Những phản hồi chân thực từ hàng nghìn khách hàng đã tin tưởng
+                và lựa chọn DOSIN
               </p>
             </div>
 
             <Swiper
               modules={[Pagination, Autoplay]}
-              pagination={{ clickable: true, dynamicBullets: true }}
+              pagination={{
+                clickable: true,
+                dynamicBullets: true,
+              }}
               autoplay={{ delay: 5000, disableOnInteraction: false }}
               slidesPerView={1}
               spaceBetween={20}
               breakpoints={{
                 768: { slidesPerView: 2, spaceBetween: 30 },
-                1024: { slidesPerView: 3, spaceBetween: 40 },
+                1024: { slidesPerView: 4, spaceBetween: 40 },
               }}
-              className="testimonials-swiper"
+              className="testimonials-swiper !pb-12"
+              style={{
+                "--swiper-pagination-color": "#059669",
+                "--swiper-pagination-bullet-inactive-color": "#d1d5db",
+                "--swiper-pagination-bullet-size": "12px",
+              }}
             >
-              {testimonials.map((testimonial, index) => (
-                <SwiperSlide key={testimonial.id}>
-                  <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 h-full border border-gray-100">
-                    <div className="flex items-center mb-6">
-                      <Avatar
-                        src={testimonial.avatar}
-                        size={60}
-                        className="shadow-lg"
-                      />
-                      <div className="ml-4">
-                        <h4 className="font-bold text-lg text-gray-900">
-                          {testimonial.name}
-                        </h4>
-                        <p className="text-sm text-gray-600 flex items-center">
-                          <MapPinIcon className="w-4 h-4 mr-1 text-blue-500" />
-                          {testimonial.location}
-                        </p>
+              {feedbackImages?.map((testimonial, index) => (
+                <SwiperSlide key={testimonial._id}>
+                  <div className="group bg-white rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-500 border border-gray-100 overflow-hidden h-full transform hover:-translate-y-2">
+                    {/* Card Header with Gradient */}
+                    <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 relative">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
+                      <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/10 rounded-full translate-y-10 -translate-x-10"></div>
+
+                      <div className="flex items-center relative z-10">
+                        <div className="relative">
+                          <Avatar
+                            src={
+                              testimonial?.userId?.avatar ||
+                              "https://randomuser.me/api/portraits/men/2.jpg"
+                            }
+                            size={64}
+                            className="shadow-xl ring-4 ring-white/20"
+                          />
+                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-3 border-white flex items-center justify-center">
+                            <svg
+                              className="w-3 h-3 text-white"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </div>
+                        </div>
+                        <div className="ml-4 text-white">
+                          <h4 className="font-bold text-xl">
+                            {testimonial?.userId?.name}
+                          </h4>
+                          <p className="text-green-100 flex items-center text-sm font-medium">
+                            <MapPinIcon className="w-4 h-4 mr-1" />
+                            {testimonial.userId.address.city || "Việt Nam"}
+                          </p>
+                        </div>
                       </div>
                     </div>
 
-                    <Rate
-                      disabled
-                      defaultValue={testimonial.rating}
-                      className="mb-4 text-yellow-400"
-                    />
+                    {/* Card Content */}
+                    <div className="p-8">
+                      {/* Rating */}
+                      <div className="mb-6">
+                        <Rate
+                          disabled
+                          defaultValue={testimonial.rating}
+                          className="text-yellow-400 text-lg"
+                        />
+                        <span className="ml-2 text-sm font-medium text-gray-600">
+                          {testimonial.rating}/5 sao
+                        </span>
+                      </div>
 
-                    <p className="text-gray-700 mb-6 italic leading-relaxed">
-                      "{testimonial.comment}"
-                    </p>
+                      {/* Review Content */}
+                      <div className="relative mb-8">
+                        <svg
+                          className="absolute -top-2 -left-2 w-8 h-8 text-green-200"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h4v10h-10z" />
+                        </svg>
+                        <p className="text-gray-700 leading-relaxed text-lg font-medium pl-6 relative">
+                          {testimonial.review}
+                        </p>
+                      </div>
 
-                    <div className="flex items-center text-sm text-gray-500">
-                      <CalendarIcon className="w-4 h-4 mr-2 text-blue-500" />
-                      {new Date(testimonial.date).toLocaleDateString("vi-VN")}
+                      {/* Footer */}
+                      <div className="flex items-center justify-between pt-6 border-t border-gray-100">
+                        <div className="flex items-center text-sm text-gray-500">
+                          <CalendarIcon className="w-4 h-4 mr-2 text-green-500" />
+                          {new Date(testimonial.createdAt).toLocaleDateString(
+                            "vi-VN"
+                          )}
+                        </div>
+                        <div className="flex items-center text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">
+                          <svg
+                            className="w-4 h-4 mr-1"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          Đã xác minh
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Hover Effect Border */}
+                    <div className="absolute inset-0 rounded-3xl border-2 border-transparent group-hover:border-green-200 transition-all duration-500"></div>
                   </div>
                 </SwiperSlide>
               ))}
             </Swiper>
+
+            {/* Trust Indicators */}
+            <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600 mb-2">
+                  15K+
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
+                  Khách hàng hài lòng
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600 mb-2">
+                  4.9/5
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
+                  Điểm đánh giá
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600 mb-2">
+                  98%
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
+                  Tỷ lệ hài lòng
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600 mb-2">
+                  5 năm
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
+                  Kinh nghiệm
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

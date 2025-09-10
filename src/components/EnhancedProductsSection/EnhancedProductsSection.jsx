@@ -604,7 +604,10 @@ const ProductsSection = ({ ListProducts }) => {
             </div>
           </div>
         </section>
-
+        <img
+          src="https://n7media.coolmate.me/uploads/September2025/mceclip0.png"
+          alt="Ảnh sale"
+        />
         {/* Bestseller Products Section */}
         <section className="sm: px-0 lg:px-0 w-full relative overflow-hidden">
           <div className=" bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl w-full">
@@ -623,7 +626,7 @@ const ProductsSection = ({ ListProducts }) => {
                     Những sản phẩm được khách hàng tin tưởng và lựa chọn nhiều
                     nhất
                   </p>
-                  <p className="text-black text-xs sm:text-sm mb-4 sm:mb-6 px-2">
+                  <p className="text-white text-xs sm:text-sm mb-4 sm:mb-6 px-2">
                     ⭐ Được đánh giá cao bởi hàng nghìn khách hàng
                   </p>
 
@@ -633,7 +636,7 @@ const ProductsSection = ({ ListProducts }) => {
                       <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
                         10,000+
                       </div>
-                      <div className="text-xs sm:text-sm text-gray-900">
+                      <div className="text-xs sm:text-sm text-white ">
                         Khách hàng hài lòng
                       </div>
                     </div>
@@ -641,7 +644,7 @@ const ProductsSection = ({ ListProducts }) => {
                       <div className="text-lg sm:text-xl lg:text-2xl text-white font-bold">
                         50,000+
                       </div>
-                      <div className="text-xs sm:text-sm text-gray-900">
+                      <div className="text-xs sm:text-sm text-white ">
                         Sản phẩm đã bán
                       </div>
                     </div>
@@ -649,7 +652,7 @@ const ProductsSection = ({ ListProducts }) => {
                       <div className="text-lg sm:text-xl lg:text-2xl text-white font-bold">
                         4.8★
                       </div>
-                      <div className="text-xs sm:text-sm text-gray-900">
+                      <div className="text-xs sm:text-sm text-white ">
                         Đánh giá trung bình
                       </div>
                     </div>

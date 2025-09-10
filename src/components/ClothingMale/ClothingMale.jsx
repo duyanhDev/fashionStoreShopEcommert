@@ -62,6 +62,22 @@ const ClothingMale = () => {
   const [dataProducts, setDataProducts] = useState([]);
   const [color, setColor] = useState("");
 
+  const listRef = useRef();
+
+  const handleFilter = () => {
+    // ... filter logic
+    if (listRef.current) {
+      const offset = -100; // số px muốn nhích lên trên
+      const y =
+        listRef.current.getBoundingClientRect().top + window.scrollY + offset;
+
+      window.scrollTo({
+        top: y,
+        behavior: "smooth",
+      });
+    }
+  };
+
   const menuRef = useRef(null);
   const { products, loading, totalPages } = useSelector(
     (state) => state.filter
@@ -262,6 +278,7 @@ const ClothingMale = () => {
     navigate(`${location.pathname}?${queryParams.toString()}`, {
       replace: true,
     });
+    handleFilter();
   };
 
   const handleSortDate = (value) => {
@@ -278,6 +295,7 @@ const ClothingMale = () => {
     navigate(`${location.pathname}?${queryParams.toString()}`, {
       replace: true,
     });
+    handleFilter();
   };
 
   const handleSortSold = (value) => {
@@ -290,6 +308,7 @@ const ClothingMale = () => {
     navigate(`${location.pathname}?${queryParams.toString()}`);
     setHidden(true);
     setCheckFilter(false);
+    handleFilter();
   };
 
   const handleFilterProduct = () => {
@@ -307,6 +326,7 @@ const ClothingMale = () => {
 
     // luôn reset về page 1 khi xoá filter
     navigate(`${location.pathname}?currentPage=1`, { replace: true });
+    handleFilter();
   };
 
   const handleRangeChange = (value) => {
@@ -323,6 +343,7 @@ const ClothingMale = () => {
     navigate(`${location.pathname}?${queryParams.toString()}`, {
       replace: true,
     });
+    handleFilter();
   };
 
   const handleOnClickColor = (value) => {
@@ -337,6 +358,7 @@ const ClothingMale = () => {
     navigate(`${location.pathname}?${queryParams.toString()}`, {
       replace: true,
     });
+    handleFilter();
   };
 
   const handleSortView = (value) => {
@@ -352,6 +374,7 @@ const ClothingMale = () => {
     navigate(`${location.pathname}?${queryParams.toString()}`, {
       replace: true,
     });
+    handleFilter();
   };
 
   const onChangeCare = (e) => {
@@ -365,6 +388,7 @@ const ClothingMale = () => {
     });
     setHidden(true);
     setCheckFilter(false);
+    handleFilter();
   };
 
   const filterBrand = (e) => {
@@ -378,6 +402,7 @@ const ClothingMale = () => {
     navigate(`${location.pathname}?${queryParams.toString()}`, {
       replace: true,
     });
+    handleFilter();
   };
 
   const SkeletonCard = () => (
@@ -453,7 +478,7 @@ const ClothingMale = () => {
     try {
       const res = await getWishlistAPI(user?._id);
       if (res && res.data && res.data.EC === 0) {
-        setWishList(res.data.data.products || []);
+        setWishList(res?.data?.data?.products || []);
       }
     } catch (error) {
       throw new Error("Lỗi lấy danh sách yêu thích");
@@ -491,7 +516,7 @@ const ClothingMale = () => {
       {/* Header */}
       <div className="flex items-center space-x-3 pb-4 border-b border-gray-100">
         <div className="w-5 h-5 bg-gradient-to-r from-green-500 to-blue-500 rounded-md"></div>
-        <h2 className="text-xl font-medium text-gray-900">Bộ lọc sản phẩm</h2>
+        <h2 className="text-xl font-medium text-gray-900">Bộ lọc</h2>
       </div>
 
       {/* Category Filter */}
@@ -790,6 +815,27 @@ const ClothingMale = () => {
     }
   };
 
+  useEffect(() => {
+    const saveScrollPos = () => {
+      sessionStorage.setItem("filterScrollPos", window.scrollY);
+    };
+    window.addEventListener("beforeunload", saveScrollPos);
+
+    // Khôi phục vị trí scroll sau reload
+    const storedScroll = sessionStorage.getItem("filterScrollPos");
+    if (storedScroll) {
+      requestAnimationFrame(() => {
+        window.scrollTo({
+          top: parseInt(storedScroll, 10),
+          behavior: "instant", // không mượt để khỏi giật
+        });
+      });
+    }
+
+    return () => {
+      window.removeEventListener("beforeunload", saveScrollPos);
+    };
+  }, []);
   return (
     <div className="min-h-screen bg-white">
       <SliderComponent />
@@ -852,12 +898,7 @@ const ClothingMale = () => {
                 {/* Sort Controls */}
                 <div className="relative" ref={menuRef}>
                   <div className=" flex items-center gap-2">
-                    <Button
-                      onClick={() => setCheckFilter((prev) => !prev)}
-                      className="bg-green-500 hover:bg-green-600 text-white border-none rounded-xl px-6 h-10"
-                    >
-                      Sắp xếp theo
-                    </Button>
+                    <div className=" ">Sắp xếp theo</div>
                     <Select
                       defaultValue="newest"
                       placeholder="Sắp xếp theo"
@@ -899,7 +940,7 @@ const ClothingMale = () => {
                     {hidden && (
                       <Button
                         onClick={handleFilterProduct}
-                        className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 border-none rounded-xl h-10"
+                        className=" bg-gray-100 hover:bg-gray-200 text-gray-700 border-none rounded-xl h-10"
                       >
                         Xóa tất cả bộ lọc
                       </Button>
@@ -910,7 +951,7 @@ const ClothingMale = () => {
             </div>
 
             {/* Products Grid */}
-            <div className="clothing-male-grid">
+            <div className="clothing-male-grid" ref={listRef}>
               {loading ? (
                 [...Array(12)].map((_, index) => <SkeletonCard key={index} />)
               ) : products && products.length > 0 ? (
@@ -934,7 +975,7 @@ const ClothingMale = () => {
                         </span>
                       )}
                       <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        {isProductInWishlist.includes(product._id) ? (
+                        {isProductInWishlist?.includes(product._id) ? (
                           <>
                             <button
                               className="bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
@@ -1133,9 +1174,7 @@ const ClothingMale = () => {
                 d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
               />
             </svg>
-            <span className="text-lg font-semibold text-gray-900">
-              Bộ lọc sản phẩm
-            </span>
+            <span className="text-lg font-semibold text-gray-900">Bộ lọc</span>
           </div>
         }
         placement="left"

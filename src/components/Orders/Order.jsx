@@ -34,6 +34,7 @@ import {
   FilterOutlined,
 } from "@ant-design/icons";
 import "./Order.css";
+import { Search } from "lucide-react";
 
 const { Title, Text } = Typography;
 
@@ -242,14 +243,27 @@ const Order = () => {
       key: "action",
       align: "center",
       render: (_, record) => (
-        <Button
-          type="link"
-          icon={<EyeOutlined />}
-          onClick={() => handleOrderStatus(record.id)}
-          style={{ color: "#0958d9", fontWeight: 500 }}
-        >
-          Chi tiết
-        </Button>
+        <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
+          <Button
+            icon={<EyeOutlined />}
+            onClick={() => handleOrderStatus(record.id)}
+            style={{ color: "#0958d9", fontWeight: 500 }}
+          >
+            Chi tiết
+          </Button>
+          <Button
+            icon={<Search />}
+            onClick={() =>
+              window.open(
+                `https://tracking.ghn.dev/?order_code=${record.order_code}`,
+                "_blank" // mở tab mới
+              )
+            }
+            style={{ color: "#0958d9", fontWeight: 500 }}
+          >
+            Tra cứu
+          </Button>
+        </div>
       ),
     },
   ];
@@ -270,6 +284,7 @@ const Order = () => {
           (total, product) => total + product.quantity,
           0
         ),
+        order_code: item.order_code,
         size: item.items.map((product) => product.size).join(", "),
         color: item.items.map((product) => product.color).join(", "),
         price: formatPrice(
@@ -352,6 +367,8 @@ const Order = () => {
     "Đang giao hàng",
     "Giao hàng thành công",
   ];
+
+  console.log(orderProducts);
 
   return (
     <ConfigProvider
@@ -589,10 +606,6 @@ const Order = () => {
                   ),
                 }}
                 scroll={{ x: 800 }}
-                onRow={(record) => ({
-                  onClick: () => handleOrderStatus(record.id),
-                  style: { cursor: "pointer" },
-                })}
               />
             )}
           </Space>
