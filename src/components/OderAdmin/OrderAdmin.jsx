@@ -160,7 +160,7 @@ const OrderAdmin = () => {
       );
     }
 
-    if (newFilters.address) {
+    if (newFilters?.address) {
       filtered = filtered.filter((item) => {
         const fullAddress = `${item.fullAddress} ${item.ward} ${item.district} ${item.city}`;
         return fullAddress

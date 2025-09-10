@@ -291,7 +291,7 @@ const Order = () => {
           item.items.map((product) => product.price).join(", ")
         ),
         fullAddress: item.shippingAddress.fullAddress,
-        city: item.shippingAddress.city,
+        city: item?.shippingAddress?.city || "Na",
         district: item.shippingAddress.district,
         ward: item.shippingAddress.ward,
         paymentMethod: item.paymentMethod,
