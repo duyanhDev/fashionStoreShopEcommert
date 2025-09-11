@@ -870,7 +870,7 @@ const Home = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {blogPosts.slice(0, 3).map((post, index) => (
-                <article
+                <div
                   key={`${post._id}-${index}`}
                   className="cursor-pointer group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 transform hover:-translate-y-2 overflow-hidden border border-gray-100"
                   onClick={() => {
@@ -912,7 +912,7 @@ const Home = () => {
                       </Link>
                     </div>
                   </div>
-                </article>
+                </div>
               ))}
             </div>
           </div>
