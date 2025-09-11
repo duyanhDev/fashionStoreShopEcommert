@@ -15,4 +15,8 @@ const getAllBlog = async () => {
 const getDetaillBlog = async (slug) => {
   return await axios.get(`api/v1/blog/${slug}`);
 };
-export { CreateBlog, getAllBlog, getDetaillBlog };
+
+const updateViewBlog = async (slug) => {
+  return await axios.put(`api/v1/post-view/${slug}`);
+};
+export { CreateBlog, getAllBlog, getDetaillBlog, updateViewBlog };

@@ -1,206 +1,176 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Play, Pause } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import "./Slider.css";
 import { getListBannerAPI } from "../../service/APIBanner";
 
 const SliderComponent = () => {
-  const progressCircle = useRef(null);
-  const progressContent = useRef(null);
-  const swiperRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [progress, setProgress] = useState(0);
   const [slides, setSlides] = useState([]);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Memoize functions để tránh re-render
+  // Next / Prev / GoTo slide
   const nextSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev + 1) % slides.length);
-    setProgress(0);
   }, [slides.length]);
 
   const prevSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
-    setProgress(0);
   }, [slides.length]);
 
   const goToSlide = useCallback((index) => {
     setCurrentSlide(index);
-    setProgress(0);
   }, []);
 
-  const toggleAutoplay = useCallback(() => {
-    setIsPlaying(!isPlaying);
-  }, [isPlaying]);
-
-  // Fetch API chỉ chạy 1 lần khi mount
+  // Fetch API
   useEffect(() => {
     const fetchAPIBanner = async () => {
       try {
+        setIsLoading(true);
         const res = await getListBannerAPI();
-
-        if (res && res.data && res.data.EC === 0) {
+        if (res?.data?.EC === 0) {
           setSlides(res.data.data);
         }
-      } catch (error) {
-        console.log("API Error:", error);
+      } catch (err) {
+        console.error("API Error:", err);
+        // Fallback slides for demo
+        setSlides([
+          {
+            _id: "demo-1",
+            imageUrl: "https://picsum.photos/1200/400?random=1",
+            title: "Demo Banner 1",
+          },
+          {
+            _id: "demo-2",
+            imageUrl: "https://picsum.photos/1200/400?random=2",
+            title: "Demo Banner 2",
+          },
+        ]);
+      } finally {
+        setIsLoading(false);
       }
     };
-
     fetchAPIBanner();
-  }, []); // Chỉ chạy 1 lần khi component mount
+  }, []);
 
-  // Auto-play functionality - FIX: thêm slides.length và nextSlide
+  // Auto-play with pause on hover
   useEffect(() => {
-    if (slides.length === 0) return; // Không chạy nếu chưa có slides
+    if (slides.length === 0) return;
 
-    let interval;
-    if (isPlaying) {
-      interval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 100) {
-            nextSlide();
-            return 0;
-          }
-          return prev + 1;
-        });
-      }, 40);
-    }
+    const interval = setInterval(() => {
+      nextSlide();
+    }, 5000); // 5 seconds
+
     return () => clearInterval(interval);
-  }, [isPlaying, currentSlide, slides.length, nextSlide]); // Thêm đầy đủ dependencies
+  }, [slides.length, nextSlide]);
 
-  // Reset currentSlide nếu vượt quá số slides
+  // Reset current slide if slides change
   useEffect(() => {
     if (slides.length > 0 && currentSlide >= slides.length) {
       setCurrentSlide(0);
     }
   }, [slides.length, currentSlide]);
 
-  // Update progress circle
-  useEffect(() => {
-    if (progressCircle.current && progressContent.current) {
-      const progressValue = progress / 100;
-      progressCircle.current.style.setProperty(
-        "--progress",
-        String(progressValue)
-      );
-      progressContent.current.textContent = `${Math.ceil(
-        ((100 - progress) * 4) / 100
-      )}`;
-    }
-  }, [progress]);
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="slider-container">
+        <div className="loading-state">
+          <div className="text-center">
+            <div className="loading-spinner mb-3"></div>
+            <div className="text-white text-sm sm:text-base">
+              Đang tải banner...
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  // Không render nếu chưa có slides
+  // No slides available
   if (slides.length === 0) {
     return (
-      <div className="slider-container flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <div className="slider-container">
+        <div className="loading-state">
+          <div className="text-white text-center">
+            <div className="text-lg mb-2">⚠️</div>
+            <div className="text-sm">Không có banner nào</div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="slider-container">
-      {/* Slides Container */}
-      <div className="relative w-full h-full">
-        {slides.map((slide, index) => (
-          <div
-            key={slide._id}
-            className={`absolute inset-0 transition-opacity duration-1000 ${
-              index === currentSlide ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            {/* Overlay */}
+    <div
+      className="slider-container"
+      onMouseEnter={() => {
+        // Pause auto-play on hover (optional)
+      }}
+      onMouseLeave={() => {
+        // Resume auto-play on leave (optional)
+      }}
+    >
+      {/* Slides */}
+      {slides.map((slide, index) => (
+        <div
+          key={slide._id}
+          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+            index === currentSlide ? "opacity-100 animate-fade-in" : "opacity-0"
+          }`}
+          style={{ zIndex: index === currentSlide ? 10 : 1 }}
+        >
+          <img
+            src={slide.imageUrl}
+            alt={slide.title || `Banner ${index + 1}`}
+            loading={index === 0 ? "eager" : "lazy"}
+            onError={(e) => {
+              console.error("Failed to load image:", slide.imageUrl);
+              e.target.src = `data:image/svg+xml,${encodeURIComponent(`
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">
+                  <rect width="100%" height="100%" fill="#374151"/>
+                  <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="white" font-size="16">
+                    Ảnh không tải được
+                  </text>
+                </svg>
+              `)}`;
+            }}
+            onLoad={() => {
+              console.log(`Image loaded: ${slide.title}`);
+            }}
+          />
 
-            {/* Image */}
-            <img
-              src={slide.imageUrl}
-              alt={slide.title}
-              className="w-full h-full object-cover"
-              loading={index === 0 ? "eager" : "lazy"}
-              onError={(e) => {
-                e.target.src = "/path/to/fallback-image.jpg"; // Fallback image
-              }}
-            />
-          </div>
-        ))}
-      </div>
+          {/* Optional: Slide title overlay */}
+        </div>
+      ))}
 
-      {/* Navigation Buttons */}
-      <button
-        onClick={prevSlide}
-        className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all duration-300 group"
-      >
-        <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform" />
-      </button>
-
-      <button
-        onClick={nextSlide}
-        className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all duration-300 group"
-      >
-        <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform" />
-      </button>
-
-      {/* Custom Progress Indicator */}
-      {/* <div className="absolute right-2 sm:right-6 bottom-2 sm:bottom-6 z-30">
-        <div className="relative w-12 h-12 sm:w-16 sm:h-16">
+      {/* Navigation Buttons - Only show if more than 1 slide */}
+      {slides.length > 1 && (
+        <>
           <button
-            onClick={toggleAutoplay}
-            className="absolute inset-0 w-full h-full bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all duration-300 group"
+            onClick={prevSlide}
+            className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 group"
+            aria-label="Previous slide"
           >
-            {isPlaying ? (
-              <Pause className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform" />
-            ) : (
-              <Play className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform ml-0.5" />
-            )}
+            <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6 text-white group-hover:scale-110 transition-transform" />
           </button>
 
-          <svg
-            ref={progressCircle}
-            viewBox="0 0 48 48"
-            className="absolute inset-0 w-full h-full -rotate-90"
-          >
-            <circle
-              cx="24"
-              cy="24"
-              r="20"
-              fill="none"
-              stroke="rgba(255,255,255,0.3)"
-              strokeWidth="2"
-            />
-            <circle
-              cx="24"
-              cy="24"
-              r="20"
-              fill="none"
-              stroke="white"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeDasharray="125.6"
-              strokeDashoffset="calc(125.6px * (1 - var(--progress, 0)))"
-              className="transition-all duration-100 ease-linear"
-            />
-          </svg>
-
-          <span
-            ref={progressContent}
-            className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white pointer-events-none"
-          />
-        </div>
-      </div> */}
-
-      {/* Custom Pagination Dots */}
-      <div className="absolute bottom-4 sm:bottom-8 left-1/2 transform -translate-x-1/2 z-30 flex space-x-2 sm:space-x-3">
-        {slides.map((_, index) => (
           <button
-            key={index}
-            onClick={() => goToSlide(index)}
-            className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all duration-300 ${
-              index === currentSlide
-                ? "bg-white scale-125 shadow-lg"
-                : "bg-white/50 hover:bg-white/75"
-            }`}
-          />
-        ))}
+            onClick={nextSlide}
+            className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 group"
+            aria-label="Next slide"
+          >
+            <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6 text-white group-hover:scale-110 transition-transform" />
+          </button>
+        </>
+      )}
+
+      {/* Pagination Bullets - Only show if more than 1 slide */}
+
+      {/* Progress indicator (optional) */}
+      <div className="absolute top-2 sm:top-4 left-2 sm:left-4 z-20 bg-black/30 backdrop-blur-sm rounded-full px-2 py-1">
+        <span className="text-white text-xs sm:text-sm font-medium">
+          {currentSlide + 1} / {slides.length}
+        </span>
       </div>
     </div>
   );

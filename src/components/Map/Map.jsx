@@ -612,7 +612,9 @@ const GoogleMapsStyleDelivery = () => {
                       key={order.id}
                       onClick={() => {
                         setSelectedOrder(order);
-                        setSearchTo(`${order.customerName} - ${order.address}`);
+                        setSearchTo(
+                          `${order.customerName} - ${order?.address}`
+                        );
                       }}
                       className={`p-3 rounded-lg border cursor-pointer transition-all ${
                         selectedOrder?.id === order.id

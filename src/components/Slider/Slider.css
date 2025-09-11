@@ -1,30 +1,38 @@
-/* Slider Container */
+/* Slider Container - Fixed spacing issues */
 .slider-container {
   position: relative;
   width: 100%;
-  height: 70vh;
-  min-height: 400px;
-  margin-top: 4rem;
-  background: #000;
+  margin-top: 1rem; /* Giảm margin trên mobile */
+  overflow: hidden;
 }
 
-/* Mobile optimizations */
+/* Mobile optimizations - Responsive spacing */
 @media (max-width: 640px) {
   .slider-container {
-    height: 60vh;
-    min-height: 250px;
-    margin-top: 4rem;
+    aspect-ratio: 4/3;
+    min-height: 200px;
+    margin-top: 0.5rem; /* Rất ít khoảng cách trên mobile */
+    height: auto; /* Cho phép height tự động */
   }
 }
 
-@media (min-width: 641px) {
+/* Tablet spacing */
+@media (min-width: 641px) and (max-width: 1024px) {
   .slider-container {
-    min-height: 500px;
-    margin-top: 7rem;
+    margin-top: 2rem;
+    height: 400px;
   }
 }
 
-/* Ensure images load properly */
+/* Desktop spacing */
+@media (min-width: 1025px) {
+  .slider-container {
+    margin-top: 7rem;
+    height: 500px;
+  }
+}
+
+/* Slides Images */
 .slider-container img {
   position: absolute;
   top: 0;
@@ -33,71 +41,17 @@
   height: 100%;
   object-fit: cover;
   object-position: center;
+  transition: opacity 1s ease-in-out;
 }
 
-/* Fix for scroll visibility */
-.slider-container {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.8s ease-out;
-}
-
-.animate-fade-in-delay {
-  animation: fadeIn 0.8s ease-out 0.2s both;
-}
-
-/* Mobile animations */
+/* Mobile: ảnh không bị cắt */
 @media (max-width: 640px) {
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(15px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .animate-fade-in {
-    animation: fadeIn 0.6s ease-out;
-  }
-
-  .animate-fade-in-delay {
-    animation: fadeIn 0.6s ease-out 0.15s both;
+  .slider-container img {
+    object-fit: contain;
   }
 }
 
-/* Custom bullets for mobile */
-.custom-bullet {
-  width: 8px !important;
-  height: 8px !important;
-  background: rgba(255, 255, 255, 0.5) !important;
-  border-radius: 50% !important;
-  transition: all 0.3s ease !important;
-  margin: 0 4px !important;
-  cursor: pointer;
-  border: none;
-}
-
-.custom-bullet-active,
-.custom-bullet:hover {
-  background: white !important;
-  transform: scale(1.2) !important;
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.6) !important;
-}
-
-@media (min-width: 641px) {
-  .custom-bullet {
-    width: 12px !important;
-    height: 12px !important;
-    margin: 0 6px !important;
-  }
-}
+/* Fade-in Animation */
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -121,23 +75,190 @@
   animation: fade-in 0.8s ease-out 0.4s both;
 }
 
+/* Mobile fade animation - faster */
 @media (max-width: 640px) {
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-      transform: translateY(15px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
   .animate-fade-in {
     animation: fade-in 0.6s ease-out;
   }
-
   .animate-fade-in-delay {
     animation: fade-in 0.6s ease-out 0.15s both;
+  }
+}
+
+/* Custom pagination bullets - Responsive */
+.slider-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px; /* Giảm gap trên mobile */
+  position: absolute;
+  bottom: 0.5rem; /* Gần bottom hơn trên mobile */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  background: rgba(0, 0, 0, 0.3); /* Thêm background */
+  padding: 6px 12px;
+  border-radius: 20px;
+  backdrop-filter: blur(4px);
+}
+
+/* Desktop dots spacing */
+@media (min-width: 641px) {
+  .slider-dots {
+    gap: 8px;
+    bottom: 1.5rem;
+    padding: 8px 16px;
+  }
+}
+
+.custom-bullet {
+  width: 6px; /* Nhỏ hơn trên mobile */
+  height: 6px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+  flex-shrink: 0; /* Không cho thu nhỏ */
+}
+
+.custom-bullet-active,
+.custom-bullet:hover {
+  background: white;
+  transform: scale(1.3);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+}
+
+/* Desktop bullets */
+@media (min-width: 641px) {
+  .custom-bullet {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+/* Navigation buttons - More responsive */
+.slider-container button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 30;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 36px; /* Nhỏ hơn trên mobile */
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+}
+
+.slider-container button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.slider-container button svg {
+  width: 16px; /* Nhỏ hơn trên mobile */
+  height: 16px;
+  color: white;
+}
+
+/* Desktop button sizing */
+@media (min-width: 641px) {
+  .slider-container button {
+    width: 48px;
+    height: 48px;
+  }
+
+  .slider-container button svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* Button positioning - responsive */
+.slider-container button:first-of-type {
+  left: 0.5rem; /* Gần edge hơn trên mobile */
+}
+
+.slider-container button:last-of-type {
+  right: 0.5rem;
+}
+
+@media (min-width: 641px) {
+  .slider-container button:first-of-type {
+    left: 1.5rem;
+  }
+
+  .slider-container button:last-of-type {
+    right: 1.5rem;
+  }
+}
+
+/* Loading state */
+.slider-container .loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  margin-top: 0.5rem;
+}
+
+@media (min-width: 641px) {
+  .slider-container .loading-state {
+    min-height: 300px;
+    margin-top: 2rem;
+  }
+}
+
+/* Improved loading animation */
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Smooth transitions for all screen sizes */
+@media (prefers-reduced-motion: reduce) {
+  .slider-container *,
+  .slider-container *::before,
+  .slider-container *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast support */
+@media (prefers-contrast: high) {
+  .slider-container button {
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid white;
+  }
+
+  .custom-bullet {
+    border: 1px solid white;
+  }
+
+  .slider-dots {
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid white;
   }
 }
