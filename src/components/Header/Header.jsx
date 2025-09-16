@@ -38,6 +38,7 @@ import Logo from "./../../assets/Image/Home/logo.png";
 const Header = ({ user, ListCart, CartListProductsUser }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
   const [data, setData] = useState([]);
   const page = 1;
   const [open, setOpen] = useState(false);
@@ -134,7 +135,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
         ]
       : []),
     { type: "divider" },
-    ...(user?.role === "admin" || user?.permissions === "order_approval"
+    ...(user?.role === "admin" || user?.role === "staff"
       ? [
           {
             key: "admin",
@@ -828,22 +829,23 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
                       </span>
                     </button>
 
-                    {user?.role === "admin" && (
-                      <button
-                        className="w-full flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-xl transition-colors duration-300"
-                        onClick={() => {
-                          navigate("/admin");
-                          setMobileMenuOpen(false);
-                        }}
-                      >
-                        <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
-                          <RiAdminLine size={16} className="text-white" />
-                        </div>
-                        <span className="text-gray-900 font-medium">
-                          Quản trị viên
-                        </span>
-                      </button>
-                    )}
+                    {user?.role === "admin" ||
+                      (user?.role === "staff" && (
+                        <button
+                          className="w-full flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-xl transition-colors duration-300"
+                          onClick={() => {
+                            navigate("/admin");
+                            setMobileMenuOpen(false);
+                          }}
+                        >
+                          <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+                            <RiAdminLine size={16} className="text-white" />
+                          </div>
+                          <span className="text-gray-900 font-medium">
+                            Quản trị viên
+                          </span>
+                        </button>
+                      ))}
 
                     <button
                       className="w-full flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-xl transition-colors duration-300"

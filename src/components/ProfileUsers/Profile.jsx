@@ -40,7 +40,6 @@ const PersonalInfoForm = ({ id }) => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassWord, setNewPassword] = useState("");
   const [confirmPassWord, setConfirmPassword] = useState("");
-  console.log(user);
 
   const [api, contextHolder] = notification.useNotification();
 
@@ -318,8 +317,6 @@ const Profile = () => {
   const onChange = (key) => {
     console.log(key);
   };
-
-  console.log(selectedImage);
 
   const FetchDataProvince = async () => {
     const url = "https://esgoo.net/api-tinhthanh/1/0.htm";
@@ -661,8 +658,6 @@ const Profile = () => {
       children: <PersonalInfoForm id={id} />,
     },
   ];
-
-  console.log(selectedImage);
 
   const handleUpdateProfileUser = async () => {
     try {

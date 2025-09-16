@@ -393,7 +393,6 @@ const Products = () => {
     },
     onChange(info) {
       if (info.file.status !== "uploading") {
-        console.log(info.file, info.fileList);
       }
       if (info.file.status === "done") {
         message.success(`${info.file.name} tải lên thành công`);
@@ -415,7 +414,6 @@ const Products = () => {
         setSelectedRowKeys((prev) => prev.filter((key) => key !== productId));
       }
     } catch (error) {
-      console.log("Xóa sản phẩm thất bại", error);
       message.error("Xóa sản phẩm thất bại");
     }
   };

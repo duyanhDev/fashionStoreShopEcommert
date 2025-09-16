@@ -224,8 +224,6 @@ const Admin = () => {
     }
   };
   const handleShowNocations = () => {
-    console.log("click");
-
     setShowHiden(true);
     setLoading(true);
     setTimeout(() => {
@@ -439,8 +437,6 @@ const Admin = () => {
           {DataNotifications?.filter((item) => item.isAdmin)?.length > 0 ? (
             DataNotifications.filter((item) => item.isAdmin === true).map(
               (item) => {
-                console.log(item);
-
                 return (
                   <div
                     key={item._id}

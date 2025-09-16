@@ -110,8 +110,6 @@ const PutFeedbackProductAPI = async (id, userId, rating, review) => {
 // phản hồi đánh giá admin
 
 const toggleLikeReplyAPI = async (productId, ratingId, userId, content) => {
-  console.log(productId, ratingId);
-
   return await axios.post(`api/v1/products/replies`, {
     productId,
     ratingId,
@@ -213,6 +211,10 @@ const updateViewProductAPI = async (slug) => {
   return await axios.post(`api/v1/product/update-view/${slug}`);
 };
 
+const getTopSellingProductsByCategoryAPI = async (category, gender) => {
+  return await axios.get(`api/v1/top-selling/${category}/${gender}`);
+};
+
 export {
   createProductAPI,
   getListProductsAPI,
@@ -227,4 +229,5 @@ export {
   updateViewProductAPI,
   DeleteRatingProductAPI,
   DeleteOneProductAPI,
+  getTopSellingProductsByCategoryAPI,
 };

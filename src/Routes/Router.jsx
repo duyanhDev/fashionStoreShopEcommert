@@ -46,6 +46,7 @@ import UserVoucherWallet from "../components/UserVoucherWallet/UserVoucherWallet
 import ResetPasswordForm from "../components/ResetPasswordForm/ResetPasswordForm";
 import PrivateRoute from "../PrivateRoute/PrivateRoute";
 import PaymentSuccessPage from "../components/PaymentSuccessPage/PaymentSuccessPage";
+import ViewBannerForm from "../components/Banner/ViewBanner/ViewBannerForm";
 
 export const RouterLayout = [
   {
@@ -148,21 +149,46 @@ export const RouterAdmin = [
         index: true,
         element: <UserStatsCard />,
       },
-      {
-        path: "banner",
-        element: <Banner />,
-      },
+
       {
         path: "add-banner",
-        element: <CreateBannerForm />,
+        element: (
+          <PermissionRoute
+            allowedPermissions={["admin", "staff", "customer_support"]}
+          >
+            <CreateBannerForm />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "banner/:id",
+        element: (
+          <PermissionRoute
+            allowedPermissions={["admin", "staff", "customer_support"]}
+          >
+            <ViewBannerForm />
+          </PermissionRoute>
+        ),
       },
       {
         path: "banner",
-        element: <Banner />,
+        element: (
+          <PermissionRoute
+            allowedPermissions={["admin", "staff", "customer_support"]}
+          >
+            <Banner />
+          </PermissionRoute>
+        ),
       },
       {
         path: "update-banner/:id",
-        element: <UpdateBannerForm />,
+        element: (
+          <PermissionRoute
+            allowedPermissions={["admin", "staff", "customer_support"]}
+          >
+            <UpdateBannerForm />
+          </PermissionRoute>
+        ),
       },
       {
         path: "products",
@@ -235,7 +261,9 @@ export const RouterAdmin = [
       {
         path: "voucher",
         element: (
-          <PermissionRoute allowedPermissions={["admin"]}>
+          <PermissionRoute
+            allowedPermissions={["admin", "staff", "customer_support"]}
+          >
             <Voucher />
           </PermissionRoute>
         ),
@@ -267,7 +295,9 @@ export const RouterAdmin = [
       {
         path: "review",
         element: (
-          <PermissionRoute allowedPermissions={["admin", "review", "support"]}>
+          <PermissionRoute
+            allowedPermissions={["admin", "staff", "customer_support"]}
+          >
             <ProductReviewAdmin />
           </PermissionRoute>
         ),
@@ -275,7 +305,9 @@ export const RouterAdmin = [
       {
         path: "add-voucher",
         element: (
-          <PermissionRoute allowedPermissions={["admin"]}>
+          <PermissionRoute
+            allowedPermissions={["admin", "staff", "customer_support"]}
+          >
             <AddVoucher />
           </PermissionRoute>
         ),

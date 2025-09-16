@@ -28,8 +28,6 @@ const UserVoucherWallet = () => {
   const [userVouchers, setUserVouchers] = useState([]);
   // Mock data vouchers cho user
 
-  console.log(filterStatus);
-
   const fetchDataVoucher = async () => {
     try {
       const res = await getVoucherAPI();
@@ -124,8 +122,6 @@ const UserVoucherWallet = () => {
         return "Không xác định";
     }
   };
-
-  console.log(user?._id);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("vi-VN", {

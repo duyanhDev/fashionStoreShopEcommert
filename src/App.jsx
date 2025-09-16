@@ -678,7 +678,7 @@ function App() {
           </button>
         </div>
       </div>
-
+      <div></div>
       {open && (
         <div className="fixed bottom-0 right-0 message_users">
           <MemoizedMessage

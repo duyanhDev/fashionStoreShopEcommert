@@ -78,7 +78,6 @@ const Blog = () => {
   };
 
   const handleSort = (type) => {
-    console.log(type);
     setSortType(type);
     setCurrentPage(0); // FIX: Reset về trang đầu khi sort
 

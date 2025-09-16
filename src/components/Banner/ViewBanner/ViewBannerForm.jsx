@@ -21,7 +21,7 @@ import {
 } from "../../../service/APIBanner";
 import { notification } from "antd";
 
-const UpdateBannerForm = () => {
+const ViewBannerForm = () => {
   const [formData, setFormData] = useState({
     title: "",
     imageUrl: "",
@@ -41,6 +41,7 @@ const UpdateBannerForm = () => {
   const { id } = useParams();
   const fileInputRef = useRef(null);
   const [api, contextHolder] = notification.useNotification();
+
   const navigate = useNavigate();
 
   const positionOptions = [
@@ -227,45 +228,6 @@ const UpdateBannerForm = () => {
     navigate("/admin/banner");
   };
 
-  // Handle form submit
-  const handleSubmit = async () => {
-    if (!validateForm()) {
-      return;
-    }
-
-    setLoading(true);
-    setSuccess(false);
-
-    try {
-      // Create FormData for file upload
-      const res = await UpdateBannerAPI(
-        id,
-        formData.title,
-        imageFile,
-        formData.link,
-        formData.position,
-        formData.isActive
-      );
-      if (res && res.data && res.data.EC === 0) {
-        api.success({
-          message: "Tạo banner thành công",
-          description: "Banner đã được tạo và sẵn sàng hiển thị.",
-        });
-        loadInitalData();
-
-        setSuccess(true);
-      }
-
-      // Auto close after success
-    } catch (error) {
-      setErrors({
-        submit: "Có lỗi xảy ra khi cập nhật banner. Vui lòng thử lại.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Get display image
   const getDisplayImage = () => {
     return imagePreview || currentImage;
@@ -297,34 +259,15 @@ const UpdateBannerForm = () => {
             <div className="p-2 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl">
               <Edit className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Cập nhật Banner
-            </h1>
+            <h1 className="text-3xl font-bold text-gray-900">Xem chi tiết</h1>
           </div>
           <p className="text-gray-600 mt-4 text-lg">
-            Chỉnh sửa thông tin banner của bạn
+            Xem thông tin banner của bạn
           </p>
           {id && <p className="text-sm text-gray-500 mt-2">ID: {id}</p>}
         </div>
 
         {/* Success Message */}
-        {success && (
-          <div className="mb-8 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-xl">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-green-800">
-                  Cập nhật banner thành công!
-                </h3>
-                <p className="text-green-600">
-                  Thay đổi đã được lưu và áp dụng.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Load Error */}
         {errors.load && (
@@ -585,8 +528,7 @@ const UpdateBannerForm = () => {
 
                 <button
                   type="submit"
-                  disabled={loading}
-                  onClick={handleSubmit}
+                  disabled
                   className={`flex-1 px-6 py-4 font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 ${
                     loading
                       ? "bg-gray-400 cursor-not-allowed"
@@ -856,4 +798,4 @@ const UpdateBannerForm = () => {
   );
 };
 
-export default UpdateBannerForm;
+export default ViewBannerForm;

@@ -233,6 +233,37 @@ const getRandomAdminAPI = async () => {
   return await axios.get(`api/v1/admins`);
 };
 
+const RegisterUserAPI_Alternative = async (
+  name,
+  email,
+  password,
+  role,
+  permissions,
+  avatarUrl
+) => {
+  try {
+    const token = localStorage.getItem("token");
+    return await axios.post(
+      `api/v1/register-admin`,
+      {
+        name: name,
+        email: email,
+        password: password,
+        role: role,
+        permissions: permissions,
+        avatar: avatarUrl,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bear ${token}`,
+        },
+      }
+    );
+  } catch (error) {
+    console.log(error);
+  }
+};
 export {
   LoginAuth,
   UserAuth,
@@ -250,4 +281,5 @@ export {
   AdminChangleProfileAPI,
   getRandomAdminAPI,
   checkRestToken,
+  RegisterUserAPI_Alternative,
 };

@@ -252,7 +252,7 @@ const ManageStore = () => {
       message.warning("Chọn ít nhất một nhà cung cấp để xóa");
       return;
     }
-    console.log("Delete selected suppliers:", selectedRowKeys);
+
     message.success(`Đã xóa ${selectedRowKeys.length} nhà cung cấp`);
     setSelectedRowKeys([]);
   };

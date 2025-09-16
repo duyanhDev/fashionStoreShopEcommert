@@ -117,8 +117,6 @@ const GeminiBlogGenerator = () => {
   };
 
   const handleSave = async (values) => {
-    console.log(values);
-
     if (!values.title || !values.content) {
       message.error("Tiêu đề và nội dung không được để trống.");
       return;

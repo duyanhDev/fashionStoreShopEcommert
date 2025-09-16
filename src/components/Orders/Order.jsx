@@ -291,7 +291,7 @@ const Order = () => {
           item.items.map((product) => product.price).join(", ")
         ),
         fullAddress: item.shippingAddress.fullAddress,
-        city: item?.shippingAddress?.city || "Na",
+        city: item.shippingAddress.city,
         district: item.shippingAddress.district,
         ward: item.shippingAddress.ward,
         paymentMethod: item.paymentMethod,
@@ -367,8 +367,6 @@ const Order = () => {
     "Đang giao hàng",
     "Giao hàng thành công",
   ];
-
-  console.log(orderProducts);
 
   return (
     <ConfigProvider

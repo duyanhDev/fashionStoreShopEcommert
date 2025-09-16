@@ -203,7 +203,6 @@ export default function DashboardStats() {
   const listRevenueTotal = async () => {
     try {
       const res = await getRevenueAPI();
-      console.log(res);
 
       if (res && res.data && res.data.EC === 0) {
         const data = res.data.data.reduce((total, acc) => {
@@ -500,6 +499,46 @@ export default function DashboardStats() {
     );
   }
 
+  // users: mảng user có created_at
+  // users: mảng user có created_at
+  const getUserStatsThisMonth = (users) => {
+    const today = new Date();
+    const thisMonth = today.getMonth() + 1;
+    const thisYear = today.getFullYear();
+
+    const lastMonthDate = new Date(
+      today.getFullYear(),
+      today.getMonth() - 1,
+      1
+    );
+    const lastMonth = lastMonthDate.getMonth() + 1;
+    const lastMonthYear = lastMonthDate.getFullYear();
+
+    const countUsersByMonth = (month, year) =>
+      users.filter((u) => {
+        const date = new Date(u.created_at);
+        return date.getMonth() + 1 === month && date.getFullYear() === year;
+      }).length;
+
+    const usersThisMonth = countUsersByMonth(thisMonth, thisYear);
+    const usersLastMonth = countUsersByMonth(lastMonth, lastMonthYear);
+
+    const changeText =
+      usersLastMonth === 0
+        ? usersThisMonth > 0
+          ? `+${usersThisMonth} người mới`
+          : "0 người mới"
+        : `${(
+            ((usersThisMonth - usersLastMonth) / usersLastMonth) *
+            100
+          ).toFixed(1)}% so với tháng trước`;
+
+    return { usersThisMonth, changeText };
+  };
+
+  const { usersThisMonth, changeText } = getUserStatsThisMonth(users);
+  // trả về số người dùng trong một tháng nhất định
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="mb-6">
@@ -571,11 +610,11 @@ export default function DashboardStats() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
             <StatCard
               title="Người dùng"
-              value={users && users.length > 0 ? users.length : "0"}
+              value={usersThisMonth || "0"}
               subtext="Tổng số người dùng"
               color="border-indigo-600"
               icon={<UserIcon />}
-              change="+5.2% so với tháng trước"
+              change={changeText}
             />
 
             <StatCard

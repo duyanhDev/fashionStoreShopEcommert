@@ -16,6 +16,7 @@ import {
 } from "@ant-design/icons";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import {
+  getTopSellingProductsByCategoryAPI,
   ListSlugProductAPI,
   toggleLikeRatingAPI,
 } from "../../service/ApiProduct";
@@ -23,6 +24,7 @@ import { AddCartAPI } from "../../service/Cart";
 import { useSelector } from "react-redux";
 import moment from "moment";
 import ReactPaginate from "react-paginate";
+import SizePredictor from "../SizePredictor/SizePredictor";
 
 const Details = () => {
   const [api, contextHolder] = notification.useNotification();
@@ -59,76 +61,11 @@ const Details = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isBuyingNow, setIsBuyingNow] = useState(false);
-
+  const [shift, SetShift] = useState("");
+  const [gender, setGender] = useState("");
+  const [topSellingProducts, setTopSellingProducts] = useState([]);
   const navigagte = useNavigate();
-
-  // Mock data cho sản phẩm gợi ý
-  const suggestedProducts = [
-    {
-      id: 1,
-      name: "Áo Thun Nam Cotton Premium Basic Tee",
-      description:
-        "Áo thun nam cao cấp làm từ 100% cotton tự nhiên, thoáng mát, thấm hút mồ hôi tốt. Thiết kế basic dễ phối đồ với form dáng slim fit ôm nhẹ cơ thể.",
-      price: 299000,
-      discountPrice: 199000,
-      discount: 33,
-      image:
-        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop",
-      rating: 4.8,
-      sold: 150,
-      colors: ["Trắng", "Đen", "Xám", "Navy"],
-      sizes: ["S", "M", "L", "XL"],
-      brand: "Basic Wear",
-    },
-    {
-      id: 2,
-      name: "Quần Jean Nam Slim Fit Dark Blue Wash",
-      description:
-        "Quần jean nam form slim fit với công nghệ co giãn 4 chiều, thoải mái vận động. Chất denim cao cấp bền đẹp, không phai màu sau nhiều lần giặt.",
-      price: 599000,
-      discountPrice: 449000,
-      discount: 25,
-      image:
-        "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=400&fit=crop",
-      rating: 4.9,
-      sold: 89,
-      colors: ["Dark Blue", "Black", "Light Blue"],
-      sizes: ["29", "30", "31", "32", "33", "34"],
-      brand: "Denim Co",
-    },
-    {
-      id: 3,
-      name: "Áo Hoodie Unisex Oversize Korean Style",
-      description:
-        "Áo hoodie unisex phong cách Hàn Quốc với form dáng oversize trendy. Chất nỉ bông cao cấp mềm mại, giữ ấm tốt. Thiết kế túi kangaroo tiện lợi.",
-      price: 449000,
-      discountPrice: 359000,
-      discount: 20,
-      image:
-        "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&h=400&fit=crop",
-      rating: 4.7,
-      sold: 203,
-      colors: ["Đen", "Trắng", "Xám", "Be", "Navy"],
-      sizes: ["S", "M", "L", "XL", "XXL"],
-      brand: "Korean Style",
-    },
-    {
-      id: 4,
-      name: "Giày Sneaker Nam Sport Running Comfort",
-      description:
-        "Giày sneaker thể thao với công nghệ đệm khí tiên tiến, hỗ trợ tối đa khi vận động. Chất liệu mesh thoáng khí, đế cao su chống trượt an toàn.",
-      price: 899000,
-      discountPrice: 699000,
-      discount: 22,
-      image:
-        "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop",
-      rating: 4.9,
-      sold: 124,
-      colors: ["Trắng/Đen", "Xám/Cam", "Navy/Trắng"],
-      sizes: ["39", "40", "41", "42", "43", "44"],
-      brand: "Sport Pro",
-    },
-  ];
+  const [open, setOpen] = useState(false);
 
   const pageCount = Math.ceil(feedback.length / itemsPerPage);
   const offset = currentPage * itemsPerPage;
@@ -197,6 +134,8 @@ const Details = () => {
         SetcolorCart(res.data.data.variants[0]?.color || "");
         setSelectedColor(res.data.data.variants[0]?.color || "");
         SetquantityProduct(res.data.data.sold || 0);
+        SetShift(res.data.data.category || "");
+        setGender(res.data.data.gender || "");
       }
     } catch (error) {
       console.log(error);
@@ -399,8 +338,6 @@ const Details = () => {
     try {
       const res = await toggleLikeRatingAPI(id, ratingId, user._id);
 
-      console.log(res);
-
       if (res && res.data && res.data.success === true) {
         FetchAPIDetaillProuduct();
       }
@@ -479,15 +416,46 @@ const Details = () => {
 
   const totalPrice = pricediscount ? pricediscount * count : price * count;
 
+  const fetchTopSelling = async () => {
+    try {
+      const res = await getTopSellingProductsByCategoryAPI(shift._id, gender);
+
+      if (res?.data?.EC === 0) {
+        setTopSellingProducts(res.data.data);
+      } else {
+        console.warn("⚠️ API trả về lỗi logic:", res?.data);
+      }
+    } catch (error) {
+      if (error.response) {
+        console.error("❌ API error:", error.response.data);
+      } else if (error.request) {
+        console.error("❌ Network error:", error.request);
+      } else {
+        console.error("❌ Unexpected error:", error.message);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (shift?._id && gender) {
+      fetchTopSelling();
+    }
+  }, [shift?._id, gender]); // ✅ thêm dependency đúng cách
+
+  const showDrawer = () => {
+    setOpen(true);
+  };
+  const onClose = () => {
+    setOpen(false);
+  };
+
   return (
     <div className="mt-28 min-h-screen bg-gradient-to-br from-white via-green-50/20 to-gray-50/30 relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-20 -right-20 w-64 h-64 bg-green-500/5 rounded-full blur-2xl animate-pulse"></div>
         <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-green-400/5 rounded-full blur-2xl animate-pulse delay-1000"></div>
       </div>
-
       {contextHolder}
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
           {/* Image Gallery Section */}
@@ -737,6 +705,9 @@ const Details = () => {
                       </button>
                     ))}
                 </div>
+                <Button onClick={showDrawer} className="w-full h-10">
+                  Hướng dẫn chọn size
+                </Button>
               </div>
             )}
 
@@ -822,20 +793,18 @@ const Details = () => {
                 </div>
               )}
             </div>
-
-            <div className="bg-white rounded-xl p-5 shadow-lg">
-              <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <span className="w-1 h-5 bg-green-600 rounded-full"></span>
-                Mô tả sản phẩm
-              </h3>
-              <div
-                className="text-gray-700 leading-relaxed text-sm prose max-w-none"
-                dangerouslySetInnerHTML={{ __html: description }}
-              />
-            </div>
           </div>
         </div>
-
+        <div className="bg-white rounded-xl p-5 shadow-lg mt-5">
+          <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+            <span className="w-1 h-5 bg-green-600 rounded-full"></span>
+            Mô tả sản phẩm
+          </h3>
+          <div
+            className="text-gray-700 "
+            dangerouslySetInnerHTML={{ __html: description }}
+          />
+        </div>
         {/* Suggested Products Section */}
         <div className="mt-16 space-y-8">
           <div className="text-center">
@@ -850,14 +819,14 @@ const Details = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {suggestedProducts.map((product) => (
+            {topSellingProducts.map((product) => (
               <div
-                key={product.id}
+                key={`product ${product._id}`}
                 className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-[1.02] overflow-hidden group"
               >
                 <div className="relative aspect-square overflow-hidden">
                   <img
-                    src={product.image}
+                    src={product.variants[0]?.images[0]?.url || ""}
                     alt={product.name}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
@@ -874,17 +843,10 @@ const Details = () => {
                     {product.name}
                   </h3>
 
-                  <div className="flex items-center gap-2">
-                    <Rate disabled value={product.rating} className="text-xs" />
-                    <span className="text-xs text-gray-500">
-                      ({product.sold})
-                    </span>
-                  </div>
-
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="text-lg font-bold text-green-600">
-                        {formatPrice(product.discountPrice)}
+                        {formatPrice(product.discountedPrice)}
                       </span>
                       {product.discount && (
                         <span className="text-sm text-gray-500 line-through">
@@ -895,7 +857,7 @@ const Details = () => {
                     {product.discount && (
                       <p className="text-xs text-green-700">
                         Tiết kiệm{" "}
-                        {formatPrice(product.price - product.discountPrice)}
+                        {formatPrice(product.price - product.discountedPrice)}
                       </p>
                     )}
                   </div>
@@ -1047,6 +1009,7 @@ const Details = () => {
           )}
         </div>
       </div>
+      <SizePredictor open={open} onClose={onClose} />
     </div>
   );
 };

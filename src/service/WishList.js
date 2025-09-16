@@ -5,13 +5,7 @@ const addToWishlistAPI = async (userId, productId) => {
 };
 
 const getWishlistAPI = async (userId) => {
-  // Validate userId trước khi gọi API
-  if (!userId) {
-    throw new Error("User ID is required");
-  }
-
-  if (userId === "undefined" || userId === "null") {
-    console.error('❌ getWishlistAPI: userId is string "undefined"');
+  if (!userId || userId === "undefined" || userId === "null") {
     throw new Error("Invalid user ID");
   }
 
@@ -23,23 +17,22 @@ const getWishlistAPI = async (userId) => {
       },
     });
 
-    return response;
-  } catch (error) {
-    console.error("❌ Wishlist API error:", error);
-
-    // Handle specific error cases
-    if (error.response?.status === 404) {
-      console.log("ℹ️ User has no wishlist - returning empty");
+    // Nếu server trả về null hoặc undefined wishlist, mặc định trả về rỗng
+    if (!response.data?.data?.products) {
       return {
         data: {
           EC: 0,
           EM: "Success - Empty wishlist",
           data: {
-            products: [], // 👈 phải có key products
+            products: [],
           },
         },
       };
     }
+
+    return response;
+  } catch (error) {
+    console.error("❌ Wishlist API error:", error);
 
     if (error.response?.status === 500) {
       console.error("Server error - possibly invalid userId format");

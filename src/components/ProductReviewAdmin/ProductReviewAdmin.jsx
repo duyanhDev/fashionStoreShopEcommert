@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from "react";
 import {
   FiSearch,
+  FiFilter,
   FiStar,
   FiMessageCircle,
   FiEye,
   FiCheckCircle,
+  FiXCircle,
+  FiMoreHorizontal,
+  FiCalendar,
+  FiUser,
+  FiPackage,
 } from "react-icons/fi";
 import { AiFillStar } from "react-icons/ai";
 import {
@@ -156,6 +162,8 @@ const ProductReviewAdmin = () => {
         user._id,
         responseText
       );
+
+      console.log("xxx", res);
 
       if (res && res.data && res.data.EC === 0) {
         const updatedReviews = reviews.map((review) => {

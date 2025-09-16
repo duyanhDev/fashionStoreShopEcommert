@@ -37,7 +37,7 @@ import { useEffect, useState } from "react";
 import moment from "moment";
 import { createStyles } from "antd-style";
 import { useNavigate } from "react-router-dom";
-import { getListBannerAPI } from "../../service/APIBanner";
+import { DeleteBannerAPI, getListBannerAPI } from "../../service/APIBanner";
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -150,7 +150,7 @@ const Banner = () => {
     navigate(`/admin/banner/${id}`);
   };
 
-  const handleDeleteBanner = (banner) => {
+  const handleDeleteBanner = async (banner) => {
     confirm({
       title: "Xác nhận xóa banner",
       icon: <ExclamationCircleOutlined />,
@@ -158,13 +158,29 @@ const Banner = () => {
       okText: "Xóa",
       okType: "danger",
       cancelText: "Hủy",
-      onOk() {
-        // Replace with actual delete API call
-        api.success({
-          message: "Thành công",
-          description: "Đã xóa banner thành công",
-        });
-        fetchApiBanner();
+      onOk: async () => {
+        try {
+          const res = await DeleteBannerAPI(banner._id);
+
+          if (res && res.data && res.data.EC === 0) {
+            api.success({
+              message: "Thành công",
+              description: "Đã xóa banner thành công",
+            });
+            fetchApiBanner(); // Cập nhật lại danh sách banner
+          } else {
+            api.error({
+              message: "Thất bại",
+              description: res?.data?.EM || "Xóa banner không thành công",
+            });
+          }
+        } catch (error) {
+          console.error("Error deleting banner:", error);
+          api.error({
+            message: "Lỗi",
+            description: "Đã xảy ra lỗi khi xóa banner",
+          });
+        }
       },
     });
   };
