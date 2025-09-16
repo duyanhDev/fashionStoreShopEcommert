@@ -2,77 +2,156 @@ import { useEffect, useRef, useState } from "react";
 import Input from "antd/es/input/Input";
 import { Button, message, notification } from "antd";
 import { RegisterUser, SendverifyOTP, verifyOTP } from "../../service/Auth";
+import {
+  validateEmail,
+  validateUsername,
+  validatePassword,
+  validateConfirmPassword,
+  validateImage,
+  validateOTP,
+  validateRegistrationForm,
+} from "../../testsCase/RegisterForm.test";
 import "./register-styles.css";
+
 const RegisterForm = () => {
+  // Form states
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
-  const [selectedImage, setSelectedImage] = useState("");
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const [ImageUpLoad, SetImageUpLoad] = useState("");
-  const [isDragging, setIsDragging] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Validation states
+  const [validationErrors, setValidationErrors] = useState({});
+  const [isFormValid, setIsFormValid] = useState(false);
+
+  // OTP states
   const [hiddenOTP, setHiddenOTP] = useState(false);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(0);
   const [isDisabled, setIsDisabled] = useState(false);
   const [buttonText, setButtonText] = useState("Send Code");
 
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  // Refs
   const inputRefs = useRef([]);
-
   const [api, contextHolder] = notification.useNotification();
 
-  const validateEmail = (email) => {
-    return /\S+@\S+\.\S+/.test(email);
+  // ==================== VALIDATION FUNCTIONS ====================
+
+  // Real-time validation for individual fields
+  const validateField = (fieldName, value, additionalValue = null) => {
+    let result = { isValid: true, errors: [] };
+
+    switch (fieldName) {
+      case "email":
+        result = validateEmail(value);
+        break;
+      case "username":
+        result = validateUsername(value);
+        break;
+      case "password":
+        result = validatePassword(value);
+        break;
+      case "confirmPassword":
+        result = validateConfirmPassword(additionalValue || password, value);
+        break;
+      case "image":
+        result = validateImage(value);
+        break;
+      case "otp":
+        result = validateOTP(value);
+        break;
+      default:
+        break;
+    }
+
+    setValidationErrors((prev) => ({
+      ...prev,
+      [fieldName]: result.errors,
+    }));
+
+    return result.isValid;
   };
 
-  const validatePassword = (password) => {
-    const startsWithUppercase = /^[A-Z]/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  // Validate entire form
+  const validateForm = () => {
+    const formData = {
+      email,
+      username,
+      password,
+      confirmPassword,
+      image: selectedImage,
+    };
 
-    if (!startsWithUppercase) {
-      return "Mật khẩu phải bắt đầu bằng chữ in hoa.";
-    }
-    if (!hasSpecialChar) {
-      return "Mật khẩu phải chứa ít nhất một ký tự đặc biệt.";
-    }
-    return null;
+    const validation = validateRegistrationForm(formData);
+
+    // Update all validation errors
+    const newErrors = {};
+    Object.entries(validation.validationResults).forEach(([field, result]) => {
+      newErrors[field] = result.errors;
+    });
+
+    setValidationErrors(newErrors);
+    setIsFormValid(validation.isValid);
+
+    return validation.isValid;
+  };
+
+  // ==================== EVENT HANDLERS ====================
+
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+    validateField("email", value);
+  };
+
+  const handleUsernameChange = (e) => {
+    const value = e.target.value;
+    setUsername(value);
+    validateField("username", value);
   };
 
   const handlePasswordChange = (e) => {
-    setPassword(e.target.value);
-    if (confirmPassword && e.target.value !== confirmPassword) {
-      setError("Vui lòng nhập đúng mật khẩu");
-    } else {
-      setError("");
+    const value = e.target.value;
+    setPassword(value);
+    validateField("password", value);
+
+    // Also re-validate confirm password if it exists
+    if (confirmPassword) {
+      validateField("confirmPassword", confirmPassword, value);
     }
   };
 
   const handleConfirmPasswordChange = (e) => {
-    setConfirmPassword(e.target.value);
-    if (password && e.target.value !== password) {
-      setError("Vui lòng nhập đúng mật khẩu");
-    } else {
-      setError("");
-    }
+    const value = e.target.value;
+    setConfirmPassword(value);
+    validateField("confirmPassword", value, password);
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file && file.type.startsWith("image/")) {
-      setSelectedImage(file);
-      SetImageUpLoad(file.name);
-      const imageUrl = URL.createObjectURL(file);
-      setPreviewUrl(imageUrl);
+    if (file) {
+      const isValid = validateField("image", file);
+      if (isValid) {
+        setSelectedImage(file);
+        const imageUrl = URL.createObjectURL(file);
+        setPreviewUrl(imageUrl);
+      }
     }
   };
 
   const removeImage = () => {
     setSelectedImage(null);
     setPreviewUrl(null);
+    setValidationErrors((prev) => ({
+      ...prev,
+      image: [],
+    }));
   };
 
+  // Drag and drop handlers
   const handleDragOver = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -86,36 +165,30 @@ const RegisterForm = () => {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith("image/")) {
-      setSelectedImage(file);
-      const imageUrl = URL.createObjectURL(file);
-      setPreviewUrl(imageUrl);
+
+    if (file) {
+      const isValid = validateField("image", file);
+      if (isValid) {
+        setSelectedImage(file);
+        const imageUrl = URL.createObjectURL(file);
+        setPreviewUrl(imageUrl);
+      }
     }
   };
-  const HandleRegister = async () => {
-    if (!username || !email || !password || !confirmPassword) {
-      message.warning("Vui lòng nhập đầy đủ thông tin!");
-      return;
-    }
 
-    if (password.length < 6) {
-      message.warning("Mật khẩu phải có ít nhất 6 ký tự!");
-      return;
-    }
+  // ==================== FORM SUBMISSION ====================
 
-    if (!validateEmail(email)) {
-      message.warning("Email không hợp lệ!");
-      return;
-    }
+  const handleRegister = async () => {
+    // Validate entire form before submission
+    const isValid = validateForm();
 
-    if (password !== confirmPassword) {
-      message.warning("Mật khẩu không khớp!");
-      return;
-    }
-
-    const passwordError = validatePassword(password);
-    if (passwordError) {
-      message.warning(passwordError);
+    if (!isValid) {
+      const allErrors = Object.values(validationErrors)
+        .flat()
+        .filter((error) => error);
+      if (allErrors.length > 0) {
+        message.error(`Vui lòng sửa các lỗi: ${allErrors[0]}`);
+      }
       return;
     }
 
@@ -137,11 +210,9 @@ const RegisterForm = () => {
         });
       }
     } catch (error) {
-      // Truy cập vào lỗi trả về từ backend (nếu có)
       const errorMessage =
         error.response?.data?.EM || "Đăng ký thất bại! Vui lòng thử lại.";
 
-      // Trường hợp email đã tồn tại
       if (error.response?.data?.EC === 1) {
         message.warning(errorMessage);
       } else {
@@ -150,7 +221,9 @@ const RegisterForm = () => {
     }
   };
 
-  const handleChange = (index, event) => {
+  // ==================== OTP HANDLERS ====================
+
+  const handleOtpChange = (index, event) => {
     const value = event.target.value;
     if (isNaN(value)) return;
 
@@ -158,46 +231,67 @@ const RegisterForm = () => {
     newOtp[index] = value;
     setOtp(newOtp);
 
+    // Auto focus next input
     if (value && index < 5) {
-      inputRefs.current[index + 1].focus();
+      inputRefs.current[index + 1]?.focus();
+    }
+
+    // Validate OTP in real-time
+    validateField("otp", newOtp);
+  };
+
+  const handleKeyDown = (index, e) => {
+    // Handle backspace
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
     }
   };
 
-  const handleSubmit = async () => {
+  const handleOtpSubmit = async () => {
+    const otpString = otp.join("");
+    const isOtpValid = validateField("otp", otpString);
+
+    if (!isOtpValid) {
+      message.error("Mã OTP không hợp lệ!");
+      return;
+    }
+
     try {
-      const onVerify = otp.join("");
       const res = await verifyOTP(
         email,
-        onVerify,
+        otpString,
         username,
         password,
         selectedImage,
         false
       );
 
-      console.log(res);
-
       if (res?.data?.EC === 0) {
+        // Reset form
         setEmail("");
         setUsername("");
         setPassword("");
         setConfirmPassword("");
         setSelectedImage(null);
         setPreviewUrl(null);
-        SetImageUpLoad("");
+        setOtp(["", "", "", "", "", ""]);
+        setValidationErrors({});
+
         api.success({
           message: "Đăng ký thành công",
           description: "Bạn đã đăng ký thành công tài khoản!",
         });
 
         setHiddenOTP(false);
+        window.location = "/login";
       }
     } catch (error) {
+      message.error("Xác thực OTP thất bại!");
       console.log(error);
     }
   };
 
-  const handleSendcode = async () => {
+  const handleSendCode = async () => {
     try {
       const otpResponse = await SendverifyOTP(email);
       if (otpResponse && otpResponse.status === 200) {
@@ -215,9 +309,12 @@ const RegisterForm = () => {
         });
       }
     } catch (error) {
+      message.error("Không thể gửi mã OTP!");
       console.log(error);
     }
   };
+
+  // ==================== EFFECTS ====================
 
   useEffect(() => {
     if (timer > 0) {
@@ -231,14 +328,35 @@ const RegisterForm = () => {
     }
   }, [timer]);
 
+  // Check form validity on any change
+  useEffect(() => {
+    const hasErrors = Object.values(validationErrors).some(
+      (errors) => errors.length > 0
+    );
+    const hasEmptyFields = !email || !username || !password || !confirmPassword;
+    setIsFormValid(!hasErrors && !hasEmptyFields);
+  }, [validationErrors, email, username, password, confirmPassword]);
+
+  // ==================== HELPER FUNCTIONS ====================
+
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
   };
+
+  const getFieldError = (fieldName) => {
+    return validationErrors[fieldName]?.[0] || "";
+  };
+
+  const hasFieldError = (fieldName) => {
+    return validationErrors[fieldName]?.length > 0;
+  };
+
+  // ==================== RENDER ====================
+
   return (
     <div className="register min-h-screen mt-32 bg-gradient-to-br from-gray-900 via-gray-800 to-green-900 flex items-center justify-center p-4">
-      {/* Main Layout */}
       {contextHolder}
       <div className="w-full max-w-2xl mx-auto">
         <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden backdrop-blur-sm bg-white/95">
@@ -265,9 +383,16 @@ const RegisterForm = () => {
                     id="email"
                     type="email"
                     placeholder="mail@example.com"
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={email}
+                    onChange={handleEmailChange}
+                    status={hasFieldError("email") ? "error" : ""}
                     className="h-12 rounded-xl border-2 border-gray-200 hover:border-gray-300 focus:border-green-500"
                   />
+                  {hasFieldError("email") && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {getFieldError("email")}
+                    </p>
+                  )}
                 </div>
 
                 {/* Username Input */}
@@ -282,9 +407,16 @@ const RegisterForm = () => {
                     id="username"
                     type="text"
                     placeholder="Nhập tên của bạn"
-                    onChange={(e) => setUsername(e.target.value)}
+                    value={username}
+                    onChange={handleUsernameChange}
+                    status={hasFieldError("username") ? "error" : ""}
                     className="h-12 rounded-xl border-2 border-gray-200 hover:border-gray-300 focus:border-green-500"
                   />
+                  {hasFieldError("username") && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {getFieldError("username")}
+                    </p>
+                  )}
                 </div>
 
                 {/* Password Input */}
@@ -297,12 +429,17 @@ const RegisterForm = () => {
                   </label>
                   <Input.Password
                     id="password"
-                    type="password"
                     placeholder="Nhập mật khẩu"
                     value={password}
                     onChange={handlePasswordChange}
+                    status={hasFieldError("password") ? "error" : ""}
                     className="h-12 rounded-xl border-2 border-gray-200 hover:border-gray-300 focus:border-green-500"
                   />
+                  {hasFieldError("password") && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {getFieldError("password")}
+                    </p>
+                  )}
                 </div>
 
                 {/* Confirm Password Input */}
@@ -315,14 +452,16 @@ const RegisterForm = () => {
                   </label>
                   <Input.Password
                     id="confirmPassword"
-                    type="password"
                     placeholder="Nhập lại mật khẩu"
                     value={confirmPassword}
                     onChange={handleConfirmPasswordChange}
+                    status={hasFieldError("confirmPassword") ? "error" : ""}
                     className="h-12 rounded-xl border-2 border-gray-200 hover:border-gray-300 focus:border-green-500"
                   />
-                  {error && (
-                    <p className="text-red-500 text-sm mt-1">{error}</p>
+                  {hasFieldError("confirmPassword") && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {getFieldError("confirmPassword")}
+                    </p>
                   )}
                 </div>
               </div>
@@ -342,6 +481,8 @@ const RegisterForm = () => {
                   className={`relative border-2 rounded-xl p-4 text-center transition-all duration-200 ${
                     isDragging
                       ? "border-green-500 bg-green-50 shadow-md"
+                      : hasFieldError("image")
+                      ? "border-red-300 bg-red-50"
                       : "border-gray-200 bg-gray-50 hover:border-green-400 hover:bg-gray-50"
                   }`}
                   onDragOver={handleDragOver}
@@ -390,7 +531,7 @@ const RegisterForm = () => {
                   ) : (
                     <div className="relative">
                       <img
-                        src={previewUrl || "/placeholder.svg"}
+                        src={previewUrl}
                         alt="Preview"
                         className="max-h-32 mx-auto rounded-lg shadow-lg"
                       />
@@ -415,6 +556,12 @@ const RegisterForm = () => {
                     </div>
                   )}
                 </div>
+
+                {hasFieldError("image") && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {getFieldError("image")}
+                  </p>
+                )}
 
                 {selectedImage && (
                   <div className="mt-3">
@@ -453,8 +600,13 @@ const RegisterForm = () => {
             {/* Register Button */}
             <div className="mt-8">
               <Button
-                className="w-full h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 border-none rounded-xl font-semibold text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                onClick={HandleRegister}
+                className={`w-full h-12 ${
+                  isFormValid
+                    ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                    : "bg-gray-400 cursor-not-allowed"
+                } border-none rounded-xl font-semibold text-white shadow-lg hover:shadow-xl transition-all duration-200`}
+                onClick={handleRegister}
+                disabled={!isFormValid}
               >
                 Đăng Ký
               </Button>
@@ -518,16 +670,26 @@ const RegisterForm = () => {
                     type="text"
                     maxLength="1"
                     value={value}
-                    onChange={(e) => handleChange(index, e)}
+                    onChange={(e) => handleOtpChange(index, e)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
-                    className="w-12 h-12 text-center text-xl font-bold border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                    className={`w-12 h-12 text-center text-xl font-bold border-2 ${
+                      hasFieldError("otp")
+                        ? "border-red-300 focus:ring-red-500"
+                        : "border-gray-200 focus:ring-green-500"
+                    } rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200`}
                   />
                 ))}
               </div>
 
+              {hasFieldError("otp") && (
+                <p className="text-red-500 text-sm text-center mb-4">
+                  {getFieldError("otp")}
+                </p>
+              )}
+
               <button
                 className="w-full h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 mb-4"
-                onClick={handleSubmit}
+                onClick={handleOtpSubmit}
               >
                 Xác Nhận
               </button>
@@ -535,7 +697,7 @@ const RegisterForm = () => {
               <p className="text-center text-gray-600">
                 Chưa nhận được mã?{" "}
                 <button
-                  onClick={handleSendcode}
+                  onClick={handleSendCode}
                   disabled={isDisabled}
                   className={`font-semibold transition-colors duration-200 ${
                     isDisabled

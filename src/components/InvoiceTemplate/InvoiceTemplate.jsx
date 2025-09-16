@@ -4,6 +4,7 @@ import { message } from "antd";
 import dayjs from "dayjs";
 import { forwardRef } from "react";
 
+import chuki from "./../../assets/chu-ky-ten-anh.jpg";
 // Component hiển thị hóa đơn để in
 export const InvoiceTemplate = forwardRef(({ transaction }, ref) => {
   if (!transaction) return null;
@@ -310,19 +311,33 @@ export const InvoiceTemplate = forwardRef(({ transaction }, ref) => {
         }}
       >
         <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: "bold", marginBottom: "60px" }}>
+          <div style={{ fontWeight: "bold", marginBottom: "100px" }}>
             NGƯỜI MUA
           </div>
-          <div style={{ borderTop: "1px solid #666", paddingTop: "8px" }}>
+          <div style={{ borderTop: "1px solid #666", paddingTop: "15px" }}>
             (Ký, ghi rõ họ tên)
           </div>
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: "bold", marginBottom: "60px" }}>
             NGƯỜI BÁN
+            <img
+              src={chuki}
+              loading="lazy"
+              alt="lỗi chứ kí"
+              width={80}
+              height={80}
+              className="m-auto text-center object-cover"
+            />
           </div>
-          <div style={{ borderTop: "1px solid #666", paddingTop: "8px" }}>
-            (Ký, ghi rõ họ tên)
+
+          <div
+            style={{
+              borderTop: "1px solid #666",
+              paddingTop: "15px",
+            }}
+          >
+            Đặng Trịnh Duy Anh
           </div>
         </div>
       </div>

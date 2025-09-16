@@ -1,3 +1,7 @@
 tspan {
   font-size: 12px;
 }
+
+.recharts-legend-wrapper {
+  bottom: -26px !important;
+}

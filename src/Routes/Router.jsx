@@ -47,6 +47,8 @@ import ResetPasswordForm from "../components/ResetPasswordForm/ResetPasswordForm
 import PrivateRoute from "../PrivateRoute/PrivateRoute";
 import PaymentSuccessPage from "../components/PaymentSuccessPage/PaymentSuccessPage";
 import ViewBannerForm from "../components/Banner/ViewBanner/ViewBannerForm";
+import ChangelogPage from "../components/ChangelogPage/ChangelogPage";
+import ChangelogManager from "../components/ChangelogManager/ChangelogManager";
 
 export const RouterLayout = [
   {
@@ -125,6 +127,10 @@ export const RouterLayout = [
   {
     path: "/about",
     element: <BrandAboutPage />,
+  },
+  {
+    path: "/changelog",
+    element: <ChangelogPage />,
   },
   {
     path: "/voucher-wallet",
@@ -326,6 +332,14 @@ export const RouterAdmin = [
         element: (
           <PermissionRoute allowedPermissions={["admin"]}>
             <Transactions />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "changle-log",
+        element: (
+          <PermissionRoute allowedPermissions={["admin"]}>
+            <ChangelogManager />
           </PermissionRoute>
         ),
       },

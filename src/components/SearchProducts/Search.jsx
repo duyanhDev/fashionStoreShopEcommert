@@ -255,7 +255,7 @@ const Search = ({
                       </p>
 
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-lg mx-auto">
-                        {["iPhone", "Samsung", "Laptop", "Tai nghe"].map(
+                        {["Quần", "Áo", "Balo", "Phụ Kiện"].map(
                           (keyword, index) => (
                             <button
                               key={index}

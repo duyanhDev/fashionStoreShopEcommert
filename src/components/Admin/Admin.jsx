@@ -112,6 +112,12 @@ const menuItems = [
     to: "/admin/review",
     color: "text-gray-500",
   },
+  {
+    icon: <FcFeedback className="text-xl " />,
+    label: "Update",
+    to: "/admin/changle-log",
+    color: "text-gray-500",
+  },
 ];
 
 const Admin = () => {

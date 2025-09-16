@@ -207,6 +207,10 @@ const filterOrdersByStatus = async (status) => {
     console.log(error);
   }
 };
+
+const getListDallyOrderAPI = async () => {
+  return await axios.get(`api/v1/daily`);
+};
 export {
   listOderUserIdAPI,
   createOrder,
@@ -221,4 +225,5 @@ export {
   updateShippingCancelledAdmin,
   filterOrdersByStatus,
   createRepurchaseOrder,
+  getListDallyOrderAPI,
 };

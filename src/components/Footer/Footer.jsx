@@ -9,6 +9,7 @@ import {
   FaUsers,
 } from "react-icons/fa";
 import socket from "../../socket";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   const [count, setCount] = useState(0);
@@ -165,15 +166,24 @@ const Footer = () => {
               lưu.
             </div>
             <div className="flex items-center gap-6 text-sm text-gray-400">
-              <a href="#" className="hover:text-white transition-colors">
+              <Link
+                to="/changelog"
+                className="hover:text-white transition-colors"
+              >
+                Lịch sử thay đổi website
+              </Link>
+              <Link className="hover:text-white transition-colors">
                 Chính sách bảo mật
-              </a>
-              <a href="#" className="hover:text-white transition-colors">
+              </Link>
+              <Link className="hover:text-white transition-colors">
                 Điều khoản sử dụng
-              </a>
-              <a href="#" className="hover:text-white transition-colors">
+              </Link>
+              <Link
+                to="https://www.facebook.com/anhcanvlog"
+                className="hover:text-white transition-colors"
+              >
                 Hỗ trợ
-              </a>
+              </Link>
             </div>
           </div>
         </div>

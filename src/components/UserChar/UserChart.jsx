@@ -26,7 +26,11 @@ import {
 import { UserAuth } from "../../service/Auth";
 import { getListProductsAPI } from "../../service/ApiProduct";
 import { ListCategoryAPI } from "../../service/ApiCategory";
-import { ListAllSumProduct, ListOderProductsAll } from "../../service/Oder";
+import {
+  getListDallyOrderAPI,
+  ListAllSumProduct,
+  ListOderProductsAll,
+} from "../../service/Oder";
 import moment from "moment";
 import "./UserChart.css";
 import { getRevenueAPI } from "../../service/APITransaction";
@@ -138,6 +142,8 @@ export default function DashboardStats() {
   const [dateRange, setDateRange] = useState("year");
   const [isLoading, setIsLoading] = useState(true);
   const [customerSegment, setCustomerSegment] = useState([]);
+  const [dailySum, setDailySum] = useState([]);
+  const [paymentMethodData, setPaymentMethodData] = useState([]);
   const formatPrice = (price) => {
     if (price === undefined || price === null) {
       return "0₫";
@@ -208,7 +214,7 @@ export default function DashboardStats() {
         const data = res.data.data.reduce((total, acc) => {
           return total + acc.totalAmount;
         }, 0);
-
+        setPaymentMethodData(res.data.data);
         setSumTotal(data);
       }
     } catch (error) {
@@ -216,6 +222,16 @@ export default function DashboardStats() {
     }
   };
 
+  const fetchDailySum = async () => {
+    try {
+      const res = await getListDallyOrderAPI();
+      if (res && res.data.EC === 0) {
+        setDailySum(res.data.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
   useEffect(() => {
     const loadAllData = async () => {
       setIsLoading(true);
@@ -226,6 +242,7 @@ export default function DashboardStats() {
         AllTotalPriceProduct(),
         ListOderProductsTotalSum(),
         listRevenueTotal(),
+        fetchDailySum(),
       ]);
       setIsLoading(false);
     };
@@ -258,38 +275,66 @@ export default function DashboardStats() {
     { name: "Chi phí nhập hàng", value: priceTotalProduct },
     { name: "Lợi nhuận", value: totalProfit },
   ];
-  const pieColors = ["#4caf50", "#f44336"]; // xanh cho chi phí, đỏ cho lợi nhuận (âm)
+  const pastelColors = [
+    "#FF6B6B", // Coral Red
+    "#4ECDC4", // Turquoise
+    "#45B7D1", // Sky Blue
+    "#96CEB4", // Mint Green
+    "#FECA57", // Golden Yellow
+  ];
+  const pieColors = pastelColors; // xanh cho chi phí, đỏ cho lợi nhuận (âm)
   // Generate data for product categories
   const categoryProductData = category?.map((cat) => {
+    const catProducts = products.filter(
+      (product) => product.category.name === cat.name
+    );
+
+    // Tổng doanh thu: ví dụ lấy discountedPrice * sold
+    const totalRevenue = catProducts.reduce(
+      (sum, product) =>
+        sum + (product.discountedPrice || product.price) * product.sold,
+      0
+    );
+
+    // Tổng lợi nhuận: ví dụ totalRevenue - tổng cost
+    const totalProfit = catProducts.reduce((sum, product) => {
+      const cost = (product.costPrice || 0) * (product.stock || 0);
+
+      const profit =
+        ((product.discountedPrice || product.price) -
+          (product.costPrice || 0)) *
+        (product.stock || 0);
+      return sum + profit; // quan trọng: return sum + profit
+    }, 0);
+
     return {
       name: cat.name,
-      products: products.filter((product) => product.category.name === cat.name)
-        .length,
-      revenue: products.filter((product) => product.category === cat.name),
-
-      profit: products.filter((product) => product.categoryId === cat.name),
+      products: catProducts.length,
+      revenue: totalRevenue,
+      profit: totalProfit,
     };
   });
 
   // Generate data for top selling products
   const topSellingProducts = products
     ?.filter((product) => product.sold > 2000)
-    .slice(0, 5)
     .map((product) => {
       return {
         name: product.name || `Sản phẩm ${index + 1}`,
         sold: product.sold,
         revenue: Math.floor(Math.random() * 10000000) + 5000000,
       };
-    });
+    })
+    .sort((a, b) => b.sold - a.sold)
+    .slice(0, 5);
 
-  // Sample data for payment methods
-  const paymentMethodData = [
-    { name: "Thanh toán khi nhận hàng", value: 55 },
-    { name: "Chuyển khoản ngân hàng", value: 20 },
-    { name: "Ví điện tử", value: 15 },
-    { name: "Thẻ tín dụng", value: 10 },
-  ];
+  // // Sample data for payment methods
+  // const paymentMethodData = [
+  //   { name: "Thanh toán khi nhận hàng", value: 55 },
+  //   { name: "Chuyển khoản ngân hàng", value: 20 },
+  //   { name: "Ví điện tử", value: 15 },
+  //   { name: "Thẻ tín dụng", value: 10 },
+  // ];
 
   const monthlyData = [
     { name: "Jan", users: 22, sales: 18, profit: 15 },
@@ -539,6 +584,20 @@ export default function DashboardStats() {
   const { usersThisMonth, changeText } = getUserStatsThisMonth(users);
   // trả về số người dùng trong một tháng nhất định
 
+  const groupedPayments = paymentMethodData?.reduce((acc, item) => {
+    if (item.paymentMethod) {
+      acc[item.paymentMethod] = (acc[item.paymentMethod] || 0) + 1;
+    }
+    return acc;
+  }, {});
+
+  const groupedPaymentsArray = Object.entries(groupedPayments).map(
+    ([method, count]) => ({
+      paymentMethod: method,
+      count,
+    })
+  );
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="mb-6">
@@ -577,7 +636,7 @@ export default function DashboardStats() {
       </div>
 
       {/* Date Range Filter */}
-      <div className="mb-8 flex gap-2 justify-end">
+      {/* <div className="mb-8 flex gap-2 justify-end">
         <TabButton
           active={dateRange === "week"}
           onClick={() => setDateRange("week")}
@@ -602,7 +661,7 @@ export default function DashboardStats() {
         >
           Năm nay
         </TabButton>
-      </div>
+      </div> */}
 
       {activeTab === "overview" && (
         <>
@@ -639,7 +698,6 @@ export default function DashboardStats() {
               subtext="Số lượng sản phẩm đã bán"
               color="border-yellow-500"
               icon={<SalesIcon />}
-              change="-12.4% so với tháng trước"
             />
           </div>
 
@@ -865,16 +923,26 @@ export default function DashboardStats() {
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={dailySalesData}
+                    data={dailySum}
                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                     barSize={6}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="name" tick={{ fill: "#6b7280" }} />
-                    <YAxis tick={{ fill: "#6b7280" }} />
+                    <XAxis dataKey="day" tick={{ fill: "#6b7280" }} />
+                    <YAxis
+                      tick={{ fill: "#6b7280" }}
+                      tickFormatter={(value) => {
+                        if (value >= 1000000) {
+                          return `${(value / 1000000).toFixed(1)}M`;
+                        } else if (value >= 1000) {
+                          return `${(value / 1000).toFixed(0)}K`;
+                        }
+                        return value.toString();
+                      }}
+                    />
                     <Tooltip content={<CustomTooltip />} />
                     <Bar
-                      dataKey="value"
+                      dataKey="totalSales"
                       name="Doanh số"
                       fill="#4f46e5"
                       radius={[3, 3, 0, 0]}
@@ -894,19 +962,19 @@ export default function DashboardStats() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={paymentMethodData}
+                    data={groupedPaymentsArray}
                     cx="50%"
                     cy="50%"
                     labelLine={true}
-                    outerRadius={120}
+                    outerRadius={78}
                     fill="#8884d8"
-                    dataKey="value"
-                    nameKey="name"
+                    dataKey="count"
+                    nameKey="paymentMethod"
                     label={({ name, percent }) =>
                       `${name}: ${(percent * 100).toFixed(0)}%`
                     }
                   >
-                    {paymentMethodData.map((entry, index) => (
+                    {groupedPaymentsArray.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
                         fill={pieColors[index % pieColors.length]}

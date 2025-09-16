@@ -7,7 +7,15 @@ import {
   IoMenuOutline,
   IoCloseOutline,
 } from "react-icons/io5";
-import { Dropdown, Button, Drawer, Modal, message, Badge } from "antd";
+import {
+  Dropdown,
+  Button,
+  Drawer,
+  Modal,
+  message,
+  Badge,
+  notification,
+} from "antd";
 import { LogoutOutlined, WalletOutlined } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
 import { logout, Search as SearchAction } from "../../redux/actions/Auth";
@@ -55,6 +63,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
   const [searchVisible, setSearchVisible] = useState(false);
   const [inputValue, setInputValue] = useState({}); // Local state for input values
 
+  const [api, contextHolder] = notification.useNotification();
   const handleLogOut = () => {
     localStorage.removeItem("token");
     dispatch(logout());
@@ -353,8 +362,18 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
   };
 
   const handleChangeInput = (e) => {
-    setKeywordSearch(e.target.value);
-    setShowSearch(false);
+    const value = e.target.value;
+
+    if (value.length > 32) {
+      api.warning({
+        message: `Bạn không nên nhập quá 32 kí tự  `,
+        description: "Không được nhập quá 32 ký tự",
+      });
+      setKeywordSearch("");
+    } else {
+      setKeywordSearch(value);
+      setShowSearch(true);
+    }
   };
 
   const FetchSearhProductsAPI = async (keyword = keywordSearch) => {
@@ -521,6 +540,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
       {/* Professional Header */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-lg border-b border-gray-200 shadow-sm">
         <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
+          {contextHolder}
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo Section */}
             <div className="flex items-center space-x-4 flex-shrink-0">
