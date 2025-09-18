@@ -25,6 +25,7 @@ import {
   FetcDataNocatifions,
   UpdateDataNocatifions,
 } from "../../service/ApiNocatifions";
+import { BookA, SquarePen, TicketSlash } from "lucide-react";
 
 const menuItems = [
   {
@@ -60,31 +61,31 @@ const menuItems = [
   },
   {
     icon: <MdInventory className="text-xl" />,
-    label: "Sản phẩm",
+    label: "Quản lí sản phẩm",
     to: "/admin/products",
     color: "text-orange-500",
   },
   {
     icon: <MdCategory className="text-xl" />,
-    label: "Danh mục",
+    label: "Quản lí danh mục",
     to: "category",
     color: "text-pink-500",
   },
   {
     icon: <FaSquarePollVertical className="text-xl" />,
-    label: "Báo cáo",
+    label: "Quản lí báo cáo",
     to: "/reports",
     color: "text-indigo-500",
   },
   {
     icon: <FiShoppingBag className="text-xl" />,
-    label: "Đơn hàng",
+    label: "Quản lí Đơn hàng",
     to: "order",
     color: "text-teal-500",
   },
   {
     icon: <AiTwotoneAppstore className="text-xl" />,
-    label: "Nhà cung cấp",
+    label: "Quản lí nhà cung cấp",
     to: "/admin/manage-store",
     color: "text-red-500",
   },
@@ -96,26 +97,32 @@ const menuItems = [
   },
   {
     icon: <GiftFilled className="text-xl" />,
-    label: "Khuyến mãi",
+    label: "Quản lí khuyến mãi",
     to: "/admin/voucher",
     color: "text-yellow-500",
   },
   {
-    icon: <GiftFilled className="text-xl" />,
+    icon: <TicketSlash className="text-xl" />,
     label: "Quản lý Banner",
     to: "/admin/banner",
     color: "text-yellow-500",
   },
   {
-    icon: <FcFeedback className="text-xl " />,
-    label: "Đánh giá",
+    icon: <BookA className="text-xl " />,
+    label: "Quản lí Đánh giá",
     to: "/admin/review",
     color: "text-gray-500",
   },
   {
-    icon: <FcFeedback className="text-xl " />,
-    label: "Update",
+    icon: <SquarePen className="text-xl " />,
+    label: "Quản lí nhật kí ",
     to: "/admin/changle-log",
+    color: "text-gray-500",
+  },
+  {
+    icon: <SquarePen className="text-xl " />,
+    label: "Quản lí bài viết ",
+    to: "/admin/quan-li-blog",
     color: "text-gray-500",
   },
 ];

@@ -25,6 +25,7 @@ import { useSelector } from "react-redux";
 import moment from "moment";
 import ReactPaginate from "react-paginate";
 import SizePredictor from "../SizePredictor/SizePredictor";
+import VirtualTryOnApp from "../VirtualTryOnApp/VirtualTryOnApp";
 
 const Details = () => {
   const [api, contextHolder] = notification.useNotification();
@@ -66,6 +67,11 @@ const Details = () => {
   const [topSellingProducts, setTopSellingProducts] = useState([]);
   const navigagte = useNavigate();
   const [open, setOpen] = useState(false);
+
+  // ghép try on
+
+  const [clothImage, setClothImage] = useState(null);
+  const [modal2Open, setModal2Open] = useState(false);
 
   const pageCount = Math.ceil(feedback.length / itemsPerPage);
   const offset = currentPage * itemsPerPage;
@@ -161,6 +167,8 @@ const Details = () => {
       const firstImageIndex = image.findIndex((img) => img.color === item);
       if (firstImageIndex !== -1) {
         setActiveThumbIndex(firstImageIndex);
+        setClothImage(image[firstImageIndex].url);
+        console.log(image[firstImageIndex].url);
 
         setTimeout(() => {
           if (mainSwiper) {
@@ -192,6 +200,7 @@ const Details = () => {
       }
 
       const clickedImage = image[index];
+
       if (clickedImage && clickedImage.color !== SelectedColor) {
         setSelectedColor(clickedImage.color);
         SetcolorCart(clickedImage.color);
@@ -708,6 +717,9 @@ const Details = () => {
                 <Button onClick={showDrawer} className="w-full h-10">
                   Hướng dẫn chọn size
                 </Button>
+                <Button type="primary" onClick={() => setModal2Open(true)}>
+                  Thử đồ bằng AI
+                </Button>
               </div>
             )}
 
@@ -1010,6 +1022,12 @@ const Details = () => {
         </div>
       </div>
       <SizePredictor open={open} onClose={onClose} />
+      <VirtualTryOnApp
+        modal2Open={modal2Open}
+        setModal2Open={setModal2Open}
+        clothImage={clothImage}
+        setClothImage={setClothImage}
+      />
     </div>
   );
 };

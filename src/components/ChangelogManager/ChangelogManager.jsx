@@ -8,7 +8,13 @@ import {
   Search,
   Filter,
 } from "lucide-react";
-import { createChangeLogAPI, getChangeModelAPI } from "../../service/Changelog";
+import {
+  createChangeLogAPI,
+  deleteChangelModelAPI,
+  getChangeModelAPI,
+  updateChangeModelAPI,
+} from "../../service/Changelog";
+import { notification } from "antd";
 
 const ChangelogManager = () => {
   const [changelogs, setChangelogs] = useState([]);
@@ -16,7 +22,7 @@ const ChangelogManager = () => {
   const [editingChangelog, setEditingChangelog] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTag, setSelectedTag] = useState("");
-
+  const [api, contextHolder] = notification.useNotification();
   const fetchDataChangeLogs = async () => {
     try {
       const res = await getChangeModelAPI();
@@ -46,8 +52,6 @@ const ChangelogManager = () => {
   useEffect(() => {
     fetchDataChangeLogs();
   }, []);
-
-  console.log(changelogs);
 
   const [formData, setFormData] = useState({
     version: "",
@@ -157,15 +161,27 @@ const ChangelogManager = () => {
             : changelog
         )
       );
+      const res = await updateChangeModelAPI(editingChangelog._id, formData);
+
+      if (res && res.data.success === true) {
+        api.success({
+          message: `Cập nhật thành công ChangeLog`,
+          description: ` Cập nhật thành công ${editingChangelog.title}`,
+        });
+      }
+      fetchDataChangeLogs();
       setEditingChangelog(null);
     } else {
       const res = await createChangeLogAPI(formData);
 
-      console.log(res);
-
       if (res.data.success === true) {
+        api.info({
+          message: `Notification `,
+          description: ` Tạo mới thành công changelog`,
+        });
         resetForm();
         setShowAddForm(false);
+        fetchDataChangeLogs();
       }
     }
   };
@@ -188,9 +204,19 @@ const ChangelogManager = () => {
     setShowAddForm(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa changelog này?")) {
       setChangelogs((prev) => prev.filter((changelog) => changelog._id !== id));
+      const res = await deleteChangelModelAPI(id);
+      console.log(res);
+
+      if (res && res.data && res.data.data.success === true) {
+        api.info({
+          message: `Notification `,
+          description: ` Xóa thành công`,
+        });
+        fetchDataChangeLogs();
+      }
     }
   };
 
@@ -238,6 +264,7 @@ const ChangelogManager = () => {
   if (showAddForm) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
+        {contextHolder}
         <div className="max-w-4xl mx-auto px-4">
           <div className="bg-white rounded-xl shadow-lg p-8">
             <div className="flex items-center justify-between mb-8">
@@ -307,8 +334,6 @@ const ChangelogManager = () => {
 
               {/* Changes sections */}
               {Object.entries(formData.changes).map(([category, items]) => {
-                console.log(category, items);
-
                 return (
                   <div key={category} className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -428,6 +453,7 @@ const ChangelogManager = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+      {contextHolder}
       <div className="max-w-6xl mx-auto px-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -564,8 +590,6 @@ const ChangelogManager = () => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {Object.entries(changelog.changes).map(
                       ([category, items]) => {
-                        console.log(items);
-
                         return (
                           items?.length > 0 && (
                             <div key={category}>

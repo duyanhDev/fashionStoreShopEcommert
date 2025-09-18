@@ -8,7 +8,6 @@ import Category from "../components/Category/Category";
 import ClothingMale from "../components/ClothingMale/ClothingMale";
 import Details from "../components/Details/Details";
 import EditCustom from "../components/EditCustom/EditCustom";
-import ForgetPassword from "../components/ForgetPassword/ForgetPassword";
 import Home from "../components/Home/Home";
 import DeliveryMap from "../components/Map/Map";
 
@@ -49,6 +48,7 @@ import PaymentSuccessPage from "../components/PaymentSuccessPage/PaymentSuccessP
 import ViewBannerForm from "../components/Banner/ViewBanner/ViewBannerForm";
 import ChangelogPage from "../components/ChangelogPage/ChangelogPage";
 import ChangelogManager from "../components/ChangelogManager/ChangelogManager";
+import BlogManager from "../components/BlogManager/BlogManager";
 
 export const RouterLayout = [
   {
@@ -340,6 +340,14 @@ export const RouterAdmin = [
         element: (
           <PermissionRoute allowedPermissions={["admin"]}>
             <ChangelogManager />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "quan-li-blog",
+        element: (
+          <PermissionRoute allowedPermissions={["admin"]}>
+            <BlogManager />
           </PermissionRoute>
         ),
       },

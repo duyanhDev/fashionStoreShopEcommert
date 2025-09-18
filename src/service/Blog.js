@@ -19,4 +19,14 @@ const getDetaillBlog = async (slug) => {
 const updateViewBlog = async (slug) => {
   return await axios.put(`api/v1/post-view/${slug}`);
 };
-export { CreateBlog, getAllBlog, getDetaillBlog, updateViewBlog };
+
+const updateBlogNew = async (id, dataBlog) => {
+  return await axios.put(`api/v1/update-blog/${id}`, { dataBlog });
+};
+export {
+  CreateBlog,
+  getAllBlog,
+  getDetaillBlog,
+  updateViewBlog,
+  updateBlogNew,
+};

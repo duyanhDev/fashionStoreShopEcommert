@@ -442,11 +442,23 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
       debouncedUpdate(cartId, newQuantity);
     }
   };
-
   const handlePlus = (cartId, currentQuantity) => {
-    const newQuantity = currentQuantity + 1;
     const cartItem = ListCart.items.find((item) => item._id === cartId);
-    const maxQuantity = cartItem?.productId?.inventory || Infinity;
+    if (!cartItem) return;
+
+    // Lấy variant theo color
+    const variant = cartItem.productId.variants.find(
+      (v) => v.color === cartItem.color
+    );
+
+    // Lấy size object theo size
+    const sizeObj = variant?.sizes.find((s) => s.size === cartItem.size);
+
+    // Số lượng tối đa có thể mua
+    const maxQuantity = sizeObj?.quantity || Infinity;
+
+    const newQuantity = currentQuantity + 1;
+
     if (newQuantity > maxQuantity) {
       message.warning(`Số lượng tối đa là ${maxQuantity}!`);
       setInputValue((prev) => ({ ...prev, [cartId]: maxQuantity }));
@@ -462,13 +474,21 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
       setInputValue((prev) => ({ ...prev, [cartId]: value }));
     }
 
-    if (value === "") {
-      return;
-    }
+    if (value === "") return;
 
     const quantity = parseInt(value);
     const cartItem = ListCart.items.find((item) => item._id === cartId);
-    const maxQuantity = cartItem?.productId?.inventory || Infinity;
+
+    // Lấy variant theo color
+    const variant = cartItem.productId.variants.find(
+      (v) => v.color === cartItem.color
+    );
+
+    // Lấy size object theo size
+    const sizeObj = variant?.sizes.find((s) => s.size === cartItem.size);
+
+    // Số lượng tối đa có thể mua
+    const maxQuantity = sizeObj?.quantity || Infinity;
 
     if (quantity === 0) {
       handleRemoveCartProduct(cartId);
@@ -477,7 +497,7 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
       setInputValue((prev) => ({ ...prev, [cartId]: maxQuantity }));
       debouncedUpdate(cartId, maxQuantity);
     } else {
-      const validQuantity = Math.max(1, quantity || 1);
+      const validQuantity = Math.max(1, quantity);
       debouncedUpdate(cartId, validQuantity);
     }
   };
