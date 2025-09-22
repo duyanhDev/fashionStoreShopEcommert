@@ -349,3 +349,20 @@
     height: 32px;
   }
 }
+
+@media (min-width: 1024px) {
+  .cart-container tr {
+    text-align: center;
+  }
+
+  :where(.css-dev-only-do-not-override-apn68).ant-table-wrapper
+    .ant-table-thead
+    > tr
+    > th,
+  :where(.css-dev-only-do-not-override-apn68).ant-table-wrapper
+    .ant-table-thead
+    > tr
+    > td {
+    text-align: center;
+  }
+}

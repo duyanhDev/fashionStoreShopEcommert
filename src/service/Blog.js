@@ -20,9 +20,35 @@ const updateViewBlog = async (slug) => {
   return await axios.put(`api/v1/post-view/${slug}`);
 };
 
-const updateBlogNew = async (id, dataBlog) => {
-  return await axios.put(`api/v1/update-blog/${id}`, { dataBlog });
+const updateBlogNew = async (id, dataBlog, selectedFiles) => {
+  try {
+    const formData = new FormData();
+
+    // append các field text
+    formData.append("title", dataBlog.title);
+    formData.append("tip", dataBlog.tip);
+    formData.append("content", dataBlog.content);
+    formData.append("slug", dataBlog.slugTilte);
+    formData.append("regex", dataBlog.regex);
+    formData.append("userId", dataBlog.userId);
+    formData.append("readTime", dataBlog.readTime);
+    formData.append("featured", dataBlog.featured);
+
+    if (selectedFiles && selectedFiles.length > 0) {
+      selectedFiles.forEach((img) => formData.append("img", img));
+    }
+
+    return await axios.put(`api/v1/update-blog/${id}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  } catch (error) {
+    console.error("Error update blog:", error);
+    throw error;
+  }
 };
+
 export {
   CreateBlog,
   getAllBlog,

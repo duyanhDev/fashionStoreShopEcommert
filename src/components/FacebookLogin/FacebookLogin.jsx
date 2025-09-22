@@ -45,7 +45,22 @@ const FacebookLogin = () => {
       onResolve={({ data }) => handleLogin({ data })}
       onReject={handleError}
     >
-      <FacebookLoginButton />
+      <button
+        style={{
+          border: "1px solid #ccc",
+          color: "#333",
+          borderRadius: "12px",
+          fontWeight: "bold",
+          padding: "10px 20px",
+          cursor: "pointer",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          width: "100%", // nếu muốn full width
+        }}
+      >
+        Đăng nhập bằng Facebook
+      </button>
     </LoginSocialFacebook>
   );
 };

@@ -1,16 +1,49 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import axios from "./../../untils/axios";
 import "./Cart.css";
-import { Input, Select, Radio, Button, Table, notification, Modal } from "antd";
+import {
+  Input,
+  Select,
+  Radio,
+  Button,
+  Table,
+  notification,
+  Modal,
+  message,
+  Card,
+  Divider,
+  Badge,
+  Space,
+  Typography,
+  Checkbox,
+} from "antd";
 import { useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { createOrder } from "../../service/Oder";
-import { SmileOutlined } from "@ant-design/icons";
+import {
+  SmileOutlined,
+  ShoppingCartOutlined,
+  CreditCardOutlined,
+  TruckOutlined,
+  TagOutlined,
+  DeleteOutlined,
+  MinusOutlined,
+  PlusOutlined,
+  CheckCircleOutlined,
+  GiftOutlined,
+  HomeOutlined,
+  PhoneOutlined,
+  MailOutlined,
+  EnvironmentOutlined,
+} from "@ant-design/icons";
 import ClipLoader from "react-spinners/ClipLoader";
 import { getVoucherAPI } from "../../service/APIVoucher.js";
 import moment from "moment";
-
+import { debounce } from "lodash";
 import socket from "../../socket";
+import { UpdateCartQuantity } from "../../service/Cart.js";
+
+const { Title, Text } = Typography;
 
 const CartProducts = ({}) => {
   const { ListCart, user, CartListProductsUser } = useOutletContext();
@@ -27,7 +60,7 @@ const CartProducts = ({}) => {
   const [priceObj, setPriceObj] = useState({});
   const [Products, setProducts] = useState([]);
   const [Name, setName] = useState(user?.name || "");
-  const [number, setNumber] = useState(Number(user?.phone) || "");
+  const [number, setNumber] = useState(user?.phone || "");
   const [email, setEmail] = useState(user?.email || "");
   const [city, setCity] = useState("");
   const [districtName, setDistrictName] = useState("");
@@ -50,7 +83,10 @@ const CartProducts = ({}) => {
   const [isCheckSepay, setIsCheckSepay] = useState(false);
   const [qrnUrl, setQrnUrl] = useState("");
   const [orderId, setOrderId] = useState(null);
+
+  const [inputValue, setInputValue] = useState({});
   const navigate = useNavigate();
+
   const formatPrice = (price) => {
     const numericPrice =
       typeof price === "string"
@@ -60,7 +96,7 @@ const CartProducts = ({}) => {
     return numericPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
   };
 
-  // Các hàm xử lý địa chỉ (giữ nguyên)
+  // Giữ nguyên tất cả các hàm xử lý địa chỉ
   const DataProvine = async () => {
     try {
       let api =
@@ -135,7 +171,6 @@ const CartProducts = ({}) => {
       ListCart.items.length > 0 &&
       !isInitialized
     ) {
-      // Tự động chọn tất cả sản phẩm
       const newCheckedItems = [];
       const newPriceObj = {};
       const newProductId = [];
@@ -179,7 +214,7 @@ const CartProducts = ({}) => {
       setProductId(newProductId);
       setidItems(newItemsId);
       setProducts(newProducts);
-      setIsInitialized(true); // Đánh dấu đã khởi tạo
+      setIsInitialized(true);
     }
   }, [ListCart, isInitialized]);
 
@@ -202,53 +237,226 @@ const CartProducts = ({}) => {
     setValue(e.target.value);
   };
 
-  const data =
-    ListCart && ListCart.items && ListCart.items.length > 0
-      ? ListCart.items.map((item, index) => ({
-          key: index + 1,
-          id: item.productId._id,
-          images: (
-            <img
-              src={
-                item.color
-                  ? item.productId.variants.find(
-                      (variant) => variant.color === item.color
-                    )?.images[0]?.url
-                  : item.productId.variants[0].images[0].url
-              }
-              alt="Product"
-              className="w-12 h-12 md:w-16 md:h-16 object-cover rounded"
-            />
-          ),
-          name: item.productId.name,
-          color: item.color,
-          quantity: item.quantity,
-          size: item.size,
-          price: formatPrice(item.price),
-          totalItemPrice: formatPrice(item.totalItemPrice),
-          _id: item._id,
-        }))
-      : [];
+  const handleMinus = (cartId, currentQuantity) => {
+    if (currentQuantity <= 1) return;
+
+    const newQuantity = currentQuantity - 1;
+    setInputValue((prev) => ({ ...prev, [cartId]: newQuantity }));
+
+    const cartItem = ListCart.items.find((item) => item._id === cartId);
+    if (!cartItem) return;
+
+    const numericPrice =
+      typeof cartItem.totalItemPrice === "string"
+        ? parseInt(cartItem.totalItemPrice.replace(/[^\d]/g, ""), 10) /
+          cartItem.quantity
+        : cartItem.totalItemPrice / cartItem.quantity;
+
+    const uniqueKey = `${cartItem.productId._id}-${cartItem.size}-${cartItem.color}`;
+
+    // Cập nhật giá
+    setPriceObj((prev) => ({
+      ...prev,
+      [uniqueKey]: numericPrice * newQuantity,
+    }));
+
+    // Cập nhật số lượng trong Products array
+    setProducts((prevProducts) =>
+      prevProducts.map((product) =>
+        product._id === cartId
+          ? {
+              ...product,
+              quantity: newQuantity,
+              price: numericPrice * newQuantity,
+            }
+          : product
+      )
+    );
+
+    debouncedUpdate(cartId, newQuantity);
+  };
+
+  const handlePlus = (cartId, currentQuantity) => {
+    const cartItem = ListCart.items.find((item) => item._id === cartId);
+    if (!cartItem) return;
+
+    const variant = cartItem.productId.variants.find(
+      (v) => v.color === cartItem.color
+    );
+    const sizeObj = variant?.sizes.find((s) => s.size === cartItem.size);
+    const maxQuantity = sizeObj?.quantity || Infinity;
+
+    const newQuantity = currentQuantity + 1;
+    const finalQuantity = Math.min(newQuantity, maxQuantity);
+
+    if (newQuantity > maxQuantity) {
+      message.warning(`Số lượng tối đa là ${maxQuantity}!`);
+    }
+
+    setInputValue((prev) => ({ ...prev, [cartId]: finalQuantity }));
+
+    const numericPrice =
+      typeof cartItem.totalItemPrice === "string"
+        ? parseInt(cartItem.totalItemPrice.replace(/[^\d]/g, ""), 10) /
+          cartItem.quantity
+        : cartItem.totalItemPrice / cartItem.quantity;
+
+    const uniqueKey = `${cartItem.productId._id}-${cartItem.size}-${cartItem.color}`;
+
+    // Cập nhật giá
+    setPriceObj((prev) => ({
+      ...prev,
+      [uniqueKey]: numericPrice * finalQuantity,
+    }));
+
+    // Cập nhật số lượng trong Products array
+    setProducts((prevProducts) =>
+      prevProducts.map((product) =>
+        product._id === cartId
+          ? {
+              ...product,
+              quantity: finalQuantity,
+              price: numericPrice * finalQuantity,
+            }
+          : product
+      )
+    );
+
+    debouncedUpdate(cartId, finalQuantity);
+  };
+
+  const handleInputChange = (cartId, value) => {
+    if (value === "" || /^[0-9]*$/.test(value)) {
+      setInputValue((prev) => ({ ...prev, [cartId]: value }));
+    }
+
+    if (value === "") return;
+
+    const quantity = parseInt(value);
+    const cartItem = ListCart.items.find((item) => item._id === cartId);
+    const variant = cartItem.productId.variants.find(
+      (v) => v.color === cartItem.color
+    );
+    const sizeObj = variant?.sizes.find((s) => s.size === cartItem.size);
+    const maxQuantity = sizeObj?.quantity || Infinity;
+
+    if (quantity === 0) {
+      handleRemoveCartProduct(cartId);
+      return;
+    }
+
+    const finalQuantity = Math.min(quantity, maxQuantity);
+
+    if (quantity > maxQuantity) {
+      message.warning(`Số lượng tối đa là ${maxQuantity}!`);
+      setInputValue((prev) => ({ ...prev, [cartId]: maxQuantity }));
+    }
+
+    const numericPrice =
+      typeof cartItem.totalItemPrice === "string"
+        ? parseInt(cartItem.totalItemPrice.replace(/[^\d]/g, ""), 10) /
+          cartItem.quantity
+        : cartItem.totalItemPrice / cartItem.quantity;
+
+    setPriceObj((prev) => ({
+      ...prev,
+      [`${cartItem.productId._id}-${cartItem.size}-${cartItem.color}`]:
+        numericPrice * finalQuantity,
+    }));
+
+    debouncedUpdate(cartId, finalQuantity);
+  };
+
+  const handleBlur = (cartId, value) => {
+    if (value === "" || isNaN(value)) {
+      const currentQuantity =
+        ListCart.items.find((item) => item._id === cartId)?.quantity || 1;
+      setInputValue((prev) => ({ ...prev, [cartId]: currentQuantity }));
+
+      // Cập nhật lại Products array về số lượng gốc
+      const cartItem = ListCart.items.find((item) => item._id === cartId);
+      if (cartItem) {
+        const numericPrice =
+          typeof cartItem.totalItemPrice === "string"
+            ? parseInt(cartItem.totalItemPrice.replace(/[^\d]/g, ""), 10) /
+              cartItem.quantity
+            : cartItem.totalItemPrice / cartItem.quantity;
+
+        setProducts((prevProducts) =>
+          prevProducts.map((product) =>
+            product._id === cartId
+              ? {
+                  ...product,
+                  quantity: currentQuantity,
+                  price: numericPrice * currentQuantity,
+                }
+              : product
+          )
+        );
+      }
+
+      debouncedUpdate(cartId, currentQuantity);
+    }
+  };
+
+  const handleUpdateQuantity = useCallback(
+    async (cartId, newQuantity) => {
+      try {
+        const quantityToUpdate =
+          newQuantity === "" || isNaN(newQuantity) ? 1 : newQuantity;
+        const res = await UpdateCartQuantity(
+          ListCart?._id,
+          cartId,
+          user?._id,
+          quantityToUpdate
+        );
+        if (res.data && res.data.EC === 0) {
+          CartListProductsUser();
+          setInputValue((prev) => ({ ...prev, [cartId]: quantityToUpdate }));
+        } else {
+          throw new Error(res.data?.message || "Update failed");
+        }
+      } catch (error) {
+        setLoadingSpin(false);
+        console.error("Error updating quantity:", error);
+        message.error("Không thể cập nhật số lượng. Vui lòng thử lại!");
+        setInputValue((prev) => ({
+          ...prev,
+          [cartId]:
+            ListCart.items.find((item) => item._id === cartId)?.quantity || 1,
+        }));
+      }
+    },
+    [ListCart, user?._id, CartListProductsUser]
+  );
+
+  const debouncedUpdate = useCallback(
+    debounce(handleUpdateQuantity, 100, { leading: false, trailing: true }),
+    [handleUpdateQuantity]
+  );
+
   const handleSelectAll = () => {
+    const data = ListCart && ListCart.items ? ListCart.items : [];
     const allSelected = checkedItems.length === data?.length;
 
     if (allSelected) {
-      // Bỏ chọn tất cả
       setCheckedItems([]);
       setPriceObj({});
       setProductId([]);
       setProducts([]);
     } else {
-      // Chọn tất cả
       const newCheckedItems = [];
       const newPriceObj = {};
       const newProducts = [];
 
-      data.forEach((product) => {
-        const { id, name, size, quantity, color, totalItemPrice, images, _id } =
-          product;
+      data.forEach((item) => {
+        const { productId, size, quantity, color, totalItemPrice, _id } = item;
+        const id = productId._id;
+        const name = productId.name;
 
-        const imageUrl = images.props.src;
+        const imageUrl =
+          productId.variants.find((variant) => variant.color === color)
+            ?.images[0]?.url || "";
         const numericPrice =
           typeof totalItemPrice === "string"
             ? parseInt(totalItemPrice.replace(/[^\d]/g, ""), 10)
@@ -269,7 +477,6 @@ const CartProducts = ({}) => {
         });
       });
 
-      // Tính lại productId từ danh sách sản phẩm đã chọn
       const updatedProductId = [...new Set(newProducts.map((p) => p.id))];
       const updatedItemCartId = [...new Set(newProducts.map((p) => p._id))];
 
@@ -289,7 +496,7 @@ const CartProducts = ({}) => {
     quantity,
     color,
     price,
-    images,
+    imageUrl,
     itemID,
     _id
   ) => {
@@ -297,65 +504,63 @@ const CartProducts = ({}) => {
       typeof price === "string"
         ? parseInt(price.replace(/[^\d]/g, ""), 10)
         : price;
-    const imageUrl = images.props.src;
     const uniqueKey = `${id}-${size}-${color}`;
 
     setCartId(itemID);
 
-    setCheckedItems((prev) => {
-      const isChecked = prev.includes(uniqueKey);
+    const isCurrentlyChecked = checkedItems.includes(uniqueKey);
 
-      setProducts((prevProducts) => {
-        let updatedProducts;
+    if (isCurrentlyChecked) {
+      // Bỏ chọn sản phẩm
+      setCheckedItems((prev) => prev.filter((item) => item !== uniqueKey));
 
-        if (isChecked) {
-          // Bỏ chọn → loại bỏ khỏi danh sách
-          updatedProducts = prevProducts.filter(
-            (p) => `${p.id}-${p.size}-${p.color}` !== uniqueKey
-          );
-        } else {
-          // Chọn mới → thêm vào danh sách
-          updatedProducts = [
-            ...prevProducts,
-            {
-              id,
-              name,
-              quantity,
-              size,
-              color,
-              price: numericPrice,
-              imageUrl,
-              _id,
-            },
-          ];
-        }
+      setPriceObj((prev) => {
+        const newPriceObj = { ...prev };
+        delete newPriceObj[uniqueKey];
+        return newPriceObj;
+      });
 
-        // Cập nhật danh sách productId và itemId để gửi backend
-        const updatedProductId = [...new Set(updatedProducts.map((p) => p.id))];
+      setProducts((prevProducts) =>
+        prevProducts.filter((p) => `${p.id}-${p.size}-${p.color}` !== uniqueKey)
+      );
+    } else {
+      // Chọn sản phẩm
+      setCheckedItems((prev) => [...prev, uniqueKey]);
+
+      setPriceObj((prev) => ({
+        ...prev,
+        [uniqueKey]: numericPrice,
+      }));
+
+      setProducts((prevProducts) => [
+        ...prevProducts,
+        {
+          id,
+          name,
+          quantity,
+          size,
+          color,
+          price: numericPrice,
+          imageUrl,
+          _id,
+        },
+      ]);
+    }
+
+    // Cập nhật productId và itemId sau khi thay đổi Products
+    setTimeout(() => {
+      setProducts((currentProducts) => {
+        const updatedProductId = [...new Set(currentProducts.map((p) => p.id))];
         const updatedItemCartId = [
-          ...new Set(updatedProducts.map((p) => p._id)),
+          ...new Set(currentProducts.map((p) => p._id)),
         ];
 
         setProductId(updatedProductId);
         setidItems(updatedItemCartId);
 
-        return updatedProducts;
+        return currentProducts;
       });
-
-      return isChecked
-        ? prev.filter((item) => item !== uniqueKey)
-        : [...prev, uniqueKey];
-    });
-
-    setPriceObj((prev) => {
-      const newPriceObj = { ...prev };
-      if (newPriceObj[uniqueKey]) {
-        delete newPriceObj[uniqueKey];
-      } else {
-        newPriceObj[uniqueKey] = numericPrice;
-      }
-      return newPriceObj;
-    });
+    }, 0);
   };
 
   const handleVoucherChange = (discountValue, voucherId, content) => {
@@ -380,98 +585,6 @@ const CartProducts = ({}) => {
     discountValue > 0 ? (discountValue / 100) * totalCheckedPrice : 0;
   const finalPrice = Math.round(totalCheckedPrice - discountAmount);
 
-  // Mobile columns - simplified
-  const mobileColumns = [
-    {
-      title: "Sản phẩm",
-      dataIndex: "name",
-      key: "name",
-      render: (_, record) => (
-        <div className="flex items-start gap-3">
-          <input
-            type="checkbox"
-            checked={checkedItems.includes(
-              `${record.id}-${record.size}-${record.color}`
-            )}
-            onChange={() =>
-              handleCheck(
-                record.id,
-                record.name,
-                record.size,
-                record.quantity,
-                record.color,
-                record.totalItemPrice,
-                record.images,
-                ListCart._id,
-                record._id
-              )
-            }
-            className="mt-1"
-          />
-          {record.images}
-          <div className="flex-1 min-w-0">
-            <div className="font-medium text-sm truncate">{record.name}</div>
-            <div className="text-xs text-gray-500">
-              {record.color} • Size {record.size}
-            </div>
-            <div className="text-xs text-gray-500">SL: {record.quantity}</div>
-            <div className="font-medium text-sm text-blue-600">
-              {record.totalItemPrice}
-            </div>
-          </div>
-        </div>
-      ),
-    },
-  ];
-
-  // Desktop columns
-  const desktopColumns = [
-    { title: "Hình Ảnh", dataIndex: "images", key: "images" },
-    { title: "Tên Sản Phẩm", dataIndex: "name", key: "name" },
-    { title: "Màu", dataIndex: "color", key: "color" },
-    { title: "Số Lượng", dataIndex: "quantity", key: "quantity" },
-    { title: "Size", dataIndex: "size", key: "size" },
-    { title: "Giá từng sản phẩm", dataIndex: "price", key: "price" },
-    { title: "Tổng tiền", dataIndex: "totalItemPrice", key: "totalItemPrice" },
-    {
-      title: (
-        <input
-          type="checkbox"
-          checked={
-            data.length > 0 &&
-            data.every((item) =>
-              checkedItems.includes(`${item.id}-${item.size}-${item.color}`)
-            )
-          }
-          onChange={handleSelectAll}
-        />
-      ),
-      dataIndex: "id",
-      key: "id",
-      render: (_, record) => (
-        <input
-          type="checkbox"
-          checked={checkedItems.includes(
-            `${record.id}-${record.size}-${record.color}`
-          )}
-          onChange={() =>
-            handleCheck(
-              record.id,
-              record.name,
-              record.size,
-              record.quantity,
-              record.color,
-              record.totalItemPrice,
-              record.images,
-              ListCart._id,
-              record._id
-            )
-          }
-        />
-      ),
-    },
-  ];
-
   const handleOrder = async () => {
     if (Products.length === 0) {
       notification.error({
@@ -488,7 +601,10 @@ const CartProducts = ({}) => {
         productId: item.id,
       }));
 
-      const allProductIdsInCart = [...new Set(data.map((item) => item.id))];
+      const data = ListCart && ListCart.items ? ListCart.items : [];
+      const allProductIdsInCart = [
+        ...new Set(data.map((item) => item.productId._id)),
+      ];
 
       const filteredProductIds = allProductIdsInCart.filter((id) => {
         const hasSelected = Products.some((p) => p.id === id);
@@ -685,7 +801,7 @@ const CartProducts = ({}) => {
           description: "Chúc mừng quý khách đã đặt hàng thành công tại shop",
           icon: <SmileOutlined style={{ color: "#108ee9" }} />,
         });
-        navigate(`/vnpay_return/${orderId}`); // Chuyển hướng sau khi thanh toán thành công
+        navigate(`/vnpay_return/${orderId}`);
       }
     };
 
@@ -696,497 +812,613 @@ const CartProducts = ({}) => {
     };
   }, [orderId]);
 
+  const availableVouchers = voucher?.filter(
+    (v) => !v.appliedUsers.some((u) => u.user === user._id)
+  );
+
+  const data =
+    ListCart && ListCart.items && ListCart.items.length > 0
+      ? ListCart.items
+      : [];
+
   return (
-    <div className="min-h-screen w-full mt-16 md:mt-28 pb-32 md:pb-24">
-      <div className="cart-container px-4 md:px-8 lg:px-0">
-        <div className="flex flex-col lg:flex-row lg:justify-between gap-6 lg:gap-8">
-          {qrnUrl && isCheckSepay && (
-            <Modal
-              title="Basic Modal"
-              closable={{ "aria-label": "Custom Close Button" }}
-              open={isCheckSepay}
-              onOk={() => setIsCheckSepay(false)}
-              onCancel={() => setIsCheckSepay(false)}
-            >
-              <img src={qrnUrl} alt="QR Code" className="w-full h-auto" />
-            </Modal>
-          )}
-          {/* Form Section */}
-          <div className="w-full lg:w-1/2">
-            <h1 className="text-2xl md:text-3xl font-semibold mb-4 md:mb-6">
-              Thông tin đặt hàng
-            </h1>
+    <div className="min-h-screen bg-gray-50 mt-20">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center gap-3">
+            <ShoppingCartOutlined className="text-2xl text-blue-600" />
+            <Title level={2} className="!mb-0 !text-gray-800">
+              Giỏ hàng của bạn
+            </Title>
+            <Badge count={data.length} showZero className="ml-2" />
+          </div>
+        </div>
+      </div>
 
-            {/* Name and Phone */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-4">
-              <div className="flex-1">
-                <label className="block text-sm mb-1">Họ và tên</label>
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Product List & Customer Info */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Cart Items */}
+            <Card className="shadow-sm border-0 rounded-2xl">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <Title level={4} className="!mb-0">
+                    Sản phẩm ({data.length})
+                  </Title>
+                </div>
+                <Checkbox
+                  checked={
+                    data.length > 0 &&
+                    data.every((item) =>
+                      checkedItems.includes(
+                        `${item.productId._id}-${item.size}-${item.color}`
+                      )
+                    )
+                  }
+                  onChange={handleSelectAll}
+                >
+                  Chọn tất cả
+                </Checkbox>
+              </div>
+
+              <div className="space-y-4">
+                {data.map((item, index) => {
+                  const uniqueKey = `${item.productId._id}-${item.size}-${item.color}`;
+                  const isChecked = checkedItems.includes(uniqueKey);
+                  const imageUrl =
+                    item.productId.variants.find(
+                      (variant) => variant.color === item.color
+                    )?.images[0]?.url || "";
+
+                  return (
+                    <div
+                      key={index}
+                      className={`p-4 rounded-xl border-2 transition-all duration-200 ${
+                        isChecked
+                          ? "border-blue-200 bg-blue-50"
+                          : "border-gray-100 bg-white hover:border-gray-200"
+                      }`}
+                    >
+                      <div className="flex items-start gap-4">
+                        <Checkbox
+                          checked={isChecked}
+                          onChange={() =>
+                            handleCheck(
+                              item.productId._id,
+                              item.productId.name,
+                              item.size,
+                              inputValue[item._id] !== undefined
+                                ? inputValue[item._id]
+                                : item.quantity,
+                              item.color,
+                              item.totalItemPrice,
+                              imageUrl,
+                              ListCart._id,
+                              item._id
+                            )
+                          }
+                        />
+
+                        <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                          <img
+                            src={imageUrl}
+                            alt={item.productId.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <Title
+                            level={5}
+                            className="!mb-1 !text-gray-800 truncate"
+                          >
+                            {item.productId.name}
+                          </Title>
+                          <div className="flex items-center gap-3 mb-3">
+                            <Text className="text-sm text-gray-500">
+                              Màu:{" "}
+                              <span className="font-medium">{item.color}</span>
+                            </Text>
+                            <Text className="text-sm text-gray-500">
+                              Size:{" "}
+                              <span className="font-medium">{item.size}</span>
+                            </Text>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="small"
+                                icon={<MinusOutlined />}
+                                onClick={() =>
+                                  handleMinus(item._id, item.quantity)
+                                }
+                                disabled={loadingSpin || item.quantity <= 1}
+                                className="rounded-lg border-gray-300"
+                              />
+                              <Input
+                                value={
+                                  inputValue[item._id] !== undefined
+                                    ? inputValue[item._id]
+                                    : item.quantity
+                                }
+                                onChange={(e) =>
+                                  handleInputChange(item._id, e.target.value)
+                                }
+                                onBlur={(e) =>
+                                  handleBlur(item._id, e.target.value)
+                                }
+                                className="w-16 text-center rounded-lg"
+                                size="small"
+                              />
+                              <Button
+                                size="small"
+                                icon={<PlusOutlined />}
+                                onClick={() =>
+                                  handlePlus(item._id, item.quantity)
+                                }
+                                disabled={loadingSpin}
+                                className="rounded-lg border-gray-300"
+                              />
+                            </div>
+
+                            <div className="text-right">
+                              <Text className="text-sm text-gray-400 line-through">
+                                {formatPrice(item.price)}
+                              </Text>
+                              <div className="text-lg font-bold text-red-600">
+                                {formatPrice(item.totalItemPrice)}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+
+            {/* Customer Information */}
+            <Card className="shadow-sm border-0 rounded-2xl">
+              <div className="flex items-center gap-3 mb-6">
+                <HomeOutlined className="text-xl text-blue-600" />
+                <Title level={4} className="!mb-0">
+                  Thông tin giao hàng
+                </Title>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <HomeOutlined className="mr-2" />
+                    Họ và tên *
+                  </label>
+                  <Input
+                    placeholder="Nhập họ và tên"
+                    value={Name}
+                    onChange={(e) => setName(e.target.value)}
+                    status={!Name ? "error" : ""}
+                    size="large"
+                    className="rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <PhoneOutlined className="mr-2" />
+                    Số điện thoại *
+                  </label>
+                  <Input
+                    placeholder="Nhập số điện thoại"
+                    value={number}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^\d*$/.test(value)) {
+                        setNumber(value);
+                      }
+                    }}
+                    status={!number ? "error" : ""}
+                    size="large"
+                    className="rounded-xl"
+                  />
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <MailOutlined className="mr-2" />
+                  Email *
+                </label>
                 <Input
-                  placeholder="Nhập họ và tên"
-                  onChange={(e) => setName(e.target.value)}
-                  value={Name}
-                  status={!Name && "error"}
+                  placeholder="Nhập email của bạn"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  status={!email ? "error" : ""}
                   size="large"
+                  className="rounded-xl"
                 />
               </div>
-              <div className="flex-1">
-                <label className="block text-sm mb-1">Số điện thoại</label>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <EnvironmentOutlined className="mr-2" />
+                  Địa chỉ chi tiết *
+                </label>
                 <Input
-                  placeholder="Nhập số điện thoại"
-                  type="number"
-                  onChange={(e) => setNumber(e.target.value)}
-                  value={number}
-                  status={!number && "error"}
+                  placeholder="Số nhà, tên đường..."
+                  value={fullAddress}
+                  onChange={(e) => setFullAddress(e.target.value)}
+                  status={!fullAddress ? "error" : ""}
                   size="large"
+                  className="rounded-xl"
                 />
               </div>
-            </div>
 
-            {/* Email */}
-            <div className="mb-4">
-              <label className="block text-sm mb-1">Email</label>
-              <Input
-                placeholder="Nhập email của bạn"
-                onChange={(e) => setEmail(e.target.value)}
-                value={email}
-                status={!email && "error"}
-                size="large"
-              />
-            </div>
-
-            {/* Address */}
-            <div className="mb-4">
-              <label className="block text-sm mb-1">Địa chỉ</label>
-              <Input
-                placeholder="Nhập địa chỉ của bạn"
-                onChange={(e) => setFullAddress(e.target.value)}
-                value={fullAddress}
-                status={!fullAddress && "error"}
-                size="large"
-              />
-
-              {/* Location Selects */}
-              <div className="flex flex-col sm:flex-row gap-2 mt-2">
-                <Select
-                  placeholder="Chọn Tỉnh/Thành Phố"
-                  status={!id && "error"}
-                  value={id}
-                  style={{ flex: 1 }}
-                  size="large"
-                  options={[
-                    { value: "", label: "Chọn Tỉnh/Thành Phố", disabled: true },
-                    ...provine.map((item) => ({
-                      value: item.id,
-                      label: item.name,
-                    })),
-                  ]}
-                  onChange={handleProvinceChange}
-                />
-                <Select
-                  placeholder="Chọn Quận/Huyện"
-                  style={{ flex: 1 }}
-                  value={selectedDistrict}
-                  status={!selectedDistrict && "error"}
-                  size="large"
-                  options={[
-                    { value: "", label: "Chọn Quận/Huyện", disabled: true },
-                    ...district.map((item) => ({
-                      value: item.id,
-                      label: item.name,
-                    })),
-                  ]}
-                  onChange={handleDistrictChange}
-                />
-                <Select
-                  placeholder="Chọn Phường/Xã"
-                  style={{ flex: 1 }}
-                  value={WarnDistrict}
-                  status={!WarnDistrict && "error"}
-                  size="large"
-                  options={[
-                    { value: "", label: "Chọn Phường/Xã", disabled: true },
-                    ...warn.map((item) => ({
-                      value: item.id,
-                      label: item.name,
-                    })),
-                  ]}
-                  onChange={(value, name) => {
-                    setSelectedWarnDistrict(value);
-                    setWardName(name.label);
-                    setGhnWardCode(value);
-                  }}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tỉnh/Thành phố *
+                  </label>
+                  <Select
+                    placeholder="Chọn tỉnh/thành"
+                    value={id}
+                    onChange={handleProvinceChange}
+                    status={!id ? "error" : ""}
+                    size="large"
+                    className="w-full rounded-xl"
+                    options={[
+                      {
+                        value: "",
+                        label: "Chọn Tỉnh/Thành Phố",
+                        disabled: true,
+                      },
+                      ...provine.map((item) => ({
+                        value: item.id,
+                        label: item.name,
+                      })),
+                    ]}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Quận/Huyện *
+                  </label>
+                  <Select
+                    placeholder="Chọn quận/huyện"
+                    value={selectedDistrict}
+                    onChange={handleDistrictChange}
+                    status={!selectedDistrict ? "error" : ""}
+                    size="large"
+                    className="w-full rounded-xl"
+                    options={[
+                      { value: "", label: "Chọn Quận/Huyện", disabled: true },
+                      ...district.map((item) => ({
+                        value: item.id,
+                        label: item.name,
+                      })),
+                    ]}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Phường/Xã *
+                  </label>
+                  <Select
+                    placeholder="Chọn phường/xã"
+                    value={WarnDistrict}
+                    onChange={(value, name) => {
+                      setSelectedWarnDistrict(value);
+                      setWardName(name.label);
+                      setGhnWardCode(value);
+                    }}
+                    status={!WarnDistrict ? "error" : ""}
+                    size="large"
+                    className="w-full rounded-xl"
+                    options={[
+                      { value: "", label: "Chọn Phường/Xã", disabled: true },
+                      ...warn.map((item) => ({
+                        value: item.id,
+                        label: item.name,
+                      })),
+                    ]}
+                  />
+                </div>
               </div>
-            </div>
+            </Card>
 
             {/* Payment Methods */}
-            <div className="mt-6">
-              <h1 className="text-2xl md:text-3xl font-semibold mb-4">
-                Hình thức thanh toán
-              </h1>
+            <Card className="shadow-sm border-0 rounded-2xl">
+              <div className="flex items-center gap-3 mb-6">
+                <CreditCardOutlined className="text-xl text-blue-600" />
+                <Title level={4} className="!mb-0">
+                  Phương thức thanh toán
+                </Title>
+              </div>
+
               <Radio.Group onChange={onChange} value={value} className="w-full">
-                <div className="space-y-3">
-                  <div className="payment-option">
-                    <Radio value={"ZaloPay"}>
-                      <div className="flex gap-3 items-start">
+                <div className="space-y-4">
+                  <div className="p-4 rounded-xl border border-gray-200 hover:border-blue-300 transition-colors">
+                    <Radio value="ZaloPay">
+                      <div className="flex items-center gap-4 ml-2">
                         <img
                           src="https://mcdn.coolmate.me/image/October2024/mceclip3_6.png"
                           alt="ZaloPay"
-                          className="w-8 h-8 md:w-11 md:h-11 flex-shrink-0"
+                          className="w-12 h-12"
                         />
-                        <div className="flex-1">
-                          <p className="font-bold text-sm">
+                        <div>
+                          <Text className="font-semibold">
                             Thanh toán qua ZaloPay
-                          </p>
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-gray-500 text-xs">
-                            <span>Hỗ trợ mọi hình thức thanh toán</span>
-                            <img
-                              src="https://mcdn.coolmate.me/image/October2024/mceclip0_27.png"
-                              alt="Payment methods"
-                              className="w-32 sm:w-64"
-                            />
+                          </Text>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Hỗ trợ mọi hình thức thanh toán
                           </div>
                         </div>
                       </div>
                     </Radio>
                   </div>
 
-                  <div className="payment-option">
-                    <Radio value={"cod"}>
-                      <div className="flex gap-3 items-center">
+                  <div className="p-4 rounded-xl border border-gray-200 hover:border-blue-300 transition-colors">
+                    <Radio value="cod">
+                      <div className="flex items-center gap-4 ml-2">
                         <img
                           src="https://mcdn.coolmate.me/image/October2024/mceclip2_42.png"
                           alt="COD"
-                          className="w-8 h-8 md:w-11 md:h-11"
+                          className="w-12 h-12"
                         />
-                        <p className="font-bold text-sm">
-                          Thanh toán khi nhận hàng
-                        </p>
+                        <div>
+                          <Text className="font-semibold">
+                            Thanh toán khi nhận hàng
+                          </Text>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Thanh toán bằng tiền mặt
+                          </div>
+                        </div>
                       </div>
                     </Radio>
                   </div>
 
-                  <div className="payment-option">
-                    <Radio value={"momo"}>
-                      <div className="flex gap-3 items-center">
+                  <div className="p-4 rounded-xl border border-gray-200 hover:border-blue-300 transition-colors">
+                    <Radio value="momo">
+                      <div className="flex items-center gap-4 ml-2">
                         <img
                           src="https://mcdn.coolmate.me/image/October2024/mceclip1_171.png"
                           alt="MoMo"
-                          className="w-8 h-8 md:w-11 md:h-11"
+                          className="w-12 h-12"
                         />
-                        <p className="font-bold text-sm">Ví MoMo</p>
+                        <div>
+                          <Text className="font-semibold">Ví MoMo</Text>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Thanh toán qua ví điện tử MoMo
+                          </div>
+                        </div>
                       </div>
                     </Radio>
                   </div>
 
-                  <div className="payment-option">
-                    <Radio value={"sepay"}>
-                      <div className="flex gap-3 items-center">
+                  <div className="p-4 rounded-xl border border-gray-200 hover:border-blue-300 transition-colors">
+                    <Radio value="sepay">
+                      <div className="flex items-center gap-4 ml-2">
                         <img
                           src="https://sepay.vn//assets/img/logo/sepay-blue-154x50.png"
-                          alt="MoMo"
-                          className="w-8 h-8 md:w-11 md:h-11"
+                          alt="Sepay"
+                          className="w-12 h-12"
                         />
-                        <p className="font-bold text-sm">Ví Sepay</p>
+                        <div>
+                          <Text className="font-semibold">Ví Sepay</Text>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Thanh toán qua ví Sepay
+                          </div>
+                        </div>
                       </div>
                     </Radio>
                   </div>
 
-                  <div className="payment-option">
-                    <Radio value={"vnpay"}>
-                      <div className="flex gap-3 items-start">
+                  <div className="p-4 rounded-xl border border-gray-200 hover:border-blue-300 transition-colors">
+                    <Radio value="vnpay">
+                      <div className="flex items-center gap-4 ml-2">
                         <img
                           src="https://mcdn.coolmate.me/image/October2024/mceclip0_81.png"
                           alt="VNPay"
-                          className="w-8 h-8 md:w-11 md:h-11 flex-shrink-0"
+                          className="w-12 h-12"
                         />
                         <div>
-                          <p className="font-bold text-sm">Ví điện tử VNPAY</p>
-                          <span className="text-gray-500 text-xs">
+                          <Text className="font-semibold">
+                            Ví điện tử VNPAY
+                          </Text>
+                          <div className="text-xs text-gray-500 mt-1">
                             Quét QR để thanh toán
-                          </span>
+                          </div>
                         </div>
                       </div>
                     </Radio>
                   </div>
                 </div>
               </Radio.Group>
-            </div>
+            </Card>
           </div>
 
-          {/* Cart Items Section */}
-          <div className="w-full lg:w-1/2">
-            {/* Products Table */}
-            <div className="mb-6">
-              <div className="block md:hidden">
-                <Table
-                  columns={mobileColumns}
-                  dataSource={data}
-                  size="small"
-                  pagination={{
-                    total: data.length,
-                    pageSize: 5,
-                    showSizeChanger: false,
-                    showTotal: (total) => `Tổng ${total} sản phẩm`,
-                    className: "pagination-custom",
-                  }}
-                  scroll={{ x: false }}
-                />
-              </div>
-              <div className="hidden md:block">
-                <Table
-                  columns={desktopColumns}
-                  dataSource={data}
-                  size="middle"
-                  pagination={{
-                    total: data.length,
-                    pageSize: 5,
-                    showSizeChanger: false,
-                    showTotal: (total) => `Tổng ${total} sản phẩm`,
-                    className: "pagination-custom",
-                  }}
-                  scroll={{ x: 800 }}
-                />
-              </div>
-            </div>
-
+          {/* Right Column - Order Summary */}
+          <div className="space-y-6">
             {/* Vouchers */}
-            <div className="voucher-container">
-              {voucher &&
-                voucher.length > 0 &&
-                voucher.map((voucher, index) => {
-                  const isUsed = voucher.appliedUsers.some(
-                    (u) => u.user === user._id
-                  );
-
-                  if (isUsed) return null;
-
-                  return (
-                    <label
-                      key={index + 1}
-                      className="voucher-item"
-                      htmlFor={`voucher-${voucher._id}`}
-                    >
-                      <div className="voucher-content">
-                        <div className="voucher-header">
-                          <span className="font-bold text-sm">
-                            {voucher.code}
-                          </span>
-                          <span className="text-xs text-gray-500 ml-2">
-                            (Còn {voucher.usageLimit})
-                          </span>
-                        </div>
-                        <div className="voucher-description">
-                          <span className="text-sm">{voucher.content}</span>
-                        </div>
-                        <div className="voucher-footer">
-                          <span className="text-xs text-gray-500">
-                            HSD: {moment(voucher.endDate).format("DD-MM-YYYY")}
-                          </span>
-                          <span className="text-xs text-blue-600">
-                            Điều kiện
-                          </span>
-                        </div>
-                      </div>
-
-                      <input
-                        type="radio"
-                        name="voucher"
-                        id={`voucher-${voucher._id}`}
-                        className="voucher-radio"
-                        checked={selectedVouCher === voucher._id}
-                        onClick={() =>
-                          handleVoucherChange(
-                            voucher.discountValue,
-                            voucher._id,
-                            voucher.content
-                          )
-                        }
-                      />
-                    </label>
-                  );
-                })}
-            </div>
-
-            {/* Price Summary */}
-            <div className="price-summary">
-              <div className="price-row">
-                <span className="text-sm font-bold">Tạm tính</span>
-                <div className="text-right">
-                  <p className="text-sm font-bold">
-                    {checkedItems.length > 0
-                      ? formatPrice(finalPrice)
-                      : formatPrice(0)}
-                  </p>
-                  <i className="text-xs text-gray-500">
-                    (tiết kiệm{" "}
-                    <span className="text-blue-600">
-                      {formatMoney(discountAmount)})
-                    </span>
-                  </i>
-                </div>
+            <Card className="shadow-sm border-0 rounded-2xl sticky top-24">
+              <div className="flex items-center gap-3 mb-6">
+                <TagOutlined className="text-xl text-orange-600" />
+                <Title level={4} className="!mb-0">
+                  Mã giảm giá
+                </Title>
               </div>
 
-              <div className="price-row">
-                <span className="text-sm font-bold">Giảm giá</span>
-                <span className="text-sm">{formatPrice(discountAmount)}</span>
-              </div>
-
-              <div className="price-row border-b border-gray-200 pb-3">
-                <span className="text-sm font-bold">Phí giao hàng</span>
-                <span className="text-sm">
-                  {finalPrice > 290000 ? "Miễn phí" : formatPrice(35000)}
-                </span>
-              </div>
-
-              <div className="price-row pt-3">
-                <span className="text-sm font-bold">Tổng</span>
-                <div className="text-right">
-                  <span className="text-sm font-bold">
-                    {checkedItems.length > 0
-                      ? formatPrice(
-                          finalPrice > 290000 ? finalPrice : finalPrice + 0
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {availableVouchers && availableVouchers.length > 0 ? (
+                  availableVouchers.map((voucher, index) => (
+                    <div
+                      key={index}
+                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                        selectedVouCher === voucher._id
+                          ? "border-orange-400 bg-orange-50"
+                          : "border-gray-200 hover:border-orange-300"
+                      }`}
+                      onClick={() =>
+                        handleVoucherChange(
+                          voucher.discountValue,
+                          voucher._id,
+                          voucher.content
                         )
-                      : formatPrice(0)}
-                  </span>
-                  <i className="block text-red-500 text-xs mt-1">
-                    (Đã giảm {formatMoney(discountAmount)}) trên giá gốc)
-                  </i>
+                      }
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-xl flex items-center justify-center">
+                          <GiftOutlined className="text-white text-lg" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-bold text-sm text-gray-800">
+                            {voucher.code}
+                          </div>
+                          <div className="text-xs text-gray-600 mb-1">
+                            {voucher.content}
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-500">
+                              Còn {voucher.usageLimit} lượt
+                            </span>
+                            <span className="text-orange-600 font-medium">
+                              HSD:{" "}
+                              {moment(voucher.endDate).format("DD/MM/YYYY")}
+                            </span>
+                          </div>
+                        </div>
+                        {selectedVouCher === voucher._id && (
+                          <CheckCircleOutlined className="text-orange-500 text-lg" />
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <GiftOutlined className="text-4xl mb-3" />
+                    <div>Hiện tại không có mã giảm giá khả dụng</div>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            {/* Order Summary */}
+            <Card className="shadow-sm border-0 rounded-2xl sticky top-24">
+              <div className="flex items-center gap-3 mb-6">
+                <TruckOutlined className="text-xl text-green-600" />
+                <Title level={4} className="!mb-0">
+                  Tổng đơn hàng
+                </Title>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center py-2">
+                  <Text>Tạm tính ({checkedItems.length} sản phẩm)</Text>
+                  <Text className="font-semibold">
+                    {formatPrice(totalCheckedPrice)}
+                  </Text>
+                </div>
+
+                <div className="flex justify-between items-center py-2">
+                  <Text>Giảm giá</Text>
+                  <Text className="font-semibold text-green-600">
+                    -{formatPrice(discountAmount)}
+                  </Text>
+                </div>
+
+                <div className="flex justify-between items-center py-2">
+                  <Text>Phí vận chuyển</Text>
+                  <Text className="font-semibold">
+                    {finalPrice > 290000 ? (
+                      <span className="text-green-600">Miễn phí</span>
+                    ) : (
+                      formatPrice(35000)
+                    )}
+                  </Text>
+                </div>
+
+                <Divider className="!my-4" />
+
+                <div className="flex justify-between items-center py-2">
+                  <Title level={4} className="!mb-0">
+                    Tổng cộng
+                  </Title>
+                  <Title level={4} className="!mb-0 !text-red-600">
+                    {formatPrice(
+                      finalPrice > 290000 ? finalPrice : finalPrice + 35000
+                    )}
+                  </Title>
+                </div>
+
+                {discountValue > 0 && (
+                  <div className="text-center text-xs text-green-600 bg-green-50 p-2 rounded-lg">
+                    Bạn đã tiết kiệm được {formatPrice(discountAmount)}
+                  </div>
+                )}
+
+                <Button
+                  type="primary"
+                  size="large"
+                  block
+                  onClick={handleOrder}
+                  className="h-12 text-lg font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 border-0 hover:from-blue-700 hover:to-purple-700"
+                  loading={loadingSpin}
+                  disabled={checkedItems.length === 0}
+                >
+                  Đặt hàng ngay
+                </Button>
+
+                <div className="text-center text-xs text-gray-500 mt-3">
+                  Bằng việc đặt hàng, bạn đồng ý với{" "}
+                  <a href="#" className="text-blue-600 hover:underline">
+                    Điều khoản sử dụng
+                  </a>{" "}
+                  của chúng tôi
                 </div>
               </div>
-            </div>
+            </Card>
           </div>
         </div>
       </div>
 
-      {/* Loading Spinner */}
+      {/* Loading Overlay */}
       {loadingSpin && (
-        <div className="overlay1 fixed flex items-center justify-center">
-          <ClipLoader />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-2xl shadow-2xl text-center">
+            <ClipLoader size={50} color="#3B82F6" />
+            <div className="mt-4 text-lg font-semibold text-gray-700">
+              Đang xử lý đơn hàng...
+            </div>
+            <div className="text-sm text-gray-500 mt-2">
+              Vui lòng không thoát khỏi trang
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Footer */}
-      <div className="footer-checkout">
-        <div className="footer-content">
-          <div className="footer-payment">
-            <div className="payment-display">
-              {(() => {
-                switch (value) {
-                  case "ZaloPay":
-                    return (
-                      <div className="flex items-center gap-2">
-                        <img
-                          src="https://mcdn.coolmate.me/image/October2024/mceclip3_6.png"
-                          alt="ZaloPay"
-                          className="w-8 h-8"
-                        />
-                        <span className="text-sm font-medium text-blue-600 hidden sm:inline">
-                          ZaloPay
-                        </span>
-                      </div>
-                    );
-                  case "cod":
-                    return (
-                      <div className="flex items-center gap-2">
-                        <img
-                          src="https://mcdn.coolmate.me/image/October2024/mceclip2_42.png"
-                          alt="COD"
-                          className="w-8 h-8"
-                        />
-                        <span className="text-sm font-medium text-blue-600 hidden sm:inline">
-                          COD
-                        </span>
-                      </div>
-                    );
-                  case "momo":
-                    return (
-                      <div className="flex items-center gap-2">
-                        <img
-                          src="https://mcdn.coolmate.me/image/October2024/mceclip1_171.png"
-                          alt="MoMo"
-                          className="w-8 h-8"
-                        />
-                        <span className="text-sm font-medium text-blue-600 hidden sm:inline">
-                          MoMo
-                        </span>
-                      </div>
-                    );
-                  case "vnpay":
-                    return (
-                      <div className="flex items-center gap-2">
-                        <img
-                          src="https://mcdn.coolmate.me/image/October2024/mceclip0_81.png"
-                          alt="VNPay"
-                          className="w-8 h-8"
-                        />
-                        <span className="text-sm font-medium text-blue-600 hidden sm:inline">
-                          VNPay
-                        </span>
-                      </div>
-                    );
-                  case "sepay":
-                    return (
-                      <div className="flex items-center gap-2">
-                        <img
-                          src="https://sepay.vn//assets/img/logo/sepay-blue-154x50.png"
-                          alt="VNPay"
-                          className="w-8 h-8"
-                        />
-                        <span className="text-sm font-medium text-blue-600 hidden sm:inline">
-                          Sepay
-                        </span>
-                      </div>
-                    );
-                  default:
-                    return (
-                      <span className="text-sm text-gray-500">
-                        Chọn phương thức
-                      </span>
-                    );
-                }
-              })()}
-            </div>
-
-            <div className="voucher-display">
-              <span className="text-center text-blue-600 font-medium text-sm">
-                {discountValue > 0 ? contentVoucher : "Chưa dùng voucher"}
-              </span>
-            </div>
+      {/* QR Code Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-3">
+            <CreditCardOutlined className="text-blue-600" />
+            <span>Quét mã QR để thanh toán</span>
           </div>
-
-          <div className="footer-total">
-            <div className="total-section">
-              <div className="total-text">
-                <span className="text-sm">Thành tiền</span>
-                <span className="text-lg md:text-xl text-blue-600 font-bold ml-2">
-                  {checkedItems.length > 0
-                    ? formatPrice(
-                        finalPrice > 290000 ? finalPrice : finalPrice + 0
-                      )
-                    : formatPrice(0)}
-                </span>
-              </div>
-              {discountValue > 0 && (
-                <div className="discount-info">
-                  <span className="text-xs text-green-500">
-                    Đã giảm: {formatPrice(discountAmount)}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <Button
-              type="primary"
-              className="order-button"
-              onClick={handleOrder}
-              size="large"
-            >
-              ĐẶT HÀNG
-            </Button>
+        }
+        open={isCheckSepay}
+        onCancel={() => setIsCheckSepay(false)}
+        footer={null}
+        centered
+        className="qr-modal"
+      >
+        <div className="text-center py-4">
+          <img src={qrnUrl} alt="QR Code" className="w-64 h-64 mx-auto mb-4" />
+          <div className="text-gray-600">
+            Sử dụng ứng dụng ngân hàng để quét mã QR
           </div>
         </div>
-      </div>
+      </Modal>
 
       {contextHolder}
     </div>

@@ -49,6 +49,7 @@ import ViewBannerForm from "../components/Banner/ViewBanner/ViewBannerForm";
 import ChangelogPage from "../components/ChangelogPage/ChangelogPage";
 import ChangelogManager from "../components/ChangelogManager/ChangelogManager";
 import BlogManager from "../components/BlogManager/BlogManager";
+import SizeManager from "../components/SizeManager/SizeMange";
 
 export const RouterLayout = [
   {
@@ -348,6 +349,14 @@ export const RouterAdmin = [
         element: (
           <PermissionRoute allowedPermissions={["admin"]}>
             <BlogManager />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "quan-li-bang-size",
+        element: (
+          <PermissionRoute allowedPermissions={["admin"]}>
+            <SizeManager />
           </PermissionRoute>
         ),
       },

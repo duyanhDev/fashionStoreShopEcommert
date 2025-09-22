@@ -16,13 +16,6 @@ import { UserAuth } from "../../service/Auth";
 import { useNavigate } from "react-router-dom";
 
 const BlogManager = () => {
-  // Mock data
-  const mockUsers = [
-    { _id: "1", name: "Nguyễn Văn A", email: "nva@email.com" },
-    { _id: "2", name: "Trần Thị B", email: "ttb@email.com" },
-    { _id: "3", name: "Lê Văn C", email: "lvc@email.com" },
-  ];
-
   const [blogs, setBlogs] = useState([]);
   const [users, setUsers] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -43,8 +36,10 @@ const BlogManager = () => {
     isApproved: false,
   });
 
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
+  // State cho file upload
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [useUrlInput, setUseUrlInput] = useState(false);
 
   const navigate = useNavigate();
 
@@ -61,8 +56,9 @@ const BlogManager = () => {
       featured: false,
       isApproved: false,
     });
-    setImageFile(null);
-    setImagePreview("");
+    setSelectedFiles([]);
+    setImagePreviews([]);
+    setUseUrlInput(false);
   };
 
   const generateSlug = (title) => {
@@ -90,7 +86,9 @@ const BlogManager = () => {
         ...prev,
         img: [{ url: value }],
       }));
-      setImagePreview(value);
+      // Clear file selection when using URL
+      setSelectedFiles([]);
+      setImagePreviews([]);
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -99,47 +97,74 @@ const BlogManager = () => {
     }
   };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Kiểm tra định dạng file
-      const validTypes = [
-        "image/jpeg",
-        "image/jpg",
-        "image/png",
-        "image/gif",
-        "image/webp",
-      ];
+  // Xử lý upload multiple files
+  const handleFileUpload = (e) => {
+    const files = Array.from(e.target.files);
+
+    if (files.length === 0) return;
+
+    // Validation
+    const validTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
+
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    const validFiles = [];
+    const previews = [];
+
+    for (const file of files) {
+      // Kiểm tra định dạng
       if (!validTypes.includes(file.type)) {
-        alert("Vui lòng chọn file ảnh hợp lệ (JPEG, PNG, GIF, WebP)");
-        return;
+        alert(
+          `File "${file.name}" không đúng định dạng. Chỉ chấp nhận: JPEG, PNG, GIF, WebP`
+        );
+        continue;
       }
 
-      // Kiểm tra kích thước file (max 5MB)
-      const maxSize = 5 * 1024 * 1024; // 5MB
+      // Kiểm tra kích thước
       if (file.size > maxSize) {
-        alert("Kích thước file không được vượt quá 5MB");
-        return;
+        alert(`File "${file.name}" quá lớn. Tối đa 5MB`);
+        continue;
       }
 
-      setImageFile(file);
+      validFiles.push(file);
 
-      // Tạo preview URL
+      // Tạo preview
       const reader = new FileReader();
       reader.onload = (e) => {
-        setImagePreview(e.target.result);
-        setFormData((prev) => ({
-          ...prev,
-          img: [{ url: e.target.result }], // Trong thực tế, đây sẽ là URL từ server sau khi upload
-        }));
+        previews.push(e.target.result);
+        if (previews.length === validFiles.length) {
+          setImagePreviews(previews);
+        }
       };
       reader.readAsDataURL(file);
     }
+
+    setSelectedFiles(validFiles);
+
+    // Clear URL input when using file upload
+    setFormData((prev) => ({
+      ...prev,
+      img: [{ url: "" }],
+    }));
+
+    console.log(`Selected ${validFiles.length} valid files`);
   };
 
-  const removeImage = () => {
-    setImageFile(null);
-    setImagePreview("");
+  const removeFile = (index) => {
+    const newFiles = selectedFiles.filter((_, i) => i !== index);
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+
+    setSelectedFiles(newFiles);
+    setImagePreviews(newPreviews);
+  };
+
+  const removeUrlImage = () => {
     setFormData((prev) => ({
       ...prev,
       img: [{ url: "" }],
@@ -147,7 +172,7 @@ const BlogManager = () => {
   };
 
   const handleSubmit = async () => {
-    // Validation cơ bản
+    // Validation
     if (!formData.title.trim()) {
       alert("Vui lòng nhập tiêu đề");
       return;
@@ -165,27 +190,52 @@ const BlogManager = () => {
       return;
     }
 
-    // Trong thực tế, bạn sẽ upload file ảnh lên server trước
-    // và nhận về URL để lưu vào database
-    let imageUrl = formData.img[0]?.url || "";
+    try {
+      if (editingBlog) {
+        // Chuẩn bị data để gửi (không bao gồm img nếu có files)
+        const dataToUpdate = {
+          title: formData.title,
+          tip: formData.tip,
+          content: formData.content,
+          slug: formData.slug,
+          regex: formData.regex,
+          userId: formData.userId,
+          readTime: formData.readTime,
+          featured: formData.featured,
+          isApproved: formData.isApproved,
+        };
 
-    if (imageFile) {
-      // Giả lập upload file - trong thực tế sẽ gọi API upload
-      console.log("Uploading file:", imageFile);
-      // imageUrl = await uploadImageToServer(imageFile);
-      imageUrl = imagePreview; // Tạm thời dùng preview URL
-    }
+        // Chỉ thêm img nếu không có files được chọn (sử dụng URL)
+        if (selectedFiles.length === 0 && formData.img[0]?.url) {
+          dataToUpdate.img = formData.img;
+        }
 
-    if (editingBlog) {
-      // Update blog
+        console.log("Updating blog with:", {
+          data: dataToUpdate,
+          files: selectedFiles,
+          hasFiles: selectedFiles.length > 0,
+        });
 
-      const res = await updateBlogNew(editingBlog._id, formData);
-      console.log(res);
+        const res = await updateBlogNew(
+          editingBlog._id,
+          dataToUpdate,
+          selectedFiles.length > 0 ? selectedFiles : null
+        );
 
-      setShowModal(false);
-      setEditingBlog(null);
-      resetForm();
-      fetchApiBlog();
+        console.log("Update success:", res.data);
+        alert("Cập nhật blog thành công!");
+
+        setShowModal(false);
+        setEditingBlog(null);
+        resetForm();
+        fetchApiBlog();
+      }
+    } catch (err) {
+      console.error("Update failed:", err);
+      alert(
+        "Có lỗi khi cập nhật blog: " +
+          (err.response?.data?.message || err.message)
+      );
     }
   };
 
@@ -197,14 +247,18 @@ const BlogManager = () => {
       content: blog.content,
       slug: blog.slug,
       regex: blog.regex,
-      img: blog.img,
-      userId: blog.userId,
+      img: blog.img || [{ url: "" }],
+      userId: blog.userId?._id || blog.userId,
       readTime: blog.readTime,
       featured: blog.featured,
       isApproved: blog.isApproved,
     });
-    setImagePreview(blog.img[0]?.url || "");
-    setImageFile(null);
+
+    // Reset file states
+    setSelectedFiles([]);
+    setImagePreviews([]);
+    setUseUrlInput(!!blog.img[0]?.url);
+
     setShowModal(true);
   };
 
@@ -215,10 +269,17 @@ const BlogManager = () => {
   };
 
   const getUserName = (userId) => {
-    console.log(userId);
+    if (typeof userId === "string") {
+      const user = users.find((u) => u._id === userId);
+      return user ? user.name : "Unknown User";
+    }
 
-    const user = users.find((u) => u._id === userId._id);
-    return user ? user.name : "Unknown User";
+    if (userId && userId._id) {
+      const user = users.find((u) => u._id === userId._id);
+      return user ? user.name : userId.name || "Unknown User";
+    }
+
+    return "Unknown User";
   };
 
   const filteredBlogs = blogs.filter((blog) => {
@@ -238,10 +299,8 @@ const BlogManager = () => {
   const fetchApiBlog = async () => {
     try {
       const res = await getAllBlog();
-
       if (res && res.data && res.data.EC === 0) {
-        setBlogs(res.data.data); // dữ liệu hiển thị mặc định
-        // tạo danh mục (nếu cần unique)
+        setBlogs(res.data.data);
       }
     } catch (error) {
       console.log(error);
@@ -259,12 +318,10 @@ const BlogManager = () => {
         const filter = res.data.data.filter((item) => {
           return item.role === "admin";
         });
-
         setUsers(filter);
       }
     } catch (error) {
       console.error(error);
-    } finally {
     }
   };
 
@@ -367,11 +424,12 @@ const BlogManager = () => {
                           </span>
                           <span className="flex items-center gap-1">
                             <Eye size={16} />
-                            {blog.view.toLocaleString()} lượt xem
+                            {blog.view ? blog.view.toLocaleString() : "0"} lượt
+                            xem
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock size={16} />
-                            {blog.readTime}
+                            {blog.readTime || "5 phút"}
                           </span>
                         </div>
                       </div>
@@ -501,72 +559,127 @@ const BlogManager = () => {
                     Hình ảnh
                   </label>
 
-                  {/* Image Preview */}
-                  {imagePreview && (
-                    <div className="mb-4 relative">
-                      <img
-                        src={imagePreview}
-                        alt="Preview"
-                        className="w-full h-48 object-cover rounded-lg border"
-                      />
-                      <button
-                        type="button"
-                        onClick={removeImage}
-                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
-                        title="Xóa ảnh"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  )}
-
-                  <div className="space-y-4">
-                    {/* File Upload */}
-                    <div>
-                      <label className="block w-full">
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer">
-                          <Upload
-                            className="mx-auto text-gray-400 mb-2"
-                            size={48}
-                          />
-                          <p className="text-gray-600 mb-1">
-                            Kéo thả file ảnh vào đây hoặc click để chọn
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            Hỗ trợ: JPEG, PNG, GIF, WebP (tối đa 5MB)
-                          </p>
-                        </div>
+                  {/* Toggle between upload and URL */}
+                  <div className="mb-4">
+                    <div className="flex gap-4">
+                      <label className="flex items-center">
                         <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="hidden"
+                          type="radio"
+                          name="imageMethod"
+                          checked={!useUrlInput}
+                          onChange={() => setUseUrlInput(false)}
+                          className="mr-2"
                         />
+                        Upload file
                       </label>
-                    </div>
-
-                    {/* OR divider */}
-                    <div className="flex items-center">
-                      <div className="flex-1 border-t border-gray-300"></div>
-                      <span className="px-3 text-gray-500 text-sm">HOẶC</span>
-                      <div className="flex-1 border-t border-gray-300"></div>
-                    </div>
-
-                    {/* URL Input */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        URL hình ảnh
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="imageMethod"
+                          checked={useUrlInput}
+                          onChange={() => setUseUrlInput(true)}
+                          className="mr-2"
+                        />
+                        Dùng URL
                       </label>
-                      <input
-                        type="url"
-                        name="img-url"
-                        value={formData.img[0]?.url || ""}
-                        onChange={handleInputChange}
-                        placeholder="https://example.com/image.jpg"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
                     </div>
                   </div>
+
+                  {!useUrlInput ? (
+                    // File Upload Section
+                    <div className="space-y-4">
+                      {/* Selected Files Preview */}
+                      {imagePreviews.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                          {imagePreviews.map((preview, index) => (
+                            <div key={index} className="relative">
+                              <img
+                                src={preview}
+                                alt={`Preview ${index + 1}`}
+                                className="w-full h-32 object-cover rounded-lg border"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeFile(index)}
+                                className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
+                                title="Xóa ảnh"
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* File Upload */}
+                      <div>
+                        <label className="block w-full">
+                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer">
+                            <Upload
+                              className="mx-auto text-gray-400 mb-2"
+                              size={48}
+                            />
+                            <p className="text-gray-600 mb-1">
+                              Kéo thả file ảnh vào đây hoặc click để chọn
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              Hỗ trợ: JPEG, PNG, GIF, WebP (tối đa 5MB)
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              Đã chọn: {selectedFiles.length} file(s)
+                            </p>
+                          </div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleFileUpload}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  ) : (
+                    // URL Input Section
+                    <div className="space-y-4">
+                      {/* URL Preview */}
+                      {formData.img[0]?.url && (
+                        <div className="relative mb-4">
+                          <img
+                            src={formData.img[0].url}
+                            alt="URL Preview"
+                            className="w-full h-48 object-cover rounded-lg border"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={removeUrlImage}
+                            className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
+                            title="Xóa ảnh"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* URL Input */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          URL hình ảnh
+                        </label>
+                        <input
+                          type="url"
+                          name="img-url"
+                          value={formData.img[0]?.url || ""}
+                          onChange={handleInputChange}
+                          placeholder="https://example.com/image.jpg"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
