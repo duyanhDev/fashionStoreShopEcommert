@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { getListProductsAPI } from "../../service/ApiProduct";
 import {
-  addOneSize,
-  deleteGuideSize,
-  getIdGuideSize,
-  updateGuideSeize,
-} from "../../service/APISizeGuide";
-import { message, notification } from "antd";
+  addOnePantsSize,
+  deleteOnePantsSize,
+  getIdGuidePantsSize,
+  updateOnePantsSize,
+} from "../../service/APIPantsSize";
+
 // Enhanced Mock Ant Design components with better styling
 const Card = ({ children, title, extra, size = "default", ...props }) => {
   const sizeClasses = {
@@ -21,7 +21,7 @@ const Card = ({ children, title, extra, size = "default", ...props }) => {
       {...props}
     >
       {(title || extra) && (
-        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-xl">
+        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-purple-50 to-blue-50 rounded-t-xl">
           {title && (
             <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
               {title}
@@ -58,12 +58,12 @@ const Button = ({
 
   const typeClasses = {
     primary:
-      "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/25",
+      "bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white shadow-lg shadow-purple-500/25",
     default:
       "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 shadow-sm",
     dashed:
       "bg-white hover:bg-gray-50 text-gray-700 border border-dashed border-gray-300 shadow-sm",
-    link: "bg-transparent hover:bg-blue-50 text-blue-600 hover:text-blue-700",
+    link: "bg-transparent hover:bg-purple-50 text-purple-600 hover:text-purple-700",
   };
 
   let classes = `${baseClasses} ${sizeClasses[size]} ${typeClasses[type]} ${className}`;
@@ -89,24 +89,6 @@ const Button = ({
   );
 };
 
-const Select = ({ value, onChange, options, placeholder, style, ...props }) => (
-  <select
-    value={value}
-    onChange={(e) => onChange && onChange(e.target.value)}
-    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white hover:border-gray-300"
-    style={style}
-    {...props}
-  >
-    {placeholder && <option value="">{placeholder}</option>}
-    {options &&
-      options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-  </select>
-);
-
 const Input = ({
   value,
   onChange,
@@ -131,7 +113,7 @@ const Input = ({
             placeholder={placeholder}
             className={`w-full px-4 py-3 border border-gray-200 ${
               addonBefore ? "rounded-r-lg rounded-l-none" : "rounded-lg"
-            } focus:outline-none focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white hover:border-gray-300`}
+            } focus:outline-none focus:ring-3 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white hover:border-gray-300`}
             {...props}
           />
           {suffix && (
@@ -150,7 +132,7 @@ const Input = ({
       value={value}
       onChange={(e) => onChange && onChange(e)}
       placeholder={placeholder}
-      className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white hover:border-gray-300"
+      className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white hover:border-gray-300"
       {...props}
     />
   );
@@ -172,7 +154,6 @@ const InputNumber = ({
       value={value}
       onChange={(e) => {
         const inputValue = e.target.value;
-        // Cho phép số, dấu chấm, dấu trừ và chuỗi rỗng
         if (inputValue === "" || /^-?\d*\.?\d*$/.test(inputValue)) {
           onChange && onChange(inputValue);
         }
@@ -180,7 +161,7 @@ const InputNumber = ({
       placeholder={placeholder}
       className={`w-full px-4 py-3 border border-gray-200 ${
         addonAfter ? "rounded-l-lg rounded-r-none" : "rounded-lg"
-      } focus:outline-none focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white hover:border-gray-300`}
+      } focus:outline-none focus:ring-3 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white hover:border-gray-300`}
       {...props}
     />
     {addonAfter && (
@@ -219,7 +200,7 @@ const Spin = ({ spinning, children, tip }) => (
     {spinning && (
       <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-3 border-blue-500 border-t-transparent mx-auto"></div>
+          <div className="animate-spin rounded-full h-10 w-10 border-3 border-purple-500 border-t-transparent mx-auto"></div>
           {tip && (
             <p className="text-gray-600 mt-3 text-sm font-medium">{tip}</p>
           )}
@@ -244,7 +225,7 @@ const Alert = ({ message, description, type = "info", showIcon, style }) => {
   const typeClasses = {
     success:
       "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 text-green-800",
-    info: "bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200 text-blue-800",
+    info: "bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 text-purple-800",
     warning:
       "bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200 text-yellow-800",
     error:
@@ -279,27 +260,24 @@ const EditOutlined = () => <span className="text-lg">✏️</span>;
 const DeleteOutlined = () => <span className="text-lg">🗑️</span>;
 const SaveOutlined = () => <span className="text-lg">💾</span>;
 const CloseOutlined = () => <span className="text-lg">❌</span>;
-const CheckOutlined = () => <span className="text-lg">✅</span>;
 const SearchOutlined = () => <span className="text-lg">🔍</span>;
 
-const SizeManager = () => {
+const PantsSizeManager = () => {
   const [products, setProducts] = useState([]);
-  const [productSizeStatus, setProductSizeStatus] = useState({}); // Track which products have sizes
+  const [productSizeStatus, setProductSizeStatus] = useState({});
   const [selectedProductId, setSelectedProductId] = useState("");
   const [sizeData, setSizeData] = useState(null);
   const [editingIndex, setEditingIndex] = useState(-1);
   const [loading, setLoading] = useState(false);
   const [isCheckEdit, setisCheckEdit] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [SizeUpdate, setSizeUpdate] = useState("");
-  const [api, contextHolder] = notification.useNotification();
 
   const fetchProductsdata = async () => {
     try {
       const res = await getListProductsAPI();
       if (res && res.data && res.data.EC === 0) {
         const data = res.data?.data.filter((item) => {
-          return item.category.name === "Áo";
+          return item.category.name === "Quần"; // Filter for pants
         });
         setProducts(data);
 
@@ -316,7 +294,7 @@ const SizeManager = () => {
 
     for (const product of productList) {
       try {
-        const res = await getIdGuideSize(product._id);
+        const res = await getIdGuidePantsSize(product._id);
         sizeStatus[product._id] = {
           hasSize:
             res &&
@@ -352,7 +330,7 @@ const SizeManager = () => {
 
     setTimeout(async () => {
       if (productId) {
-        const res = await getIdGuideSize(productId);
+        const res = await getIdGuidePantsSize(productId);
 
         if (res && res.data && res.data.EC === 0) {
           if (!res.data.data || !res.data.data.sizes) {
@@ -376,11 +354,11 @@ const SizeManager = () => {
       size: "",
       heightRange: "",
       weightRange: "",
-      shirtLength: "",
-      shoulderWidth: "",
-      chestWidth: "",
-      sleeveLength: "",
-      bicepWidth: "",
+      pantsLength: "",
+      waistCircumference: "",
+      hipCircumference: "",
+      thighCircumference: "",
+      crotchLength: "",
     };
 
     setSizeData((prev) => ({
@@ -391,15 +369,14 @@ const SizeManager = () => {
     setEditingIndex(sizeData.sizes.length);
   };
 
-  const handleDeleteSize = async (index, size) => {
+  const handleDeleteSize = async (index) => {
     if (!sizeData) return;
+    const size = sizeData.sizes[index];
+    console.log(size);
 
-    const res = await deleteGuideSize(selectedProductId, size);
+    const res = await deleteOnePantsSize(selectedProductId, size._id);
     if (res && res.data && res.data.EC === 0) {
-      api["success"]({
-        message: `Bạn đã xóa thành công `,
-        description: `Chúc mừng bạn đã xóa thành công size ${size}`,
-      });
+      alert("xóa thành công");
       setSizeData((prev) => ({
         ...prev,
         sizes: prev.sizes.filter((_, i) => i !== index),
@@ -411,8 +388,7 @@ const SizeManager = () => {
     }
   };
 
-  const handleEditSize = (index, size) => {
-    setSizeUpdate(size);
+  const handleEditSize = (index) => {
     setEditingIndex(index);
     setisCheckEdit(true);
   };
@@ -420,29 +396,30 @@ const SizeManager = () => {
   const handleSaveSize = async (index) => {
     setEditingIndex(-1);
     if (isCheckEdit) {
+      setisCheckEdit(false);
+
       const size = sizeData.sizes[editingIndex];
-      const res = await updateGuideSeize(selectedProductId, SizeUpdate, size);
+      const note = sizeData.note;
+      const res = await updateOnePantsSize(
+        selectedProductId,
+        size._id,
+        size,
+        note
+      );
 
       if (res && res.data && res.data.EC === 0) {
-        setisCheckEdit(false);
-        api["success"]({
-          message: `Bạn đã cập nhật thành công`,
-          description: `Chúc mừng bạn đã cập nhật thành công size ${size.size}`,
-        });
-        checkProductSizeStatus(products);
+        alert("Cập nhật thành công");
+        fetchProductsdata();
       }
     } else {
       const size = sizeData.sizes[index];
       const note = sizeData.note;
-      const res = await addOneSize(selectedProductId, size, note);
+      const res = await addOnePantsSize(selectedProductId, size, note);
 
       if (res && res.data && res.data.EC === 0) {
-        api["success"]({
-          message: `Bạn đã thêm thành công size cho sản phẩm `,
-          description: `Chúc mừng bạn đã thêm thành công size ${size.size}`,
-        });
+        alert("Thêm thành công");
         // Update size status after adding
-        checkProductSizeStatus(products);
+        fetchProductsdata();
       }
     }
   };
@@ -496,7 +473,7 @@ const SizeManager = () => {
       {
         key: "size",
         label: "Size",
-        placeholder: "M, L, XL...",
+        placeholder: "29, 30, 31, 32, 33...",
         required: true,
         icon: "🏷️",
       },
@@ -509,47 +486,47 @@ const SizeManager = () => {
       {
         key: "weightRange",
         label: "Cân nặng",
-        placeholder: "55kg - 60kg",
+        placeholder: "55kg - 63kg",
         icon: "⚖️",
       },
       {
-        key: "shirtLength",
-        label: "Dài áo",
-        placeholder: "67",
+        key: "pantsLength",
+        label: "Dài quần",
+        placeholder: "95.5",
         type: "number",
         icon: "📐",
         unit: "cm",
       },
       {
-        key: "shoulderWidth",
-        label: "Rộng vai",
-        placeholder: "43",
+        key: "waistCircumference",
+        label: "1/2 Vòng eo",
+        placeholder: "38.5",
         type: "number",
-        icon: "👐",
+        icon: "⭕",
         unit: "cm",
       },
       {
-        key: "chestWidth",
-        label: "Vòng ngực",
+        key: "hipCircumference",
+        label: "1/2 Vòng mông",
         placeholder: "49",
         type: "number",
-        icon: "🫸",
+        icon: "🍑",
         unit: "cm",
       },
       {
-        key: "sleeveLength",
-        label: "Dài tay",
-        placeholder: "20.5",
+        key: "thighCircumference",
+        label: "1/2 Vòng đùi",
+        placeholder: "32.4",
         type: "number",
-        icon: "🦾",
+        icon: "🦵",
         unit: "cm",
       },
       {
-        key: "bicepWidth",
-        label: "Bắp tay",
-        placeholder: "15.5",
+        key: "crotchLength",
+        label: "1/2 Vòng lai",
+        placeholder: "19",
         type: "number",
-        icon: "💪",
+        icon: "📏",
         unit: "cm",
       },
     ];
@@ -560,11 +537,11 @@ const SizeManager = () => {
         title={
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2">
-              <span className="text-2xl">👕</span>
+              <span className="text-2xl">👖</span>
               <div>
                 <span className="text-lg font-bold">
                   Size:{" "}
-                  <span className="text-blue-600">
+                  <span className="text-purple-600">
                     {size.size || "Chưa đặt tên"}
                   </span>
                 </span>
@@ -598,14 +575,14 @@ const SizeManager = () => {
                   <Button
                     type="default"
                     icon={<EditOutlined />}
-                    onClick={() => handleEditSize(index, size.size)}
+                    onClick={() => handleEditSize(index)}
                     size="small"
                   >
                     Sửa
                   </Button>
                   <Popconfirm
                     title="Bạn có chắc chắn muốn xóa size này?"
-                    onConfirm={() => handleDeleteSize(index, size.size)}
+                    onConfirm={() => handleDeleteSize(index)}
                   >
                     <Button danger icon={<DeleteOutlined />} size="small">
                       Xóa
@@ -660,21 +637,20 @@ const SizeManager = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      {contextHolder}
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       <div className="p-6 max-w-7xl mx-auto">
         <Card
           title={
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <span className="text-3xl">📏</span>
+              <div className="p-3 bg-purple-100 rounded-lg">
+                <span className="text-3xl">👖</span>
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-800">
-                  Quản lý bảng size áo
+                  Quản lý bảng size quần
                 </h1>
                 <p className="text-sm text-gray-600 mt-1">
-                  Tạo và quản lý thông tin size chi tiết cho từng sản phẩm áo
+                  Tạo và quản lý thông tin size chi tiết cho từng sản phẩm quần
                 </p>
               </div>
             </div>
@@ -691,7 +667,7 @@ const SizeManager = () => {
                       {productsWithSizes.length}
                     </div>
                     <div className="text-sm text-green-600 font-medium">
-                      Sản phẩm đã có size
+                      Quần đã có size
                     </div>
                   </div>
                 </div>
@@ -705,21 +681,21 @@ const SizeManager = () => {
                       {productsWithoutSizes.length}
                     </div>
                     <div className="text-sm text-orange-600 font-medium">
-                      Sản phẩm chưa có size
+                      Quần chưa có size
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
+              <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-4">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">📦</span>
+                  <span className="text-2xl">👖</span>
                   <div>
-                    <div className="text-2xl font-bold text-blue-700">
+                    <div className="text-2xl font-bold text-purple-700">
                       {products.length}
                     </div>
-                    <div className="text-sm text-blue-600 font-medium">
-                      Tổng sản phẩm áo
+                    <div className="text-sm text-purple-600 font-medium">
+                      Tổng sản phẩm quần
                     </div>
                   </div>
                 </div>
@@ -742,12 +718,12 @@ const SizeManager = () => {
                   <select
                     value={selectedProductId}
                     onChange={(e) => handleChangeProduct(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white hover:border-gray-300"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white hover:border-gray-300"
                   >
-                    <option value="">-- Chọn sản phẩm --</option>
+                    <option value="">-- Chọn sản phẩm quần --</option>
 
                     {productsWithoutSizes.length > 0 && (
-                      <optgroup label="🔴 Sản phẩm chưa có size (ưu tiên)">
+                      <optgroup label="🔴 Quần chưa có size (ưu tiên)">
                         {productsWithoutSizes.map((product) => (
                           <option key={product._id} value={product._id}>
                             ⭕ {product.name} - Chưa có size
@@ -757,7 +733,7 @@ const SizeManager = () => {
                     )}
 
                     {productsWithSizes.length > 0 && (
-                      <optgroup label="✅ Sản phẩm đã có size">
+                      <optgroup label="✅ Quần đã có size">
                         {productsWithSizes.map((product) => {
                           const sizeCount =
                             productSizeStatus[product._id]?.sizeCount || 0;
@@ -776,7 +752,7 @@ const SizeManager = () => {
             </Card>
 
             {/* Main Content */}
-            <Spin spinning={loading} tip="🔄 Đang tải dữ liệu size...">
+            <Spin spinning={loading} tip="🔄 Đang tải dữ liệu size quần...">
               {sizeData && (
                 <div className="space-y-6">
                   {/* Quick Actions */}
@@ -787,7 +763,7 @@ const SizeManager = () => {
                           <span className="text-lg">📊</span>
                           <span className="font-semibold">
                             Tổng số size:{" "}
-                            <span className="text-blue-600">
+                            <span className="text-purple-600">
                               {sizeData.sizes.length}
                             </span>
                           </span>
@@ -827,13 +803,13 @@ const SizeManager = () => {
                   ) : (
                     <Card>
                       <Empty description="📭 Sản phẩm này chưa có size nào">
-                        <div className="mt-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                        <div className="mt-6 p-6 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200">
                           <div className="text-center">
-                            <span className="text-4xl mb-4 block">👕</span>
-                            <h3 className="text-lg font-semibold text-blue-800 mb-2">
-                              Bắt đầu tạo bảng size
+                            <span className="text-4xl mb-4 block">👖</span>
+                            <h3 className="text-lg font-semibold text-purple-800 mb-2">
+                              Bắt đầu tạo bảng size quần
                             </h3>
-                            <p className="text-blue-600 mb-4">
+                            <p className="text-purple-600 mb-4">
                               Thêm thông tin size chi tiết để khách hàng dễ dàng
                               chọn lựa
                             </p>
@@ -856,21 +832,23 @@ const SizeManager = () => {
                     <Card title="📝 Ghi chú hướng dẫn chọn size">
                       <div className="space-y-4">
                         <Alert
-                          message="💡 Lời khuyên"
-                          description="Ghi chú chi tiết sẽ giúp khách hàng chọn size phù hợp, giảm thiểu việc đổi trả hàng."
+                          message="💡 Lời khuyên cho size quần"
+                          description="Ghi chú chi tiết về cách đo và chọn size quần sẽ giúp khách hàng chọn đúng size, giảm thiểu việc đổi trả."
                           type="info"
                           showIcon
                         />
                         <textarea
                           value={sizeData.note}
                           onChange={handleNoteChange}
-                          placeholder="💬 Nhập ghi chú hướng dẫn chọn size cho khách hàng...
+                          placeholder="💬 Nhập ghi chú hướng dẫn chọn size quần cho khách hàng...
 Ví dụ: 
-- Size M phù hợp với người cao 1m65-1m70, nặng 60-65kg
+- Size 30 phù hợp với người cao 1m65-1m70, nặng 60-65kg
+- Đo vòng eo tại vị trí hẹp nhất của eo
+- Đo vòng mông tại vị trí rộng nhất
 - Nếu thích mặc rộng, nên chọn size lớn hơn 1 số
-- Chất liệu co giãn nhẹ, thoải mái khi mặc"
+- Chất liệu jeans ít co giãn, cần chọn size vừa vặn"
                           rows={6}
-                          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white hover:border-gray-300 resize-none"
+                          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white hover:border-gray-300 resize-none"
                         />
                       </div>
                     </Card>
@@ -880,8 +858,8 @@ Ví dụ:
 
               {!selectedProductId && !loading && (
                 <Card>
-                  <Empty description="🛍️ Vui lòng chọn một sản phẩm để bắt đầu quản lý bảng size">
-                    <div className="mt-6 p-6 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl border border-green-200">
+                  <Empty description="👖 Vui lòng chọn một sản phẩm quần để bắt đầu quản lý bảng size">
+                    <div className="mt-6 p-6 bg-gradient-to-r from-green-50 to-purple-50 rounded-xl border border-green-200">
                       <div className="text-center mb-6">
                         <span className="text-4xl mb-4 block">🚀</span>
                         <h3 className="text-lg font-semibold text-green-800 mb-2">
@@ -895,29 +873,30 @@ Ví dụ:
                           </h4>
                           <ul className="text-green-600 space-y-1">
                             <li>
-                              • Chọn sản phẩm <strong>chưa có size</strong> (màu
-                              đỏ)
+                              • Chọn quần <strong>chưa có size</strong> (màu đỏ)
                             </li>
-                            <li>• Thêm đầy đủ thông số size</li>
-                            <li>• Viết ghi chú hướng dẫn rõ ràng</li>
+                            <li>• Thêm đầy đủ thông số size (8 trường)</li>
+                            <li>• Viết ghi chú hướng dẫn đo size rõ ràng</li>
                           </ul>
                         </div>
                         <div>
-                          <h4 className="font-semibold text-blue-700 mb-2">
-                            🔧 Các chức năng:
+                          <h4 className="font-semibold text-purple-700 mb-2">
+                            📏 Các thông số size:
                           </h4>
-                          <ul className="text-blue-600 space-y-1">
+                          <ul className="text-purple-600 space-y-1">
                             <li>
-                              • <strong>Thêm</strong>: Tạo size mới
+                              • <strong>Dài quần</strong>: Từ eo xuống gấu
                             </li>
                             <li>
-                              • <strong>Sửa</strong>: Chỉnh sửa thông tin size
+                              • <strong>1/2 Vòng eo</strong>: Nửa chu vi vòng eo
                             </li>
                             <li>
-                              • <strong>Xóa</strong>: Loại bỏ size không cần
+                              • <strong>1/2 Vòng mông</strong>: Nửa chu vi vòng
+                              mông
                             </li>
                             <li>
-                              • <strong>Tìm kiếm</strong>: Lọc sản phẩm nhanh
+                              • <strong>1/2 Vòng đùi & lai</strong>: Chi tiết
+                              fit
                             </li>
                           </ul>
                         </div>
@@ -934,4 +913,4 @@ Ví dụ:
   );
 };
 
-export default SizeManager;
+export default PantsSizeManager;

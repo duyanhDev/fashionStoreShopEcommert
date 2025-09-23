@@ -35,9 +35,11 @@ import { MdDeleteForever, MdOutlineVolunteerActivism } from "react-icons/md";
 import { debounce } from "lodash";
 
 import {
+  FaBookReader,
   FaCartArrowDown,
   FaRegListAlt,
   FaRegUserCircle,
+  FaTrashAlt,
   FaUser,
 } from "react-icons/fa";
 import { RiAdminLine } from "react-icons/ri";
@@ -555,6 +557,24 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
     setSearchVisible(!searchVisible);
   };
 
+  const getUserGroup = (UserGroup) => {
+    switch (UserGroup) {
+      case "newUser":
+        return "Thành viên mới";
+
+      case "regular":
+        return "Khách hàng thường xuyên";
+      case "vip":
+        return "Khách hàng vip";
+      case "loyalCustomer":
+        return "Khách hàng trung thành";
+      case "elite":
+        return "Khách hàng thân thiết";
+      default:
+        return "Tài khoản";
+    }
+  };
+
   return (
     <>
       {/* Professional Header */}
@@ -685,7 +705,9 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
                         <p className="text-sm font-semibold text-gray-900 truncate max-w-24">
                           {user.name}
                         </p>
-                        <p className="text-xs text-gray-500">Tài khoản</p>
+                        <p className="text-xs text-gray-500 font-bold">
+                          {getUserGroup(user?.userGroup)}
+                        </p>
                       </div>
                     </button>
                   </Dropdown>
@@ -794,8 +816,10 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
                     className="w-12 h-12 rounded-xl object-cover"
                   />
                   <div>
-                    <p className="font-semibold text-gray-900">{user.name}</p>
-                    <p className="text-sm text-gray-500">Thành viên</p>
+                    <p className="font-semibold text-gray-900">{user?.name}</p>
+                    <p className="text-xs text-gray-500 font-bold">
+                      {getUserGroup(user?.userGroup)}
+                    </p>
                   </div>
                 </div>
               ) : (
@@ -1104,11 +1128,18 @@ const Header = ({ user, ListCart, CartListProductsUser }) => {
               type="primary"
               size="small"
               onClick={handleReadsNocations}
-              className="bg-gradient-to-r from-blue-500 to-indigo-600 border-none"
+              className="flex items-center gap-2 bg-gradient-to-r from-blue-400/30 to-indigo-500/30 backdrop-blur-md text-white font-semibold shadow-lg rounded-xl border border-white/30 hover:scale-105 transform transition-all duration-300 px-4 py-2"
             >
+              <FaBookReader className="w-4 h-4" />
               Đọc tất cả
             </Button>
-            <Button danger size="small" onClick={handleDeleteNocations}>
+
+            <Button
+              size="small"
+              onClick={handleDeleteNocations}
+              className="flex items-center gap-2 bg-gradient-to-r from-pink-400/30 to-purple-500/30 backdrop-blur-md text-white font-semibold shadow-lg rounded-xl border border-white/30 hover:scale-105 transform transition-all duration-300 px-4 py-2"
+            >
+              <FaTrashAlt className="w-4 h-4" />
               Xóa tất cả
             </Button>
           </div>

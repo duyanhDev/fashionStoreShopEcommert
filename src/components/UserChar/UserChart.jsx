@@ -38,14 +38,6 @@ import { getRevenueAPI } from "../../service/APITransaction";
 // Sample data for charts
 
 // Sample data for customer segments
-const customerSegmentData = [
-  { subject: "Khách thường xuyên", A: 120, fullMark: 150 },
-  { subject: "Khách mới", A: 98, fullMark: 150 },
-  { subject: "Khách VIP", A: 86, fullMark: 150 },
-  { subject: "Khách doanh nghiệp", A: 99, fullMark: 150 },
-  { subject: "Khách lẻ", A: 85, fullMark: 150 },
-  { subject: "Khách online", A: 65, fullMark: 150 },
-];
 
 // Sample data for daily sales
 const dailySalesData = Array.from({ length: 30 }, (_, i) => ({
@@ -314,6 +306,30 @@ export default function DashboardStats() {
       profit: totalProfit,
     };
   });
+  let yearCounts = {};
+
+  users?.forEach((user) => {
+    if (!user.created_at) return;
+
+    const date = new Date(user.created_at);
+    if (isNaN(date)) return;
+
+    const year = date.getFullYear();
+    yearCounts[year] = (yearCounts[year] || 0) + 1;
+  });
+
+  // Chuyển thành mảng
+  let yearlyData = Object.keys(yearCounts).map((year) => ({
+    year: parseInt(year),
+    users: yearCounts[year],
+  }));
+
+  // Sắp xếp tăng dần theo năm
+  yearlyData.sort((a, b) => a.year - b.year);
+
+  // Tính riêng năm hiện tại
+  const currentYear = new Date().getFullYear();
+  const currentYearUsers = yearCounts[currentYear] || 0;
 
   // Generate data for top selling products
   const topSellingProducts = products
@@ -327,29 +343,6 @@ export default function DashboardStats() {
     })
     .sort((a, b) => b.sold - a.sold)
     .slice(0, 5);
-
-  // // Sample data for payment methods
-  // const paymentMethodData = [
-  //   { name: "Thanh toán khi nhận hàng", value: 55 },
-  //   { name: "Chuyển khoản ngân hàng", value: 20 },
-  //   { name: "Ví điện tử", value: 15 },
-  //   { name: "Thẻ tín dụng", value: 10 },
-  // ];
-
-  const monthlyData = [
-    { name: "Jan", users: 22, sales: 18, profit: 15 },
-    { name: "Feb", users: 20, sales: 20, profit: 17 },
-    { name: "Mar", users: 24, sales: 25, profit: 20 },
-    { name: "Apr", users: 25, sales: 27, profit: 23 },
-    { name: "May", users: 19, sales: 18, profit: 15 },
-    { name: "Jun", users: 18, sales: 20, profit: 17 },
-    { name: "Jul", users: 16, sales: 15, profit: 12 },
-    { name: "Aug", users: 18, sales: 19, profit: 16 },
-    { name: "Sep", users: 23, sales: 24, profit: 20 },
-    { name: "Oct", users: 26, sales: 28, profit: 23 },
-    { name: "Nov", users: 28, sales: 30, profit: 25 },
-    { name: "Dec", users: 30, sales: 32, profit: 27 },
-  ];
 
   // xử lí dữ liệu  cho biểu độ hiệu suất theo tháng
   const monthlyDataChart = {};
@@ -597,6 +590,72 @@ export default function DashboardStats() {
       count,
     })
   );
+
+  // Mảng tháng
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  // Khởi tạo dữ liệu mặc định cho 12 tháng
+  let monthly2025 = months.map((month) => ({
+    name: month,
+    users: 0,
+  }));
+
+  // Gom users theo tháng trong năm 2025
+  users?.forEach((user) => {
+    if (!user.created_at) return;
+    const date = new Date(user.created_at);
+    if (isNaN(date)) return;
+
+    const year = date.getFullYear();
+    if (year === 2025) {
+      const monthIndex = date.getMonth(); // 0-11
+      monthly2025[monthIndex].users += 1;
+    }
+  });
+
+  // Giả sử mỗi user có field userGroup = "Khách thường xuyên" | "Khách mới" | ...
+  const groupCounts = users?.reduce((acc, user) => {
+    const group = user.userGroup;
+    acc[group] = (acc[group] || 0) + 1;
+    return acc;
+  }, {});
+
+  const customerSegmentData = [
+    {
+      subject: "Khách hàng thường xuyên",
+      A: groupCounts["regular"] || 0,
+      fullMark: 150,
+    },
+    {
+      subject: "Khách hàng mới",
+      A: groupCounts["newUser"] || 0,
+      fullMark: 150,
+    },
+    { subject: "Khách hàng vip", A: groupCounts["vip"] || 0, fullMark: 150 },
+    {
+      subject: "Khách hàng thân thiết",
+      A: groupCounts["elite"] || 0,
+      fullMark: 150,
+    },
+    {
+      subject: "Khách hàng trung thành",
+      A: groupCounts["loyalCustomer"] || 0,
+      fullMark: 150,
+    },
+  ];
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -1107,26 +1166,25 @@ export default function DashboardStats() {
             </div>
           </div>
 
-          {/* Customer Growth Chart */}
           <div className="bg-white p-6 rounded-xl shadow-md mb-8 hover:shadow-lg transition-shadow duration-300">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">
-              Tăng trưởng khách hàng
+              Tăng trưởng khách hàng theo tháng (2025)
             </h2>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={monthlyData}
+                  data={monthly2025}
                   margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis dataKey="name" tick={{ fill: "#6b7280" }} />
                   <YAxis tick={{ fill: "#6b7280" }} />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip />
                   <Legend wrapperStyle={{ paddingTop: 10 }} />
                   <Line
                     type="monotone"
                     dataKey="users"
-                    stroke="#4f46e5"
+                    stroke="#10b981"
                     strokeWidth={3}
                     dot={{ r: 5 }}
                     activeDot={{ r: 8 }}
@@ -1136,170 +1194,58 @@ export default function DashboardStats() {
               </ResponsiveContainer>
             </div>
           </div>
+
+          {/* Customer Growth Chart */}
+          <div className="bg-white p-6 rounded-xl shadow-md mb-8 hover:shadow-lg transition-shadow duration-300">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">
+              Tăng trưởng khách hàng
+            </h2>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={yearlyData}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis
+                        dataKey="year"
+                        tick={{ fill: "#6b7280" }}
+                        label={{
+                          value: "Năm",
+                          position: "insideBottom",
+                          offset: -5,
+                          fill: "#374151",
+                          fontSize: 14,
+                        }}
+                      />
+                      <YAxis
+                        tick={{ fill: "#6b7280" }}
+                        label={{
+                          value: "Số lượng khách hàng",
+                          angle: -90,
+                          position: "insideLeft",
+                          fill: "#374151",
+                          fontSize: 14,
+                        }}
+                      />
+                      <Tooltip />
+                      <Legend wrapperStyle={{ paddingTop: 10 }} />
+                      <Bar
+                        dataKey="users"
+                        fill="#4f46e5"
+                        barSize={50}
+                        name="Khách hàng mới"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </>
       )}
-
-      {/* Recent Activity Section */}
-      <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">
-            Hoạt động gần đây
-          </h2>
-          <button className="text-indigo-600 hover:text-indigo-800 font-medium">
-            Xem tất cả
-          </button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Mã đơn hàng
-                </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Khách hàng
-                </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sản phẩm
-                </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tổng tiền
-                </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Trạng thái
-                </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ngày
-                </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thao tác
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {[1, 2, 3, 4, 5].map((item) => (
-                <tr key={item} className="hover:bg-gray-50">
-                  <td className="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    DH-{Math.floor(Math.random() * 10000)}
-                  </td>
-                  <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-500">
-                    Khách hàng {item}
-                  </td>
-                  <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-500">
-                    Sản phẩm {Math.floor(Math.random() * 100) + 1}
-                  </td>
-                  <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatPrice(Math.floor(Math.random() * 1000000) + 100000)}
-                  </td>
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        item % 3 === 0
-                          ? "bg-yellow-100 text-yellow-800"
-                          : item % 2 === 0
-                          ? "bg-green-100 text-green-800"
-                          : "bg-blue-100 text-blue-800"
-                      }`}
-                    >
-                      {item % 3 === 0
-                        ? "Đang xử lý"
-                        : item % 2 === 0
-                        ? "Hoàn thành"
-                        : "Đang giao"}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(
-                      Date.now() - Math.floor(Math.random() * 10) * 86400000
-                    ).toLocaleDateString("vi-VN")}
-                  </td>
-                  <td className="py-3 px-4 whitespace-nowrap text-sm">
-                    <div className="flex space-x-2">
-                      <button className="text-indigo-600 hover:text-indigo-900">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          />
-                        </svg>
-                      </button>
-                      <button className="text-blue-600 hover:text-blue-900">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          />
-                        </svg>
-                      </button>
-                      <button className="text-red-600 hover:text-red-900">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="mt-4 flex justify-between items-center">
-          <div className="text-sm text-gray-500">
-            Hiển thị 1-5 trong tổng số 25 bản ghi
-          </div>
-          <div className="flex space-x-1">
-            <button className="px-3 py-1 border border-gray-300 bg-white text-gray-500 hover:bg-gray-50 rounded-md">
-              Trước
-            </button>
-            <button className="px-3 py-1 border border-indigo-500 bg-indigo-500 text-white rounded-md">
-              1
-            </button>
-            <button className="px-3 py-1 border border-gray-300 bg-white text-gray-500 hover:bg-gray-50 rounded-md">
-              2
-            </button>
-            <button className="px-3 py-1 border border-gray-300 bg-white text-gray-500 hover:bg-gray-50 rounded-md">
-              3
-            </button>
-            <button className="px-3 py-1 border border-gray-300 bg-white text-gray-500 hover:bg-gray-50 rounded-md">
-              Tiếp
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

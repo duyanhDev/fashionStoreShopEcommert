@@ -50,6 +50,7 @@ import ChangelogPage from "../components/ChangelogPage/ChangelogPage";
 import ChangelogManager from "../components/ChangelogManager/ChangelogManager";
 import BlogManager from "../components/BlogManager/BlogManager";
 import SizeManager from "../components/SizeManager/SizeMange";
+import PantsSizeManager from "../components/PantsSizeManager/PantsSizeManager";
 
 export const RouterLayout = [
   {
@@ -353,10 +354,18 @@ export const RouterAdmin = [
         ),
       },
       {
-        path: "quan-li-bang-size",
+        path: "quan-li-bang-size-ao",
         element: (
           <PermissionRoute allowedPermissions={["admin"]}>
             <SizeManager />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "quan-li-bang-size-quan",
+        element: (
+          <PermissionRoute allowedPermissions={["admin"]}>
+            <PantsSizeManager />
           </PermissionRoute>
         ),
       },

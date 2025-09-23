@@ -3,6 +3,7 @@ import { Calendar, Clock, Eye } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { getDetaillBlog } from "../../service/Blog";
 import moment from "moment";
+import { Helmet } from "react-helmet-async";
 
 const BlogPostPage = () => {
   const { slug } = useParams();
@@ -12,6 +13,7 @@ const BlogPostPage = () => {
     try {
       const res = await getDetaillBlog(slug);
 
+      console.log(res);
       SetblogPost(res.data.data);
     } catch (error) {
       console.log(error);
@@ -192,6 +194,65 @@ const BlogPostPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Helmet>
+        <title>
+          {blogPost.title ? `${blogPost.title} | Fashion Blog` : "Fashion Blog"}
+        </title>
+        <meta
+          name="description"
+          content={
+            blogPost.subtitle ||
+            blogPost.content?.slice(0, 160) ||
+            "Khám phá các bài viết thời trang mới nhất từ Fashion Store."
+          }
+        />
+        <meta
+          name="keywords"
+          content={`${blogPost.category || "thời trang"}, ${
+            blogPost.title || ""
+          }, blog thời trang, xu hướng`}
+        />
+
+        {/* Open Graph */}
+        <meta property="og:title" content={blogPost.title || "Fashion Blog"} />
+        <meta
+          property="og:description"
+          content={
+            blogPost.subtitle ||
+            blogPost.content?.slice(0, 160) ||
+            "Khám phá các bài viết mới nhất."
+          }
+        />
+        <meta
+          property="og:image"
+          content={blogPost.featuredImage || "/placeholder.svg"}
+        />
+        <meta
+          property="og:url"
+          content={`https://fashion-store-shop-ecommert.vercel.app/blog/${slug}`}
+        />
+        <meta property="og:type" content="article" />
+
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={blogPost.title || "Fashion Blog"} />
+        <meta
+          name="twitter:description"
+          content={
+            blogPost.subtitle ||
+            blogPost.content?.slice(0, 160) ||
+            "Khám phá các bài viết mới nhất."
+          }
+        />
+        <meta
+          name="twitter:image"
+          content={blogPost.featuredImage || "/placeholder.svg"}
+        />
+
+        {/* Robots */}
+        <meta name="robots" content="index, follow" />
+      </Helmet>
+
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8 mt-20">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">

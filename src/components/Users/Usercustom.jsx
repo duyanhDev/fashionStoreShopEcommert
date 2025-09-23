@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { DeleteUserAPI, UserAuth } from "../../service/Auth";
+import {
+  DeleteUserAPI,
+  isAccountUserLockerAPI,
+  UserAuth,
+} from "../../service/Auth";
 import {
   Avatar,
   Button,
@@ -128,8 +132,23 @@ const UsersCustom = () => {
     return { level: "Mới", color: "green" };
   };
 
-  const handleStatusToggle = (checked) => {
-    console.log(checked);
+  const handleStatusToggle = async (record, checked) => {
+    try {
+      const res = await isAccountUserLockerAPI(record.id, checked);
+
+      if (res && res.data && res.data.EC === 0) {
+        api.success({
+          message: "Khóa thành công tài khoản",
+          description: res.data.message,
+        });
+        fetchAPIUser();
+      } else {
+        api.success({
+          message: "Khóa không thành công tài khoản",
+          description: res.data.message,
+        });
+      }
+    } catch (error) {}
   };
 
   const columns = [
@@ -171,7 +190,7 @@ const UsersCustom = () => {
     },
     {
       title: "Trạng thái",
-      dataIndex: "isActive",
+      dataIndex: "isAccountLocked",
       width: 120,
       align: "center",
       render: (isAccountLocked, record) => {
@@ -193,7 +212,7 @@ const UsersCustom = () => {
             <Switch
               size="small"
               checked={isAccountLocked}
-              onChange={(checked) => handleStatusToggle(checked)}
+              onChange={(checked) => handleStatusToggle(record, checked)}
             />
           </div>
         );

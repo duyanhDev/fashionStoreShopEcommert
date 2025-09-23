@@ -25,7 +25,21 @@ import {
   FetcDataNocatifions,
   UpdateDataNocatifions,
 } from "../../service/ApiNocatifions";
-import { BookA, SquarePen, TicketSlash } from "lucide-react";
+import { BookA, Grid2x2Check, SquarePen, TicketSlash } from "lucide-react";
+
+import {
+  MdAttachMoney,
+  MdAssessment,
+  MdCardGiftcard,
+  MdRateReview,
+  MdHistory,
+  MdArticle,
+} from "react-icons/md";
+import { FiMessageCircle, FiImage } from "react-icons/fi";
+import { RiCustomerService2Line } from "react-icons/ri";
+import { AiOutlineShop } from "react-icons/ai";
+import { TbRuler2 } from "react-icons/tb";
+import { PiPantsFill } from "react-icons/pi";
 
 const menuItems = [
   {
@@ -34,18 +48,17 @@ const menuItems = [
     to: "",
     color: "text-blue-500",
   },
-
   {
-    icon: <FcFeedback className="text-xl " />,
+    icon: <MdAttachMoney className="text-xl" />,
     label: "Quản lí doanh thu",
     to: "/admin/revenue",
-    color: "text-gray-500",
+    color: "text-green-600",
   },
   {
     icon: <FiUsers className="text-xl" />,
     label: "Khách hàng",
     to: "/admin/usercustom",
-    color: "text-green-500",
+    color: "text-blue-600",
   },
   {
     icon: <RiAdminLine className="text-xl" />,
@@ -54,10 +67,10 @@ const menuItems = [
     color: "text-purple-500",
   },
   {
-    icon: <SettingOutlined className="text-xl" />,
+    icon: <RiCustomerService2Line className="text-xl" />,
     label: "Hỗ trợ tài khoản",
     to: "/admin/adminAccountManagement",
-    color: "text-purple-500",
+    color: "text-indigo-500",
   },
   {
     icon: <MdInventory className="text-xl" />,
@@ -72,10 +85,10 @@ const menuItems = [
     color: "text-pink-500",
   },
   {
-    icon: <FaSquarePollVertical className="text-xl" />,
+    icon: <MdAssessment className="text-xl" />,
     label: "Quản lí báo cáo",
     to: "/reports",
-    color: "text-indigo-500",
+    color: "text-red-500",
   },
   {
     icon: <FiShoppingBag className="text-xl" />,
@@ -84,46 +97,58 @@ const menuItems = [
     color: "text-teal-500",
   },
   {
-    icon: <AiTwotoneAppstore className="text-xl" />,
+    icon: <AiOutlineShop className="text-xl" />,
     label: "Quản lí nhà cung cấp",
     to: "/admin/manage-store",
-    color: "text-red-500",
-  },
-  {
-    icon: <MessageOutlined className="text-xl" />,
-    label: "Hỗ trợ",
-    to: "/admin/support-chat",
     color: "text-cyan-500",
   },
   {
-    icon: <GiftFilled className="text-xl" />,
+    icon: <FiMessageCircle className="text-xl" />,
+    label: "Hỗ trợ",
+    to: "/admin/support-chat",
+    color: "text-blue-400",
+  },
+  {
+    icon: <MdCardGiftcard className="text-xl" />,
     label: "Quản lí khuyến mãi",
     to: "/admin/voucher",
     color: "text-yellow-500",
   },
   {
-    icon: <TicketSlash className="text-xl" />,
+    icon: <FiImage className="text-xl" />,
     label: "Quản lý Banner",
     to: "/admin/banner",
-    color: "text-yellow-500",
+    color: "text-purple-400",
   },
   {
-    icon: <BookA className="text-xl " />,
+    icon: <MdRateReview className="text-xl" />,
     label: "Quản lí Đánh giá",
     to: "/admin/review",
-    color: "text-gray-500",
+    color: "text-amber-500",
   },
   {
-    icon: <SquarePen className="text-xl " />,
-    label: "Quản lí nhật kí ",
+    icon: <MdHistory className="text-xl" />,
+    label: "Quản lí nhật kí",
     to: "/admin/changle-log",
-    color: "text-gray-500",
+    color: "text-slate-500",
   },
   {
-    icon: <SquarePen className="text-xl " />,
-    label: "Quản lí bài viết ",
+    icon: <MdArticle className="text-xl" />,
+    label: "Quản lí bài viết",
     to: "/admin/quan-li-blog",
-    color: "text-gray-500",
+    color: "text-emerald-500",
+  },
+  {
+    icon: <TbRuler2 className="text-xl" />,
+    label: "Quản lí bảng size áo",
+    to: "/admin/quan-li-bang-size-ao",
+    color: "text-rose-500",
+  },
+  {
+    icon: <PiPantsFill className="text-xl" />,
+    label: "Quản lí bảng size quần",
+    to: "/admin/quan-li-bang-size-quan",
+    color: "text-violet-500",
   },
 ];
 
@@ -360,16 +385,7 @@ const Admin = () => {
             </button>
 
             {/* Search Bar - Hidden on mobile */}
-            <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
-              <div className="relative w-full">
-                <SearchOutlined className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm..."
-                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                />
-              </div>
-            </div>
+            <div className="hidden md:flex items-center flex-1 max-w-md mx-8"></div>
 
             {/* Right Side */}
             <div className="flex items-center gap-4">

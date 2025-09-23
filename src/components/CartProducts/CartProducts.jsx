@@ -76,6 +76,7 @@ const CartProducts = ({}) => {
   const [checkedItems, setCheckedItems] = useState([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [idItems, setidItems] = useState([]);
+  const [discountType, setDiscountType] = useState("");
 
   const [ghnDistrictId, setGhnDistrictId] = useState("");
   const [ghnWardCode, setGhnWardCode] = useState("");
@@ -563,17 +564,24 @@ const CartProducts = ({}) => {
     }, 0);
   };
 
-  const handleVoucherChange = (discountValue, voucherId, content) => {
+  const handleVoucherChange = (
+    discountValue,
+    voucherId,
+    content,
+    discountType
+  ) => {
     if (selectedVouCher === voucherId) {
       setSelectedVoucher(null);
       setDiscountValue(0);
       setContentvoucher("");
       setidDiscount("");
+      setDiscountType("");
     } else {
       setSelectedVoucher(voucherId);
       setDiscountValue(discountValue);
       setContentvoucher(content);
       setidDiscount(voucherId);
+      setDiscountType(discountType);
     }
   };
 
@@ -581,8 +589,14 @@ const CartProducts = ({}) => {
     (total, itemId) => total + (priceObj[itemId] || 0),
     0
   );
-  const discountAmount =
-    discountValue > 0 ? (discountValue / 100) * totalCheckedPrice : 0;
+  let discountAmount = 0;
+
+  if (discountType === "percentage") {
+    discountAmount = (discountValue / 100) * totalCheckedPrice;
+  } else if (discountType === "fixed") {
+    discountAmount = discountValue; // trừ thẳng số tiền
+  }
+
   const finalPrice = Math.round(totalCheckedPrice - discountAmount);
 
   const handleOrder = async () => {
@@ -927,7 +941,7 @@ const CartProducts = ({}) => {
                             </Text>
                           </div>
 
-                          <div className="flex items-center justify-between">
+                          <div className="block lg:flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <Button
                                 size="small"
@@ -1264,7 +1278,8 @@ const CartProducts = ({}) => {
                         handleVoucherChange(
                           voucher.discountValue,
                           voucher._id,
-                          voucher.content
+                          voucher.content,
+                          voucher.discountType
                         )
                       }
                     >

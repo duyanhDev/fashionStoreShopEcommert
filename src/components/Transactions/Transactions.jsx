@@ -37,7 +37,10 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import "./Transactions.css";
-import { getRevenueAPI } from "../../service/APITransaction";
+import {
+  exportTransactionsExcel,
+  getRevenueAPI,
+} from "../../service/APITransaction";
 import { generateInvoicePDF, InvoiceTemplate } from "../InvoiceTemplate";
 
 const { Text, Title } = Typography;
@@ -68,6 +71,14 @@ const Transactions = () => {
 
   const onSelectChange = (newSelectedRowKeys) => {
     setSelectedRowKeys(newSelectedRowKeys);
+  };
+
+  const handleExport = async () => {
+    try {
+      const res = await exportTransactionsExcel();
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const fetchData = async () => {
@@ -400,12 +411,16 @@ const Transactions = () => {
   ]);
 
   const handlePreviewInvoice = (transaction) => {
+    console.log(transaction);
+
     setSelectedInvoice(transaction);
     setIsModalOpen(true);
   };
 
   // Hàm xử lý in hóa đơn
   const handlePrintInvoice = async (transaction) => {
+    console.log(transaction);
+
     setPrintLoading(true);
     try {
       await generateInvoicePDF(transaction);
@@ -571,15 +586,9 @@ const Transactions = () => {
             <div className="mt-4 lg:mt-0">
               <Space wrap>
                 <Button
-                  icon={<ExportOutlined />}
-                  size="large"
-                  className="bg-gradient-to-r from-green-500 to-emerald-600 border-0 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
-                >
-                  Xuất Excel
-                </Button>
-                <Button
                   icon={<DownloadOutlined />}
                   size="large"
+                  onClick={handleExport}
                   className="bg-gradient-to-r from-purple-500 to-pink-600 border-0 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
                 >
                   Tải Báo Cáo

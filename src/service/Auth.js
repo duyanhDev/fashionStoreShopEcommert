@@ -1,4 +1,3 @@
-import { User } from "lucide-react";
 import axios from "./../untils/axios";
 
 const LoginAuth = async (email, password) => {
@@ -222,7 +221,7 @@ const AdminChangleProfileAPI = async (
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bear ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       }
     );
@@ -256,7 +255,7 @@ const RegisterUserAPI_Alternative = async (
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bear ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       }
     );
@@ -264,6 +263,21 @@ const RegisterUserAPI_Alternative = async (
     console.log(error);
   }
 };
+
+const isAccountUserLockerAPI = async (userId, isAccountLocked) => {
+  const token = localStorage.getItem("token");
+
+  return await axios.put(
+    `/api/v1/users/${userId}/lock`,
+    { isAccountLocked }, // body rỗng vì chỉ cập nhật trạng thái
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+};
+
 export {
   LoginAuth,
   UserAuth,
@@ -282,4 +296,5 @@ export {
   getRandomAdminAPI,
   checkRestToken,
   RegisterUserAPI_Alternative,
+  isAccountUserLockerAPI,
 };

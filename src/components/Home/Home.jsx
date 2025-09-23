@@ -1,5 +1,14 @@
 import { useState, useEffect } from "react";
-import { Card, notification, Rate, Skeleton, Avatar, Form, Badge } from "antd";
+import {
+  Card,
+  notification,
+  Rate,
+  Skeleton,
+  Avatar,
+  Form,
+  Badge,
+  Calendar,
+} from "antd";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "./Home.css";
 // Import Swiper styles
@@ -38,9 +47,18 @@ import {
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
 import EnhancedProductsSection from "../EnhancedProductsSection/EnhancedProductsSection";
-import { GiftIcon } from "lucide-react";
+import {
+  Award,
+  Check,
+  GiftIcon,
+  Heart,
+  MapPin,
+  ShoppingBag,
+  Star,
+} from "lucide-react";
 import { getAllBlog, updateViewBlog } from "../../service/Blog";
-
+import FashionBrandPartners from "../FashionBrandPartners/FashionBrandPartners";
+import { Helmet } from "react-helmet-async";
 const Home = () => {
   const { ListProducts } = useOutletContext();
   const { user } = useSelector((state) => state.auth);
@@ -58,29 +76,6 @@ const Home = () => {
   const [form] = Form.useForm();
   const [error, setError] = useState("");
   const [blogPosts, SetBlogPosts] = useState([]);
-
-  const brands = [
-    {
-      name: "Nike",
-      logo: "https://logos-world.net/wp-content/uploads/2020/04/Nike-Logo.png",
-    },
-    {
-      name: "Adidas",
-      logo: "https://logos-world.net/wp-content/uploads/2020/04/Adidas-Logo.png",
-    },
-    {
-      name: "Zara",
-      logo: "https://logos-world.net/wp-content/uploads/2020/07/Zara-Logo.png",
-    },
-    {
-      name: "H&M",
-      logo: "https://logos-world.net/wp-content/uploads/2020/04/HM-Logo.png",
-    },
-    {
-      name: "Uniqlo",
-      logo: "https://logos-world.net/wp-content/uploads/2020/09/Uniqlo-Logo.png",
-    },
-  ];
 
   const services = [
     {
@@ -266,6 +261,7 @@ const Home = () => {
   const handleIncreaseView = async (slug) => {
     try {
       const res = await updateViewBlog(slug);
+      console.log(res);
 
       if (res && res.data && res.data.EC === 0) {
         navigate(`/blog/${slug}`);
@@ -275,11 +271,75 @@ const Home = () => {
     }
   };
 
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [slidesToShow, setSlidesToShow] = useState(1);
+
+  useEffect(() => {
+    const updateSlidesToShow = () => {
+      if (window.innerWidth >= 1280) setSlidesToShow(3);
+      else if (window.innerWidth >= 768) setSlidesToShow(2);
+      else setSlidesToShow(1);
+    };
+
+    updateSlidesToShow();
+    window.addEventListener("resize", updateSlidesToShow);
+    return () => window.removeEventListener("resize", updateSlidesToShow);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide(
+        (prev) => (prev + 1) % Math.ceil(feedbackImages.length / slidesToShow)
+      );
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [feedbackImages.length, slidesToShow]);
+  const nextSlide = () => {
+    setCurrentSlide(
+      (prev) => (prev + 1) % Math.ceil(feedbackImages.length / slidesToShow)
+    );
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) =>
+      prev === 0
+        ? Math.ceil(feedbackImages.length / slidesToShow) - 1
+        : prev - 1
+    );
+  };
+
+  const renderStars = (rating) => {
+    return Array.from({ length: 5 }, (_, index) => (
+      <Star
+        key={index}
+        className={`w-4 h-4 ${
+          index < rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+        }`}
+      />
+    ));
+  };
   return (
     <>
       <SliderComponent />
       {contextHolder}
-
+      <Helmet>
+        <title>Shop Quần Áo - Thời Trang Nam Nữ</title>
+        <meta
+          name="description"
+          content="Mua sắm thời trang nam nữ, phụ kiện chính hãng với nhiều ưu đãi hấp dẫn."
+        />
+        <meta property="og:title" content="Shop Quần Áo - Thời Trang Nam Nữ" />
+        <meta
+          property="og:description"
+          content="Khám phá bộ sưu tập thời trang đa dạng, phù hợp mọi phong cách."
+        />
+        <meta
+          property="og:image"
+          content="https://yourdomain.com/og-image.jpg"
+        />
+        <meta property="og:url" content="https://yourdomain.com" />
+      </Helmet>
       <div className="home_doisin">
         {/* Category Section */}
         <div className="py-16 bg-white">
@@ -659,193 +719,224 @@ const Home = () => {
         </div>
 
         {/* Customer Testimonials */}
-        {/* Customer Testimonials */}
-        <div className="py-20 bg-white relative overflow-hidden">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-xl"></div>
-          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-green-200 to-transparent"></div>
+        <section className="py-16 lg:py-24 bg-gradient-to-br from-slate-50 via-white to-blue-50 relative overflow-hidden">
+          {/* Background Decorations */}
+          <div className="absolute top-0 left-0 w-72 h-72 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full opacity-20 -translate-x-1/2 -translate-y-1/2"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-r from-green-100 to-blue-100 rounded-full opacity-20 translate-x-1/3 translate-y-1/3"></div>
 
-          <div className="w-full mx-auto px-4 sm:px-0 lg:px-8 relative z-10">
-            {/* Enhanced Header */}
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            {/* Section Header */}
             <div className="text-center mb-16">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-6">
-                <svg
-                  className="w-8 h-8 text-green-600"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h4v10h-10z" />
-                </svg>
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mb-6 shadow-lg">
+                <Heart className="w-10 h-10 text-white" />
               </div>
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
-                KHÁCH HÀNG NÓI GÌ VỀ
-                <span className="text-white"> CHÚNG TÔI</span>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+                Khách Hàng Nói Gì Về
+                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  {" "}
+                  Chúng Tôi
+                </span>
               </h2>
-              <p className="text-xl text-white max-w-3xl mx-auto leading-relaxed">
+              <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
                 Những phản hồi chân thực từ hàng nghìn khách hàng đã tin tưởng
-                và lựa chọn DOSIN
+                và mua sắm tại cửa hàng
               </p>
             </div>
 
-            <Swiper
-              modules={[Pagination, Autoplay]}
-              pagination={{
-                clickable: true,
-                dynamicBullets: true,
-              }}
-              autoplay={{ delay: 5000, disableOnInteraction: false }}
-              slidesPerView={1}
-              spaceBetween={20}
-              breakpoints={{
-                768: { slidesPerView: 2, spaceBetween: 30 },
-                1024: { slidesPerView: 4, spaceBetween: 40 },
-              }}
-              className="testimonials-swiper !pb-12"
-              style={{
-                "--swiper-pagination-color": "#059669",
-                "--swiper-pagination-bullet-inactive-color": "#d1d5db",
-                "--swiper-pagination-bullet-size": "12px",
-              }}
-            >
-              {feedbackImages?.map((testimonial, index) => (
-                <SwiperSlide key={testimonial._id}>
-                  <div className="group bg-white rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-500 border border-gray-100 overflow-hidden h-full transform hover:-translate-y-2">
-                    {/* Card Header with Gradient */}
-                    <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 relative">
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
-                      <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/10 rounded-full translate-y-10 -translate-x-10"></div>
+            {/* Testimonials Carousel */}
+            <div className="relative">
+              {/* Navigation Buttons */}
+              <button
+                onClick={prevSlide}
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-20 w-12 h-12 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-all duration-200 group"
+              >
+                <svg
+                  className="w-5 h-5 text-gray-600 group-hover:text-blue-600 transition-colors"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
 
-                      <div className="flex items-center relative z-10">
-                        <div className="relative">
-                          <Avatar
-                            src={
-                              testimonial?.userId?.avatar ||
-                              "https://randomuser.me/api/portraits/men/2.jpg"
-                            }
-                            size={64}
-                            className="shadow-xl ring-4 ring-white/20"
-                          />
-                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-3 border-white flex items-center justify-center">
-                            <svg
-                              className="w-3 h-3 text-white"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                clipRule="evenodd"
+              <button
+                onClick={nextSlide}
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-20 w-12 h-12 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-all duration-200 group"
+              >
+                <svg
+                  className="w-5 h-5 text-gray-600 group-hover:text-blue-600 transition-colors"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+
+              {/* Testimonials Container */}
+              <div className="overflow-hidden">
+                <div
+                  className="flex transition-transform duration-500 ease-in-out"
+                  style={{
+                    transform: `translateX(-${
+                      currentSlide * (100 / slidesToShow)
+                    }%)`,
+                  }}
+                >
+                  {feedbackImages.map((testimonial, index) => (
+                    <div
+                      key={testimonial._id}
+                      className={`flex-shrink-0 px-3 ${
+                        slidesToShow === 1
+                          ? "w-full"
+                          : slidesToShow === 2
+                          ? "w-1/2"
+                          : "w-1/3"
+                      }`}
+                    >
+                      <div className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 border border-gray-100 overflow-hidden h-full group hover:-translate-y-1">
+                        {/* Card Header */}
+                        <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 relative">
+                          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-12 translate-x-12"></div>
+
+                          <div className="flex items-center relative z-10">
+                            <div className="relative">
+                              <img
+                                src={testimonial.userId.avatar}
+                                alt={testimonial.userId.name}
+                                className="w-16 h-16 rounded-full object-cover border-4 border-white/20 shadow-lg"
                               />
-                            </svg>
+                              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-2 border-white flex items-center justify-center">
+                                <Check className="w-3 h-3 text-white" />
+                              </div>
+                            </div>
+                            <div className="ml-4 text-white">
+                              <h4 className="font-bold text-lg">
+                                {testimonial.userId.name}
+                              </h4>
+                              <p className="text-blue-100 flex items-center text-sm">
+                                <MapPin className="w-3 h-3 mr-1" />
+                                {testimonial.userId.address.city}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                        <div className="ml-4 text-white">
-                          <h4 className="font-bold text-xl">
-                            {testimonial?.userId?.name}
-                          </h4>
-                          <p className="text-green-100 flex items-center text-sm font-medium">
-                            <MapPinIcon className="w-4 h-4 mr-1" />
-                            {testimonial?.userId?.address?.city || "Việt Nam"}
-                          </p>
+
+                        {/* Card Content */}
+                        <div className="p-6 flex flex-col h-64">
+                          {/* Product Info */}
+                          <div className="flex items-center mb-4 p-2 bg-gray-50 rounded-lg">
+                            <ShoppingBag className="w-4 h-4 text-blue-500 mr-2" />
+                            <span className="text-sm font-medium text-gray-700">
+                              {testimonial.productName}
+                            </span>
+                          </div>
+
+                          {/* Rating */}
+                          <div className="flex items-center mb-4">
+                            <div className="flex space-x-1">
+                              {renderStars(testimonial.rating)}
+                            </div>
+                            <span className="ml-2 text-sm font-medium text-gray-600">
+                              {testimonial.rating}/5 sao
+                            </span>
+                          </div>
+
+                          {/* Review */}
+                          <div className="flex-1 mb-4">
+                            <p className="text-gray-700 text-sm leading-relaxed line-clamp-4">
+                              "{testimonial.review}"
+                            </p>
+                          </div>
+
+                          {/* Footer */}
+                          <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                            <div className="flex items-center text-xs text-gray-500">
+                              <Calendar className="w-3 h-3 mr-1" />
+                              {new Date(
+                                testimonial.createdAt
+                              ).toLocaleDateString("vi-VN")}
+                            </div>
+                            <div className="flex items-center text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                              <Award className="w-3 h-3 mr-1" />
+                              Đã mua hàng
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
+                  ))}
+                </div>
+              </div>
 
-                    {/* Card Content */}
-                    <div className="p-8">
-                      {/* Rating */}
-                      <div className="mb-6">
-                        <Rate
-                          disabled
-                          defaultValue={testimonial?.rating || 5}
-                          className="text-yellow-400 text-lg"
-                        />
-                        <span className="ml-2 text-sm font-medium text-gray-600">
-                          {testimonial?.rating}/5 sao
-                        </span>
-                      </div>
-
-                      {/* Review Content */}
-                      <div className="relative mb-8">
-                        <svg
-                          className="absolute -top-2 -left-2 w-8 h-8 text-green-200"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h4v10h-10z" />
-                        </svg>
-                        <p className="text-gray-700 leading-relaxed text-lg font-medium pl-6 relative">
-                          {testimonial?.review}
-                        </p>
-                      </div>
-
-                      {/* Footer */}
-                      <div className="flex items-center justify-between pt-6 border-t border-gray-100">
-                        <div className="flex items-center text-sm text-gray-500">
-                          <CalendarIcon className="w-4 h-4 mr-2 text-green-500" />
-                          {new Date(testimonial?.createdAt).toLocaleDateString(
-                            "vi-VN"
-                          )}
-                        </div>
-                        <div className="flex items-center text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">
-                          <svg
-                            className="w-4 h-4 mr-1"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          Đã xác minh
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Hover Effect Border */}
-                    <div className="absolute inset-0 rounded-3xl border-2 border-transparent group-hover:border-green-200 transition-all duration-500"></div>
-                  </div>
-                </SwiperSlide>
-              ))}
-            </Swiper>
+              {/* Pagination Dots */}
+              <div className="flex justify-center mt-8 space-x-2">
+                {Array.from(
+                  { length: Math.ceil(feedbackImages.length / slidesToShow) },
+                  (_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentSlide(index)}
+                      className={`w-3 h-3 rounded-full transition-all duration-200 ${
+                        index === currentSlide
+                          ? "bg-blue-500 w-8"
+                          : "bg-gray-300 hover:bg-gray-400"
+                      }`}
+                    />
+                  )
+                )}
+              </div>
+            </div>
 
             {/* Trust Indicators */}
-            <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-900 mb-2">
+            <div className="mt-20 grid grid-cols-2 lg:grid-cols-4 gap-8">
+              <div className="text-center group">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-200">
+                  <Heart className="w-8 h-8 text-white" />
+                </div>
+                <div className="text-3xl font-bold text-gray-900 mb-2">
                   15K+
                 </div>
-                <div className="text-sm text-white font-medium">
-                  Khách hàng hài lòng
-                </div>
+                <div className="text-sm text-gray-600">Khách hàng hài lòng</div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-900 mb-2">
+              <div className="text-center group">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-200">
+                  <Star className="w-8 h-8 text-white fill-white" />
+                </div>
+                <div className="text-3xl font-bold text-gray-900 mb-2">
                   4.9/5
                 </div>
-                <div className="text-sm text-white font-medium">
-                  Điểm đánh giá
-                </div>
+                <div className="text-sm text-gray-600">Điểm đánh giá</div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-900 mb-2">98%</div>
-                <div className="text-sm text-white font-medium">
-                  Tỷ lệ hài lòng
+              <div className="text-center group">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-200">
+                  <Check className="w-8 h-8 text-white" />
                 </div>
+                <div className="text-3xl font-bold text-gray-900 mb-2">98%</div>
+                <div className="text-sm text-gray-600">Tỷ lệ hài lòng</div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-900  mb-2">
+              <div className="text-center group">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-200">
+                  <Award className="w-8 h-8 text-white" />
+                </div>
+                <div className="text-3xl font-bold text-gray-900 mb-2">
                   5 năm
                 </div>
-                <div className="text-sm text-white font-medium">
-                  Kinh nghiệm
-                </div>
+                <div className="text-sm text-gray-600">Kinh nghiệm</div>
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Blog Section */}
         <div className="py-16 bg-white">
@@ -870,7 +961,7 @@ const Home = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {blogPosts.slice(0, 3).map((post, index) => (
-                <div
+                <article
                   key={`${post._id}-${index}`}
                   className="cursor-pointer group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 transform hover:-translate-y-2 overflow-hidden border border-gray-100"
                   onClick={() => {
@@ -912,62 +1003,14 @@ const Home = () => {
                       </Link>
                     </div>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
           </div>
         </div>
 
         {/* Brand Partners */}
-        <div className="py-16 bg-gradient-to-b from-gray-50 to-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12 animate-fade-in">
-              <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">
-                THƯƠNG HIỆU ĐỐI TÁC
-              </h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Những thương hiệu uy tín mà chúng tôi hợp tác
-              </p>
-            </div>
-
-            {/* Desktop Grid View */}
-            <div className="hidden lg:grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
-              {brands.map((brand, index) => (
-                <div
-                  key={index}
-                  className="group relative flex justify-center items-center p-6 bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                >
-                  <img
-                    src={brand.logo}
-                    alt={brand.name}
-                    className="max-h-14 object-contain group-hover:grayscale-0 grayscale transition-all duration-300"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
-                </div>
-              ))}
-            </div>
-
-            {/* Mobile/Tablet Carousel View */}
-            <div className="lg:hidden swiper">
-              <div className="swiper-wrapper">
-                {brands.map((brand, index) => (
-                  <div
-                    key={index}
-                    className="swiper-slide flex justify-center items-center p-6 bg-white rounded-2xl shadow-md"
-                  >
-                    <img
-                      src={brand.logo}
-                      alt={brand.name}
-                      className="max-h-12 object-contain"
-                      loading="lazy"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        <FashionBrandPartners />
 
         {/* All Products */}
         <div className="py-16">

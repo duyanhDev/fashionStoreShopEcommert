@@ -33,6 +33,7 @@ import {
   EyeOutlined,
 } from "@ant-design/icons";
 import { Select } from "antd";
+import { Helmet } from "react-helmet-async";
 const { Option } = Select;
 
 const ClothingMale = () => {
@@ -840,6 +841,21 @@ const ClothingMale = () => {
     <div className="min-h-screen bg-white">
       <SliderComponent />
       {contextHolder}
+
+      <Helmet>
+        <title>Thời trang nam | Shop Duy Anh</title>
+        <meta
+          name="description"
+          content="Bộ sưu tập quần áo nam mới nhất, đa dạng mẫu mã, chất lượng cao."
+        />
+        <meta property="og:title" content="Thời trang nam" />
+        <meta
+          property="og:description"
+          content="Khám phá ngay bộ sưu tập thời trang nam của Shop Duy Anh."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="/logo.png" />
+      </Helmet>
       <div className="clothing-male-wrapper">
         <div className="clothing-male-layout-grid">
           {/* Desktop Sidebar Filters */}

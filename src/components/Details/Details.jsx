@@ -26,7 +26,7 @@ import moment from "moment";
 import ReactPaginate from "react-paginate";
 import SizePredictor from "../SizePredictor/SizePredictor";
 import VirtualTryOnApp from "../VirtualTryOnApp/VirtualTryOnApp";
-
+import { Helmet } from "react-helmet-async";
 const Details = () => {
   const [api, contextHolder] = notification.useNotification();
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
@@ -460,6 +460,28 @@ const Details = () => {
 
   return (
     <div className="mt-28 min-h-screen bg-gradient-to-br from-white via-green-50/20 to-gray-50/30 relative overflow-hidden">
+      <Helmet>
+        <title>
+          {name} | {brand} - Fashion Store
+        </title>
+        <meta name="description" content={description?.slice(0, 160)} />
+        <meta
+          name="keywords"
+          content={`${name}, ${brand}, thời trang, quần áo`}
+        />
+        <meta property="og:title" content={name} />
+        <meta property="og:description" content={description?.slice(0, 160)} />
+        <meta
+          property="og:image"
+          content={image[0]?.url || "/placeholder.svg"}
+        />
+        <meta property="og:type" content="product" />
+        <meta
+          property="og:url"
+          content={`https://fashion-store-shop-ecommert.vercel.app/product/${param.slug}`}
+        />
+        <meta name="robots" content="index, follow" />
+      </Helmet>
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-20 -right-20 w-64 h-64 bg-green-500/5 rounded-full blur-2xl animate-pulse"></div>
         <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-green-400/5 rounded-full blur-2xl animate-pulse delay-1000"></div>
@@ -1021,7 +1043,12 @@ const Details = () => {
           )}
         </div>
       </div>
-      <SizePredictor open={open} onClose={onClose} />
+      <SizePredictor
+        open={open}
+        onClose={onClose}
+        productId={id}
+        shift={shift}
+      />
       <VirtualTryOnApp
         modal2Open={modal2Open}
         setModal2Open={setModal2Open}
