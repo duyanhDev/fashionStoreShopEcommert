@@ -235,7 +235,7 @@ const Home = () => {
     })?.slice(0, 5) || [];
 
   const feedbackImages =
-    ListProducts.length > 0
+    ListProducts?.length > 0
       ? ListProducts?.flatMap((item) =>
           item?.ratings.filter((rating) => rating.rating === 5)
         )
@@ -793,7 +793,7 @@ const Home = () => {
                     }%)`,
                   }}
                 >
-                  {feedbackImages.map((testimonial, index) => (
+                  {feedbackImages?.map((testimonial, index) => (
                     <div
                       key={testimonial._id}
                       className={`flex-shrink-0 px-3 ${
@@ -812,8 +812,8 @@ const Home = () => {
                           <div className="flex items-center relative z-10">
                             <div className="relative">
                               <img
-                                src={testimonial.userId.avatar}
-                                alt={testimonial.userId.name}
+                                src={testimonial?.userId?.avatar}
+                                alt={testimonial?.userId?.name}
                                 className="w-16 h-16 rounded-full object-cover border-4 border-white/20 shadow-lg"
                               />
                               <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-2 border-white flex items-center justify-center">
@@ -822,11 +822,12 @@ const Home = () => {
                             </div>
                             <div className="ml-4 text-white">
                               <h4 className="font-bold text-lg">
-                                {testimonial.userId.name}
+                                {testimonial?.userId?.name}
                               </h4>
                               <p className="text-blue-100 flex items-center text-sm">
                                 <MapPin className="w-3 h-3 mr-1" />
-                                {testimonial.userId.address.city}
+                                {testimonial?.userId?.address?.city ||
+                                  "Nocation"}
                               </p>
                             </div>
                           </div>
