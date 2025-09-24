@@ -41,58 +41,69 @@ const BotChatAI = () => {
   const { user, ListProducts } = useOutletContext();
   const [inputMessage, setInputMessage] = useState("");
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   const suggestionButtons = [
     {
       id: 1,
       text: "Danh sách sản phẩm",
       icon: "🛒",
-      gradient: "from-blue-500 to-blue-600",
+      gradient: "from-emerald-500 to-green-600",
     },
     {
       id: 2,
       text: "Sản phẩm cao cấp",
       icon: "💎",
-      gradient: "from-purple-500 to-purple-600",
+      gradient: "from-green-600 to-emerald-700",
     },
     {
       id: 3,
       text: "Thông tin tác giả",
       icon: "👨‍💻",
-      gradient: "from-green-500 to-green-600",
+      gradient: "from-gray-700 to-gray-800",
     },
     {
       id: 4,
       text: "Chính sách bảo hành",
       icon: "🛡️",
-      gradient: "from-orange-500 to-orange-600",
+      gradient: "from-gray-600 to-gray-700",
     },
   ];
 
+  // Scroll to bottom function - giống ChatGPT
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
+    }
+  };
+
+  // Auto scroll khi có tin nhắn mới
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    setTimeout(() => {
-      const container = messagesEndRef.current?.parentNode?.parentNode;
-      if (container) {
-        container.scrollTop -= 100;
-      }
-    }, 300); // delay để scrollIntoView xong mới scroll lên
-  };
+  // Auto scroll khi đang loading
+  useEffect(() => {
+    if (isLoading) {
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+    }
+  }, [isLoading]);
 
   const UserAvatar = () => (
-    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white text-sm font-semibold shadow-lg ring-2 ring-blue-100">
+    <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-white text-xs sm:text-sm font-semibold shadow-lg ring-2 ring-emerald-100 flex-shrink-0">
       {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
     </div>
   );
 
   const BotAvatar = () => (
-    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg ring-2 ring-emerald-100">
+    <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 shadow-lg ring-2 ring-gray-200 flex-shrink-0">
       <svg
-        className="w-5 h-5 text-white"
+        className="w-4 h-4 sm:w-5 sm:h-5 text-white"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -108,7 +119,7 @@ const BotChatAI = () => {
   );
 
   const LoadingIndicator = () => (
-    <div className="flex items-center space-x-2 text-gray-500">
+    <div className="flex items-center space-x-2 text-gray-500 px-4 py-3">
       <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
         <circle
           className="opacity-25"
@@ -138,12 +149,13 @@ const BotChatAI = () => {
           style={{ animationDelay: "0.4s" }}
         ></div>
       </div>
+      <span className="text-sm hidden sm:inline">Đang suy nghĩ...</span>
     </div>
   );
 
   const MessageActions = ({ message }) => (
-    <div className="flex items-center space-x-2 mt-3 opacity-0 group-hover:opacity-100 transition-all duration-200">
-      <button className="flex items-center space-x-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
+    <div className="flex items-center space-x-1 sm:space-x-2 mt-3 opacity-0 group-hover:opacity-100 transition-all duration-200">
+      <button className="flex items-center space-x-1 px-2 py-1 text-xs text-gray-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors">
         <svg
           className="w-3 h-3"
           fill="none"
@@ -157,7 +169,7 @@ const BotChatAI = () => {
             d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
           />
         </svg>
-        <span>Sao chép</span>
+        <span className="hidden sm:inline">Sao chép</span>
       </button>
       <button className="flex items-center px-2 py-1 text-xs text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors">
         <svg
@@ -171,21 +183,6 @@ const BotChatAI = () => {
             strokeLinejoin="round"
             strokeWidth={2}
             d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
-          />
-        </svg>
-      </button>
-      <button className="flex items-center px-2 py-1 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors">
-        <svg
-          className="w-3 h-3"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M7.5 15h2.25m8.25-9.75a3 3 0 11-6 6m2.25-3a3 3 0 11-6 6m2.25-3a3 3 0 11-6 6"
           />
         </svg>
       </button>
@@ -420,14 +417,36 @@ Vui lòng thử lại với một trong những chủ đề trên!`,
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
+      <style jsx>{`
+        /* Custom scrollbar */
+        .messages-container::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .messages-container::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 10px;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb {
+          background: #10b981;
+          border-radius: 10px;
+          opacity: 0.7;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb:hover {
+          background: #059669;
+        }
+      `}</style>
+
       {/* Header */}
-      <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200 shadow-sm sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-center space-x-4">
-            <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-lg">
+      <div className="bg-white/95 backdrop-blur-md border-b border-green-100 shadow-sm sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-center space-x-3 sm:space-x-4">
+            <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-emerald-500 via-green-500 to-emerald-600 shadow-lg ring-2 ring-green-100">
               <svg
-                className="w-6 h-6 text-white"
+                className="w-5 h-5 sm:w-6 sm:h-6 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -441,12 +460,12 @@ Vui lòng thử lại với một trong những chủ đề trên!`,
               </svg>
             </div>
             <div className="text-center">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+              <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-gray-800 via-green-700 to-emerald-600 bg-clip-text text-transparent">
                 AI Assistant Pro
               </h1>
-              <p className="text-sm text-gray-500 flex items-center justify-center">
+              <p className="text-xs sm:text-sm text-gray-600 flex items-center justify-center">
                 <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-                Trực tuyến • Phản hồi trong vài giây
+                Trực tuyến • Phản hồi nhanh chóng
               </p>
             </div>
           </div>
@@ -454,53 +473,56 @@ Vui lòng thử lại với một trong những chủ đề trên!`,
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-6 py-8 space-y-8">
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto messages-container"
+        style={{ scrollBehavior: "smooth" }}
+      >
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8 space-y-4 sm:space-y-6">
           {messages.map((message, index) => (
             <div
               key={message.id}
-              className={`flex items-start space-x-4 group animate-in slide-in-from-bottom-4 duration-500 ${
+              className={`flex items-start space-x-2 sm:space-x-4 group animate-in slide-in-from-bottom-4 duration-500 ${
                 message.sender === "user"
                   ? "flex-row-reverse space-x-reverse"
                   : ""
               }`}
               style={{ animationDelay: `${index * 100}ms` }}
-              ref={messagesEndRef}
             >
               {message.sender === "bot" ? <BotAvatar /> : <UserAvatar />}
 
               <div
-                className={`flex-1 max-w-3xl ${
+                className={`flex-1 max-w-[85%] sm:max-w-4xl ${
                   message.sender === "user" ? "flex justify-end" : ""
                 }`}
               >
                 <div
                   className={`relative ${
                     message.sender === "user"
-                      ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-3xl rounded-br-lg shadow-lg"
-                      : "bg-white/80 backdrop-blur-sm text-gray-800 rounded-3xl rounded-bl-lg shadow-lg border border-gray-200/50"
-                  } p-6 transition-all duration-200 hover:shadow-xl`}
+                      ? "bg-gradient-to-br from-emerald-500 to-green-600 text-white rounded-2xl sm:rounded-3xl rounded-br-lg shadow-lg"
+                      : "bg-white/90 backdrop-blur-sm text-gray-800 rounded-2xl sm:rounded-3xl rounded-bl-lg shadow-lg border border-green-100/50"
+                  } p-3 sm:p-4 md:p-6 transition-all duration-200 hover:shadow-xl`}
                 >
                   {message.sender === "bot" ? (
                     <div
                       className="prose prose-sm max-w-none 
   prose-headings:text-gray-900 prose-headings:font-semibold prose-headings:leading-tight
-  prose-h2:text-xl prose-h2:mt-0 prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-gray-200
-  prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3 prose-h3:text-gray-800
-  prose-h4:text-base prose-h4:mt-4 prose-h4:mb-2 prose-h4:text-gray-700
-  prose-p:text-gray-700 prose-p:leading-relaxed prose-p:mb-4
+  prose-h2:text-base  prose-h2:mt-0 prose-h2:mb-3 sm:prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-green-200
+  prose-h3:text-sm  prose-h3:mt-4 sm:prose-h3:mt-6 prose-h3:mb-2 sm:prose-h3:mb-3 prose-h3:text-gray-800
+  prose-h4:text-sm prose-h4:mt-3 sm:prose-h4:mt-4 prose-h4:mb-1 sm:prose-h4:mb-2 prose-h4:text-gray-700
+  prose-p:text-sm sm:text-base prose-p:text-gray-700 prose-p:leading-relaxed prose-p:mb-3 sm:prose-p:mb-4
   prose-strong:text-gray-900 prose-strong:font-semibold
-  prose-ul:my-3 prose-li:my-1 prose-li:text-gray-700
-  prose-ol:my-3 prose-ol:text-gray-700
-  prose-code:text-indigo-600 prose-code:bg-indigo-50 
-  prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm
-  prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-lg prose-pre:p-4
-  prose-blockquote:border-l-indigo-500 prose-blockquote:bg-indigo-50 prose-blockquote:text-indigo-900
-  prose-hr:border-gray-300 prose-hr:my-6
-  prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
-  prose-table:text-sm prose-table:border-collapse
-  prose-th:border prose-th:border-gray-300 prose-th:bg-gray-50 prose-th:p-2
-  prose-td:border prose-td:border-gray-300 prose-td:p-2"
+  prose-ul:my-2 sm:prose-ul:my-3 prose-li:my-0.5 sm:prose-li:my-1 prose-li:text-sm sm:prose-li:text-base prose-li:text-gray-700
+  prose-ol:my-2 sm:prose-ol:my-3 prose-ol:text-sm sm:prose-ol:text-base prose-ol:text-gray-700
+  prose-code:text-green-600 prose-code:bg-green-50 
+  prose-code:px-1.5 sm:prose-code:px-2 prose-code:py-0.5 sm:prose-code:py-1 prose-code:rounded prose-code:text-xs sm:prose-code:text-sm
+  prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-lg prose-pre:p-3 sm:prose-pre:p-4
+  prose-blockquote:border-l-green-500 prose-blockquote:bg-green-50 prose-blockquote:text-green-900
+  prose-hr:border-green-200 prose-hr:my-4 sm:prose-hr:my-6
+  prose-a:text-green-600 prose-a:no-underline hover:prose-a:underline
+  prose-table:text-xs sm:prose-table:text-sm prose-table:border-collapse
+  prose-th:border prose-th:border-green-200 prose-th:bg-green-50 prose-th:p-1 sm:prose-th:p-2 prose-th:text-xs sm:prose-th:text-sm
+  prose-td:border prose-td:border-green-200 prose-td:p-1 sm:prose-td:p-2 prose-td:text-xs sm:prose-td:text-sm"
                     >
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
@@ -510,24 +532,24 @@ Vui lòng thử lại với một trong những chủ đề trên!`,
                       </ReactMarkdown>
                     </div>
                   ) : (
-                    <p className="text-white font-medium leading-relaxed">
+                    <p className="text-white font-medium leading-relaxed text-sm sm:text-base">
                       {message.text}
                     </p>
                   )}
 
                   {/* Message Footer */}
                   <div
-                    className={`flex items-center justify-between mt-4 pt-3 border-t ${
+                    className={`flex items-center justify-between mt-3 sm:mt-4 pt-2 sm:pt-3 border-t ${
                       message.sender === "user"
-                        ? "border-blue-400/30"
-                        : "border-gray-200/50"
+                        ? "border-emerald-400/30"
+                        : "border-green-200/50"
                     }`}
                   >
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-1 sm:space-x-2">
                       <svg
                         className={`w-3 h-3 ${
                           message.sender === "user"
-                            ? "text-blue-200"
+                            ? "text-emerald-200"
                             : "text-gray-400"
                         }`}
                         fill="none"
@@ -544,7 +566,7 @@ Vui lòng thử lại với một trong những chủ đề trên!`,
                       <span
                         className={`text-xs ${
                           message.sender === "user"
-                            ? "text-blue-100"
+                            ? "text-emerald-100"
                             : "text-gray-500"
                         }`}
                       >
@@ -563,45 +585,49 @@ Vui lòng thử lại với một trong những chủ đề trên!`,
 
           {/* Loading Indicator */}
           {isLoading && (
-            <div className="flex items-start space-x-4 animate-in slide-in-from-bottom-4 duration-300">
+            <div className="flex items-start space-x-2 sm:space-x-4 animate-in slide-in-from-bottom-4 duration-300">
               <BotAvatar />
-              <div className="bg-white/80 backdrop-blur-sm rounded-3xl rounded-bl-lg shadow-lg border border-gray-200/50 p-4">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl sm:rounded-3xl rounded-bl-lg shadow-lg border border-green-100/50">
                 <LoadingIndicator />
               </div>
             </div>
           )}
+
           <div ref={messagesEndRef} />
         </div>
       </div>
 
       {/* Input Area */}
-      <div className="bg-white/90 backdrop-blur-sm border-t border-gray-200/50 shadow-lg">
+      <div className="bg-white/95 backdrop-blur-md border-t border-green-100 shadow-lg">
         {/* Suggestion Buttons */}
-        <div className="max-w-4xl mx-auto px-6 py-4">
-          <div className="grid grid-cols-4 md:grid-cols-4 lg:md:grid-cols gap-3">
-            {isTyping &&
-              suggestionButtons.map((button) => (
+        {isTyping && (
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+              {suggestionButtons.map((button) => (
                 <button
                   key={button.id}
                   onClick={() => handleSuggestionClick(button)}
-                  className={`group relative overflow-hidden bg-gradient-to-r ${button.gradient} text-white border-0 hover:shadow-lg hover:scale-105 transition-all duration-300 p-4 rounded-xl h-auto flex flex-col items-center space-y-2`}
+                  className={`group relative overflow-hidden bg-gradient-to-r ${button.gradient} text-white border-0 hover:shadow-lg hover:scale-105 transition-all duration-300 p-3 sm:p-4 rounded-xl flex flex-col sm:flex-row items-center justify-center sm:justify-start space-y-1 sm:space-y-0 sm:space-x-3`}
                   disabled={isLoading}
                 >
                   <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <span className="text-2xl relative z-10">{button.icon}</span>
-                  <div className="text-center relative z-10">
-                    <div className="hidden md:block font-medium text-sm">
+                  <span className="text-lg sm:text-xl relative z-10">
+                    {button.icon}
+                  </span>
+                  <div className="text-center sm:text-left relative z-10">
+                    <div className="font-medium text-xs sm:text-sm">
                       {button.text}
                     </div>
                   </div>
                 </button>
               ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Input */}
-        <div className="max-w-4xl mx-auto px-6 pb-6">
-          <div className="relative bg-white rounded-2xl shadow-lg border border-gray-200/50 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 pb-4 sm:pb-6">
+          <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-lg border border-green-100/50 overflow-hidden">
             <textarea
               value={inputMessage}
               onChange={(e) => {
@@ -615,24 +641,24 @@ Vui lòng thử lại với một trong những chủ đề trên!`,
                 }
               }}
               placeholder="Nhập câu hỏi của bạn... (Enter để gửi, Shift+Enter để xuống dòng)"
-              className="w-full min-h-[60px] pr-16 p-4 border-0 focus:outline-none focus:ring-0 resize-none text-gray-800 placeholder:text-gray-400 bg-transparent"
+              className="w-full min-h-[50px] sm:min-h-[60px] pr-12 sm:pr-16 p-3 sm:p-4 border-0 focus:outline-none focus:ring-0 resize-none text-gray-800 placeholder:text-gray-400 bg-transparent text-sm sm:text-base"
               disabled={isLoading}
               rows={2}
             />
-            <div className="absolute bottom-3 right-3 flex items-center space-x-2">
+            <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-3 flex items-center space-x-1 sm:space-x-2">
               {inputMessage.trim() && (
-                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full hidden sm:inline">
                   {inputMessage.length} ký tự
                 </span>
               )}
               <button
                 onClick={() => handleSendMessage()}
                 disabled={isLoading || !inputMessage.trim()}
-                className="h-10 w-10 p-0 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                className="h-8 w-8 sm:h-10 sm:w-10 p-0 rounded-lg sm:rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {isLoading ? (
                   <svg
-                    className="w-4 h-4 animate-spin text-white"
+                    className="w-3 h-3 sm:w-4 sm:h-4 animate-spin text-white"
                     fill="none"
                     viewBox="0 0 24 24"
                   >
@@ -652,7 +678,7 @@ Vui lòng thử lại với một trong những chủ đề trên!`,
                   </svg>
                 ) : (
                   <svg
-                    className="w-4 h-4 text-white"
+                    className="w-3 h-3 sm:w-4 sm:h-4 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -667,6 +693,11 @@ Vui lòng thử lại với một trong những chủ đề trên!`,
                 )}
               </button>
             </div>
+          </div>
+
+          {/* Mobile helper text */}
+          <div className="mt-2 text-center sm:hidden">
+            <p className="text-xs text-gray-500">Nhấn Enter để gửi tin nhắn</p>
           </div>
         </div>
       </div>

@@ -49,10 +49,14 @@ const updateBlogNew = async (id, dataBlog, selectedFiles) => {
   }
 };
 
+const deleteBlog = async (id) => {
+  return await axios.delete(`api/v1/delete-blog/${id}`);
+};
 export {
   CreateBlog,
   getAllBlog,
   getDetaillBlog,
   updateViewBlog,
   updateBlogNew,
+  deleteBlog,
 };

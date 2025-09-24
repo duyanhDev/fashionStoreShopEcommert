@@ -346,7 +346,6 @@ const ProductsSection = ({ ListProducts }) => {
       className="group relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden"
       onMouseEnter={() => setHoveredProduct(product._id)}
       onMouseLeave={() => setHoveredProduct(null)}
-      onClick={() => navigate(`/product/${product.slug}`)}
     >
       {/* Image Container */}
       <div className="relative overflow-hidden">
@@ -359,6 +358,7 @@ const ProductsSection = ({ ListProducts }) => {
               "/placeholder.svg" ||
               "/placeholder.svg"
             }
+            onClick={() => navigate(`/product/${product.slug}`)}
             alt={product.name}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             loading="lazy"
@@ -461,7 +461,10 @@ const ProductsSection = ({ ListProducts }) => {
       </div>
 
       {/* Content */}
-      <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
+      <div
+        className="p-3 sm:p-4 space-y-2 sm:space-y-3 cursor-pointer"
+        onClick={() => navigate(`/product/${product.slug}`)}
+      >
         <div className="space-y-1">
           <div className="lg:text-lg sm:text-xs font-medium text-green-600 uppercase tracking-wide">
             {product.brand}
@@ -606,6 +609,7 @@ const ProductsSection = ({ ListProducts }) => {
         </section>
         <img
           src="https://n7media.coolmate.me/uploads/September2025/mceclip0.png"
+          className="rounded-2xl"
           alt="Ảnh sale"
         />
         {/* Bestseller Products Section */}

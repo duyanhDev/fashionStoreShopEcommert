@@ -232,10 +232,10 @@ const Home = () => {
   const featuredProducts =
     ListProducts?.filter((item) => {
       return item.ratings?.reduce((sum, acc) => sum + acc.rating, 0) || 0 >= 5;
-    })?.slice(0, 5) || [];
+    })?.slice(0, 12) || [];
 
   const feedbackImages =
-    ListProducts?.length > 0
+    ListProducts.length > 0
       ? ListProducts?.flatMap((item) =>
           item?.ratings.filter((rating) => rating.rating === 5)
         )
@@ -526,175 +526,226 @@ const Home = () => {
 
         <EnhancedProductsSection ListProducts={ListProducts} />
 
-        <div className="py-16 bg-white">
-          <div className="w-full mx-auto px-4 sm:px-0 lg:px-4">
-            <div className="flex justify-between items-center mb-12">
-              <div>
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                  SẢN PHẨM NỔI BẬT
-                </h2>
-                <p className="text-lg text-gray-600">
-                  Những sản phẩm được yêu thích nhất
-                </p>
+        <div className="py-16 w-full bg-gradient-to-br from-gray-50 via-white to-green-50 relative overflow-hidden">
+          {/* Background Effects */}
+          <div className="absolute inset-0 bg-gradient-to-r from-green-600/5 to-transparent"></div>
+          <div className="absolute top-0 left-1/4 w-72 h-72 bg-green-200/20 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-green-300/15 rounded-full blur-3xl"></div>
+
+          <div className="w-full mx-auto px-4 sm:px-2 lg:px-8 relative z-10">
+            {/* Enhanced Header */}
+            <div className="text-center mb-12 relative">
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-full text-xs sm:text-sm font-bold mb-6 shadow-xl border border-green-500/30">
+                ✨ SẢN PHẨM NỔI BẬT ✨
               </div>
+
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gray-900 via-green-600 to-gray-900 mb-6 tracking-tight leading-tight">
+                SẢN PHẨM
+                <br />
+                <span className="relative inline-block">
+                  NỔI BẬT
+                  <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 sm:w-32 lg:w-40 h-1 sm:h-2 bg-gradient-to-r from-green-400 via-green-500 to-green-600 rounded-full shadow-lg"></div>
+                </span>
+              </h2>
+
+              <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-2xl lg:max-w-3xl mx-auto leading-relaxed font-medium px-4">
+                Khám phá những sản phẩm được yêu thích nhất với
+                <span className="font-bold text-green-600 bg-green-50 px-2 py-1 rounded-lg mx-1">
+                  công nghệ tiên tiến
+                </span>{" "}
+                và
+                <span className="font-bold text-green-600 bg-green-50 px-2 py-1 rounded-lg mx-1">
+                  chất lượng vượt trội
+                </span>
+              </p>
+
+              {/* Decorative Elements */}
             </div>
 
             {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-5 gap-2 sm:gap-6">
                 {[...Array(5)].map((_, index) => (
-                  <SkeletonCard key={`skeleton-${index}`} />
+                  <div
+                    key={`skeleton-${index}`}
+                    className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden animate-pulse"
+                  >
+                    <div className="aspect-square bg-gradient-to-br from-gray-200 to-gray-300"></div>
+                    <div className="p-4 space-y-3">
+                      <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                      <div className="h-4 bg-gray-200 rounded w-full"></div>
+                      <div className="h-5 bg-gray-200 rounded w-2/3"></div>
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 sm:gap-3 lg:grid-cols-5 lg:gap-4">
                 {featuredProducts.map((item, index) => {
                   const isOutOfStock = item.stock === 0;
                   return (
                     <div
                       key={`featured-${index}`}
-                      className="group relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden"
+                      className="group relative bg-white rounded-2xl shadow-lg  cursor-pointer"
                       onClick={() => handleDetails(item.slug)}
                     >
-                      {/* Image Container */}
-                      <div className="relative overflow-hidden">
-                        <div className="aspect-square relative bg-gray-50 cursor-pointer">
-                          <img
-                            src={
-                              item.variants?.[0]?.images?.[0]?.url ||
-                              "/placeholder.svg?height=320&width=280"
-                            }
-                            alt={item.name}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            loading="lazy"
-                          />
-                        </div>
+                      {/* Enhanced Gradient Border Effect */}
+                      <div className="relative bg-white rounded-2xl">
+                        {/* Image Container */}
+                        <div className="relative overflow-hidden rounded-t-2xl">
+                          <div className="aspect-square relative bg-gradient-to-br from-gray-50 via-white to-gray-100">
+                            <img
+                              src={
+                                item.variants?.[0]?.images?.[0]?.url ||
+                                "/placeholder.svg?height=320&width=280"
+                              }
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
 
-                        {isOutOfStock && (
-                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                            <div className="bg-red-600 text-white px-6 py-3 rounded-xl font-bold text-lg transform rotate-12 shadow-lg">
-                              SOLD OUT
-                            </div>
+                            {/* Enhanced Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
                           </div>
-                        )}
 
-                        {/* Badges */}
-                        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex flex-col gap-1 sm:gap-2">
-                          {typeof item.discount !== "undefined" &&
-                            item.discount > 0 && (
-                              <div className="bg-green-600 text-white lg:text-lg font-semibold px-1.5 sm:px-2 sm:text-sm py-0.5 sm:py-1 rounded">
-                                -{item.discount}%
+                          {isOutOfStock && (
+                            <div className="absolute inset-0 bg-black/70 flex items-center justify-center backdrop-blur-sm">
+                              <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-xl font-bold text-sm transform -rotate-12 shadow-lg border border-white/30">
+                                SOLD OUT
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Enhanced Badges */}
+                          <div className="absolute top-3 left-3 flex flex-col gap-2 z-20">
+                            {typeof item.discount !== "undefined" &&
+                              item.discount > 0 && (
+                                <div className="bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-lg border border-green-400/50 transform group-hover:scale-110 transition-all duration-200">
+                                  -{item.discount}%
+                                </div>
+                              )}
+                            {index < 3 && (
+                              <div className="bg-gradient-to-r from-gray-900 to-black text-white text-xs font-bold px-2 py-1 rounded-lg shadow-lg border border-gray-600/50 transform group-hover:scale-110 transition-all duration-200 delay-75">
+                                TOP {index + 1}
                               </div>
                             )}
-                          {index < 3 && (
-                            <div className="bg-black text-white lg:text-lg sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
-                              TOP {index + 1}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="absolute top-2 sm:top-3 right-2 sm:right-3 flex flex-col gap-1 sm:gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          {isProductInWishlist.includes(item._id) ? (
-                            <button
-                              className="bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemoveWishList(item._id);
-                              }}
-                            >
-                              <HeartSolidIcon className="h-4 w-4 text-green-600" />
-                            </button>
-                          ) : (
-                            <button
-                              className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlAddWishList(item._id);
-                              }}
-                            >
-                              <HeartIcon className="w-4 h-4 text-gray-600" />
-                            </button>
-                          )}
-                          <button
-                            className="bg-green-600 text-white p-1.5 sm:p-2 rounded-full shadow-md hover:shadow-lg hover:bg-green-700 transition-all duration-200"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handelModelProductCart(
-                                item._id,
-                                item.variants,
-                                item.price,
-                                item.discountedPrice,
-                                item.name,
-                                item.discount
-                              );
-                            }}
-                          >
-                            <ShoppingBagIcon className="w-3 sm:w-4 h-3 sm:h-4" />
-                          </button>
-                          <button
-                            className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDetails(item.slug);
-                            }}
-                          >
-                            <EyeIcon className="w-4 h-4 text-gray-600" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Content */}
-                      <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
-                        <div className="space-y-1">
-                          <div className="lg:text-lg sm:text-xs font-medium text-green-600 uppercase tracking-wide">
-                            {item.brand}
                           </div>
-                          <h3
-                            className="font-medium text-gray-900 line-clamp-2 lg:text-lg sm:text-xs leading-tight hover:text-green-600 transition-colors duration-200 cursor-pointer
-                            whitespace-nowrap overflow-hidden text-ellipsis"
-                          >
-                            {item.name}
-                          </h3>
+
+                          {/* Enhanced Action Buttons */}
+                          <div className="absolute top-3 right-3 flex flex-col gap-2">
+                            {isProductInWishlist.includes(item._id) ? (
+                              <button
+                                className="bg-white/90 backdrop-blur-sm p-2 rounded-full "
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveWishList(item._id);
+                                }}
+                              >
+                                <HeartSolidIcon className="h-4 w-4 text-red-500" />
+                              </button>
+                            ) : (
+                              <button
+                                className="bg-white/90 backdrop-blur-sm p-2 rounded-full  "
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handlAddWishList(item._id);
+                                }}
+                              >
+                                <HeartIcon className="w-4 h-4 text-gray-600 " />
+                              </button>
+                            )}
+
+                            <button
+                              className="bg-gradient-to-r from-green-500 to-green-600 text-white p-2 rounded-full "
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handelModelProductCart(
+                                  item._id,
+                                  item.variants,
+                                  item.price,
+                                  item.discountedPrice,
+                                  item.name,
+                                  item.discount
+                                );
+                              }}
+                            >
+                              <ShoppingBagIcon className="w-4 h-4" />
+                            </button>
+
+                            <button
+                              className="bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-lg hover:shadow-xl hover:bg-white transition-all duration-200 border border-gray-200/50 transform hover:scale-110"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDetails(item.slug);
+                              }}
+                            >
+                              <EyeIcon className="w-4 h-4 text-gray-600 hover:text-green-600 transition-colors" />
+                            </button>
+                          </div>
                         </div>
 
-                        {/* Rating */}
-                        <div className="flex items-center justify-between">
-                          <Rate
-                            disabled
-                            defaultValue={
-                              item.ratings?.length
-                                ? item.ratings.reduce(
-                                    (total, acc) => total + acc.rating,
-                                    0
-                                  ) / item.ratings.length
-                                : 5
-                            }
-                            style={{ fontSize: "12px" }}
-                          />
-                          <span className="text-sm text-gray-500">
-                            ({item.ratings.length} đánh giá)
-                          </span>
-                        </div>
+                        {/* Enhanced Content */}
+                        <div className="p-4 space-y-3 relative">
+                          {/* Brand & Title */}
+                          <div className="space-y-2">
+                            <div className="text-xs font-bold text-green-600 uppercase tracking-wide bg-green-50 px-2 py-1 rounded inline-block border border-green-200">
+                              {item.brand}
+                            </div>
+                            <h3 className="font-semibold text-gray-900 text-sm leading-tight hover:text-green-600 transition-colors duration-200 line-clamp-2 group-hover:text-green-700">
+                              {item.name}
+                            </h3>
+                          </div>
 
-                        {/* Price */}
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="lg:text-lg sm:text-xs font-semibold text-green-600">
-                              {formatPrice(item.discountedPrice || item.price)}
+                          {/* Rating */}
+                          <div className="flex items-center justify-between py-2 bg-gray-50 rounded-lg px-3 border border-gray-100">
+                            <Rate
+                              disabled
+                              defaultValue={
+                                item.ratings?.length
+                                  ? item.ratings.reduce(
+                                      (total, acc) => total + acc.rating,
+                                      0
+                                    ) / item.ratings.length
+                                  : 5
+                              }
+                              style={{ fontSize: "12px" }}
+                            />
+                            <span className="text-xs text-gray-500 font-medium">
+                              ({item.ratings.length})
                             </span>
-                            {item.discount > 0 && (
-                              <span className="lg:text-lg sm:text-xs text-gray-400 line-through">
-                                {formatPrice(item.price || item.costPrice)}
+                          </div>
+
+                          {/* Enhanced Price */}
+                          <div className="space-y-2 bg-gradient-to-r from-green-50 to-green-100 p-3 rounded-xl border border-green-200">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg font-bold text-green-600">
+                                {formatPrice(
+                                  item.discountedPrice || item.price
+                                )}
                               </span>
+                              {item.discount > 0 && (
+                                <span className="text-sm text-gray-400 line-through font-medium bg-white px-1 py-0.5 rounded">
+                                  {formatPrice(item.price || item.costPrice)}
+                                </span>
+                              )}
+                            </div>
+                            {item.discount > 0 && (
+                              <div className="text-xs text-white font-bold bg-gradient-to-r from-green-600 to-green-700 px-2 py-1 rounded-lg inline-block shadow-sm">
+                                Tiết kiệm{" "}
+                                {formatPrice(
+                                  (item.price || item.costPrice) -
+                                    (item.discountedPrice || item.costPrice)
+                                )}
+                              </div>
                             )}
                           </div>
-                          {item.discount > 0 && (
-                            <div className="lg:text-lg sm:text-xs text-green-600">
-                              Tiết kiệm{" "}
-                              {formatPrice(
-                                (item.price || item.costPrice) -
-                                  (item.discountedPrice || item.costPrice)
-                              )}
+
+                          {/* Stock indicator */}
+                          {!isOutOfStock && (
+                            <div className="flex items-center justify-center gap-2 text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-lg border border-gray-200">
+                              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                              <span className="text-center">
+                                Còn {item.stock} sản phẩm
+                              </span>
                             </div>
                           )}
                         </div>
@@ -705,16 +756,7 @@ const Home = () => {
               </div>
             )}
 
-            {/* View All Button for Mobile */}
-            <div className="md:hidden text-center mt-8">
-              <Link
-                to="/products"
-                className="inline-flex items-center px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl"
-              >
-                Xem tất cả sản phẩm
-                <ArrowRightIcon className="w-5 h-5 ml-2" />
-              </Link>
-            </div>
+            {/* Enhanced View All Button for Mobile */}
           </div>
         </div>
 
@@ -827,7 +869,7 @@ const Home = () => {
                               <p className="text-blue-100 flex items-center text-sm">
                                 <MapPin className="w-3 h-3 mr-1" />
                                 {testimonial?.userId?.address?.city ||
-                                  "Nocation"}
+                                  "Việt Nam"}
                               </p>
                             </div>
                           </div>
@@ -863,7 +905,6 @@ const Home = () => {
                           {/* Footer */}
                           <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                             <div className="flex items-center text-xs text-gray-500">
-                              <Calendar className="w-3 h-3 mr-1" />
                               {new Date(
                                 testimonial.createdAt
                               ).toLocaleDateString("vi-VN")}

@@ -11,7 +11,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { getAllBlog, updateBlogNew } from "../../service/Blog";
+import { deleteBlog, getAllBlog, updateBlogNew } from "../../service/Blog";
 import { UserAuth } from "../../service/Auth";
 import { useNavigate } from "react-router-dom";
 
@@ -222,7 +222,6 @@ const BlogManager = () => {
           selectedFiles.length > 0 ? selectedFiles : null
         );
 
-        console.log("Update success:", res.data);
         alert("Cập nhật blog thành công!");
 
         setShowModal(false);
@@ -262,9 +261,13 @@ const BlogManager = () => {
     setShowModal(true);
   };
 
-  const handleDelete = (blogId) => {
+  const handleDelete = async (blogId) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa bài viết này?")) {
-      setBlogs((prev) => prev.filter((blog) => blog._id !== blogId));
+      const res = await deleteBlog(blogId);
+      if (res && res.data && res.data.EC === 0) {
+        alert("Xóa thành công Blog!");
+        fetchApiBlog();
+      }
     }
   };
 

@@ -24,10 +24,10 @@ export default function Clothing({ ListProducts }) {
   const [costPrice, setCostPrice] = useState(0);
   const [productname, setProductname] = useState("");
   const [discount, setDiscount] = useState(0);
-  const [visibleItems, setVisibleItems] = useState(20);
-  const [visibleAoItems, setVisibleAoItems] = useState(20);
-  const [visibleQuanItems, setVisibleQuanItems] = useState(20);
-  const [visibleGiayItems, setVisibleGiayItems] = useState(20);
+  const [visibleItems, setVisibleItems] = useState(10);
+  const [visibleAoItems, setVisibleAoItems] = useState(10);
+  const [visibleQuanItems, setVisibleQuanItems] = useState(10);
+  const [visibleGiayItems, setVisibleGiayItems] = useState(10);
   const [WishList, setWishList] = useState([]);
   const [api, contextHolder] = notification.useNotification();
   const [hoveredProduct, setHoveredProduct] = useState(null);
@@ -119,7 +119,7 @@ export default function Clothing({ ListProducts }) {
     try {
       const res = await getWishlistAPI(user?._id);
       if (res && res.data && res.data.EC === 0) {
-        setWishList(res?.data?.data?.products || []);
+        setWishList(res.data.data.products);
       }
     } catch (error) {
       throw new Error("Lỗi lấy danh sách yêu thích");

@@ -658,8 +658,8 @@ const ClothingMale = () => {
         <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4">
           <div className="grid grid-cols-3 gap-4">
             {[
-              { value: "vàng", label: "Vàng", color: "bg-yellow-400" },
-              { value: "xanh lá cây", label: "Xanh lá", color: "bg-green-500" },
+              { value: "be", label: "Be", color: "bg-yellow-400" },
+              { value: "xanh", label: "Xanh", color: "bg-blue-500" },
               { value: "đen", label: "Đen", color: "bg-black" },
               { value: "đỏ", label: "Đỏ", color: "bg-red-500" },
               {
@@ -888,81 +888,82 @@ const ClothingMale = () => {
             </div>
 
             {/* Mobile Filter Button & Sort Controls */}
-            <div className="bg-white rounded-2xl shadow-lg p-4 mb-6">
-              <div className="flex items-center justify-between gap-4">
-                {/* Mobile Filter Button */}
-                <Button
-                  onClick={() => setFilterDrawerOpen(true)}
-                  className="clothing-male-filter-btn bg-green-500 hover:bg-green-600 text-white border-none rounded-xl px-4 h-10 flex items-center gap-2"
+            <div className="flex justify-end items-center gap-3 mb-4 px-2 w-full flex-wrap">
+              {/* Mobile Filter Button */}
+              <Button
+                onClick={() => setFilterDrawerOpen(true)}
+                className="clothing-male-filter-btn bg-green-500 hover:bg-green-600 text-white border-none rounded-xl px-3 h-9 flex items-center gap-2 transition-colors duration-200"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                    />
-                  </svg>
-                  Bộ lọc
-                </Button>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                  />
+                </svg>
+                Bộ lọc
+              </Button>
 
-                {/* Sort Controls */}
-                <div className="relative" ref={menuRef}>
-                  <div className=" flex items-center gap-2">
-                    <div className=" ">Sắp xếp theo</div>
-                    <Select
-                      defaultValue="newest"
-                      placeholder="Sắp xếp theo"
-                      onChange={handleSortChange}
-                      className="min-w-[200px] md:min-w-[240px]"
-                      size="large"
-                      dropdownClassName="custom-sort-dropdown"
-                      dropdownStyle={{
-                        borderRadius: "16px",
-                        boxShadow:
-                          "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-                        border: "1px solid rgba(0, 0, 0, 0.05)",
-                        overflow: "hidden",
-                      }}
-                      style={{
-                        borderRadius: "12px",
-                      }}
-                    >
-                      {sortOptions.map((option) => (
-                        <Option
-                          key={option.value}
-                          value={option.value}
-                          className="custom-option"
-                        >
-                          <div className="flex items-center space-x-3 py-1">
-                            <div
-                              className={`w-8 h-8 rounded-lg bg-gradient-to-r ${option.color} flex items-center justify-center shadow-sm`}
-                            >
-                              {option.icon}
-                            </div>
-                            <span className="font-medium text-gray-700">
-                              {option.label}
-                            </span>
-                          </div>
-                        </Option>
-                      ))}
-                    </Select>
-
-                    {hidden && (
-                      <Button
-                        onClick={handleFilterProduct}
-                        className=" bg-gray-100 hover:bg-gray-200 text-gray-700 border-none rounded-xl h-10"
-                      >
-                        Xóa tất cả bộ lọc
-                      </Button>
-                    )}
-                  </div>
+              {/* Sort Controls */}
+              <div className="relative flex items-center gap-2" ref={menuRef}>
+                <div className="text-gray-600 font-medium hidden md:block">
+                  Sắp xếp theo
                 </div>
+                <Select
+                  defaultValue="newest"
+                  placeholder="Sắp xếp theo"
+                  onChange={handleSortChange}
+                  className="w-[160px] md:w-[200px]"
+                  size="large"
+                  dropdownClassName="custom-sort-dropdown"
+                  dropdownStyle={{
+                    borderRadius: "10px",
+                    boxShadow:
+                      "0 8px 12px -2px rgba(0, 0, 0, 0.1), 0 3px 5px -1px rgba(0, 0, 0, 0.05)",
+                    border: "1px solid rgba(0, 0, 0, 0.05)",
+                    overflow: "hidden",
+                    zIndex: 1000, // Đảm bảo dropdown không bị che
+                  }}
+                  style={{
+                    borderRadius: "8px",
+                    border: "1px solid rgba(0, 0, 0, 0.1)",
+                    height: "36px", // Chuẩn hóa chiều cao
+                  }}
+                >
+                  {sortOptions.map((option) => (
+                    <Option
+                      key={option.value}
+                      value={option.value}
+                      className="custom-option"
+                    >
+                      <div className="flex items-center space-x-2 py-1">
+                        <div
+                          className={`w-6 h-6 rounded-md bg-gradient-to-r ${option.color} flex items-center justify-center shadow-sm`}
+                        >
+                          {option.icon}
+                        </div>
+                        <span className="font-medium text-gray-700">
+                          {option.label}
+                        </span>
+                      </div>
+                    </Option>
+                  ))}
+                </Select>
+
+                {hidden && (
+                  <Button
+                    onClick={handleFilterProduct}
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 border-none rounded-xl h-9 px-3 transition-colors duration-200"
+                  >
+                    Xóa tất cả bộ lọc
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -985,6 +986,13 @@ const ClothingMale = () => {
                         }
                         alt={product.name}
                       />
+                      {product.stock === 0 && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <div className="bg-red-600 text-white px-6 py-3 rounded-xl font-bold text-lg transform rotate-12 shadow-lg">
+                            SOLD OUT
+                          </div>
+                        </div>
+                      )}
                       {product.discount > 0 && (
                         <span className="absolute top-3 right-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
                           -{product.discount}%

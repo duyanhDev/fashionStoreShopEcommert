@@ -148,7 +148,7 @@ const SliderComponent = () => {
         <>
           <button
             onClick={prevSlide}
-            className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 group"
+            className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-10 w-9 h-9 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 group"
             aria-label="Previous slide"
           >
             <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6 text-white group-hover:scale-110 transition-transform" />
@@ -156,7 +156,7 @@ const SliderComponent = () => {
 
           <button
             onClick={nextSlide}
-            className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 group"
+            className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-10 w-9 h-9 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 group"
             aria-label="Next slide"
           >
             <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6 text-white group-hover:scale-110 transition-transform" />
@@ -167,7 +167,7 @@ const SliderComponent = () => {
       {/* Pagination Bullets - Only show if more than 1 slide */}
 
       {/* Progress indicator (optional) */}
-      <div className="absolute top-2 sm:top-4 left-2 sm:left-4 z-20 bg-black/30 backdrop-blur-sm rounded-full px-2 py-1">
+      <div className="absolute sm:top-28 lg:top-7 left-2 sm:left-4 z-20 bg-black/30 backdrop-blur-sm rounded-full px-2 py-1">
         <span className="text-white text-xs sm:text-sm font-medium">
           {currentSlide + 1} / {slides.length}
         </span>

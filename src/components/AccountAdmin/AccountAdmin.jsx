@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { DeleteUserAPI, UserAuth } from "../../service/Auth";
+import {
+  DeleteUserAPI,
+  isAccountUserLockerAPI,
+  UserAuth,
+} from "../../service/Auth";
 import {
   Avatar,
   Button,
@@ -35,6 +39,7 @@ import {
   SafetyCertificateOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  LockOutlined,
 } from "@ant-design/icons";
 
 import { useNavigate } from "react-router-dom";
@@ -116,9 +121,30 @@ const AccountAdmin = () => {
     }
   };
 
-  const handleStatusToggle = (checked) => {
-    console.log(checked);
+  const handleStatusToggle = async (record, checked) => {
+    try {
+      const res = await isAccountUserLockerAPI(record.id, checked);
+
+      if (res && res.data && res.data.EC === 0) {
+        api.success({
+          message: "Khóa thành công tài khoản",
+          description: res.data.message,
+        });
+        fetchAPIUser();
+      } else {
+        api.error({
+          message: "Khóa không thành công tài khoản",
+          description: res.data.message,
+        });
+      }
+    } catch (error) {
+      api.error({
+        message: "Khóa không thành công tài khoản",
+        description: "Bạn không thể khóa tài khoản này",
+      });
+    }
   };
+
   const columns = [
     {
       title: "STT",
@@ -154,7 +180,7 @@ const AccountAdmin = () => {
     },
     {
       title: "Trạng thái",
-      dataIndex: "isActive",
+      dataIndex: "isAccountLocked",
       width: 120,
       align: "center",
       render: (isAccountLocked, record) => {
@@ -176,7 +202,7 @@ const AccountAdmin = () => {
             <Switch
               size="small"
               checked={isAccountLocked}
-              onChange={(checked) => handleStatusToggle(checked)}
+              onChange={(checked) => handleStatusToggle(record, checked)}
             />
           </div>
         );

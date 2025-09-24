@@ -464,7 +464,7 @@ const Details = () => {
         <title>
           {name} | {brand} - Fashion Store
         </title>
-        <meta name="description" content={description?.slice(0, 160)} />
+        <meta name="description" content={description?.slice(0, 10)} />
         <meta
           name="keywords"
           content={`${name}, ${brand}, thời trang, quần áo`}
@@ -736,12 +736,31 @@ const Details = () => {
                       </button>
                     ))}
                 </div>
-                <Button onClick={showDrawer} className="w-full h-10">
-                  Hướng dẫn chọn size
-                </Button>
-                <Button type="primary" onClick={() => setModal2Open(true)}>
-                  Thử đồ bằng AI
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button
+                    type="primary"
+                    onClick={showDrawer}
+                    className="h-10 px-8 bg-gradient-to-r from-blue-500 to-purple-600 border-0 rounded-lg font-semibold text-white shadow-lg hover:from-blue-600 hover:to-purple-700 hover:scale-105 transform transition-all duration-200"
+                    style={{
+                      background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+                      borderColor: "transparent",
+                    }}
+                  >
+                    📏 Hướng dẫn chọn size
+                  </Button>
+
+                  <Button
+                    type="primary"
+                    onClick={() => setModal2Open(true)}
+                    className="h-10 px-8 bg-gradient-to-r from-emerald-500 to-teal-600 border-0 rounded-lg font-semibold text-white shadow-lg hover:from-emerald-600 hover:to-teal-700 hover:scale-105 transform transition-all duration-200"
+                    style={{
+                      background: "linear-gradient(135deg, #10b981, #0d9488)",
+                      borderColor: "transparent",
+                    }}
+                  >
+                    🤖 Thử đồ bằng AI
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -896,7 +915,10 @@ const Details = () => {
                     )}
                   </div>
 
-                  <button className="w-full py-2 bg-green-600 text-white rounded-lg font-semibold text-sm hover:bg-green-700 transition-all duration-300 transform hover:scale-[1.02] shadow-md hover:shadow-lg">
+                  <button
+                    className="w-full py-2 bg-green-600 text-white rounded-lg font-semibold text-sm hover:bg-green-700 transition-all duration-300 transform hover:scale-[1.02] shadow-md hover:shadow-lg"
+                    onClick={() => navigagte(`/product/${product.slug}`)}
+                  >
                     Xem chi tiết
                   </button>
                 </div>
