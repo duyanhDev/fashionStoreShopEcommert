@@ -418,7 +418,6 @@ const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
   const btnHandleChangeSearch = async () => {
     setOpenSearch(false);
     const keyword = keywordSearch.trim();
-    console.log(keyword);
 
     if (!keyword) {
       message.error("Vui lòng nhập từ khóa tìm kiếm!");
@@ -431,6 +430,7 @@ const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
     navigate(`search?q=${keyword}`);
     dispatch(SearchAction(data, totalPage));
     setSearchVisible(false);
+    setKeywordSearch("");
   };
 
   const unreadNotifications = (DataNotifications || []).filter(

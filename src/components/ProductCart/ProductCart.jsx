@@ -1,12 +1,12 @@
 import { Modal, notification } from "antd";
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { LeftOutlined, RightOutlined, HeartOutlined } from "@ant-design/icons";
 import "./Style.css";
 import { AddCartAPI } from "../../service/Cart";
 import { useSelector } from "react-redux";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { Check, Minus, Plus } from "lucide-react";
-const ProductCart = React.memo(
+const ProductCart = memo(
   ({
     modalCartOpen,
     setModalCartOpen,
@@ -231,9 +231,6 @@ const ProductCart = React.memo(
                 className="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-200 p-2 rounded-full"
               >
                 <RightOutlined />
-              </button>
-              <button className="absolute bottom-2 right-2 bg-white p-2 rounded-full shadow">
-                <HeartOutlined />
               </button>
             </div>
             <div className="flex mt-2 gap-2">

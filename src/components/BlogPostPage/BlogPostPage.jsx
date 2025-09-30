@@ -1,73 +1,52 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Calendar, Clock, Eye } from "lucide-react";
-import { useParams } from "react-router-dom";
-import { getDetaillBlog } from "../../service/Blog";
+import { useNavigate, useParams } from "react-router-dom";
+import { getAllBlog, getDetaillBlog } from "../../service/Blog";
 import moment from "moment";
 import { Helmet } from "react-helmet-async";
 
 const BlogPostPage = () => {
   const { slug } = useParams();
   const [blogPost1, SetblogPost] = useState("");
-
+  const [loading, setLoading] = useState(true);
+  const [suggestedPosts, setSuggestedPosts] = useState([]);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
   const fetchAPIBlog = async () => {
     try {
       const res = await getDetaillBlog(slug);
 
-      console.log(res);
-      SetblogPost(res.data.data);
+      if (res) {
+        SetblogPost(res.data.data);
+      }
     } catch (error) {
       console.log(error);
     }
   };
 
-  // Mock data cho các bài viết gợi ý
-  const suggestedPosts = [
-    {
-      id: 1,
-      title: "10 Xu hướng thời trang nữ hot nhất 2025",
-      image:
-        "https://images.unsplash.com/photo-1445205170230-053b83016050?w=300&h=200&fit=crop",
-      category: "Thời trang",
-      readTime: "3 phút",
-      publishDate: "25/08/2025",
-    },
-    {
-      id: 2,
-      title: "Cách phối đồ streetwear chuẩn chỉnh",
-      image:
-        "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=300&h=200&fit=crop",
-      category: "Streetwear",
-      readTime: "5 phút",
-      publishDate: "23/08/2025",
-    },
-    {
-      id: 3,
-      title: "Makeup trend mùa thu 2025",
-      image:
-        "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=300&h=200&fit=crop",
-      category: "Làm đẹp",
-      readTime: "4 phút",
-      publishDate: "20/08/2025",
-    },
-    {
-      id: 4,
-      title: "Bí quyết chọn phụ kiện hoàn hảo",
-      image:
-        "https://images.unsplash.com/photo-1596035069985-8d0968a8bc01?w=300&h=200&fit=crop",
-      category: "Phụ kiện",
-      readTime: "6 phút",
-      publishDate: "18/08/2025",
-    },
-    {
-      id: 5,
-      title: "Thời trang công sở hiện đại",
-      image:
-        "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&h=200&fit=crop",
-      category: "Công sở",
-      readTime: "7 phút",
-      publishDate: "15/08/2025",
-    },
-  ];
+  const fetchApiBlog = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const res = await getAllBlog();
+
+      if (res && res.data && res.data.EC === 0) {
+        const data = res.data?.data.sort((a, b) => b.view - a.view).slice(0, 4);
+        setSuggestedPosts(data);
+      } else {
+        setError("Không thể tải dữ liệu blog");
+      }
+    } catch (error) {
+      console.error("Lỗi khi tải blog:", error);
+      setError("Đã xảy ra lỗi khi tải dữ liệu");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchApiBlog();
+  }, [fetchApiBlog]);
 
   const trendingTags = [
     "Thời trang 2025",
@@ -192,6 +171,34 @@ const BlogPostPage = () => {
     fetchAPIBlog();
   }, [slug]);
 
+  // Loading component
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Đang tải bài viết...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error component
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-400 mb-4">{error}</p>
+          <button
+            onClick={fetchApiBlog}
+            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-gray-50">
       <Helmet>
@@ -348,12 +355,13 @@ const BlogPostPage = () => {
               <div className="space-y-4">
                 {suggestedPosts.map((post) => (
                   <div
-                    key={post.id}
+                    key={post._id}
                     className="flex space-x-3 group cursor-pointer"
+                    onClick={() => navigate(`/blog/${post.slug}`)}
                   >
                     <div className="flex-shrink-0">
                       <img
-                        src={post.image}
+                        src={post.img[0]?.url}
                         alt={post.title}
                         className="w-16 h-16 rounded-lg object-cover group-hover:opacity-80 transition-opacity"
                       />
@@ -363,7 +371,7 @@ const BlogPostPage = () => {
                         {post.title}
                       </h4>
                       <div className="flex items-center text-xs text-gray-500 space-x-2">
-                        <span>{post.category}</span>
+                        <span>{post.regex}</span>
                         <span>•</span>
                         <span>{post.readTime}</span>
                       </div>

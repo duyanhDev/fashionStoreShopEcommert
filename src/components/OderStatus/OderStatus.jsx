@@ -1,5 +1,13 @@
-import { Button, notification } from "antd";
-
+import {
+  Button,
+  notification,
+  Badge,
+  Card,
+  Avatar,
+  Tag,
+  Timeline,
+  Divider,
+} from "antd";
 import "mapbox-gl/dist/mapbox-gl.css";
 import "./OderStaus.css";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -9,7 +17,17 @@ import {
 } from "../../service/Oder";
 import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { EditOutlined, SmileOutlined } from "@ant-design/icons";
+import {
+  EditOutlined,
+  SmileOutlined,
+  ShoppingCartOutlined,
+  BellOutlined,
+  GiftOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  TruckOutlined,
+  CloseCircleOutlined,
+} from "@ant-design/icons";
 import { FaUser, FaMoneyBill } from "react-icons/fa";
 import { RiBillFill } from "react-icons/ri";
 import { IoIosNotifications } from "react-icons/io";
@@ -18,7 +36,6 @@ import FeedBack from "../FeedBack/FeeBack";
 import OrderDetailModal from "../OrderDetailModal/OrderDetailModal";
 import socket from "../../socket";
 import { useOutletContext } from "react-router-dom";
-
 import { addMultipleToCart } from "../../service/Cart";
 
 const OderStatus = () => {
@@ -35,10 +52,10 @@ const OderStatus = () => {
   const { CartListProductsUser } = useOutletContext();
 
   const Navigate = useNavigate();
+
   const fetchAPIOrderStatus = async () => {
     try {
       const res = await OrderStatusOneProduct(param.id);
-
       if (res && res.data && res.data.EC === 0) {
         SetOrderStatus(res.data.data.orderStatus);
         setCreatedAt(res.data.data.createdAt);
@@ -48,31 +65,25 @@ const OderStatus = () => {
       console.log(error);
     }
   };
-  // const description = moment(createdAt).format("DD/MM/YYYY");
 
   useEffect(() => {
     fetchAPIOrderStatus();
   }, [param.id]);
 
   useEffect(() => {
-    // Lắng nghe sự kiện từ server
     socket.on(`order-update-${user?._id}`, (data) => {
       setData(data.data);
-      // alert(data.message);
     });
-
     return () => {
       socket.off(`order-update-${user?._id}`);
     };
   }, [user?._id]);
+
   const formatPrice = (price) => {
-    // Nếu price là chuỗi, chuyển đổi nó thành một số
     const numericPrice =
       typeof price === "string"
         ? parseFloat(price.replace(/[^\d,.-]/g, "").replace(",", "."))
         : price;
-
-    // Định dạng lại giá trị bằng cách thêm dấu chấm ngăn cách hàng nghìn và thêm "đ"
     return numericPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
   };
 
@@ -83,24 +94,21 @@ const OderStatus = () => {
   const ModelFeedBack = () => {
     setModal2Open(true);
   };
+
   const handleAddCart = async (items) => {
     setIsAddingToCart(true);
-
     try {
       const res = await addMultipleToCart(user._id, items);
-
       if (res && res.data && res.data.cart) {
-        // Hiển thị toast và lấy Promise resolve sau duration
         await new Promise((resolve) => {
           api.open({
             message: "Đã thêm vào giỏ hàng",
             description: "Sản phẩm đã được thêm vào giỏ hàng của bạn.",
-            duration: 3, // thời gian hiển thị toast (giây)
-            onClose: resolve, // khi toast đóng, resolve promise
+            duration: 3,
+            onClose: resolve,
           });
         });
         await CartListProductsUser();
-        // Chuyển hướng đến trang giỏ hàng
         Navigate("/cart");
       }
     } catch (error) {
@@ -120,7 +128,6 @@ const OderStatus = () => {
   const UpdateOderStatusCalled = async (orderStatus) => {
     try {
       let res = await updateShippingCancelled(param.id, orderStatus);
-
       if (res && res.data && res.data.EC === 0) {
         setData(res.data.data);
         api.open({
@@ -138,250 +145,296 @@ const OderStatus = () => {
     setVisible(true);
     setOrderId(id);
   };
+
+  const getStatusConfig = (status) => {
+    const configs = {
+      Processing: {
+        text: "Chờ xác nhận",
+        color: "#faad14",
+        icon: <ClockCircleOutlined />,
+      },
+      Confirmed: {
+        text: "Đã xác nhận",
+        color: "#1890ff",
+        icon: <CheckCircleOutlined />,
+      },
+      Shipping: {
+        text: "Đã giao vận chuyển",
+        color: "#13c2c2",
+        icon: <TruckOutlined />,
+      },
+      Delivered: {
+        text: "Đang giao hàng",
+        color: "#722ed1",
+        icon: <TruckOutlined />,
+      },
+      Completed: {
+        text: "Hoàn thành",
+        color: "#52c41a",
+        icon: <CheckCircleOutlined />,
+      },
+      Cancelled: {
+        text: "Đã hủy",
+        color: "#ff4d4f",
+        icon: <CloseCircleOutlined />,
+      },
+    };
+    return (
+      configs[status] || {
+        text: "Không xác định",
+        color: "#d9d9d9",
+        icon: null,
+      }
+    );
+  };
+
+  const statusConfig = getStatusConfig(data.orderStatus);
+
   return (
-    <div className="main_order ">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 py-6 px-4 sm:px-6 lg:px-8 mt-28">
       {contextHolder}
-      <div className="main_ranking__status">
-        <h1 className="m-auto font-bold text-4xl" style={{ width: "1400px" }}>
-          Đơn Mua
+
+      {/* Header */}
+      <div className="max-w-7xl mx-auto mb-8">
+        <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-emerald-700 to-emerald-900 bg-clip-text text-transparent flex items-center gap-3">
+          <ShoppingCartOutlined className="text-emerald-600" />
+          Đơn Hàng Của Tôi
         </h1>
       </div>
-      <div className="main_stack flex ">
-        <div className="item_products ">
-          <div className="mt-8 flex gap-2">
-            <img
-              style={{
-                width: "50px",
-                height: "50px",
-                borderRadius: "50%",
-                objectFit: "fill",
-              }}
-              src={user.avatar}
-            />
-            <div>
-              <p className="font-semibold">{user.name}</p>
-              <Link to={`/profile/${user.name}`}>
-                {" "}
-                <EditOutlined />
-                Sửa hồ sơ
-              </Link>
-            </div>
-          </div>
 
-          <div className="mt-8 ">
-            <div>
-              <span className="flex gap-2 items-center">
-                {" "}
-                <FaUser color="brown" /> Tài khoản của tôi
-              </span>
-            </div>
-            <div className="mt-2">
-              <span className="flex gap-2 items-center">
-                {" "}
-                <RiBillFill color="brown" /> Đơn mua
-              </span>
-            </div>
-            <div className="mt-2">
-              <span className="flex gap-2 items-center">
-                {" "}
-                <IoIosNotifications color="brown" /> Thông Báo
-              </span>
-            </div>
-
-            <div className="mt-2">
-              <span className="flex gap-2 items-center">
-                {" "}
-                <FaMoneyBill color="brown" /> Kho Voucher
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="item_products flex-1">
-          <div className="mt-3 bg-slate-50 rounded-md cursor-pointer">
-            <ul className="flex items-center gap-1 justify-between p-2 main_ul ">
-              <li>Tất cả</li>
-              <li
-                className={`${
-                  data.orderStatus === "Processing"
-                    ? "text-amber-950 border-b-amber-800 border-b-2"
-                    : ""
-                }`}
-              >
-                {" "}
-                Chờ người bán xác nhận
-              </li>
-              <li
-                className={`${
-                  data.orderStatus === "Confirmed"
-                    ? "text-amber-950 border-b-amber-800 border-b-2"
-                    : ""
-                }`}
-              >
-                Người bán đang chuẩn bị hàng
-              </li>
-              <li
-                className={`${
-                  data.orderStatus === "Shipping"
-                    ? "text-amber-950 border-b-amber-800 border-b-2"
-                    : ""
-                }`}
-              >
-                Đã giao cho shipper/đơn vị vận chuyển
-              </li>
-              <li
-                className={`${
-                  data.orderStatus === "Delivered"
-                    ? "text-amber-950 border-b-amber-800 border-b-2"
-                    : ""
-                }`}
-              >
-                Đơn hàng đang giao hàng đến bạn
-              </li>
-
-              <li
-                className={`${
-                  data.orderStatus === "Completed"
-                    ? "text-amber-950 border-b-amber-800 border-b-2"
-                    : ""
-                }`}
-              >
-                Đơn hàng giao thành công
-              </li>
-              <li
-                className={`${
-                  data.orderStatus === "Cancelled"
-                    ? "text-amber-950 border-b-amber-800 border-b-2"
-                    : ""
-                }`}
-              >
-                Đã hủy
-              </li>
-            </ul>
-          </div>
-
-          <div className="mt-3 bg-slate-50 rounded-md cursor-pointer min-h-80 p-3">
-            <div className="w-full relative p-3 border-b-2">
-              <div className="main_right flex gap-2 items-center  absolute inset-0 float-right justify-end">
-                <span className="text-green-500 flex items-center gap-1">
-                  {" "}
-                  <FaTruck />
-                  {(() => {
-                    switch (data.orderStatus) {
-                      case "Processing":
-                        return "Chờ xác nhận";
-                      case "Confirmed":
-                        return "Đơn hàng bạn đã được xác nhận";
-                      case "Shipping":
-                        return "Đã giao cho đơn vị vận chuyển";
-                      case "Delivered":
-                        return "Đang vận chuyển";
-                      case "Completed":
-                        return "Đơn hàng đã giao thành công";
-                      case "Cancelled":
-                        return "Đơn hàng đã hủy";
-                      default:
-                        return "Trạng thái không xác định";
-                    }
-                  })()}
-                </span>
-                <span onClick={() => handleDetailsRouter(data._id)}>
-                  Xem chi tiết
-                </span>
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Sidebar */}
+        <div className="lg:col-span-3">
+          <Card className="shadow-xl rounded-2xl border-0 sticky top-6 bg-white">
+            {/* User Profile */}
+            <div className="flex items-center gap-3 mb-6 pb-6 border-b border-gray-100">
+              <Avatar
+                size={64}
+                src={user.avatar}
+                className="ring-4 ring-emerald-100"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-gray-800 truncate text-lg">
+                  {user.name}
+                </p>
+                <Link
+                  to={`/profile/${user.name}`}
+                  className="text-emerald-600 hover:text-emerald-700 text-sm flex items-center gap-1 transition-colors"
+                >
+                  <EditOutlined />
+                  Sửa hồ sơ
+                </Link>
               </div>
             </div>
-            <div className="mt-3">
+
+            {/* Menu Items */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-50 transition-all cursor-pointer group">
+                <FaUser
+                  className="text-emerald-600 group-hover:scale-110 transition-transform"
+                  size={20}
+                />
+                <span className="text-gray-700 font-medium">
+                  Tài khoản của tôi
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 transition-all cursor-pointer shadow-md">
+                <RiBillFill className="text-white" size={20} />
+                <span className="text-white font-semibold">Đơn mua</span>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-50 transition-all cursor-pointer group">
+                <Badge count={5} size="small">
+                  <BellOutlined
+                    className="text-emerald-600 group-hover:scale-110 transition-transform"
+                    style={{ fontSize: 20 }}
+                  />
+                </Badge>
+                <span className="text-gray-700 font-medium ml-2">
+                  Thông Báo
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-50 transition-all cursor-pointer group">
+                <GiftOutlined
+                  className="text-emerald-600 group-hover:scale-110 transition-transform"
+                  style={{ fontSize: 20 }}
+                />
+                <span className="text-gray-700 font-medium">Kho Voucher</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Main Content */}
+        <div className="lg:col-span-9">
+          {/* Status Tabs */}
+          <Card className="shadow-xl rounded-2xl border-0 mb-6 overflow-hidden bg-white">
+            <div className="overflow-x-auto">
+              <div className="flex gap-2 sm:gap-4 min-w-max sm:min-w-0 p-2">
+                {[
+                  { key: "all", label: "Tất cả" },
+                  { key: "Processing", label: "Chờ xác nhận" },
+                  { key: "Confirmed", label: "Đã xác nhận" },
+                  { key: "Shipping", label: "Đang vận chuyển" },
+                  { key: "Delivered", label: "Đang giao" },
+                  { key: "Completed", label: "Hoàn thành" },
+                  { key: "Cancelled", label: "Đã hủy" },
+                ].map((tab) => (
+                  <div
+                    key={tab.key}
+                    className={`px-4 py-2 rounded-xl cursor-pointer transition-all whitespace-nowrap text-sm sm:text-base font-medium ${
+                      data.orderStatus === tab.key ||
+                      (tab.key === "all" && !data.orderStatus)
+                        ? "bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg transform scale-105"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-emerald-600 border border-gray-200"
+                    }`}
+                  >
+                    {tab.label}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+
+          {/* Order Details */}
+          <Card className="shadow-xl rounded-2xl border-0 bg-white">
+            {/* Order Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                {statusConfig.icon && (
+                  <span style={{ fontSize: 24, color: statusConfig.color }}>
+                    {statusConfig.icon}
+                  </span>
+                )}
+                <div>
+                  <Tag
+                    color={statusConfig.color}
+                    className="text-sm font-semibold px-4 py-1 rounded-full"
+                  >
+                    {statusConfig.text}
+                  </Tag>
+                  <p className="text-gray-500 text-sm mt-2">
+                    Mã đơn: #{data._id?.slice(-8)}
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="link"
+                className="text-emerald-600 font-semibold hover:text-emerald-700"
+                onClick={() => handleDetailsRouter(data._id)}
+              >
+                Xem chi tiết →
+              </Button>
+            </div>
+
+            {/* Products List */}
+            <div className="mt-6 space-y-4">
               {data.items &&
                 data.items.length > 0 &&
-                data.items.map((item) => {
-                  return (
-                    <div
-                      className="flex justify-between mt-2 items-center border-b-2"
-                      key={item._id}
-                    >
-                      <div
-                        className="flex gap-2 items-center"
-                        onClick={() =>
-                          Navigate(`/product/${item.productId.slug}`)
-                        }
-                      >
-                        <img
-                          className="w-24 h-24 rounded-full object-cover"
-                          src={item.image}
-                          alt="lỗi"
-                        />
-                        <div>
-                          <span>{item.name}</span>
-                          <span className="text-xs block">
-                            Màu: {item.color}
-                          </span>
-
-                          <span className="text-xs block">
-                            Kích thước: {item.size}
-                          </span>
-                          <span className="text-xs block">
-                            Số lượng: {item.quantity}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-amber-900">
-                        {formatPrice(item.price)}
+                data.items.map((item) => (
+                  <div
+                    key={item._id}
+                    className="flex flex-col sm:flex-row gap-4 p-4 rounded-xl hover:bg-gradient-to-r hover:from-emerald-50 hover:to-white transition-all cursor-pointer border border-gray-100 hover:border-emerald-200 hover:shadow-md"
+                    onClick={() => Navigate(`/product/${item.productId.slug}`)}
+                  >
+                    <img
+                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover shadow-md mx-auto sm:mx-0 ring-2 ring-gray-100"
+                      src={item.image}
+                      alt={item.name}
+                    />
+                    <div className="flex-1 text-center sm:text-left">
+                      <h3 className="font-semibold text-gray-800 text-lg mb-2">
+                        {item.name}
+                      </h3>
+                      <div className="flex flex-wrap justify-center sm:justify-start gap-2 text-sm text-gray-600">
+                        <Tag className="rounded-full bg-emerald-50 border-emerald-200">
+                          Màu: {item.color}
+                        </Tag>
+                        <Tag className="rounded-full bg-emerald-50 border-emerald-200">
+                          Size: {item.size}
+                        </Tag>
+                        <Tag className="rounded-full bg-emerald-50 border-emerald-200">
+                          SL: {item.quantity}
+                        </Tag>
                       </div>
                     </div>
-                  );
-                })}
+                    <div className="text-center sm:text-right">
+                      <p className="text-2xl font-bold text-emerald-600">
+                        {formatPrice(item.price)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
             </div>
-            <div className="mt-3">
-              <div className="flex items-center justify-end gap-4">
-                <span>Thành tiền:</span>{" "}
-                <span className="text-amber-950">
+
+            <Divider />
+
+            {/* Order Summary */}
+            <div className="bg-gradient-to-r from-slate-900 via-gray-900 to-emerald-900 rounded-xl p-6 mb-6 shadow-lg">
+              <div className="flex justify-between items-center">
+                <span className="text-white text-lg font-medium">
+                  Tổng thanh toán:
+                </span>
+                <span className="text-3xl font-bold text-white">
                   {data.totalAmount && formatPrice1(data.totalAmount)}
                 </span>
               </div>
-
-              <div className="flex items-center justify-end gap-4 mt-3">
-                {data.orderStatus === "Completed" && (
-                  <Button
-                    className="bg-amber-800 text-white"
-                    onClick={ModelFeedBack}
-                  >
-                    Đánh giá
-                  </Button>
-                )}
-                {data.orderStatus === "Cancelled" && (
-                  <Button
-                    className="bg-amber-800 text-white"
-                    onClick={() => handleAddCart(data.items)}
-                  >
-                    {isAddingToCart ? "Đang thêm..." : "Mua lại"}
-                  </Button>
-                )}
-                <Button className="bg-amber-800 text-white">
-                  Liên hệ người bán
-                </Button>
-
-                {data.orderStatus === "Processing" && (
-                  <Button
-                    className="bg-amber-800 text-white"
-                    onClick={() => UpdateOderStatusCalled("Cancelled")}
-                  >
-                    Hủy đơn hàng
-                  </Button>
-                )}
-              </div>
             </div>
-          </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row justify-end gap-3">
+              {data.orderStatus === "Completed" && (
+                <Button
+                  size="large"
+                  className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-0 hover:from-emerald-700 hover:to-emerald-800 font-semibold shadow-lg hover:shadow-xl transition-all rounded-xl"
+                  onClick={ModelFeedBack}
+                >
+                  ⭐ Đánh giá sản phẩm
+                </Button>
+              )}
+
+              {data.orderStatus === "Cancelled" && (
+                <Button
+                  size="large"
+                  className="bg-gradient-to-r from-slate-700 to-slate-900 text-white border-0 hover:from-slate-800 hover:to-black font-semibold shadow-lg hover:shadow-xl transition-all rounded-xl"
+                  onClick={() => handleAddCart(data.items)}
+                  loading={isAddingToCart}
+                >
+                  🛒 {isAddingToCart ? "Đang thêm..." : "Mua lại"}
+                </Button>
+              )}
+
+              <Button
+                size="large"
+                className="bg-white text-emerald-700 border-2 border-emerald-600 hover:bg-emerald-50 font-semibold shadow-md hover:shadow-lg transition-all rounded-xl"
+              >
+                💬 Liên hệ người bán
+              </Button>
+
+              {data.orderStatus === "Processing" && (
+                <Button
+                  size="large"
+                  className="bg-gradient-to-r from-red-500 to-red-600 text-white border-0 hover:from-red-600 hover:to-red-700 font-semibold shadow-lg hover:shadow-xl transition-all rounded-xl"
+                  onClick={() => UpdateOderStatusCalled("Cancelled")}
+                >
+                  ❌ Hủy đơn hàng
+                </Button>
+              )}
+            </div>
+          </Card>
         </div>
       </div>
 
-      <div>
-        <FeedBack
-          modal2Open={modal2Open}
-          setModal2Open={setModal2Open}
-          data={data}
-          userid={user?._id}
-          setData={setData}
-        />
-      </div>
+      {/* Modals */}
+      <FeedBack
+        modal2Open={modal2Open}
+        setModal2Open={setModal2Open}
+        data={data}
+        userid={user?._id}
+        setData={setData}
+      />
       <OrderDetailModal
         visible={visible}
         id={param.id}

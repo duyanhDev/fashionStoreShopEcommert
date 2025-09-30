@@ -19,12 +19,15 @@ const RegisterForm = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
 
   // Validation states
-  const [validationErrors, setValidationErrors] = useState({});
+  const [validationStatus, setValidationStatus] = useState({
+    email: { isValid: false, errors: [], requirements: [] },
+    username: { isValid: false, errors: [], requirements: [] },
+    password: { isValid: false, errors: [], requirements: [] },
+    confirmPassword: { isValid: false, errors: [], requirements: [] },
+    otp: { isValid: false, errors: [], requirements: [] },
+  });
   const [isFormValid, setIsFormValid] = useState(false);
 
   // OTP states
@@ -38,69 +41,148 @@ const RegisterForm = () => {
   const inputRefs = useRef([]);
   const [api, contextHolder] = notification.useNotification();
 
-  // ==================== VALIDATION FUNCTIONS ====================
+  // Validation functions
+  const createEmailRequirements = (email) => {
+    const originalResult = validateEmail(email);
+    const requirements = [
+      { text: "Không được để trống", check: email.trim().length > 0 },
+      {
+        text: "Phải là email hợp lệ (@domain.com)",
+        check: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
+      },
+    ];
+    return { ...originalResult, requirements };
+  };
 
-  // Real-time validation for individual fields
+  const createUsernameRequirements = (username) => {
+    const originalResult = validateUsername(username);
+    const requirements = [
+      { text: "Không được để trống", check: username.trim().length > 0 },
+      {
+        text: "Từ 3-50 ký tự",
+        check: username.length >= 3 && username.length <= 50,
+      },
+      {
+        text: "Chỉ chứa chữ cái, số, dấu gạch dưới",
+        check: /^[a-zA-Z0-9_\u00C0-\u024F\u1E00-\u1EFF\s]+$/.test(username),
+      },
+    ];
+    return { ...originalResult, requirements };
+  };
+
+  const createPasswordRequirements = (password) => {
+    const originalResult = validatePassword(password);
+    const requirements = [
+      { text: "Ít nhất 8 ký tự", check: password.length >= 8 },
+      { text: "Có ít nhất 1 chữ hoa", check: /[A-Z]/.test(password) },
+      { text: "Có ít nhất 1 chữ thường", check: /[a-z]/.test(password) },
+      { text: "Có ít nhất 1 số", check: /\d/.test(password) },
+      {
+        text: "Có ít nhất 1 ký tự đặc biệt",
+        check: /[!@#$%^&*(),.?\":{}|<>]/.test(password),
+      },
+    ];
+    return { ...originalResult, requirements };
+  };
+
+  const createConfirmPasswordRequirements = (password, confirmPassword) => {
+    const originalResult = validateConfirmPassword(password, confirmPassword);
+    const requirements = [
+      { text: "Không được để trống", check: confirmPassword.trim().length > 0 },
+      {
+        text: "Phải trùng với mật khẩu",
+        check: password === confirmPassword && password.length > 0,
+      },
+    ];
+    return { ...originalResult, requirements };
+  };
+
+  const createOTPRequirements = (otpString) => {
+    const originalResult = validateOTP(otpString);
+    const requirements = [
+      { text: "Phải có đủ 6 số", check: otpString.length === 6 },
+      { text: "Chỉ chứa số", check: /^\d+$/.test(otpString) },
+    ];
+    return { ...originalResult, requirements };
+  };
+
   const validateField = (fieldName, value, additionalValue = null) => {
-    let result = { isValid: true, errors: [] };
+    let result = { isValid: true, errors: [], requirements: [] };
 
     switch (fieldName) {
       case "email":
-        result = validateEmail(value);
+        result = createEmailRequirements(value);
         break;
       case "username":
-        result = validateUsername(value);
+        result = createUsernameRequirements(value);
         break;
       case "password":
-        result = validatePassword(value);
+        result = createPasswordRequirements(value);
         break;
       case "confirmPassword":
-        result = validateConfirmPassword(additionalValue || password, value);
-        break;
-      case "image":
-        result = validateImage(value);
+        result = createConfirmPasswordRequirements(
+          additionalValue || password,
+          value
+        );
         break;
       case "otp":
-        result = validateOTP(value);
+        result = createOTPRequirements(value);
         break;
       default:
         break;
     }
 
-    setValidationErrors((prev) => ({
+    setValidationStatus((prev) => ({
       ...prev,
-      [fieldName]: result.errors,
+      [fieldName]: result,
     }));
 
     return result.isValid;
   };
 
-  // Validate entire form
   const validateForm = () => {
     const formData = {
       email,
       username,
       password,
       confirmPassword,
-      image: selectedImage,
     };
 
     const validation = validateRegistrationForm(formData);
 
-    // Update all validation errors
-    const newErrors = {};
+    const newValidationStatus = {};
     Object.entries(validation.validationResults).forEach(([field, result]) => {
-      newErrors[field] = result.errors;
+      switch (field) {
+        case "email":
+          newValidationStatus[field] = createEmailRequirements(email);
+          break;
+        case "username":
+          newValidationStatus[field] = createUsernameRequirements(username);
+          break;
+        case "password":
+          newValidationStatus[field] = createPasswordRequirements(password);
+          break;
+        case "confirmPassword":
+          newValidationStatus[field] = createConfirmPasswordRequirements(
+            password,
+            confirmPassword
+          );
+          break;
+        default:
+          newValidationStatus[field] = result;
+      }
     });
 
-    setValidationErrors(newErrors);
+    setValidationStatus((prev) => ({
+      ...prev,
+      ...newValidationStatus,
+    }));
     setIsFormValid(validation.isValid);
 
     return validation.isValid;
   };
 
-  // ==================== EVENT HANDLERS ====================
-
+  // Event handlers
   const handleEmailChange = (e) => {
     const value = e.target.value;
     setEmail(value);
@@ -117,8 +199,6 @@ const RegisterForm = () => {
     const value = e.target.value;
     setPassword(value);
     validateField("password", value);
-
-    // Also re-validate confirm password if it exists
     if (confirmPassword) {
       validateField("confirmPassword", confirmPassword, value);
     }
@@ -130,60 +210,12 @@ const RegisterForm = () => {
     validateField("confirmPassword", value, password);
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const isValid = validateField("image", file);
-      if (isValid) {
-        setSelectedImage(file);
-        const imageUrl = URL.createObjectURL(file);
-        setPreviewUrl(imageUrl);
-      }
-    }
-  };
-
-  const removeImage = () => {
-    setSelectedImage(null);
-    setPreviewUrl(null);
-    setValidationErrors((prev) => ({
-      ...prev,
-      image: [],
-    }));
-  };
-
-  // Drag and drop handlers
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-
-    if (file) {
-      const isValid = validateField("image", file);
-      if (isValid) {
-        setSelectedImage(file);
-        const imageUrl = URL.createObjectURL(file);
-        setPreviewUrl(imageUrl);
-      }
-    }
-  };
-
-  // ==================== FORM SUBMISSION ====================
-
   const handleRegister = async () => {
-    // Validate entire form before submission
     const isValid = validateForm();
 
     if (!isValid) {
-      const allErrors = Object.values(validationErrors)
+      const allErrors = Object.values(validationStatus)
+        .map((status) => status.errors)
         .flat()
         .filter((error) => error);
       if (allErrors.length > 0) {
@@ -221,8 +253,6 @@ const RegisterForm = () => {
     }
   };
 
-  // ==================== OTP HANDLERS ====================
-
   const handleOtpChange = (index, event) => {
     const value = event.target.value;
     if (isNaN(value)) return;
@@ -231,17 +261,15 @@ const RegisterForm = () => {
     newOtp[index] = value;
     setOtp(newOtp);
 
-    // Auto focus next input
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
 
-    // Validate OTP in real-time
-    validateField("otp", newOtp);
+    const otpString = newOtp.join("");
+    validateField("otp", otpString);
   };
 
   const handleKeyDown = (index, e) => {
-    // Handle backspace
     if (e.key === "Backspace" && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
@@ -257,25 +285,22 @@ const RegisterForm = () => {
     }
 
     try {
-      const res = await verifyOTP(
-        email,
-        otpString,
-        username,
-        password,
-        selectedImage,
-        false
-      );
+      const res = await verifyOTP(email, otpString, username, password, false);
 
       if (res?.data?.EC === 0) {
-        // Reset form
         setEmail("");
         setUsername("");
         setPassword("");
         setConfirmPassword("");
-        setSelectedImage(null);
-        setPreviewUrl(null);
         setOtp(["", "", "", "", "", ""]);
-        setValidationErrors({});
+
+        setValidationStatus({
+          email: { isValid: false, errors: [], requirements: [] },
+          username: { isValid: false, errors: [], requirements: [] },
+          password: { isValid: false, errors: [], requirements: [] },
+          confirmPassword: { isValid: false, errors: [], requirements: [] },
+          otp: { isValid: false, errors: [], requirements: [] },
+        });
 
         api.success({
           message: "Đăng ký thành công",
@@ -314,8 +339,7 @@ const RegisterForm = () => {
     }
   };
 
-  // ==================== EFFECTS ====================
-
+  // Effects
   useEffect(() => {
     if (timer > 0) {
       const interval = setInterval(() => {
@@ -328,173 +352,368 @@ const RegisterForm = () => {
     }
   }, [timer]);
 
-  // Check form validity on any change
   useEffect(() => {
-    const hasErrors = Object.values(validationErrors).some(
-      (errors) => errors.length > 0
+    validateField("email", email);
+    validateField("username", username);
+    validateField("password", password);
+    validateField("confirmPassword", confirmPassword);
+  }, []);
+
+  useEffect(() => {
+    const hasErrors = Object.values(validationStatus).some(
+      (status) => status.errors && status.errors.length > 0
     );
     const hasEmptyFields = !email || !username || !password || !confirmPassword;
     setIsFormValid(!hasErrors && !hasEmptyFields);
-  }, [validationErrors, email, username, password, confirmPassword]);
+  }, [validationStatus, email, username, password, confirmPassword]);
 
-  // ==================== HELPER FUNCTIONS ====================
-
+  // Helper functions
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
   };
 
-  const getFieldError = (fieldName) => {
-    return validationErrors[fieldName]?.[0] || "";
-  };
-
   const hasFieldError = (fieldName) => {
-    return validationErrors[fieldName]?.length > 0;
+    return validationStatus[fieldName]?.errors?.length > 0;
   };
 
-  // ==================== RENDER ====================
+  const RequirementsDisplay = ({ fieldName }) => {
+    const status = validationStatus[fieldName];
+    if (!status || !status.requirements || status.requirements.length === 0)
+      return null;
+
+    return (
+      <div className="mt-2.5 space-y-2">
+        {status.requirements.map((req, index) => {
+          const isChecked = req.check;
+          return (
+            <div key={index} className="flex items-center text-sm">
+              <div
+                className={`w-4 h-4 rounded-full flex items-center justify-center mr-2.5 flex-shrink-0 transition-all duration-200 ${
+                  isChecked ? "bg-emerald-500" : "bg-gray-200"
+                }`}
+              >
+                {isChecked && (
+                  <svg
+                    className="w-2.5 h-2.5 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
+              </div>
+              <span
+                className={`transition-colors duration-200 ${
+                  isChecked ? "text-emerald-600 font-medium" : "text-gray-500"
+                }`}
+              >
+                {req.text}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const getProgressPercentage = () => {
+    const fields = ["email", "username", "password", "confirmPassword"];
+    const validCount = fields.filter(
+      (field) => validationStatus[field].isValid
+    ).length;
+    return (validCount / fields.length) * 100;
+  };
 
   return (
-    <div className="register min-h-screen mt-32 bg-gradient-to-br from-gray-900 via-gray-800 to-green-900 flex items-center justify-center p-4">
+    <div className="mt-28 register min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center p-4 sm:p-6">
       {contextHolder}
-      <div className="w-full max-w-2xl mx-auto">
-        <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden backdrop-blur-sm bg-white/95">
-          <div className="p-8">
-            <div className="text-center mb-8">
-              <h3 className="text-3xl font-bold text-gray-900 mb-2">
-                Đăng Ký Tài Khoản
-              </h3>
-              <p className="text-gray-600">Tạo tài khoản mới để bắt đầu</p>
+
+      {/* Decorative background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-teal-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-cyan-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+      </div>
+
+      <div className="w-full max-w-5xl mx-auto relative z-10">
+        <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 overflow-hidden">
+          {/* Header with gradient */}
+          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-6 sm:px-10 py-8 sm:py-12">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl sm:text-4xl font-bold text-white mb-2">
+                  Đăng Ký Tài Khoản
+                </h3>
+                <p className="text-emerald-50 text-sm sm:text-base">
+                  Tạo tài khoản mới để bắt đầu hành trình của bạn
+                </p>
+              </div>
+              <div className="hidden sm:flex items-center justify-center w-16 h-16 lg:w-20 lg:h-20 bg-white/20 backdrop-blur-sm rounded-2xl">
+                <svg
+                  className="w-8 h-8 lg:w-10 lg:h-10 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 sm:p-10">
+            {/* Progress bar */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-semibold text-gray-700">
+                  Tiến độ hoàn thành
+                </span>
+                <span className="text-sm font-bold text-emerald-600">
+                  {Math.round(getProgressPercentage())}%
+                </span>
+              </div>
+              <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500 ease-out rounded-full"
+                  style={{ width: `${getProgressPercentage()}%` }}
+                />
+              </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Left Column - Form Fields */}
-              <div className="space-y-4">
-                {/* Email Input */}
+            <div className="grid lg:grid-cols-2 gap-6 lg:gap-10">
+              {/* Left Column */}
+              <div className="space-y-5 sm:space-y-6">
+                {/* Email */}
                 <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-semibold text-gray-700 mb-2"
-                  >
-                    Email*
+                  <label className="sm:block text-sm font-semibold text-gray-700 mb-2.5 flex items-center">
+                    <svg
+                      className="w-4 h-4 mr-1.5 text-gray-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
+                    </svg>
+                    Email
+                    <span className="text-red-500 ml-1">*</span>
                   </label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="mail@example.com"
-                    value={email}
-                    onChange={handleEmailChange}
-                    status={hasFieldError("email") ? "error" : ""}
-                    className="h-12 rounded-xl border-2 border-gray-200 hover:border-gray-300 focus:border-green-500"
-                  />
-                  {hasFieldError("email") && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {getFieldError("email")}
-                    </p>
-                  )}
+                  <div className="relative">
+                    <Input
+                      type="email"
+                      placeholder="mail@example.com"
+                      value={email}
+                      onChange={handleEmailChange}
+                      status={hasFieldError("email") ? "error" : ""}
+                      className={`h-12 rounded-xl border-2 transition-all duration-200 ${
+                        validationStatus.email.isValid && email
+                          ? "border-emerald-400 bg-emerald-50/50"
+                          : "border-gray-200"
+                      }`}
+                    />
+                    {validationStatus.email.isValid && email && (
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <svg
+                          className="w-5 h-5 text-emerald-500"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  <RequirementsDisplay fieldName="email" />
                 </div>
 
-                {/* Username Input */}
+                {/* Username */}
                 <div>
-                  <label
-                    htmlFor="username"
-                    className="block text-sm font-semibold text-gray-700 mb-2"
-                  >
-                    Tên cá nhân*
+                  <label className="sm:block text-sm font-semibold text-gray-700 mb-2.5 flex items-center">
+                    <svg
+                      className="w-4 h-4 mr-1.5 text-gray-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                    Tên cá nhân
+                    <span className="text-red-500 ml-1">*</span>
                   </label>
-                  <Input
-                    id="username"
-                    type="text"
-                    placeholder="Nhập tên của bạn"
-                    value={username}
-                    onChange={handleUsernameChange}
-                    status={hasFieldError("username") ? "error" : ""}
-                    className="h-12 rounded-xl border-2 border-gray-200 hover:border-gray-300 focus:border-green-500"
-                  />
-                  {hasFieldError("username") && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {getFieldError("username")}
-                    </p>
-                  )}
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      placeholder="Nhập tên của bạn"
+                      value={username}
+                      onChange={handleUsernameChange}
+                      status={hasFieldError("username") ? "error" : ""}
+                      className={`h-12 rounded-xl border-2 transition-all duration-200 ${
+                        validationStatus.username.isValid && username
+                          ? "border-emerald-400 bg-emerald-50/50"
+                          : "border-gray-200"
+                      }`}
+                    />
+                    {validationStatus.username.isValid && username && (
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <svg
+                          className="w-5 h-5 text-emerald-500"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  <RequirementsDisplay fieldName="username" />
                 </div>
 
-                {/* Password Input */}
+                {/* Password */}
                 <div>
-                  <label
-                    htmlFor="password"
-                    className="block text-sm font-semibold text-gray-700 mb-2"
-                  >
-                    Mật khẩu*
+                  <label className="sm:block text-sm font-semibold text-gray-700 mb-2.5 flex items-center">
+                    <svg
+                      className="w-4 h-4 mr-1.5 text-gray-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
+                    </svg>
+                    Mật khẩu
+                    <span className="text-red-500 ml-1">*</span>
                   </label>
                   <Input.Password
-                    id="password"
                     placeholder="Nhập mật khẩu"
                     value={password}
                     onChange={handlePasswordChange}
                     status={hasFieldError("password") ? "error" : ""}
-                    className="h-12 rounded-xl border-2 border-gray-200 hover:border-gray-300 focus:border-green-500"
+                    className={`h-12 rounded-xl border-2 transition-all duration-200 ${
+                      validationStatus.password.isValid && password
+                        ? "border-emerald-400 bg-emerald-50/50"
+                        : "border-gray-200"
+                    }`}
                   />
-                  {hasFieldError("password") && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {getFieldError("password")}
-                    </p>
-                  )}
+                  <RequirementsDisplay fieldName="password" />
                 </div>
 
-                {/* Confirm Password Input */}
+                {/* Confirm Password */}
                 <div>
-                  <label
-                    htmlFor="confirmPassword"
-                    className="block text-sm font-semibold text-gray-700 mb-2"
-                  >
-                    Nhập lại mật khẩu*
+                  <label className="sm:block text-sm font-semibold text-gray-700 mb-2.5 flex items-center">
+                    <svg
+                      className="w-4 h-4 mr-1.5 text-gray-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                      />
+                    </svg>
+                    Nhập lại mật khẩu
+                    <span className="text-red-500 ml-1">*</span>
                   </label>
                   <Input.Password
-                    id="confirmPassword"
                     placeholder="Nhập lại mật khẩu"
                     value={confirmPassword}
                     onChange={handleConfirmPasswordChange}
                     status={hasFieldError("confirmPassword") ? "error" : ""}
-                    className="h-12 rounded-xl border-2 border-gray-200 hover:border-gray-300 focus:border-green-500"
+                    className={`h-12 rounded-xl border-2 transition-all duration-200 ${
+                      validationStatus.confirmPassword.isValid &&
+                      confirmPassword
+                        ? "border-emerald-400 bg-emerald-50/50"
+                        : "border-gray-200"
+                    }`}
                   />
-                  {hasFieldError("confirmPassword") && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {getFieldError("confirmPassword")}
-                    </p>
-                  )}
+                  <RequirementsDisplay fieldName="confirmPassword" />
                 </div>
               </div>
 
-              {/* Right Column - Image Upload */}
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                    Ảnh đại diện
+              {/* Right Column */}
+              <div className="space-y-5 sm:space-y-6">
+                {/* Progress Card */}
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-6 border-2 border-emerald-200">
+                  <h4 className="text-sm font-bold text-gray-900 mb-4 flex items-center">
+                    <svg
+                      className="w-5 h-5 mr-2 text-emerald-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    Trạng thái các trường
                   </h4>
-                  <p className="text-xs text-gray-500 mb-3">
-                    Chọn hoặc kéo thả hình ảnh
-                  </p>
-                </div>
-
-                <div
-                  className={`relative border-2 rounded-xl p-4 text-center transition-all duration-200 ${
-                    isDragging
-                      ? "border-green-500 bg-green-50 shadow-md"
-                      : hasFieldError("image")
-                      ? "border-red-300 bg-red-50"
-                      : "border-gray-200 bg-gray-50 hover:border-green-400 hover:bg-gray-50"
-                  }`}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                >
-                  {!previewUrl ? (
-                    <div className="space-y-3">
-                      <div className="flex justify-center">
-                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <div className="space-y-3">
+                    {[
+                      {
+                        name: "email",
+                        label: "Email",
+                        icon: "M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
+                      },
+                      {
+                        name: "username",
+                        label: "Tên cá nhân",
+                        icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z",
+                      },
+                      {
+                        name: "password",
+                        label: "Mật khẩu",
+                        icon: "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z",
+                      },
+                      {
+                        name: "confirmPassword",
+                        label: "Xác nhận",
+                        icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
+                      },
+                    ].map((field) => (
+                      <div
+                        key={field.name}
+                        className="flex items-center justify-between p-3 rounded-xl bg-white/80 backdrop-blur-sm"
+                      >
+                        <div className="flex items-center space-x-3">
                           <svg
-                            className="w-6 h-6 text-green-600"
+                            className="w-4 h-4 text-gray-500"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -503,123 +722,170 @@ const RegisterForm = () => {
                               strokeLinecap="round"
                               strokeLinejoin="round"
                               strokeWidth={2}
-                              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                              d={field.icon}
                             />
                           </svg>
+                          <span className="text-sm text-gray-700 font-medium">
+                            {field.label}
+                          </span>
+                        </div>
+                        <div
+                          className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 ${
+                            validationStatus[field.name].isValid
+                              ? "bg-emerald-500 scale-110"
+                              : "bg-gray-300"
+                          }`}
+                        >
+                          {validationStatus[field.name].isValid && (
+                            <svg
+                              className="w-3.5 h-3.5 text-white"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          )}
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <p className="text-sm text-gray-600">
-                          Kéo thả hình ảnh vào đây hoặc
-                        </p>
-                        <label className="inline-block">
-                          <span className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg cursor-pointer hover:bg-green-700 transition-colors shadow-sm hover:shadow-md">
-                            Chọn tệp
-                          </span>
-                          <input
-                            type="file"
-                            className="hidden"
-                            accept="image/*"
-                            onChange={handleImageChange}
-                          />
-                        </label>
-                      </div>
-                      <p className="text-xs text-gray-500">
-                        Hỗ trợ: JPG, PNG, GIF (Tối đa 5MB)
+                    ))}
+                  </div>
+                </div>
+
+                {/* Security Info */}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border-2 border-blue-200">
+                  <div className="flex items-start space-x-3 mb-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                      <svg
+                        className="w-5 h-5 text-blue-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 mb-1">
+                        Bảo mật thông tin
+                      </h3>
+                      <p className="text-xs text-gray-600 leading-relaxed">
+                        Thông tin được mã hóa và bảo vệ an toàn
                       </p>
                     </div>
-                  ) : (
-                    <div className="relative">
-                      <img
-                        src={previewUrl}
-                        alt="Preview"
-                        className="max-h-32 mx-auto rounded-lg shadow-lg"
-                      />
-                      <button
-                        onClick={removeImage}
-                        className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-md"
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <div className="flex items-center text-xs text-gray-600">
+                      <svg
+                        className="w-4 h-4 mr-2 text-blue-500 flex-shrink-0"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
                       >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
-                      </button>
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      Mã hóa SSL 256-bit
                     </div>
-                  )}
-                </div>
-
-                {hasFieldError("image") && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {getFieldError("image")}
-                  </p>
-                )}
-
-                {selectedImage && (
-                  <div className="mt-3">
-                    <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-green-100 rounded-lg">
-                          <svg
-                            className="w-4 h-4 text-green-600"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-700">
-                            {selectedImage.name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {(selectedImage.size / (1024 * 1024)).toFixed(2)} MB
-                          </p>
-                        </div>
-                      </div>
+                    <div className="flex items-center text-xs text-gray-600">
+                      <svg
+                        className="w-4 h-4 mr-2 text-blue-500 flex-shrink-0"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      Xác thực 2 bước qua email
+                    </div>
+                    <div className="flex items-center text-xs text-gray-600">
+                      <svg
+                        className="w-4 h-4 mr-2 text-blue-500 flex-shrink-0"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      Tuân thủ tiêu chuẩn bảo mật
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             </div>
 
             {/* Register Button */}
             <div className="mt-8">
               <Button
-                className={`w-full h-12 ${
+                className={`w-full h-14 text-base ${
                   isFormValid
-                    ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                    ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
                     : "bg-gray-400 cursor-not-allowed"
-                } border-none rounded-xl font-semibold text-white shadow-lg hover:shadow-xl transition-all duration-200`}
+                } border-none rounded-xl font-bold text-white shadow-lg hover:shadow-xl transition-all duration-300`}
                 onClick={handleRegister}
                 disabled={!isFormValid}
               >
-                Đăng Ký
+                {isFormValid ? (
+                  <span className="flex items-center justify-center">
+                    <svg
+                      className="w-5 h-5 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 10V3L4 14h7v7l9-11h-7z"
+                      />
+                    </svg>
+                    Đăng Ký Ngay
+                  </span>
+                ) : (
+                  "Vui lòng hoàn thành thông tin"
+                )}
               </Button>
             </div>
 
             {/* Login Link */}
-            <p className="text-center text-gray-600 mt-6">
+            <p className="text-center text-gray-600 mt-6 text-sm sm:text-base">
               Đã có tài khoản?{" "}
               <a
                 href="/login"
-                className="text-green-600 hover:text-green-700 font-semibold transition-colors duration-200"
+                className="text-emerald-600 hover:text-emerald-700 font-semibold transition-colors duration-200 inline-flex items-center"
               >
                 Đăng nhập ngay
+                <svg
+                  className="w-4 h-4 ml-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 7l5 5m0 0l-5 5m5-5H6"
+                  />
+                </svg>
               </a>
             </p>
           </div>
@@ -628,20 +894,32 @@ const RegisterForm = () => {
 
       {/* OTP Modal */}
       {hiddenOTP && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md relative">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md relative animate-slideUp">
             <button
-              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-all duration-200 group"
               onClick={() => setHiddenOTP(false)}
             >
-              ×
+              <svg
+                className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
             </button>
 
-            <div className="p-8">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="p-8 sm:p-10">
+              <div className="text-center mb-8">
+                <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <svg
-                    className="w-8 h-8 text-green-600"
+                    className="w-10 h-10 text-emerald-600"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -654,60 +932,109 @@ const RegisterForm = () => {
                     />
                   </svg>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Nhập mã OTP
+                <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+                  Xác Thực Email
                 </h3>
-                <p className="text-gray-600">
-                  Chúng tôi đã gửi mã xác nhận đến email của bạn
+                <p className="text-gray-600 text-sm">
+                  Nhập mã OTP gồm 6 số đã được gửi đến
+                </p>
+                <p className="text-emerald-600 font-semibold text-sm mt-1">
+                  {email}
                 </p>
               </div>
 
-              <div className="flex justify-center gap-3 mb-6">
+              <div className="flex justify-center gap-2 sm:gap-3 mb-6">
                 {otp.map((value, index) => (
                   <input
                     key={index}
                     ref={(el) => (inputRefs.current[index] = el)}
                     type="text"
+                    inputMode="numeric"
                     maxLength="1"
                     value={value}
                     onChange={(e) => handleOtpChange(index, e)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
-                    className={`w-12 h-12 text-center text-xl font-bold border-2 ${
+                    className={`w-11 h-14 sm:w-12 sm:h-16 text-center text-2xl font-bold border-2 rounded-xl focus:outline-none focus:ring-4 transition-all duration-200 ${
                       hasFieldError("otp")
-                        ? "border-red-300 focus:ring-red-500"
-                        : "border-gray-200 focus:ring-green-500"
-                    } rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200`}
+                        ? "border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-100"
+                        : value
+                        ? "border-emerald-500 bg-emerald-50 focus:border-emerald-600 focus:ring-emerald-100"
+                        : "border-gray-300 bg-white focus:border-emerald-500 focus:ring-emerald-100"
+                    }`}
                   />
                 ))}
               </div>
 
-              {hasFieldError("otp") && (
-                <p className="text-red-500 text-sm text-center mb-4">
-                  {getFieldError("otp")}
-                </p>
-              )}
+              <RequirementsDisplay fieldName="otp" />
 
               <button
-                className="w-full h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 mb-4"
+                className="w-full h-14 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 mt-6 flex items-center justify-center"
                 onClick={handleOtpSubmit}
               >
-                Xác Nhận
+                <svg
+                  className="w-5 h-5 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                Xác Nhận OTP
               </button>
 
-              <p className="text-center text-gray-600">
-                Chưa nhận được mã?{" "}
+              <div className="mt-6 text-center">
+                <p className="text-gray-600 text-sm mb-2">Chưa nhận được mã?</p>
                 <button
                   onClick={handleSendCode}
                   disabled={isDisabled}
-                  className={`font-semibold transition-colors duration-200 ${
+                  className={`font-semibold text-sm transition-all duration-200 inline-flex items-center ${
                     isDisabled
                       ? "text-gray-400 cursor-not-allowed"
-                      : "text-green-600 hover:text-green-700"
+                      : "text-emerald-600 hover:text-emerald-700"
                   }`}
                 >
-                  {isDisabled ? `Gửi lại sau ${formatTime(timer)}` : buttonText}
+                  {isDisabled ? (
+                    <>
+                      <svg
+                        className="w-4 h-4 mr-1.5 animate-spin"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                      Gửi lại sau {formatTime(timer)}
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-4 h-4 mr-1.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                      {buttonText}
+                    </>
+                  )}
                 </button>
-              </p>
+              </div>
             </div>
           </div>
         </div>

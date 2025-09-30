@@ -15,6 +15,7 @@ import {
   updateChangeModelAPI,
 } from "../../service/Changelog";
 import { notification } from "antd";
+import ReactPaginate from "react-paginate";
 
 const ChangelogManager = () => {
   const [changelogs, setChangelogs] = useState([]);
@@ -23,6 +24,11 @@ const ChangelogManager = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTag, setSelectedTag] = useState("");
   const [api, contextHolder] = notification.useNotification();
+  const [newTag, setNewTag] = useState("");
+
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 5;
+
   const fetchDataChangeLogs = async () => {
     try {
       const res = await getChangeModelAPI();
@@ -64,8 +70,6 @@ const ChangelogManager = () => {
     },
     tags: [],
   });
-
-  const [newTag, setNewTag] = useState("");
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
@@ -208,7 +212,6 @@ const ChangelogManager = () => {
     if (window.confirm("Bạn có chắc chắn muốn xóa changelog này?")) {
       setChangelogs((prev) => prev.filter((changelog) => changelog._id !== id));
       const res = await deleteChangelModelAPI(id);
-      console.log(res);
 
       if (res && res.data && res.data.data.success === true) {
         api.info({
@@ -451,6 +454,13 @@ const ChangelogManager = () => {
     );
   }
 
+  const pageCount = Math.ceil(filteredChangelogs.length / itemsPerPage);
+  const offset = currentPage * itemsPerPage;
+  const currentItems = filteredChangelogs.slice(offset, offset + itemsPerPage);
+
+  const handlePageClick = ({ selected }) => {
+    setCurrentPage(selected);
+  };
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       {contextHolder}
@@ -512,7 +522,7 @@ const ChangelogManager = () => {
 
         {/* Changelog List */}
         <div className="space-y-6">
-          {filteredChangelogs.length === 0 ? (
+          {currentItems.length === 0 ? (
             <div className="bg-white rounded-lg shadow-sm p-12 text-center">
               <div className="text-gray-400 mb-4">
                 <Calendar size={48} className="mx-auto" />
@@ -529,7 +539,7 @@ const ChangelogManager = () => {
               </p>
             </div>
           ) : (
-            filteredChangelogs.map((changelog) => (
+            currentItems.map((changelog) => (
               <div
                 key={changelog._id}
                 className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
@@ -623,6 +633,21 @@ const ChangelogManager = () => {
           )}
         </div>
       </div>
+      <ReactPaginate
+        previousLabel={"← Trước"}
+        nextLabel={"Sau →"}
+        breakLabel={"..."}
+        pageCount={pageCount}
+        marginPagesDisplayed={2}
+        pageRangeDisplayed={3}
+        onPageChange={handlePageClick}
+        containerClassName={"flex justify-center mt-6 space-x-2"}
+        pageClassName={"px-3 py-1 border rounded"}
+        activeClassName={"bg-blue-500 text-white"}
+        previousClassName={"px-3 py-1 border rounded"}
+        nextClassName={"px-3 py-1 border rounded"}
+        disabledClassName={"opacity-50 cursor-not-allowed"}
+      />
     </div>
   );
 };

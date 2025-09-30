@@ -28,6 +28,7 @@ import {
   SearchOutlined,
 } from "@ant-design/icons";
 import {
+  AdminChangleNewpassword,
   AdminChangleProfileAPI,
   RegisterUserAPI_Alternative,
 } from "../../service/Auth";
@@ -64,7 +65,6 @@ const AdminAccountManagement = () => {
   // Xử lý tạo tài khoản
   const handleCreateAccount = async (values) => {
     setCreateLoading(true);
-    console.log(values);
 
     try {
       const res = await RegisterUserAPI_Alternative(
@@ -113,12 +113,20 @@ const AdminAccountManagement = () => {
     setResetLoading(true);
 
     try {
-      const res = await AdminChangleProfileAPI(
-        values.resetEmail,
-        values.newPassword,
-        values.adminPassword,
-        user.email
-      );
+      if (values.resetMethod === "manual") {
+        await AdminChangleProfileAPI(
+          values.resetEmail,
+          values.newPassword,
+          values.adminPassword,
+          user.email
+        );
+      } else if (values.resetMethod === "email") {
+        await AdminChangleNewpassword(
+          values.resetEmail,
+          values.adminPassword,
+          user.email
+        );
+      }
 
       let successMessage = "";
       switch (values.resetMethod) {
@@ -587,7 +595,6 @@ const AdminAccountManagement = () => {
                     >
                       <Option value="email">Gửi email khôi phục</Option>
                       <Option value="manual">Đặt mật khẩu mới</Option>
-                      <Option value="temp">Tạo mật khẩu tạm thời</Option>
                     </Select>
                   </Form.Item>
 

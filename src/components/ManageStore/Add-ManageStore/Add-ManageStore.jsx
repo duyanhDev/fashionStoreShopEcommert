@@ -21,7 +21,6 @@ const AddManageStore = ({ openResponsive, setOpenResponsive, fetchData }) => {
     setLoading(true);
     try {
       const res = await CreateSupplierAPI(values);
-      console.log(res);
 
       if (res?.data?.EC === 0) {
         message.success("Thêm nhà cung cấp thành công!");

@@ -1029,11 +1029,11 @@ const CartProducts = ({}) => {
                     value={number}
                     onChange={(e) => {
                       const value = e.target.value;
-                      if (/^\d*$/.test(value)) {
+                      if (/^\d*$/.test(value) && value.length <= 10) {
                         setNumber(value);
                       }
                     }}
-                    status={!number ? "error" : ""}
+                    status={number.length !== 10 ? "error" : ""} // bắt buộc phải đủ 10 số
                     size="large"
                     className="rounded-xl"
                   />

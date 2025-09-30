@@ -34,6 +34,7 @@ import {
 } from "@ant-design/icons";
 import { Select } from "antd";
 import { Helmet } from "react-helmet-async";
+import { debounce } from "lodash";
 const { Option } = Select;
 
 const ClothingMale = () => {
@@ -57,7 +58,8 @@ const ClothingMale = () => {
   const [listCategory, setListCategory] = useState([]);
   const [valueId, setValueId] = useState("");
   const [size, setSize] = useState([]);
-  const [priceRange, setPriceRange] = useState([0, 1000000]);
+  const [priceRange, setPriceRange] = useState([0, 1000000]); // Current applied price range
+  const [tempPriceRange, setTempPriceRange] = useState([0, 1000000]);
   const [selectedCare, setSelectedCare] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("");
   const [dataProducts, setDataProducts] = useState([]);
@@ -330,12 +332,19 @@ const ClothingMale = () => {
     handleFilter();
   };
 
-  const handleRangeChange = (value) => {
-    setPriceRange(value);
-    setHidden(true);
-    setCheckFilter(false);
+  const handleRangeChange = useCallback(
+    debounce((value) => {
+      setTempPriceRange(value);
+    }, 50), // 50ms debounce to reduce lag
+    []
+  );
 
-    const [min, max] = value;
+  const handleApplyFilter = () => {
+    setPriceRange(tempPriceRange);
+    setHidden(true); // Assuming this hides a UI element
+    setCheckFilter(false); // Assuming this resets a filter checkbox
+
+    const [min, max] = tempPriceRange;
     const queryParams = new URLSearchParams(location.search);
     queryParams.set("minPrice", min);
     queryParams.set("maxPrice", max);
@@ -344,7 +353,7 @@ const ClothingMale = () => {
     navigate(`${location.pathname}?${queryParams.toString()}`, {
       replace: true,
     });
-    handleFilter();
+    handleFilter(); // Assuming this is defined elsewhere
   };
 
   const handleOnClickColor = (value) => {
@@ -375,7 +384,6 @@ const ClothingMale = () => {
     navigate(`${location.pathname}?${queryParams.toString()}`, {
       replace: true,
     });
-    handleFilter();
   };
 
   const onChangeCare = (e) => {
@@ -408,7 +416,7 @@ const ClothingMale = () => {
 
   const SkeletonCard = () => (
     <Card
-      className="w-full max-w-sm mx-auto bg-white rounded-2xl shadow-lg overflow-hidden"
+      className="w-full mx-auto bg-white rounded-2xl shadow-lg overflow-hidden"
       cover={<Skeleton.Image active style={{ width: "100%", height: 200 }} />}
     >
       <Skeleton active paragraph={{ rows: 4 }} />
@@ -695,67 +703,45 @@ const ClothingMale = () => {
       </div>
 
       {/* Price Range Filter */}
-      <div className="space-y-4">
-        <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
-          <h3 className="text-lg font-semibold text-gray-800">Lọc theo giá</h3>
+      <div className="space-y-6 p-4 ">
+        <div className="flex items-center space-x-3">
+          <div className="w-3 h-3 bg-indigo-600 rounded-full"></div>
+          <h3 className="text-xl font-bold text-gray-900">Lọc theo giá</h3>
         </div>
-        <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-lg p-5">
+        <div className="">
           <Slider
             range
             marks={marks}
-            value={priceRange}
+            value={tempPriceRange}
             min={0}
             max={1000000}
             step={50000}
             onChange={handleRangeChange}
-            className="mb-6"
-            trackStyle={[{ backgroundColor: "#6366f1", height: 6 }]}
-            handleStyle={[
-              {
-                borderColor: "#6366f1",
-                backgroundColor: "#6366f1",
-                width: 20,
-                height: 20,
-                marginTop: -7,
-                boxShadow: "0 4px 12px rgba(99, 102, 241, 0.3)",
-              },
-              {
-                borderColor: "#6366f1",
-                backgroundColor: "#6366f1",
-                width: 20,
-                height: 20,
-                marginTop: -7,
-                boxShadow: "0 4px 12px rgba(99, 102, 241, 0.3)",
-              },
-            ]}
-            railStyle={{ backgroundColor: "#e2e8f0", height: 6 }}
+            className="mb-8"
           />
-          <div className="flex justify-between items-center">
-            <div className="bg-white px-3 py-2 rounded-lg shadow-sm border border-indigo-200">
-              <span className="text-sm font-bold text-indigo-600">
-                {formatPrice(priceRange[0])}
+          <div className="flex justify-between items-center mb-6">
+            <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-indigo-100">
+              <span className="text-sm font-semibold text-indigo-700">
+                {formatPrice(tempPriceRange[0])}
               </span>
             </div>
-            <div className="flex-1 h-px bg-gradient-to-r from-indigo-200 to-indigo-200 mx-4"></div>
-            <div className="bg-white px-3 py-2 rounded-lg shadow-sm border border-indigo-200">
-              <span className="text-sm font-bold text-indigo-600">
-                {formatPrice(priceRange[1])}
+            <div className="flex-1 h-px bg-gradient-to-r from-indigo-300 to-indigo-100 mx-4"></div>
+            <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-indigo-100">
+              <span className="text-sm font-semibold text-indigo-700">
+                {formatPrice(tempPriceRange[1])}
               </span>
             </div>
           </div>
+          <button
+            onClick={handleApplyFilter}
+            className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 active:bg-indigo-800 transition-all duration-200 shadow-md hover:shadow-lg"
+          >
+            Áp dụng
+          </button>
         </div>
       </div>
 
       {/* Clear Filters Button */}
-      <div
-        className="pt-4 border-t border-gray-100"
-        onClick={handleFilterProduct}
-      >
-        <button className="w-full bg-gradient-to-r from-gray-100 to-gray-200 hover:from-red-500 hover:to-red-600 text-gray-700 hover:text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-lg">
-          Xóa tất cả bộ lọc
-        </button>
-      </div>
     </div>
   );
 

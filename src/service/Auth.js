@@ -1,3 +1,4 @@
+import { User } from "lucide-react";
 import axios from "./../untils/axios";
 
 const LoginAuth = async (email, password) => {
@@ -145,16 +146,12 @@ const ResetPassword = async (token, newPassword) => {
 const checkRestToken = async (token) => {
   return await axios.get(`api/v1/check-reset-token/${token}`);
 };
-const RegisterUser = async (name, email, password, avatar, isAdmin) => {
+const RegisterUser = async (name, email, password, isAdmin) => {
   const data = new FormData();
 
   data.append("name", name);
   data.append("email", email);
   data.append("password", password);
-  if (avatar) {
-    // If avatar is a file, append it
-    data.append("avatar", avatar);
-  }
   data.append("isAdmin", isAdmin);
   return await axios.post("api/v1/register", data, {
     headers: {
@@ -167,23 +164,12 @@ const SendverifyOTP = async (email) => {
   return await axios.post("api/v1/send-otp", { email });
 };
 
-const verifyOTP = async (
-  email,
-  otp,
-  name,
-  password,
-  avatar,
-  isAdmin = false
-) => {
+const verifyOTP = async (email, otp, name, password, isAdmin = false) => {
   const data = new FormData();
   data.append("email", email);
   data.append("otp", otp);
   data.append("name", name);
   data.append("password", password);
-  if (avatar) {
-    // If avatar is a file, append it
-    data.append("avatar", avatar);
-  }
   data.append("isAdmin", isAdmin);
 
   return await axios.post("api/v1/verify-otp", data, {
@@ -218,6 +204,22 @@ const AdminChangleProfileAPI = async (
     return await axios.put(
       `api/v1/config-password`,
       { email, password, passwordAdmin, adminEmail },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+  } catch (error) {}
+};
+
+const AdminChangleNewpassword = async (email, passwordAdmin, adminEmail) => {
+  try {
+    const token = localStorage.getItem("token");
+    return await axios.post(
+      `api/v1/send-newpassword`,
+      { email, passwordAdmin, adminEmail },
       {
         headers: {
           "Content-Type": "application/json",
@@ -297,4 +299,5 @@ export {
   checkRestToken,
   RegisterUserAPI_Alternative,
   isAccountUserLockerAPI,
+  AdminChangleNewpassword,
 };

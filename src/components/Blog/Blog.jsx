@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "antd";
 import { useNavigate } from "react-router-dom";
-import { getAllBlog } from "../../service/Blog";
+import { getAllBlog, updateViewBlog } from "../../service/Blog";
 import moment from "moment";
 import ReactPaginate from "react-paginate";
 
@@ -161,8 +161,11 @@ const Blog = () => {
   }, []);
 
   const handlePostClick = useCallback(
-    (post) => {
-      navigate(post.slug || `/blog/${post._id}`);
+    async (post) => {
+      const res = await updateViewBlog(post.slug);
+      if (res && res.data && res.data.EC === 0) {
+        navigate(post.slug || `/blog/${post.slug}`);
+      }
     },
     [navigate]
   );

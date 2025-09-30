@@ -168,7 +168,6 @@ const Details = () => {
       if (firstImageIndex !== -1) {
         setActiveThumbIndex(firstImageIndex);
         setClothImage(image[firstImageIndex].url);
-        console.log(image[firstImageIndex].url);
 
         setTimeout(() => {
           if (mainSwiper) {

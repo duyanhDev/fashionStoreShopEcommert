@@ -14,6 +14,7 @@ import {
 import { deleteBlog, getAllBlog, updateBlogNew } from "../../service/Blog";
 import { UserAuth } from "../../service/Auth";
 import { useNavigate } from "react-router-dom";
+import ReactPaginate from "react-paginate";
 
 const BlogManager = () => {
   const [blogs, setBlogs] = useState([]);
@@ -41,6 +42,8 @@ const BlogManager = () => {
   const [imagePreviews, setImagePreviews] = useState([]);
   const [useUrlInput, setUseUrlInput] = useState(false);
 
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 5;
   const navigate = useNavigate();
 
   const resetForm = () => {
@@ -152,8 +155,6 @@ const BlogManager = () => {
       ...prev,
       img: [{ url: "" }],
     }));
-
-    console.log(`Selected ${validFiles.length} valid files`);
   };
 
   const removeFile = (index) => {
@@ -209,12 +210,6 @@ const BlogManager = () => {
         if (selectedFiles.length === 0 && formData.img[0]?.url) {
           dataToUpdate.img = formData.img;
         }
-
-        console.log("Updating blog with:", {
-          data: dataToUpdate,
-          files: selectedFiles,
-          hasFiles: selectedFiles.length > 0,
-        });
 
         const res = await updateBlogNew(
           editingBlog._id,
@@ -336,6 +331,14 @@ const BlogManager = () => {
     navigate("/create/blog");
   };
 
+  const pageCount = filteredBlogs.length / itemsPerPage;
+  const offset = currentPage * itemsPerPage;
+
+  const currentItems = filteredBlogs.slice(offset, offset + itemsPerPage);
+
+  const handlePageClick = ({ selected }) => {
+    setCurrentPage(selected);
+  };
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -390,7 +393,7 @@ const BlogManager = () => {
 
         {/* Blog List */}
         <div className="grid gap-6">
-          {filteredBlogs.map((blog) => (
+          {currentItems.map((blog) => (
             <div
               key={blog._id}
               className="bg-white rounded-lg shadow-sm overflow-hidden"
@@ -484,7 +487,7 @@ const BlogManager = () => {
           ))}
         </div>
 
-        {filteredBlogs.length === 0 && (
+        {currentItems.length === 0 && (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <p className="text-gray-500 text-lg">Không tìm thấy bài viết nào</p>
           </div>
@@ -786,6 +789,22 @@ const BlogManager = () => {
           </div>
         </div>
       )}
+
+      <ReactPaginate
+        previousLabel={"← Trước"}
+        nextLabel={"Sau →"}
+        breakLabel={"..."}
+        pageCount={pageCount}
+        marginPagesDisplayed={2}
+        pageRangeDisplayed={3}
+        onPageChange={handlePageClick}
+        containerClassName={"flex justify-center mt-6 space-x-2"}
+        pageClassName={"px-3 py-1 border rounded"}
+        activeClassName={"bg-blue-500 text-white"}
+        previousClassName={"px-3 py-1 border rounded"}
+        nextClassName={"px-3 py-1 border rounded"}
+        disabledClassName={"opacity-50 cursor-not-allowed"}
+      />
     </div>
   );
 };

@@ -196,8 +196,6 @@ const GeminiBlogGenerator = () => {
     },
   };
 
-  console.log(title);
-
   return (
     <>
       <Button

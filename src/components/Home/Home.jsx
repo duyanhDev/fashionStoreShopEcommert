@@ -76,6 +76,8 @@ const Home = () => {
   const [form] = Form.useForm();
   const [error, setError] = useState("");
   const [blogPosts, SetBlogPosts] = useState([]);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [slidesToShow, setSlidesToShow] = useState(1);
 
   const services = [
     {
@@ -261,7 +263,6 @@ const Home = () => {
   const handleIncreaseView = async (slug) => {
     try {
       const res = await updateViewBlog(slug);
-      console.log(res);
 
       if (res && res.data && res.data.EC === 0) {
         navigate(`/blog/${slug}`);
@@ -270,9 +271,6 @@ const Home = () => {
       console.log(error);
     }
   };
-
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [slidesToShow, setSlidesToShow] = useState(1);
 
   useEffect(() => {
     const updateSlidesToShow = () => {
@@ -835,7 +833,7 @@ const Home = () => {
                     }%)`,
                   }}
                 >
-                  {feedbackImages?.map((testimonial, index) => (
+                  {feedbackImages.map((testimonial, index) => (
                     <div
                       key={testimonial._id}
                       className={`flex-shrink-0 px-3 ${
@@ -854,8 +852,8 @@ const Home = () => {
                           <div className="flex items-center relative z-10">
                             <div className="relative">
                               <img
-                                src={testimonial?.userId?.avatar}
-                                alt={testimonial?.userId?.name}
+                                src={testimonial.userId.avatar}
+                                alt={testimonial.userId.name}
                                 className="w-16 h-16 rounded-full object-cover border-4 border-white/20 shadow-lg"
                               />
                               <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-2 border-white flex items-center justify-center">
@@ -864,12 +862,11 @@ const Home = () => {
                             </div>
                             <div className="ml-4 text-white">
                               <h4 className="font-bold text-lg">
-                                {testimonial?.userId?.name}
+                                {testimonial.userId.name}
                               </h4>
                               <p className="text-blue-100 flex items-center text-sm">
                                 <MapPin className="w-3 h-3 mr-1" />
-                                {testimonial?.userId?.address?.city ||
-                                  "Việt Nam"}
+                                {testimonial.userId.address.city}
                               </p>
                             </div>
                           </div>
@@ -1002,7 +999,7 @@ const Home = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {blogPosts.slice(0, 3).map((post, index) => (
+              {blogPosts?.slice(0, 3).map((post, index) => (
                 <article
                   key={`${post._id}-${index}`}
                   className="cursor-pointer group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 transform hover:-translate-y-2 overflow-hidden border border-gray-100"

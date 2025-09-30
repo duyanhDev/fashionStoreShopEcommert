@@ -372,7 +372,6 @@ const PantsSizeManager = () => {
   const handleDeleteSize = async (index) => {
     if (!sizeData) return;
     const size = sizeData.sizes[index];
-    console.log(size);
 
     const res = await deleteOnePantsSize(selectedProductId, size._id);
     if (res && res.data && res.data.EC === 0) {
