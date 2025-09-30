@@ -866,7 +866,7 @@ const Home = () => {
                               </h4>
                               <p className="text-blue-100 flex items-center text-sm">
                                 <MapPin className="w-3 h-3 mr-1" />
-                                {testimonial.userId.address.city}
+                                {testimonial?.userId?.address?.city}
                               </p>
                             </div>
                           </div>
