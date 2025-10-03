@@ -118,24 +118,26 @@ const CartProducts = ({}) => {
   };
 
   const DistrstData = async () => {
+    if (!id) {
+      setDistrict([]);
+      return;
+    }
+
     try {
-      let url = `https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/district?province_id=${id}`;
-      let res = await axios.get(url, {
-        headers: { Token: "6501032d-0b70-11ef-b1d4-92b443b7a897" },
-      });
-      if (res.data && res.data.data) {
-        const data = res.data.data.map((item) => ({
-          id: item.DistrictID,
-          name: item.DistrictName,
-        }));
-        setDistrict(data);
-      }
+      // ... rest of your code
     } catch (error) {
       console.error("Error fetching districts:", error);
+      setDistrict([]);
     }
   };
 
   const WarnData = async () => {
+    // Don't call API if district is not selected
+    if (!selectedDistrict) {
+      setWarn([]);
+      return;
+    }
+
     try {
       let url = `https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/ward?district_id=${selectedDistrict}`;
       let res = await axios.get(url, {
@@ -150,6 +152,7 @@ const CartProducts = ({}) => {
       }
     } catch (error) {
       console.error("Error fetching wards:", error);
+      setWarn([]);
     }
   };
 
@@ -226,12 +229,16 @@ const CartProducts = ({}) => {
     setSelectedWarnDistrict("");
     setCity(name.label);
     setWarn([]);
+    setGhnDistrictId(""); // Also reset GHN district ID
+    setGhnWardCode(""); // Also reset GHN ward code
   };
 
   const handleDistrictChange = (value, name) => {
     setSelectedDistrict(value);
     setDistrictName(name.label);
     setGhnDistrictId(value);
+    setSelectedWarnDistrict(""); // Reset ward selection
+    setWarn([]); // Clear ward list
   };
 
   const onChange = (e) => {
