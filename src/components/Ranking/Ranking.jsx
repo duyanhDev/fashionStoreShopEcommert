@@ -85,8 +85,9 @@ const Ranking = () => {
 
   const sortedRanking = useMemo(() => {
     return [...users]
-      .slice(0, 10)
-      .sort((a, b) => (b.totalPrice || 0) - (a.totalPrice || 0));
+      .slice(0, 5)
+      .sort((a, b) => (b.totalPrice || 0) - (a.totalPrice || 0))
+      .filter((item) => item.role === "customer");
   }, [users]);
 
   const FloatingParticles = ({ count = 6, className = "bg-white" }) => (

@@ -51,6 +51,7 @@ import ChangelogManager from "../components/ChangelogManager/ChangelogManager";
 import BlogManager from "../components/BlogManager/BlogManager";
 import SizeManager from "../components/SizeManager/SizeMange";
 import PantsSizeManager from "../components/PantsSizeManager/PantsSizeManager";
+import PrivacyTermsPage from "../components/PrivacyTermsPage/PrivacyTermsPage";
 
 export const RouterLayout = [
   {
@@ -133,6 +134,10 @@ export const RouterLayout = [
   {
     path: "/changelog",
     element: <ChangelogPage />,
+  },
+  {
+    path: "/dieu-khoan-va-chinh-sach-bao-mat-thong-tin-ca-nhan",
+    element: <PrivacyTermsPage />,
   },
   {
     path: "/voucher-wallet",

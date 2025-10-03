@@ -172,10 +172,16 @@ const Footer = () => {
               >
                 Lịch sử thay đổi website
               </Link>
-              <Link className="hover:text-white transition-colors">
+              <Link
+                to="/dieu-khoan-va-chinh-sach-bao-mat-thong-tin-ca-nhan"
+                className="hover:text-white transition-colors"
+              >
                 Chính sách bảo mật
               </Link>
-              <Link className="hover:text-white transition-colors">
+              <Link
+                to="/dieu-khoan-va-chinh-sach-bao-mat-thong-tin-ca-nhan"
+                className="hover:text-white transition-colors"
+              >
                 Điều khoản sử dụng
               </Link>
               <Link

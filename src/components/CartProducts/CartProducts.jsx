@@ -18,7 +18,7 @@ import {
   Checkbox,
 } from "antd";
 import { useState } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { Link, useNavigate, useOutletContext } from "react-router-dom";
 import { createOrder } from "../../service/Oder";
 import {
   SmileOutlined,
@@ -598,7 +598,6 @@ const CartProducts = ({}) => {
   }
 
   const finalPrice = Math.round(totalCheckedPrice - discountAmount);
-
   const handleOrder = async () => {
     if (Products.length === 0) {
       notification.error({
@@ -607,6 +606,7 @@ const CartProducts = ({}) => {
       });
       return;
     }
+
     try {
       setLoadingSpin(true);
 
@@ -641,6 +641,7 @@ const CartProducts = ({}) => {
         return;
       }
 
+      // dữ liệu gửi GHN
       const ghnOrderData = {
         payment_type_id: value === "cod" ? 2 : 1,
         note: "Đơn hàng từ website",
@@ -685,6 +686,7 @@ const CartProducts = ({}) => {
         })),
       };
 
+      // gọi API GHN
       const ghnResponse = await axios.post(
         "https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/create",
         ghnOrderData,
@@ -698,67 +700,67 @@ const CartProducts = ({}) => {
       );
 
       if (ghnResponse.data && ghnResponse.data.code === 200) {
-        let res = await createOrder(
-          user._id,
-          Name,
-          number,
-          formattedItems,
-          fullAddress,
-          city,
-          districtName,
-          wardName,
-          value,
-          email,
-          CartId,
-          filteredProductIds,
-          discountValue,
-          idDiscount,
-          ghnResponse.data.data.order_code,
-          idItems
-        );
+        // chạy song song: tạo order + load lại cart
+        const [res] = await Promise.all([
+          createOrder(
+            user._id,
+            Name,
+            number,
+            formattedItems,
+            fullAddress,
+            city,
+            districtName,
+            wardName,
+            value,
+            email,
+            CartId,
+            filteredProductIds,
+            discountValue,
+            idDiscount,
+            ghnResponse.data.data.order_code,
+            idItems,
+            discountType
+          ),
+          CartListProductsUser(),
+        ]);
+
+        setLoadingSpin(false);
 
         if (res && res.data.EC === 0) {
-          await CartListProductsUser();
-          setTimeout(() => {
-            setLoadingSpin(false);
+          // xử lý redirect tuỳ phương thức thanh toán
+          if (res.data.paymentMethod === "cod") {
+            navigate(`/vnpay_return/${res.data.order_id}`);
+          }
 
-            if (
-              res.data &&
-              res.data.EC === 0 &&
-              res.data.paymentMethod === "cod"
-            ) {
-              navigate(`/vnpay_return/${res.data.order_id}`);
-            }
-
-            if (res.data.orderUrl) {
-              api.open({
-                message: "Đặt Hàng",
-                description:
-                  "Chúc mừng quý khách đã đặt hàng thành công tại shop",
-                icon: <SmileOutlined style={{ color: "#108ee9" }} />,
-              });
-              window.location.href = res.data.orderUrl;
-            } else if (res.data.vnpUrl) {
-              window.location.href = res.data.vnpUrl;
-              api.open({
-                message: "Đặt Hàng",
-                description:
-                  "Chúc mừng quý khách đã đặt hàng thành công tại shop",
-                icon: <SmileOutlined style={{ color: "#108ee9" }} />,
-              });
-            } else if (res.data.qrCodeUrl) {
-              setIsCheckSepay(true);
-              setQrnUrl(res.data.qrCodeUrl);
-              setOrderId(res.data.orderId);
-            } else if (res.data.data.shortLink)
-              window.location.href = res.data.data.payUrl;
-          }, 3000);
+          if (res.data.orderUrl) {
+            api.open({
+              message: "Đặt Hàng",
+              description:
+                "Chúc mừng quý khách đã đặt hàng thành công tại shop",
+              icon: <SmileOutlined style={{ color: "#108ee9" }} />,
+            });
+            window.location.href = res.data.orderUrl;
+          } else if (res.data.vnpUrl) {
+            api.open({
+              message: "Đặt Hàng",
+              description:
+                "Chúc mừng quý khách đã đặt hàng thành công tại shop",
+              icon: <SmileOutlined style={{ color: "#108ee9" }} />,
+            });
+            window.location.href = res.data.vnpUrl;
+          } else if (res.data.qrCodeUrl) {
+            setIsCheckSepay(true);
+            setQrnUrl(res.data.qrCodeUrl);
+            setOrderId(res.data.orderId);
+          } else if (res.data.data?.shortLink) {
+            window.location.href = res.data.data.payUrl;
+          }
         } else {
           notification.error({
             message: "Lỗi",
-            description: res.data.EM || "Tạo đơn hàng trong hệ thống thất bại.",
+            description:
+              res?.data.EM || "Tạo đơn hàng trong hệ thống thất bại.",
           });
-          setLoadingSpin(false);
         }
       } else {
         notification.error({
@@ -797,10 +799,6 @@ const CartProducts = ({}) => {
   useEffect(() => {
     fetchApiVoucher();
   }, []);
-
-  function formatMoney(amount) {
-    return (amount / 1000).toLocaleString() + "k";
-  }
 
   useEffect(() => {
     if (!orderId) return;
@@ -1387,9 +1385,12 @@ const CartProducts = ({}) => {
 
                 <div className="text-center text-xs text-gray-500 mt-3">
                   Bằng việc đặt hàng, bạn đồng ý với{" "}
-                  <a href="#" className="text-blue-600 hover:underline">
+                  <Link
+                    to="/dieu-khoan-va-chinh-sach-bao-mat-thong-tin-ca-nhan"
+                    className="text-blue-600 hover:underline"
+                  >
                     Điều khoản sử dụng
-                  </a>{" "}
+                  </Link>{" "}
                   của chúng tôi
                 </div>
               </div>

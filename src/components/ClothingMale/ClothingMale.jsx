@@ -417,12 +417,22 @@ const ClothingMale = () => {
   const SkeletonCard = () => (
     <Card
       className="w-full mx-auto bg-white rounded-2xl shadow-lg overflow-hidden"
-      cover={<Skeleton.Image active style={{ width: "100%", height: 200 }} />}
+      cover={
+        <div className="w-full aspect-[350/250] bg-gray-200">
+          <Skeleton.Image
+            active
+            style={{
+              width: "100%",
+              height: "100%",
+              display: "block",
+            }}
+          />
+        </div>
+      }
     >
       <Skeleton active paragraph={{ rows: 4 }} />
     </Card>
   );
-
   const OptionGender = (gender) => {
     switch (gender) {
       case "male":

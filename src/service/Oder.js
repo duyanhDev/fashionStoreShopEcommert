@@ -21,7 +21,8 @@ const createOrder = async (
   discountValue,
   idDiscount,
   order_code,
-  idItems
+  idItems,
+  discountType
 ) => {
   try {
     const formattedItems = items.map((item) => ({
@@ -53,6 +54,7 @@ const createOrder = async (
       idDiscount,
       order_code,
       idItems,
+      discountType,
     });
 
     return response;

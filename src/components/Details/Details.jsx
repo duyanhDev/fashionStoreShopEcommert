@@ -68,6 +68,17 @@ const Details = () => {
   const navigagte = useNavigate();
   const [open, setOpen] = useState(false);
 
+  const [expanded, setExpanded] = useState(false);
+  const maxLength = 400;
+
+  // Nếu description dài hơn 1000 ký tự thì cắt
+  const shouldTruncate = description.length > maxLength;
+  const displayText = expanded
+    ? description
+    : shouldTruncate
+    ? description.slice(0, maxLength) + "..."
+    : description;
+
   // ghép try on
 
   const [clothImage, setClothImage] = useState(null);
@@ -168,6 +179,7 @@ const Details = () => {
       if (firstImageIndex !== -1) {
         setActiveThumbIndex(firstImageIndex);
         setClothImage(image[firstImageIndex].url);
+        console.log(image[firstImageIndex].url);
 
         setTimeout(() => {
           if (mainSwiper) {
@@ -854,8 +866,16 @@ const Details = () => {
           </h3>
           <div
             className="text-gray-700 "
-            dangerouslySetInnerHTML={{ __html: description }}
+            dangerouslySetInnerHTML={{ __html: displayText }}
           />
+          {shouldTruncate && (
+            <Button
+              className=" text-center m-auto flex justify-center mt-3 text-green-500"
+              onClick={() => setExpanded(!expanded)}
+            >
+              {expanded ? "Rút gọn" : "Xem thêm"}
+            </Button>
+          )}
         </div>
         {/* Suggested Products Section */}
         <div className="mt-16 space-y-8">
