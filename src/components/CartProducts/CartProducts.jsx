@@ -120,14 +120,27 @@ const CartProducts = ({}) => {
   const DistrstData = async () => {
     if (!id) {
       setDistrict([]);
+      setWarn([]); // Reset ward khi không có province
       return;
     }
 
     try {
-      // ... rest of your code
+      let url = `https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/district?province_id=${id}`;
+      let res = await axios.get(url, {
+        headers: { Token: "6501032d-0b70-11ef-b1d4-92b443b7a897" },
+      });
+      if (res.data && res.data.data) {
+        const data = res.data.data.map((item) => ({
+          id: item.DistrictID,
+          name: item.DistrictName,
+        }));
+        setDistrict(data);
+        setWarn([]); // Reset ward list khi load district mới
+      }
     } catch (error) {
       console.error("Error fetching districts:", error);
       setDistrict([]);
+      setWarn([]);
     }
   };
 
@@ -224,13 +237,13 @@ const CartProducts = ({}) => {
 
   const handleProvinceChange = (value, name) => {
     SetId(value);
-    setDistrict([]);
-    setSelectedDistrict("");
-    setSelectedWarnDistrict("");
+    setDistrict([]); // Reset district list
+    setSelectedDistrict(""); // Reset selected district
+    setSelectedWarnDistrict(""); // Reset selected ward
     setCity(name.label);
-    setWarn([]);
-    setGhnDistrictId(""); // Also reset GHN district ID
-    setGhnWardCode(""); // Also reset GHN ward code
+    // Không reset warn ở đây vì chưa có district
+    setGhnDistrictId("");
+    setGhnWardCode("");
   };
 
   const handleDistrictChange = (value, name) => {
@@ -238,7 +251,8 @@ const CartProducts = ({}) => {
     setDistrictName(name.label);
     setGhnDistrictId(value);
     setSelectedWarnDistrict(""); // Reset ward selection
-    setWarn([]); // Clear ward list
+    setGhnWardCode(""); // Reset GHN ward code
+    // Không cần setWarn([]) ở đây, để useEffect xử lý
   };
 
   const onChange = (e) => {
