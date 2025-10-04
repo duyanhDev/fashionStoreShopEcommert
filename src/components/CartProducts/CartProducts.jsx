@@ -662,7 +662,7 @@ const CartProducts = ({}) => {
         return;
       }
 
-      // dữ liệu gửi GHN
+      // Dữ liệu gửi GHN
       const ghnOrderData = {
         payment_type_id: value === "cod" ? 2 : 1,
         note: "Đơn hàng từ website",
@@ -707,7 +707,7 @@ const CartProducts = ({}) => {
         })),
       };
 
-      // gọi API GHN
+      // Gọi API GHN
       const ghnResponse = await axios.post(
         "https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/create",
         ghnOrderData,
@@ -721,36 +721,39 @@ const CartProducts = ({}) => {
       );
 
       if (ghnResponse.data && ghnResponse.data.code === 200) {
-        // chạy song song: tạo order + load lại cart
-        const [res] = await Promise.all([
-          createOrder(
-            user._id,
-            Name,
-            number,
-            formattedItems,
-            fullAddress,
-            city,
-            districtName,
-            wardName,
-            value,
-            email,
-            CartId,
-            filteredProductIds,
-            discountValue,
-            idDiscount,
-            ghnResponse.data.data.order_code,
-            idItems,
-            discountType
-          ),
-          CartListProductsUser(),
-        ]);
+        // Tạo order trong hệ thống
+        const res = await createOrder(
+          user._id,
+          Name,
+          number,
+          formattedItems,
+          fullAddress,
+          city,
+          districtName,
+          wardName,
+          value,
+          email,
+          CartId,
+          filteredProductIds,
+          discountValue,
+          idDiscount,
+          ghnResponse.data.data.order_code,
+          idItems,
+          discountType
+        );
 
         setLoadingSpin(false);
 
         if (res && res.data.EC === 0) {
-          // xử lý redirect tuỳ phương thức thanh toán
+          // Load cart trong background (không chặn UI)
+          CartListProductsUser().catch((err) =>
+            console.error("Failed to refresh cart:", err)
+          );
+
+          // Xử lý redirect theo phương thức thanh toán
           if (res.data.paymentMethod === "cod") {
             navigate(`/vnpay_return/${res.data.order_id}`);
+            return;
           }
 
           if (res.data.orderUrl) {
@@ -761,7 +764,10 @@ const CartProducts = ({}) => {
               icon: <SmileOutlined style={{ color: "#108ee9" }} />,
             });
             window.location.href = res.data.orderUrl;
-          } else if (res.data.vnpUrl) {
+            return;
+          }
+
+          if (res.data.vnpUrl) {
             api.open({
               message: "Đặt Hàng",
               description:
@@ -769,25 +775,32 @@ const CartProducts = ({}) => {
               icon: <SmileOutlined style={{ color: "#108ee9" }} />,
             });
             window.location.href = res.data.vnpUrl;
-          } else if (res.data.qrCodeUrl) {
+            return;
+          }
+
+          if (res.data.qrCodeUrl) {
             setIsCheckSepay(true);
             setQrnUrl(res.data.qrCodeUrl);
             setOrderId(res.data.orderId);
-          } else if (res.data.data?.shortLink) {
+            return;
+          }
+
+          if (res.data.data?.shortLink) {
             window.location.href = res.data.data.payUrl;
+            return;
           }
         } else {
           notification.error({
             message: "Lỗi",
             description:
-              res?.data.EM || "Tạo đơn hàng trong hệ thống thất bại.",
+              res?.data?.EM || "Tạo đơn hàng trong hệ thống thất bại.",
           });
         }
       } else {
         notification.error({
           message: "Lỗi GHN",
           description:
-            ghnResponse.data.message ||
+            ghnResponse.data?.message ||
             "Đặt hàng qua GHN thất bại. Kiểm tra mã địa lý.",
         });
         setLoadingSpin(false);
@@ -1365,7 +1378,7 @@ const CartProducts = ({}) => {
                 <div className="flex justify-between items-center py-2">
                   <Text>Phí vận chuyển</Text>
                   <Text className="font-semibold">
-                    {finalPrice > 290000 ? (
+                    {finalPrice > 300000 ? (
                       <span className="text-green-600">Miễn phí</span>
                     ) : (
                       formatPrice(35000)
@@ -1381,7 +1394,7 @@ const CartProducts = ({}) => {
                   </Title>
                   <Title level={4} className="!mb-0 !text-red-600">
                     {formatPrice(
-                      finalPrice > 290000 ? finalPrice : finalPrice + 35000
+                      finalPrice > 300000 ? finalPrice : finalPrice + 35000
                     )}
                   </Title>
                 </div>
