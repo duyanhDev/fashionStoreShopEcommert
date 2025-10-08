@@ -28,7 +28,6 @@ const updateBlogNew = async (id, dataBlog, selectedFiles) => {
     formData.append("title", dataBlog.title);
     formData.append("tip", dataBlog.tip);
     formData.append("content", dataBlog.content);
-    formData.append("slug", dataBlog.slugTilte);
     formData.append("regex", dataBlog.regex);
     formData.append("userId", dataBlog.userId);
     formData.append("readTime", dataBlog.readTime);

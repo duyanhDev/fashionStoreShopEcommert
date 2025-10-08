@@ -256,7 +256,10 @@ const OderStatus = () => {
                 </span>
               </div>
 
-              <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-50 transition-all cursor-pointer group">
+              <div
+                className="flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-50 transition-all cursor-pointer group"
+                onClick={() => Navigate("/voucher-wallet")}
+              >
                 <GiftOutlined
                   className="text-emerald-600 group-hover:scale-110 transition-transform"
                   style={{ fontSize: 20 }}

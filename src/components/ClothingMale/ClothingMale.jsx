@@ -968,45 +968,75 @@ const ClothingMale = () => {
               {loading ? (
                 [...Array(12)].map((_, index) => <SkeletonCard key={index} />)
               ) : products && products.length > 0 ? (
-                products.map((product) => (
-                  <div
-                    key={product._id}
-                    className="clothing-male-card bg-white rounded-2xl shadow-lg overflow-hidden group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-                  >
-                    <div className="relative">
-                      <img
-                        className="clothing-male-image w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        src={
-                          product.variants[0]?.images[0]?.url ||
-                          "/placeholder.svg?height=250&width=350"
-                        }
-                        alt={product.name}
-                      />
-                      {product.stock === 0 && (
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                          <div className="bg-red-600 text-white px-6 py-3 rounded-xl font-bold text-lg transform rotate-12 shadow-lg">
-                            SOLD OUT
+                products.map((product) => {
+                  const filiterColor = product.variants.filter((item) => {
+                    return item.color === color;
+                  });
+
+                  return (
+                    <div
+                      key={product._id}
+                      className="clothing-male-card bg-white rounded-2xl shadow-lg overflow-hidden group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                    >
+                      <div className="relative">
+                        <img
+                          className="clothing-male-image w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          src={
+                            color
+                              ? filiterColor[0]?.images[0]?.url ||
+                                "/placeholder.svg?height=250&width=350"
+                              : product.variants[0]?.images[0]?.url ||
+                                "/placeholder.svg?height=250&width=350"
+                          }
+                          alt={product.name}
+                        />
+                        {product.stock === 0 && (
+                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                            <div className="bg-red-600 text-white px-6 py-3 rounded-xl font-bold text-lg transform rotate-12 shadow-lg">
+                              SOLD OUT
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      {product.discount > 0 && (
-                        <span className="absolute top-3 right-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                          -{product.discount}%
-                        </span>
-                      )}
-                      <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        {isProductInWishlist?.includes(product._id) ? (
-                          <>
+                        )}
+                        {product.discount > 0 && (
+                          <span className="absolute top-3 right-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                            -{product.discount}%
+                          </span>
+                        )}
+                        <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          {isProductInWishlist?.includes(product._id) ? (
+                            <>
+                              <button
+                                className="bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
+                                onClick={() =>
+                                  handleRemoveWishList(product._id)
+                                }
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-4 w-4 text-green-600"
+                                  fill="currentColor"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                                  />
+                                </svg>
+                              </button>
+                            </>
+                          ) : (
                             <button
-                              className="bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
-                              onClick={() => handleRemoveWishList(product._id)}
+                              className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
+                              onClick={() => handlAddWishList(product._id)}
                             >
                               <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4 text-green-600"
-                                fill="currentColor"
-                                viewBox="0 0 24 24"
+                                className="w-4 h-4 text-gray-600"
+                                fill="none"
                                 stroke="currentColor"
+                                viewBox="0 0 24 24"
                               >
                                 <path
                                   strokeLinecap="round"
@@ -1016,14 +1046,23 @@ const ClothingMale = () => {
                                 />
                               </svg>
                             </button>
-                          </>
-                        ) : (
+                          )}
+
                           <button
-                            className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100"
-                            onClick={() => handlAddWishList(product._id)}
+                            onClick={() =>
+                              handelModelProductCart(
+                                product._id,
+                                product.variants,
+                                product.price,
+                                product.discountedPrice,
+                                product.name,
+                                product.discount
+                              )
+                            }
+                            className="bg-green-500 hover:bg-green-600 p-2 rounded-full shadow-lg transition-colors"
                           >
                             <svg
-                              className="w-4 h-4 text-gray-600"
+                              className="w-4 h-4 text-white"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -1032,73 +1071,45 @@ const ClothingMale = () => {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 strokeWidth={2}
-                                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
                               />
                             </svg>
                           </button>
-                        )}
-
-                        <button
-                          onClick={() =>
-                            handelModelProductCart(
-                              product._id,
-                              product.variants,
-                              product.price,
-                              product.discountedPrice,
-                              product.name,
-                              product.discount
-                            )
-                          }
-                          className="bg-green-500 hover:bg-green-600 p-2 rounded-full shadow-lg transition-colors"
-                        >
-                          <svg
-                            className="w-4 h-4 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                    <div
-                      className="clothing-male-content"
-                      onClick={() => handleDetails(product.slug)}
-                    >
-                      <p className="text-sm text-green-600 uppercase tracking-wider font-medium mb-2">
-                        {product.brand}
-                      </p>
-                      <h3 className="clothing-male-title font-semibold text-gray-900 line-clamp-2 mb-3 cursor-pointer hover:text-green-600">
-                        {product.name}
-                      </h3>
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <span className="clothing-male-price font-bold text-green-600">
-                            {formatPrice(product.discountedPrice)}
-                          </span>
-                          {product.discount > 0 && (
-                            <span className="clothing-male-original-price text-gray-500 line-through ml-2">
-                              {formatPrice(product.price)}
-                            </span>
-                          )}
                         </div>
                       </div>
-                      <div className=" flex items-center justify-between">
-                        <span className="italic">
-                          {" "}
-                          {formatNumberToShort(product.view)} lượt xem
-                        </span>
-                        <span className="italic">Đã bán {product.sold}</span>
+                      <div
+                        className="clothing-male-content"
+                        onClick={() => handleDetails(product.slug)}
+                      >
+                        <p className="text-sm text-green-600 uppercase tracking-wider font-medium mb-2">
+                          {product.brand}
+                        </p>
+                        <h3 className="clothing-male-title font-semibold text-gray-900 line-clamp-2 mb-3 cursor-pointer hover:text-green-600">
+                          {product.name}
+                        </h3>
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <span className="clothing-male-price font-bold text-green-600">
+                              {formatPrice(product.discountedPrice)}
+                            </span>
+                            {product.discount > 0 && (
+                              <span className="clothing-male-original-price text-gray-500 line-through ml-2">
+                                {formatPrice(product.price)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className=" flex items-center justify-between">
+                          <span className="italic">
+                            {" "}
+                            {formatNumberToShort(product.view)} lượt xem
+                          </span>
+                          <span className="italic">Đã bán {product.sold}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="col-span-full flex justify-center items-center h-64 bg-white rounded-2xl shadow-lg">
                   <div className="text-center">

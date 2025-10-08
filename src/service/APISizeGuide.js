@@ -37,11 +37,9 @@ const updateGuideSeize = async (productId, size, updatedData) => {
 const deleteGuideSize = async (productId, size) => {
   const token = localStorage.getItem("token");
   return await axios.delete(`api/v1/delete-size`, {
-    // ❌ Sai: bạn đang truyền { productId, size } trực tiếp, axios sẽ hiểu đây là config object
-    // và sẽ bỏ qua nếu không đúng key hợp lệ
     data: { productId, size }, // ✅ phải đặt trong key data
     headers: {
-      Authorization: `Bearer ${token}`, // ❌ bạn viết dở "aut"
+      Authorization: `Bearer ${token}`,
     },
   });
 };

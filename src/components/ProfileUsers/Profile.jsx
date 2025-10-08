@@ -30,8 +30,11 @@ import {
   Tabs,
 } from "antd";
 import moment from "moment";
-import { login, updateUser } from "../../redux/actions/Auth";
-
+import { updateUser } from "../../redux/actions/Auth";
+import {
+  validatePassword,
+  validateConfirmPassword,
+} from "../../testsCase/RegisterForm.test";
 const { Option } = Select;
 
 const PersonalInfoForm = ({ id }) => {
@@ -43,25 +46,105 @@ const PersonalInfoForm = ({ id }) => {
 
   const [api, contextHolder] = notification.useNotification();
 
-  const onFinish = (values) => {
-    console.log("Received values of form: ", values);
+  const [validationStatus, setValidationStatus] = useState({
+    newPassWord: { isValid: false, errors: [], requirements: [] },
+    confirmPassword: { isValid: false, errors: [], requirements: [] },
+  });
+
+  // Validate mật khẩu mới
+  const validateNewPassword = (password) => {
+    const requirements = [
+      { text: "Ít nhất 8 ký tự", check: password.length >= 8 },
+      { text: "Có ít nhất 1 chữ hoa", check: /[A-Z]/.test(password) },
+      { text: "Có ít nhất 1 chữ thường", check: /[a-z]/.test(password) },
+      { text: "Có ít nhất 1 số", check: /\d/.test(password) },
+      {
+        text: "Có ít nhất 1 ký tự đặc biệt",
+        check: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+      },
+    ];
+
+    const failedRequirements = requirements.filter((req) => !req.check);
+    const isValid = failedRequirements.length === 0;
+
+    return {
+      isValid,
+      errors: failedRequirements.map((req) => req.text),
+      requirements,
+    };
   };
+
+  // Validate xác nhận mật khẩu
+  const validateConfirmPass = (newPass, confirmPass) => {
+    const requirements = [
+      { text: "Không được để trống", check: confirmPass.trim().length > 0 },
+      {
+        text: "Phải trùng với mật khẩu mới",
+        check: newPass === confirmPass && newPass.length > 0,
+      },
+    ];
+
+    const failedRequirements = requirements.filter((req) => !req.check);
+    const isValid = failedRequirements.length === 0;
+
+    return {
+      isValid,
+      errors: failedRequirements.map((req) => req.text),
+      requirements,
+    };
+  };
+
+  // Cập nhật validation khi thay đổi input
+  useEffect(() => {
+    if (newPassWord) {
+      const newPassValidation = validateNewPassword(newPassWord);
+      setValidationStatus((prev) => ({
+        ...prev,
+        newPassWord: newPassValidation,
+      }));
+    }
+
+    if (confirmPassWord || newPassWord) {
+      const confirmValidation = validateConfirmPass(
+        newPassWord,
+        confirmPassWord
+      );
+      setValidationStatus((prev) => ({
+        ...prev,
+        confirmPassword: confirmValidation,
+      }));
+    }
+  }, [newPassWord, confirmPassWord]);
 
   const handleUpdatePassWord = async () => {
     try {
-      // Validate form fields
+      // Validate form của Ant Design
       await form.validateFields();
 
-      const values = form.getFieldsValue();
-      if (!values.passworded || !values.password || !values.confirm) {
+      // Validate custom
+      const newPassValidation = validateNewPassword(newPassWord);
+      const confirmValidation = validateConfirmPass(
+        newPassWord,
+        confirmPassWord
+      );
+
+      if (!newPassValidation.isValid) {
         api["error"]({
-          message: "Thông báo",
-          description: "Vui lòng nhập đầy đủ thông tin",
+          message: "Lỗi mật khẩu mới",
+          description: newPassValidation.errors.join(", "),
         });
         return;
       }
 
-      // Call API
+      if (!confirmValidation.isValid) {
+        api["error"]({
+          message: "Lỗi xác nhận mật khẩu",
+          description: confirmValidation.errors.join(", "),
+        });
+        return;
+      }
+
+      // Gọi API
       const res = await ChanglePasswordAPI(id, currentPassword, newPassWord);
 
       if (res && res.data.success === true) {
@@ -69,22 +152,28 @@ const PersonalInfoForm = ({ id }) => {
           message: "Cập nhật mật khẩu thành công",
           description: "Bạn đã cập nhật thành công mật khẩu mới",
         });
+
+        // Reset form
+        form.resetFields();
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
       }
     } catch (error) {
       if (error.errorFields) {
-        // Form validation error
+        // Lỗi validation của form
         api["error"]({
           message: "Thông báo",
-          description: "Vui lòng nhập đầy đủ thông tin",
+          description: "Vui lòng nhập đầy đủ thông tin hợp lệ",
         });
       } else if (error.response) {
-        // Error from API
+        // Lỗi từ API
         api["error"]({
           message: "Thông báo lỗi",
           description: error.response.data.message || "Có lỗi xảy ra",
         });
       } else {
-        // Other errors
+        // Lỗi khác
         api["error"]({
           message: "Lỗi",
           description: "Có lỗi xảy ra, vui lòng thử lại sau",
@@ -98,7 +187,7 @@ const PersonalInfoForm = ({ id }) => {
     <>
       {contextHolder}
       <div className="profile-form-container">
-        <Form form={form} onFinish={onFinish} layout="vertical">
+        <Form form={form} layout="vertical">
           <Form.Item
             name="passworded"
             label="Mật khẩu cũ"
@@ -118,6 +207,7 @@ const PersonalInfoForm = ({ id }) => {
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               size="large"
+              placeholder="Nhập mật khẩu cũ"
             />
           </Form.Item>
 
@@ -130,18 +220,48 @@ const PersonalInfoForm = ({ id }) => {
                 message: "Vui lòng nhập mật khẩu mới!",
               },
               {
-                min: 6,
-                message: "Mật khẩu mới phải có ít nhất 6 ký tự!",
+                validator: (_, value) => {
+                  if (!value) return Promise.resolve();
+                  const validation = validateNewPassword(value);
+                  if (validation.isValid) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error(validation.errors[0]));
+                },
               },
             ]}
             hasFeedback
+            validateStatus={
+              newPassWord && !validationStatus.newPassWord.isValid
+                ? "error"
+                : ""
+            }
           >
             <Input.Password
               value={newPassWord}
               onChange={(e) => setNewPassword(e.target.value)}
               size="large"
+              placeholder="Nhập mật khẩu mới"
             />
           </Form.Item>
+
+          {/* Hiển thị yêu cầu mật khẩu */}
+          {newPassWord &&
+            validationStatus.newPassWord.requirements.length > 0 && (
+              <div style={{ marginTop: -16, marginBottom: 16 }}>
+                {validationStatus.newPassWord.requirements.map((req, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      color: req.check ? "#52c41a" : "#ff4d4f",
+                      fontSize: 12,
+                    }}
+                  >
+                    {req.check ? "✓" : "✗"} {req.text}
+                  </div>
+                ))}
+              </div>
+            )}
 
           <Form.Item
             name="confirm"
@@ -169,15 +289,16 @@ const PersonalInfoForm = ({ id }) => {
               value={confirmPassWord}
               onChange={(e) => setConfirmPassword(e.target.value)}
               size="large"
+              placeholder="Xác nhận mật khẩu mới"
             />
           </Form.Item>
+
           <Form.Item>
             <Button
               type="primary"
               className="w-full"
               size="large"
-              htmlType="submit"
-              onClick={() => handleUpdatePassWord()}
+              onClick={handleUpdatePassWord}
             >
               Cập nhật
             </Button>
@@ -435,9 +556,15 @@ const Profile = () => {
             <label>Số điện thoại</label>
             <Input
               size="large"
-              type="tel"
+              type="number"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (/^\d*$/.test(value) && value.length <= 10) {
+                  setPhone(value);
+                }
+              }}
+              status={phone.length !== 10 ? "error" : ""} // bắt buộc phải đủ 10 số
               placeholder="Số điện thoại"
             />
           </div>
@@ -677,8 +804,6 @@ const Profile = () => {
         selectedImage
       );
       if (res) {
-        console.log(res);
-
         message.success("Profile updated successfully");
         dispatch(updateUser(res.user)); // avatar + info khác sẽ cập nhật ngay
         setOpenResponsive(false);

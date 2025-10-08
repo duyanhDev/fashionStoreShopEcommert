@@ -195,8 +195,7 @@ const CartProducts = ({}) => {
       const newProducts = [];
 
       ListCart.items.forEach((item) => {
-        const { productId, name, size, quantity, color, totalItemPrice, _id } =
-          item;
+        const { productId, size, quantity, color, totalItemPrice, _id } = item;
         const id = productId._id;
 
         const imageUrl =
@@ -595,7 +594,7 @@ const CartProducts = ({}) => {
       setSelectedVoucher(null);
       setDiscountValue(0);
       setContentvoucher("");
-      setidDiscount("");
+      setidDiscount(null);
       setDiscountType("");
     } else {
       setSelectedVoucher(voucherId);

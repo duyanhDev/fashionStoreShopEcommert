@@ -1,5 +1,5 @@
 import "./Details.css";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/free-mode";
@@ -13,6 +13,7 @@ import {
   ShoppingCartOutlined,
   HeartOutlined,
   HeartFilled,
+  FilterOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import {
@@ -22,11 +23,12 @@ import {
 } from "../../service/ApiProduct";
 import { AddCartAPI } from "../../service/Cart";
 import { useSelector } from "react-redux";
-import moment from "moment";
+
 import ReactPaginate from "react-paginate";
 import SizePredictor from "../SizePredictor/SizePredictor";
 import VirtualTryOnApp from "../VirtualTryOnApp/VirtualTryOnApp";
 import { Helmet } from "react-helmet-async";
+
 const Details = () => {
   const [api, contextHolder] = notification.useNotification();
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
@@ -58,7 +60,7 @@ const Details = () => {
   const [quantityProduct, SetquantityProduct] = useState(0);
   const [count, setCount] = useState(1);
   const [activeThumbIndex, setActiveThumbIndex] = useState(0);
-  const itemsPerPage = 5;
+  const itemsPerPage = 2;
   const [currentPage, setCurrentPage] = useState(0);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isBuyingNow, setIsBuyingNow] = useState(false);
@@ -67,11 +69,11 @@ const Details = () => {
   const [topSellingProducts, setTopSellingProducts] = useState([]);
   const navigagte = useNavigate();
   const [open, setOpen] = useState(false);
-
+  const [filterStar, setFilterStar] = useState(0);
   const [expanded, setExpanded] = useState(false);
+  const [sortBy, setSortBy] = useState("newest");
   const maxLength = 400;
 
-  // Nếu description dài hơn 1000 ký tự thì cắt
   const shouldTruncate = description.length > maxLength;
   const displayText = expanded
     ? description
@@ -79,22 +81,12 @@ const Details = () => {
     ? description.slice(0, maxLength) + "..."
     : description;
 
-  // ghép try on
-
   const [clothImage, setClothImage] = useState(null);
   const [modal2Open, setModal2Open] = useState(false);
 
-  const pageCount = Math.ceil(feedback.length / itemsPerPage);
-  const offset = currentPage * itemsPerPage;
-  const currentFeedback = feedback
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )
-    .slice(offset, offset + itemsPerPage);
-
   const handlePageClick = ({ selected }) => {
     setCurrentPage(selected);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleIncrment = () => {
@@ -179,7 +171,6 @@ const Details = () => {
       if (firstImageIndex !== -1) {
         setActiveThumbIndex(firstImageIndex);
         setClothImage(image[firstImageIndex].url);
-        console.log(image[firstImageIndex].url);
 
         setTimeout(() => {
           if (mainSwiper) {
@@ -305,9 +296,7 @@ const Details = () => {
                 src={
                   variants.find(
                     (item) => item.color === SelectedColor.toLowerCase()
-                  )?.images[0]?.url ||
-                  "/placeholder.svg" ||
-                  "/placeholder.svg"
+                  )?.images[0]?.url || "/placeholder.svg"
                 }
                 className="w-12 h-12 object-cover rounded"
                 alt="Product"
@@ -339,11 +328,68 @@ const Details = () => {
     }
   };
 
-  const TotalRatings =
-    feedback &&
-    feedback?.reduce((acc, current) => {
-      return acc + current.rating;
-    }, 0);
+  const TotalRatings = feedback.length;
+
+  const averageRating =
+    TotalRatings > 0
+      ? (
+          feedback.reduce((sum, item) => sum + item.rating, 0) / TotalRatings
+        ).toFixed(1)
+      : 0;
+
+  // Đếm số lượng đánh giá theo số sao
+  const starCounts = useMemo(() => {
+    const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    feedback.forEach((item) => {
+      counts[item.rating] = (counts[item.rating] || 0) + 1;
+    });
+    return counts;
+  }, [feedback]);
+
+  // Lọc và sắp xếp feedback
+  const filteredAndSortedFeedback = useMemo(() => {
+    let result = [...feedback];
+
+    // Lọc theo số sao
+    if (filterStar > 0) {
+      result = result.filter((item) => item.rating === filterStar);
+    }
+
+    // Sắp xếp
+    switch (sortBy) {
+      case "newest":
+        result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        break;
+      case "oldest":
+        result.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        break;
+      case "highest":
+        result.sort((a, b) => b.rating - a.rating);
+        break;
+      case "lowest":
+        result.sort((a, b) => a.rating - b.rating);
+        break;
+      default:
+        break;
+    }
+
+    return result;
+  }, [feedback, filterStar, sortBy]);
+
+  const pageCount = Math.ceil(filteredAndSortedFeedback.length / itemsPerPage);
+  const currentFeedback = filteredAndSortedFeedback.slice(
+    currentPage * itemsPerPage,
+    (currentPage + 1) * itemsPerPage
+  );
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return `${date.getDate().toString().padStart(2, "0")}/${(
+      date.getMonth() + 1
+    )
+      .toString()
+      .padStart(2, "0")}/${date.getFullYear()}`;
+  };
 
   const toggleLikeRatingAPIHandler = async (ratingId) => {
     if (!user) {
@@ -421,7 +467,7 @@ const Details = () => {
   const handleQuantityInput = (e) => {
     const value = e.target.value;
     if (value === "") {
-      setCount(""); // cho phép xóa tạm
+      setCount("");
     } else {
       const num = parseInt(value);
       if (num >= 1 && num <= sumProducts) {
@@ -460,7 +506,7 @@ const Details = () => {
     if (shift?._id && gender) {
       fetchTopSelling();
     }
-  }, [shift?._id, gender]); // ✅ thêm dependency đúng cách
+  }, [shift?._id, gender]);
 
   const showDrawer = () => {
     setOpen(true);
@@ -632,7 +678,8 @@ const Details = () => {
                 <div className="flex items-center gap-2">
                   <Rate
                     disabled
-                    value={TotalRatings > 30 ? 5 : 4}
+                    value={parseFloat(averageRating)}
+                    allowHalf
                     className="text-base"
                   />
                   <span className="text-gray-600 text-sm">
@@ -859,212 +906,325 @@ const Details = () => {
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl p-5 shadow-lg mt-5">
+
+        {/* Mô tả sản phẩm */}
+        <div className="bg-white rounded-xl p-5 shadow-lg mt-8">
           <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
             <span className="w-1 h-5 bg-green-600 rounded-full"></span>
             Mô tả sản phẩm
           </h3>
           <div
-            className="text-gray-700 "
+            className="text-gray-700"
             dangerouslySetInnerHTML={{ __html: displayText }}
           />
           {shouldTruncate && (
             <Button
-              className=" text-center m-auto flex justify-center mt-3 text-green-500"
+              className="text-center m-auto flex justify-center mt-3 text-green-500"
               onClick={() => setExpanded(!expanded)}
             >
               {expanded ? "Rút gọn" : "Xem thêm"}
             </Button>
           )}
         </div>
-        {/* Suggested Products Section */}
-        <div className="mt-16 space-y-8">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center justify-center gap-3">
-              <span className="w-2 h-6 bg-green-600 rounded-full"></span>
-              Sản phẩm gợi ý
-              <span className="w-2 h-6 bg-green-600 rounded-full"></span>
-            </h2>
-            <p className="text-gray-600">
-              Những sản phẩm tương tự mà bạn có thể quan tâm
-            </p>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {topSellingProducts.map((product) => (
-              <div
-                key={`product ${product._id}`}
-                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-[1.02] overflow-hidden group"
-              >
-                <div className="relative aspect-square overflow-hidden">
-                  <img
-                    src={product.variants[0]?.images[0]?.url || ""}
-                    alt={product.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  {product.discount && (
-                    <div className="absolute top-3 left-3 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold animate-pulse">
-                      -{product.discount}%
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300"></div>
-                </div>
+        {/* Sản phẩm gợi ý */}
+        {topSellingProducts.length > 0 && (
+          <div className="mt-16 space-y-8">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center justify-center gap-3">
+                <span className="w-2 h-6 bg-green-600 rounded-full"></span>
+                Sản phẩm gợi ý
+                <span className="w-2 h-6 bg-green-600 rounded-full"></span>
+              </h2>
+              <p className="text-gray-600">
+                Những sản phẩm tương tự mà bạn có thể quan tâm
+              </p>
+            </div>
 
-                <div className="p-4 space-y-3">
-                  <h3 className="font-bold text-gray-900 text-sm leading-tight line-clamp-2 group-hover:text-green-600 transition-colors">
-                    {product.name}
-                  </h3>
-
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold text-green-600">
-                        {formatPrice(product.discountedPrice)}
-                      </span>
-                      {product.discount && (
-                        <span className="text-sm text-gray-500 line-through">
-                          {formatPrice(product.price)}
-                        </span>
-                      )}
-                    </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {topSellingProducts.map((product) => (
+                <div
+                  key={product._id}
+                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-[1.02] overflow-hidden group"
+                >
+                  <div className="relative aspect-square overflow-hidden">
+                    <img
+                      src={product.variants[0]?.images[0]?.url || ""}
+                      alt={product.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
                     {product.discount && (
-                      <p className="text-xs text-green-700">
-                        Tiết kiệm{" "}
-                        {formatPrice(product.price - product.discountedPrice)}
-                      </p>
+                      <div className="absolute top-3 left-3 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold animate-pulse">
+                        -{product.discount}%
+                      </div>
                     )}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300"></div>
                   </div>
 
-                  <button
-                    className="w-full py-2 bg-green-600 text-white rounded-lg font-semibold text-sm hover:bg-green-700 transition-all duration-300 transform hover:scale-[1.02] shadow-md hover:shadow-lg"
-                    onClick={() => navigagte(`/product/${product.slug}`)}
-                  >
-                    Xem chi tiết
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+                  <div className="p-4 space-y-3">
+                    <h3 className="font-bold text-gray-900 text-sm leading-tight line-clamp-2 group-hover:text-green-600 transition-colors">
+                      {product.name}
+                    </h3>
 
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-bold text-green-600">
+                          {formatPrice(product.discountedPrice)}
+                        </span>
+                        {product.discount && (
+                          <span className="text-sm text-gray-500 line-through">
+                            {formatPrice(product.price)}
+                          </span>
+                        )}
+                      </div>
+                      {product.discount && (
+                        <p className="text-xs text-green-700">
+                          Tiết kiệm{" "}
+                          {formatPrice(product.price - product.discountedPrice)}
+                        </p>
+                      )}
+                    </div>
+
+                    <button
+                      className="w-full py-2 bg-green-600 text-white rounded-lg font-semibold text-sm hover:bg-green-700 transition-all duration-300 transform hover:scale-[1.02] shadow-md hover:shadow-lg"
+                      onClick={() => navigagte(`/product/${product.slug}`)}
+                    >
+                      Xem chi tiết
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Phần đánh giá sản phẩm */}
         <div className="mt-16 space-y-8">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl font-bold text-gray-900 mb-6">
               Đánh giá sản phẩm
             </h2>
-            <div className="flex items-center justify-center gap-8 bg-white rounded-xl p-6 shadow-lg transform hover:scale-[1.01] transition-all duration-300">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-green-600 mb-2">
-                  5.0
+            <div className="bg-white rounded-2xl p-8 shadow-lg">
+              <div className="flex flex-col md:flex-row items-center justify-center gap-8">
+                {/* Điểm trung bình */}
+                <div className="text-center">
+                  <div className="text-5xl font-bold text-green-600 mb-2">
+                    {averageRating}
+                  </div>
+                  <Rate
+                    disabled
+                    value={parseFloat(averageRating)}
+                    allowHalf
+                    className="text-xl mb-2"
+                  />
+                  <p className="text-gray-600 font-medium">
+                    {TotalRatings} đánh giá
+                  </p>
                 </div>
-                <Rate
-                  disabled
-                  value={TotalRatings > 30 ? 5 : 4}
-                  className="text-lg mb-2"
-                />
-                <p className="text-gray-600 font-medium">
-                  {feedback.length} đánh giá
-                </p>
+
+                {/* Biểu đồ sao */}
+                <div className="w-full md:w-96 space-y-2">
+                  {[5, 4, 3, 2, 1].map((star) => (
+                    <div key={star} className="flex items-center gap-3">
+                      <div className="flex items-center gap-1 w-16">
+                        <span className="text-sm font-medium text-gray-700">
+                          {star}
+                        </span>
+                        <span className="text-yellow-500">★</span>
+                      </div>
+                      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-yellow-400 transition-all duration-500"
+                          style={{
+                            width: `${
+                              TotalRatings > 0
+                                ? (starCounts[star] / TotalRatings) * 100
+                                : 0
+                            }%`,
+                          }}
+                        />
+                      </div>
+                      <span className="text-sm text-gray-600 w-12 text-right">
+                        {starCounts[star]}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
 
+          {/* Bộ lọc và sắp xếp */}
+          <div className="bg-white rounded-xl p-6 shadow-md">
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+              {/* Lọc theo sao */}
+              <div className="w-full md:w-auto">
+                <div className="flex items-center gap-2 mb-3">
+                  <FilterOutlined className="text-gray-600" />
+                  <span className="font-semibold text-gray-700">Lọc theo:</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => {
+                      setFilterStar(0);
+                      setCurrentPage(0);
+                    }}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+                      filterStar === 0
+                        ? "bg-green-600 text-white shadow-lg scale-105"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    Tất cả
+                  </button>
+                  {[5, 4, 3, 2, 1].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => {
+                        setFilterStar(star);
+                        setCurrentPage(0);
+                      }}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 ${
+                        filterStar === star
+                          ? "bg-green-600 text-white shadow-lg scale-105"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
+                    >
+                      {star} <span className="text-yellow-400">★</span>
+                      <span className="text-xs">({starCounts[star]})</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sắp xếp */}
+              <div className="w-full md:w-auto">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="font-semibold text-gray-700">Sắp xếp:</span>
+                </div>
+                <select
+                  value={sortBy}
+                  onChange={(e) => {
+                    setSortBy(e.target.value);
+                    setCurrentPage(0);
+                  }}
+                  className="w-full md:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white cursor-pointer"
+                >
+                  <option value="newest">Mới nhất</option>
+                  <option value="oldest">Cũ nhất</option>
+                  <option value="highest">Đánh giá cao nhất</option>
+                  <option value="lowest">Đánh giá thấp nhất</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Danh sách đánh giá */}
           <div className="space-y-4">
-            {currentFeedback.map((item) => (
-              <div
-                key={item._id}
-                className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.01]"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0">
-                    {item.userId.avatar ? (
-                      <img
-                        className="w-12 h-12 rounded-full object-cover shadow-md"
-                        src={item.userId.avatar || "/placeholder.svg"}
-                        alt="User avatar"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center shadow-md">
-                        <span className="text-white font-semibold">
-                          {item.userId.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-semibold text-gray-900">
-                          {item.userId.name}
-                        </h4>
-                        <p className="text-xs text-gray-500">
-                          {moment(item.createdAt).format("DD/MM/YYYY")}
-                        </p>
-                      </div>
-                      <Rate
-                        allowHalf
-                        defaultValue={item.rating}
-                        disabled
-                        className="text-sm"
-                      />
+            {currentFeedback.length > 0 ? (
+              currentFeedback.map((item) => (
+                <div
+                  key={item._id}
+                  className="bg-white rounded-xl p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0">
+                      {item.userId.avatar ? (
+                        <img
+                          className="w-12 h-12 rounded-full object-cover shadow-md border-2 border-green-100"
+                          src={item.userId.avatar}
+                          alt="User avatar"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-md">
+                          <span className="text-white font-semibold text-lg">
+                            {item.userId.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-gray-700 leading-relaxed text-sm">
-                      {item.review}
-                    </p>
-                    <div className="flex items-center ">
-                      <span>{item.likes.length}</span>
-                      <button
-                        onClick={() => toggleLikeRatingAPIHandler(item._id)}
-                        className="flex items-center gap-1 px-3 py-1 rounded-full hover:bg-green-50 transition-all duration-300 transform hover:scale-110"
-                      >
-                        {user?._id && item.likes.includes(user._id) ? (
-                          <HeartFilled className="text-green-500 text-sm" />
-                        ) : (
-                          <HeartOutlined className="text-gray-400 text-sm" />
-                        )}
-                      </button>
-                    </div>
-                    <div>
-                      {item.replies &&
-                        item.replies.length > 0 &&
-                        item.replies.map((reply, index) => {
-                          return (
-                            <div key={index} className="reply_comment">
-                              <div className="w-full m-4 flex items-center gap-3">
-                                {reply && (
-                                  <img
-                                    className="w-10 h-10 rounded-full"
-                                    src={
-                                      "https://www.coolmate.me/images/logo-circle.svg"
-                                    }
-                                    alt="avatar lỗi"
-                                  />
-                                )}
-                                {reply && (
-                                  <p className="flex items-center text-neutral-900 font-bold">
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div>
+                          <h4 className="font-semibold text-gray-900 text-lg">
+                            {item.userId.name}
+                          </h4>
+                          <p className="text-sm text-gray-500">
+                            {formatDate(item.createdAt)}
+                          </p>
+                        </div>
+                        <Rate
+                          allowHalf
+                          defaultValue={item.rating}
+                          disabled
+                          className="text-base"
+                        />
+                      </div>
+                      <p className="text-gray-700 leading-relaxed">
+                        {item.review}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => toggleLikeRatingAPIHandler(item._id)}
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-green-50 transition-all duration-300 group"
+                        >
+                          {user?._id && item.likes.includes(user._id) ? (
+                            <HeartFilled className="text-green-500 text-lg group-hover:scale-125 transition-transform" />
+                          ) : (
+                            <HeartOutlined className="text-gray-400 text-lg group-hover:scale-125 transition-transform" />
+                          )}
+                          <span className="text-sm font-medium text-gray-600">
+                            {item.likes.length}
+                          </span>
+                        </button>
+                      </div>
+
+                      {/* Replies */}
+                      {item.replies && item.replies.length > 0 && (
+                        <div className="mt-4 space-y-3">
+                          {item.replies.map((reply, index) => (
+                            <div
+                              key={index}
+                              className="bg-green-50 rounded-lg p-4 ml-4 border-l-4 border-green-500"
+                            >
+                              <div className="flex items-center gap-3 mb-2">
+                                <img
+                                  className="w-8 h-8 rounded-full"
+                                  src="https://www.coolmate.me/images/logo-circle.svg"
+                                  alt="Dosiin"
+                                />
+                                <div className="flex items-center gap-2">
+                                  <p className="font-bold text-gray-900">
                                     Phản hồi từ Dosiin
-                                    <span className="ml-2 time_span">
-                                      {moment(reply.createdAt).format(
-                                        "DD-MM-YY"
-                                      )}
-                                    </span>
                                   </p>
-                                )}
+                                  <span className="text-xs text-gray-500">
+                                    {formatDate(reply.createdAt)}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="ml-5">
-                                <p className="font-bold">{reply.content}</p>
-                              </div>
+                              <p className="text-gray-700 ml-11">
+                                {reply.content}
+                              </p>
                             </div>
-                          );
-                        })}
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
+              ))
+            ) : (
+              <div className="text-center py-12 bg-white rounded-xl shadow-md">
+                <p className="text-gray-500 text-lg">
+                  Không có đánh giá nào phù hợp với bộ lọc
+                </p>
               </div>
-            ))}
+            )}
           </div>
 
+          {/* Phân trang */}
           {pageCount > 1 && (
-            <div className="flex justify-center">
+            <div className="flex justify-center mt-6">
               <ReactPaginate
                 previousLabel="‹"
                 nextLabel="›"
@@ -1073,11 +1233,15 @@ const Details = () => {
                 marginPagesDisplayed={2}
                 pageRangeDisplayed={5}
                 onPageChange={handlePageClick}
-                containerClassName="flex items-center gap-1"
-                pageClassName="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-green-50 transition-all cursor-pointer font-medium transform hover:scale-110 bg-white shadow-sm"
-                activeClassName="bg-green-600 text-white shadow-lg scale-110"
-                previousClassName="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-green-50 transition-all cursor-pointer font-bold transform hover:scale-110 bg-white shadow-sm"
-                nextClassName="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-green-50 transition-all cursor-pointer font-bold transform hover:scale-110 bg-white shadow-sm"
+                forcePage={currentPage}
+                containerClassName="flex items-center gap-2 select-none"
+                pageClassName="w-10 h-10 flex items-center justify-center rounded-lg cursor-pointer font-medium transition-all 
+                   bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-900 shadow-sm"
+                activeClassName="bg-green-600 text-white shadow-md scale-110"
+                previousClassName="w-10 h-10 flex items-center justify-center rounded-lg cursor-pointer font-bold 
+                       bg-green-500 text-white hover:bg-green-600 transition-all shadow-sm"
+                nextClassName="w-10 h-10 flex items-center justify-center rounded-lg cursor-pointer font-bold 
+                   bg-green-500 text-white hover:bg-green-600 transition-all shadow-sm"
                 disabledClassName="opacity-50 cursor-not-allowed"
               />
             </div>

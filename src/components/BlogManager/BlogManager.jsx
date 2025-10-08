@@ -198,7 +198,6 @@ const BlogManager = () => {
           title: formData.title,
           tip: formData.tip,
           content: formData.content,
-          slug: formData.slug,
           regex: formData.regex,
           userId: formData.userId,
           readTime: formData.readTime,
@@ -217,7 +216,9 @@ const BlogManager = () => {
           selectedFiles.length > 0 ? selectedFiles : null
         );
 
-        alert("Cập nhật blog thành công!");
+        if (res && res.data && res.data.EC === 0) {
+          alert("Cập nhật blog thành công!");
+        }
 
         setShowModal(false);
         setEditingBlog(null);

@@ -83,9 +83,6 @@ const Search = ({
     <div className="relative w-full">
       {open && (
         <>
-          {/* Simple backdrop */}
-
-          {/* Main container */}
           <div
             className="fixed left-1/2 top-20 -translate-x-1/2 z-50 w-[95%] max-w-4xl max-h-[80vh] bg-white rounded-lg shadow-xl"
             ref={containerRef}

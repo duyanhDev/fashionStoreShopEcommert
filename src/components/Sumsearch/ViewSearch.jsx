@@ -3,8 +3,14 @@ import "./Style.css";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { searchProductsByNameAPI } from "../../service/ApiProduct";
-import { logout, Search as SearchAction } from "../../redux/actions/Auth";
-
+import { Search as SearchAction } from "../../redux/actions/Auth";
+import ProductCart from "../ProductCart/ProductCart";
+import {
+  addToWishlistAPI,
+  getWishlistAPI,
+  RemoveToWishListAPI,
+} from "../../service/WishList";
+import { notification } from "antd";
 const ViewSearch = ({}) => {
   const { data, totalpage } = useSelector((state) => state.search);
   const dispatch = useDispatch();
@@ -13,7 +19,16 @@ const ViewSearch = ({}) => {
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState("grid"); // grid or list
   const navigate = useNavigate();
-
+  const [modalCartOpen, setModalCartOpen] = useState(false);
+  const { user } = useSelector((state) => state.auth);
+  const [IdProduct, setIdProducts] = useState("");
+  const [listItems, setListItems] = useState();
+  const [price, setPrice] = useState(0);
+  const [costPrice, setCostPrice] = useState(0);
+  const [productname, setProductname] = useState("");
+  const [discount, setDiscount] = useState(0);
+  const [WishList, setWishList] = useState([]);
+  const [api, contextHolder] = notification.useNotification();
   const formatPrice = (price) => {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
   };
@@ -44,6 +59,85 @@ const ViewSearch = ({}) => {
     setPage(1);
   }, [searchKeyword]);
 
+  const handelModelProductCart = (
+    id,
+    items,
+    price,
+    costPrice,
+    name,
+    discount
+  ) => {
+    setIdProducts(id);
+    setListItems(items);
+    setPrice(price);
+    setCostPrice(costPrice);
+    setModalCartOpen(true);
+    setProductname(name);
+    setDiscount(discount);
+  };
+
+  const handlAddWishList = async (productId) => {
+    if (!user) {
+      api["error"]({
+        message: "Vui lòng đăng nhập",
+        description: "Khách hàng đăng nhập mới sử dụng được tính năng này",
+      });
+      return;
+    }
+    try {
+      const res = await addToWishlistAPI(user?._id, productId);
+
+      if (res && res.data && res.data.EC === 0) {
+        api["success"]({
+          message: "Đã thêm vào danh sách yêu thích",
+          description: res.data.message,
+        });
+        fetchListWishList();
+      }
+    } catch (error) {
+      api["error"]({
+        message: "Sản phẩm đã tồn tại danh sách yêu thích",
+        description: "Sản phẩm đã tồn tại danh sách yêu thích",
+      });
+    }
+  };
+
+  const fetchListWishList = async () => {
+    try {
+      const res = await getWishlistAPI(user?._id);
+      if (res && res.data && res.data.EC === 0) {
+        setWishList(res?.data?.data?.products || []);
+      }
+    } catch (error) {
+      throw new Error("Lỗi lấy danh sách yêu thích");
+    }
+  };
+
+  const handleRemoveWishList = async (productId) => {
+    try {
+      const res = await RemoveToWishListAPI(user?._id, productId);
+
+      if (res && res.data && res.data.EC === 0) {
+        api["success"]({
+          message: "Đã xóa khỏi danh sách yêu thích",
+        });
+        fetchListWishList();
+      }
+    } catch (error) {
+      api["error"]({
+        message: "Lỗi khi xóa sản phẩm khỏi danh sách yêu thích",
+        description: "Lỗi khi xóa sản phẩm khỏi danh sách yêu thích",
+      });
+    }
+  };
+  useEffect(() => {
+    if (user?._id) {
+      fetchListWishList();
+    }
+  }, [user?._id]);
+
+  const isProductInWishlist = WishList?.map((item) => item.product._id);
+
   const ProductCard = ({ product }) => (
     <div
       className={`group cursor-pointer transition-all duration-300 hover:shadow-2xl ${
@@ -51,7 +145,6 @@ const ViewSearch = ({}) => {
           ? "bg-white rounded-2xl p-5 border border-gray-200 hover:border-green-300 hover:-translate-y-2 flex flex-col shadow-lg hover:shadow-green-100"
           : "bg-white rounded-xl p-4 border border-gray-200 hover:border-green-300 flex flex-row items-center gap-4 hover:shadow-lg shadow-md hover:shadow-green-50"
       }`}
-      onClick={() => navigate(`/product/${product.slug}`)}
     >
       {/* Product Image */}
       <div
@@ -79,22 +172,52 @@ const ViewSearch = ({}) => {
         {/* Hover Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-center pb-4">
           <div className="transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 flex gap-2">
-            <button className="p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200">
-              <svg
-                className="w-4 h-4 text-red-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            {isProductInWishlist?.includes(product._id) ? (
+              <>
+                <button
+                  className="p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200"
+                  onClick={() => handleRemoveWishList(product._id)}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 text-green-600"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                    />
+                  </svg>
+                </button>
+              </>
+            ) : (
+              <button
+                className="p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200"
+                onClick={() => handlAddWishList(product._id)}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                />
-              </svg>
-            </button>
-            <button className="p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200">
+                <svg
+                  className="w-4 h-4 text-red-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                  />
+                </svg>
+              </button>
+            )}
+            <button
+              className="p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200"
+              onClick={() => navigate(`/product/${product.slug}`)}
+            >
               <svg
                 className="w-4 h-4 text-green-600"
                 fill="none"
@@ -125,6 +248,7 @@ const ViewSearch = ({}) => {
           className={`font-semibold text-gray-800 line-clamp-2 group-hover:text-green-600 transition-colors ${
             viewMode === "grid" ? "text-sm h-10 leading-5" : "text-base"
           }`}
+          onClick={() => navigate(`/product/${product.slug}`)}
         >
           {product.name}
         </h3>
@@ -168,8 +292,16 @@ const ViewSearch = ({}) => {
         {/* Add to Cart Button */}
         <button
           className="w-full mt-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-2.5 px-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 text-sm font-semibold shadow-lg hover:shadow-xl hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-          onClick={(e) => {
-            e.stopPropagation();
+          onClick={() => {
+            handelModelProductCart(
+              product._id,
+              product.variants,
+              product.discountedPrice,
+              product.costPrice,
+              product.name,
+              product.discount
+            );
+            setModalCartOpen(true);
             // Add to cart logic here
           }}
         >
@@ -189,12 +321,25 @@ const ViewSearch = ({}) => {
           Thêm vào giỏ
         </button>
       </div>
+
+      <ProductCart
+        modalCartOpen={modalCartOpen}
+        setModalCartOpen={setModalCartOpen}
+        IdProduct={IdProduct}
+        listItems={listItems}
+        price={price}
+        costPrice={costPrice}
+        productname={productname}
+        discount={discount}
+      />
     </div>
   );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-gray-50 mt-28">
       {/* Header Section */}
+
+      {contextHolder}
       <div className="bg-gradient-to-r from-green-600 via-green-700 to-green-800 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

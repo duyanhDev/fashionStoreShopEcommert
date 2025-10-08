@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Calendar, Clock, Eye } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getAllBlog, getDetaillBlog } from "../../service/Blog";
+import { getAllBlog, getDetaillBlog, updateViewBlog } from "../../service/Blog";
 import moment from "moment";
 import { Helmet } from "react-helmet-async";
 
@@ -171,6 +171,15 @@ const BlogPostPage = () => {
     fetchAPIBlog();
   }, [slug]);
 
+  const handlePostClick = useCallback(
+    async (post) => {
+      const res = await updateViewBlog(post.slug);
+      if (res && res.data && res.data.EC === 0) {
+        navigate(`/blog/${post.slug}`);
+      }
+    },
+    [navigate]
+  );
   // Loading component
   if (loading) {
     return (
@@ -199,6 +208,7 @@ const BlogPostPage = () => {
       </div>
     );
   }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Helmet>
@@ -357,7 +367,7 @@ const BlogPostPage = () => {
                   <div
                     key={post._id}
                     className="flex space-x-3 group cursor-pointer"
-                    onClick={() => navigate(`/blog/${post.slug}`)}
+                    onClick={() => handlePostClick(post)}
                   >
                     <div className="flex-shrink-0">
                       <img

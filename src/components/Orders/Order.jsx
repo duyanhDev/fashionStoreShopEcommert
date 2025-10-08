@@ -45,7 +45,19 @@ const Order = () => {
   const [searchText, setSearchText] = useState("");
   const [filterStatus, setFilterStatus] = useState("Tất cả");
   const navigate = useNavigate();
+  const [tableParams, setTableParams] = useState({
+    pagination: {
+      current: 1,
+      pageSize: 5,
+    },
+  });
 
+  const handleTableChange = (pagination) => {
+    setTableParams({
+      ...tableParams,
+      pagination,
+    });
+  };
   // Format giá tiền với định dạng Việt Nam
   const formatPrice = (price) => {
     if (price === undefined || price === null) {
@@ -531,12 +543,19 @@ const Order = () => {
                     .toLowerCase()}`
                 }
                 pagination={{
-                  pageSize: 5,
+                  ...tableParams.pagination,
                   showSizeChanger: true,
-                  pageSizeOptions: ["5", "10", "20"],
+                  pageSizeOptions: ["5", "10", "20", "50", "100"],
                   showTotal: (total) => `Tổng ${total} đơn hàng`,
                   onShowSizeChange: (current, size) => {
-                    console.log(`Page size changed to: ${size}`);
+                    setTableParams({
+                      ...tableParams,
+                      pagination: {
+                        ...tableParams.pagination,
+                        current: 1,
+                        pageSize: size,
+                      },
+                    });
                   },
                   itemRender: (page, type, originalElement) => {
                     if (type === "page") {
@@ -577,6 +596,7 @@ const Order = () => {
                     return originalElement;
                   },
                 }}
+                onChange={handleTableChange}
                 locale={{
                   emptyText: (
                     <Empty

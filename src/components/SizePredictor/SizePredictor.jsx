@@ -2,6 +2,7 @@ import { Drawer, Tabs } from "antd";
 import React, { useEffect, useState } from "react";
 import "./size.css";
 import { getIdGuideSize } from "../../service/APISizeGuide";
+import { getIdGuidePantsSize } from "../../service/APIPantsSize";
 
 const SizePredictor = ({ open, onClose, productId, shift }) => {
   const [form, setForm] = useState({
@@ -16,10 +17,10 @@ const SizePredictor = ({ open, onClose, productId, shift }) => {
   });
   const [result, setResult] = useState(null);
   const [feedback, setFeedback] = useState("");
-  const [notes, setNotes] = useState(""); // thêm notes
+  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [prediction_id, setPrediction_id] = useState("");
-  const [productData, setProductData] = useState(null); // sửa thành object
+  const [productData, setProductData] = useState(null);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -90,7 +91,18 @@ const SizePredictor = ({ open, onClose, productId, shift }) => {
     try {
       const res = await getIdGuideSize(productId);
       if (res && res.data && res.data.EC === 0) {
-        setProductData(res.data.data); // giữ object gốc
+        setProductData(res.data.data);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const fetchSizesByProductIdAPIPlants = async () => {
+    try {
+      const res = await getIdGuidePantsSize(productId);
+      if (res && res.data && res.data.EC === 0) {
+        setProductData(res.data.data);
       }
     } catch (error) {
       console.error(error);
@@ -100,6 +112,8 @@ const SizePredictor = ({ open, onClose, productId, shift }) => {
   useEffect(() => {
     if (productId && shift.name === "Áo") {
       fetchSizesByProductIdAPI();
+    } else if (productId && shift.name === "Quần") {
+      fetchSizesByProductIdAPIPlants();
     }
   }, [productId, shift]);
 
@@ -220,48 +234,97 @@ const SizePredictor = ({ open, onClose, productId, shift }) => {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>Chiều cao</td>
-                  {productData.sizes.map((s, i) => (
-                    <td key={i}>{s.heightRange}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td>Cân nặng</td>
-                  {productData.sizes.map((s, i) => (
-                    <td key={i}>{s.weightRange}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td>Dài áo</td>
-                  {productData.sizes.map((s, i) => (
-                    <td key={i}>{s.shirtLength}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td>Rộng vai</td>
-                  {productData.sizes.map((s, i) => (
-                    <td key={i}>{s.shoulderWidth}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td>Ngực</td>
-                  {productData.sizes.map((s, i) => (
-                    <td key={i}>{s.chestWidth}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td>Dài tay</td>
-                  {productData.sizes.map((s, i) => (
-                    <td key={i}>{s.sleeveLength}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td>Bắp tay</td>
-                  {productData.sizes.map((s, i) => (
-                    <td key={i}>{s.bicepWidth}</td>
-                  ))}
-                </tr>
+                {shift.name === "Quần" ? (
+                  <>
+                    <tr>
+                      <td>Chiều cao</td>
+                      {productData.sizes.map((s, i) => (
+                        <td key={i}>{s.heightRange}</td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td>Cân nặng</td>
+                      {productData.sizes.map((s, i) => (
+                        <td key={i}>{s.weightRange}</td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td>Dài quần</td>
+                      {productData.sizes.map((s, i) => (
+                        <td key={i}>{s.pantsLength}</td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td>Vòng eo</td>
+                      {productData.sizes.map((s, i) => (
+                        <td key={i}>{s.waistCircumference}</td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td>Vòng mông</td>
+                      {productData.sizes.map((s, i) => (
+                        <td key={i}>{s.hipCircumference}</td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td>Vòng đùi</td>
+                      {productData.sizes.map((s, i) => (
+                        <td key={i}>{s.thighCircumference}</td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td>Dài đáy</td>
+                      {productData.sizes.map((s, i) => (
+                        <td key={i}>{s.crotchLength}</td>
+                      ))}
+                    </tr>
+                  </>
+                ) : (
+                  <>
+                    <tr>
+                      <td>Chiều cao</td>
+                      {productData.sizes.map((s, i) => (
+                        <td key={i}>{s.heightRange}</td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td>Cân nặng</td>
+                      {productData.sizes.map((s, i) => (
+                        <td key={i}>{s.weightRange}</td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td>Dài Áo</td>
+                      {productData.sizes.map((s, i) => (
+                        <td key={i}>{s.shirtLength}</td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td>Rộng vai</td>
+                      {productData.sizes.map((s, i) => (
+                        <td key={i}>{s.shoulderWidth}</td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td>Ngực</td>
+                      {productData.sizes.map((s, i) => (
+                        <td key={i}>{s.chestWidth}</td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td>Dài tay</td>
+                      {productData.sizes.map((s, i) => (
+                        <td key={i}>{s.sleeveLength}</td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td>Bắp tay</td>
+                      {productData.sizes.map((s, i) => (
+                        <td key={i}>{s.bicepWidth}</td>
+                      ))}
+                    </tr>
+                  </>
+                )}
               </tbody>
             </table>
           </div>
