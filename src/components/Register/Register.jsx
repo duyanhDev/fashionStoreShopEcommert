@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import Input from "antd/es/input/Input";
 import { Button, message, notification } from "antd";
-import { RegisterUser, SendverifyOTP, verifyOTP } from "../../service/Auth";
+import { SendverifyOTP, verifyOTP } from "../../service/Auth";
 import {
   validateEmail,
   validateUsername,
   validatePassword,
   validateConfirmPassword,
-  validateImage,
   validateOTP,
   validateRegistrationForm,
 } from "../../testsCase/RegisterForm.test";
