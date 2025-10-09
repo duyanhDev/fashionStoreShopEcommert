@@ -1,18 +1,22 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Input from "antd/es/input/Input";
 import { Button, message, notification } from "antd";
-import { SendverifyOTP, verifyOTP } from "../../service/Auth";
+import { useNavigate } from "react-router-dom"; // Thêm import này
+import { RegisterUser, SendverifyOTP, verifyOTP } from "../../service/Auth";
 import {
   validateEmail,
   validateUsername,
   validatePassword,
   validateConfirmPassword,
+  validateImage,
   validateOTP,
   validateRegistrationForm,
 } from "../../testsCase/RegisterForm.test";
 import "./register-styles.css";
 
 const RegisterForm = () => {
+  const navigate = useNavigate(); // Thay window.location
+
   // Form states
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -40,8 +44,8 @@ const RegisterForm = () => {
   const inputRefs = useRef([]);
   const [api, contextHolder] = notification.useNotification();
 
-  // Validation functions
-  const createEmailRequirements = (email) => {
+  // Validation functions - wrapped with useCallback
+  const createEmailRequirements = useCallback((email) => {
     const originalResult = validateEmail(email);
     const requirements = [
       { text: "Không được để trống", check: email.trim().length > 0 },
@@ -51,9 +55,9 @@ const RegisterForm = () => {
       },
     ];
     return { ...originalResult, requirements };
-  };
+  }, []);
 
-  const createUsernameRequirements = (username) => {
+  const createUsernameRequirements = useCallback((username) => {
     const originalResult = validateUsername(username);
     const requirements = [
       { text: "Không được để trống", check: username.trim().length > 0 },
@@ -67,9 +71,9 @@ const RegisterForm = () => {
       },
     ];
     return { ...originalResult, requirements };
-  };
+  }, []);
 
-  const createPasswordRequirements = (password) => {
+  const createPasswordRequirements = useCallback((password) => {
     const originalResult = validatePassword(password);
     const requirements = [
       { text: "Ít nhất 8 ký tự", check: password.length >= 8 },
@@ -82,64 +86,80 @@ const RegisterForm = () => {
       },
     ];
     return { ...originalResult, requirements };
-  };
+  }, []);
 
-  const createConfirmPasswordRequirements = (password, confirmPassword) => {
-    const originalResult = validateConfirmPassword(password, confirmPassword);
-    const requirements = [
-      { text: "Không được để trống", check: confirmPassword.trim().length > 0 },
-      {
-        text: "Phải trùng với mật khẩu",
-        check: password === confirmPassword && password.length > 0,
-      },
-    ];
-    return { ...originalResult, requirements };
-  };
+  const createConfirmPasswordRequirements = useCallback(
+    (password, confirmPassword) => {
+      const originalResult = validateConfirmPassword(password, confirmPassword);
+      const requirements = [
+        {
+          text: "Không được để trống",
+          check: confirmPassword.trim().length > 0,
+        },
+        {
+          text: "Phải trùng với mật khẩu",
+          check: password === confirmPassword && password.length > 0,
+        },
+      ];
+      return { ...originalResult, requirements };
+    },
+    []
+  );
 
-  const createOTPRequirements = (otpString) => {
+  const createOTPRequirements = useCallback((otpString) => {
     const originalResult = validateOTP(otpString);
     const requirements = [
       { text: "Phải có đủ 6 số", check: otpString.length === 6 },
       { text: "Chỉ chứa số", check: /^\d+$/.test(otpString) },
     ];
     return { ...originalResult, requirements };
-  };
+  }, []);
 
-  const validateField = (fieldName, value, additionalValue = null) => {
-    let result = { isValid: true, errors: [], requirements: [] };
+  const validateField = useCallback(
+    (fieldName, value, additionalValue = null) => {
+      let result = { isValid: true, errors: [], requirements: [] };
 
-    switch (fieldName) {
-      case "email":
-        result = createEmailRequirements(value);
-        break;
-      case "username":
-        result = createUsernameRequirements(value);
-        break;
-      case "password":
-        result = createPasswordRequirements(value);
-        break;
-      case "confirmPassword":
-        result = createConfirmPasswordRequirements(
-          additionalValue || password,
-          value
-        );
-        break;
-      case "otp":
-        result = createOTPRequirements(value);
-        break;
-      default:
-        break;
-    }
+      switch (fieldName) {
+        case "email":
+          result = createEmailRequirements(value);
+          break;
+        case "username":
+          result = createUsernameRequirements(value);
+          break;
+        case "password":
+          result = createPasswordRequirements(value);
+          break;
+        case "confirmPassword":
+          result = createConfirmPasswordRequirements(
+            additionalValue || password,
+            value
+          );
+          break;
+        case "otp":
+          result = createOTPRequirements(value);
+          break;
+        default:
+          break;
+      }
 
-    setValidationStatus((prev) => ({
-      ...prev,
-      [fieldName]: result,
-    }));
+      setValidationStatus((prev) => ({
+        ...prev,
+        [fieldName]: result,
+      }));
 
-    return result.isValid;
-  };
+      return result.isValid;
+    },
+    [
+      createEmailRequirements,
+      createUsernameRequirements,
+      createPasswordRequirements,
+      createConfirmPasswordRequirements,
+      createOTPRequirements,
+      password,
+    ]
+  );
 
-  const validateForm = () => {
+  const validateForm = useCallback(() => {
     const formData = {
       email,
       username,
@@ -179,7 +199,16 @@ const RegisterForm = () => {
     setIsFormValid(validation.isValid);
 
     return validation.isValid;
-  };
+  }, [
+    email,
+    username,
+    password,
+    confirmPassword,
+    createEmailRequirements,
+    createUsernameRequirements,
+    createPasswordRequirements,
+    createConfirmPasswordRequirements,
+  ]);
 
   // Event handlers
   const handleEmailChange = (e) => {
@@ -307,11 +336,15 @@ const RegisterForm = () => {
         });
 
         setHiddenOTP(false);
-        window.location = "/login";
+
+        // Thay window.location bằng navigate
+        setTimeout(() => {
+          navigate("/login", { replace: true });
+        }, 1500);
       }
     } catch (error) {
       message.error("Xác thực OTP thất bại!");
-      console.log(error);
+      console.error(error);
     }
   };
 
@@ -334,11 +367,11 @@ const RegisterForm = () => {
       }
     } catch (error) {
       message.error("Không thể gửi mã OTP!");
-      console.log(error);
+      console.error(error);
     }
   };
 
-  // Effects
+  // Effects - FIX: Xóa useEffect validation ban đầu
   useEffect(() => {
     if (timer > 0) {
       const interval = setInterval(() => {
@@ -351,13 +384,7 @@ const RegisterForm = () => {
     }
   }, [timer]);
 
-  useEffect(() => {
-    validateField("email", email);
-    validateField("username", username);
-    validateField("password", password);
-    validateField("confirmPassword", confirmPassword);
-  }, []);
-
+  // FIX: Chỉ validate khi user thay đổi input
   useEffect(() => {
     const hasErrors = Object.values(validationStatus).some(
       (status) => status.errors && status.errors.length > 0
@@ -435,9 +462,15 @@ const RegisterForm = () => {
 
       {/* Decorative background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-teal-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-cyan-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
+        <div
+          className="absolute -bottom-40 -left-40 w-80 h-80 bg-teal-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"
+          style={{ animationDelay: "2s" }}
+        ></div>
+        <div
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-cyan-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"
+          style={{ animationDelay: "4s" }}
+        ></div>
       </div>
 
       <div className="w-full max-w-5xl mx-auto relative z-10">
@@ -894,7 +927,7 @@ const RegisterForm = () => {
       {/* OTP Modal */}
       {hiddenOTP && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md relative animate-slideUp">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md relative">
             <button
               className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-all duration-200 group"
               onClick={() => setHiddenOTP(false)}
