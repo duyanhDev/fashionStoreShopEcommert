@@ -7,7 +7,7 @@ NProgress.configure({
 });
 
 const instance = axios.create({
-  baseURL: "https://fashionstoreshopecommertbe.onrender.com",
+  baseURL: "https://fashionstoreshopecommertbe.onrender.com/",
 });
 
 // const instance = axios.create({
