@@ -44,6 +44,7 @@ import {
 } from "react-icons/fa";
 import { RiAdminLine } from "react-icons/ri";
 import Logo from "./../../assets/Image/Home/logo.png";
+import NavigationMenu from "../NavigationMenu/NavigationMenu";
 
 const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
   const dispatch = useDispatch();
@@ -949,309 +950,7 @@ const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
           </div>
         )}
 
-        <div className="nav_menu flex justify-center items-center gap-3">
-          <ul className="flex gap-10 lg:mt-3">
-            {/* Navigation items - memoized để tránh re-render */}
-            <li className="">
-              <Link to="clothing/unisex" className="">
-                Sản phẩm
-              </Link>
-              <div className="absolute mt-3 w-full hover_item m-auto flex  ">
-                <div className="flex flex-1 justify-between  border-r-2  border-black short_fitter ">
-                  <div className="ml-4 ">
-                    <h1
-                      className="text-lg font-bold text-center border-b-2  border-black"
-                      onClick={() =>
-                        navigate("/unisex?currentPage=1&Category=Áo")
-                      }
-                    >
-                      Áo
-                    </h1>
-                    <div className="">
-                      <div>
-                        <Link>Tất cả các loại áo</Link>
-                      </div>
-                      <div>
-                        <Link>Áo sơ mi</Link>
-                      </div>
-                      <div>
-                        <Link>Áo thun</Link>
-                      </div>
-                      <div>
-                        <Link>Áo polo</Link>
-                      </div>
-                      <div>
-                        <Link>Áo khoác</Link>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="ml-4 ">
-                    <h1 className="text-lg font-bold text-center border-b-2  border-black">
-                      Quần
-                    </h1>
-                    <div className="">
-                      <div>
-                        <Link>Tất cả các loại quần</Link>
-                      </div>
-                      <div>
-                        <Link>Quần jeans</Link>
-                      </div>
-                      <div>
-                        <Link>Quần short</Link>
-                      </div>
-                      <div>
-                        <Link>Quần dài</Link>
-                      </div>
-                      <div>
-                        <Link>Quần thể thao</Link>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="ml-4 ">
-                    <h1 className="text-lg font-bold text-center border-b-2  border-black">
-                      Giày
-                    </h1>
-                    <div className="">
-                      <div>
-                        <Link>Tất cả các loại giày</Link>
-                      </div>
-                      <div>
-                        <Link>Giày sneaker</Link>
-                      </div>
-                      <div>
-                        <Link>Giày thể thao</Link>
-                      </div>
-                      <div>
-                        <Link>Giày sandal </Link>
-                      </div>
-                      <div>
-                        <Link>Giày boot</Link>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="ml-4 mr-2 ">
-                    <h1 className="text-lg font-bold text-center border-b-2  border-black">
-                      Túi
-                    </h1>
-                    <div className="">
-                      <div>
-                        <Link>Tất cả các loại túi</Link>
-                      </div>
-                      <div>
-                        <Link>Giày sneaker</Link>
-                      </div>
-                      <div>
-                        <Link>Giày thể thao</Link>
-                      </div>
-                      <div>
-                        <Link>Giày sandal </Link>
-                      </div>
-                      <div>
-                        <Link>Giày boot</Link>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-1">
-                  <div className="image_banner ml-4 mt-3">
-                    <div>
-                      <img
-                        src="https://dosi-in.com/file/detailed/468/dosiin-dkmv-dkmv-ao-thun-nu-phong-rong-in-hinh-mau-trang-ao-thun-nu-white-surfing-tee-dkmv-46824468245.jpg?w=320&h=320&fit=fill&fm=webp"
-                        alt="lỗi"
-                        style={{
-                          width: "200px",
-                          height: "150px",
-                          objectFit: "cover",
-                          borderRadius: "10px",
-                        }}
-                      />
-                    </div>
-                    <div className="mt-5">
-                      <img
-                        src="https://dosi-in.com/file/detailed/468/dosiin-dkmv-ao-thun-cotton-nu-don-t-kill-my-vibe-mau-trang-vibration-468312468312.jpg?w=670&h=670&fit=fill&fm=webp"
-                        alt="lỗi"
-                        style={{
-                          width: "200px",
-                          height: "150px",
-                          objectFit: "cover",
-                          borderRadius: "10px",
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="mt-3 ml-10">
-                    <img
-                      src="https://dosi-in.com/file/detailed/468/dosiin-dkmv-ao-thun-unisex-form-rong-nu-mau-trang-dontkill-my-vibe-dkmv-always-smile-tee-white-4468344.jpg?w=670&h=670&fit=fill&fm=webp"
-                      alt="lỗi"
-                      style={{
-                        width: "320px",
-                        height: "320px",
-                        objectFit: "cover",
-                        borderRadius: "10px",
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </li>
-            <li className="">
-              <Link to={"clothing/male"}>Nam</Link>
-              <div className="absolute mt-3 w-full hover_item m-auto flex  ">
-                <div className="flex flex-1 justify-between  border-r-2  border-black short_fitter ">
-                  <div className="ml-4 ">
-                    <h1 className="text-lg font-bold text-center border-b-2  border-black">
-                      Áo khoác
-                    </h1>
-                    <div className="">
-                      <div>
-                        <Link>Tất cả áo khoác</Link>
-                      </div>
-                      <div>
-                        <Link>Áo khoác da</Link>
-                      </div>
-                      <div>
-                        <Link>Áo khoác bomber</Link>
-                      </div>
-                      <div>
-                        <Link>Áo khoác Denimin</Link>
-                      </div>
-                      <div>
-                        <Link>Áo khoác Varsity</Link>
-                      </div>
-                      <div>
-                        <Link>Áo khoác Jacket</Link>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="ml-4 ">
-                    <h1 className="text-lg font-bold text-center border-b-2  border-black">
-                      Áo thun
-                    </h1>
-                    <div className="">
-                      <div>
-                        <Link>Áo thun không tay</Link>
-                      </div>
-                      <div>
-                        <Link>Áo thun tay dài</Link>
-                      </div>
-                      <div>
-                        <Link>Áo thun tay ngắn</Link>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="ml-4 ">
-                    <h1 className="text-lg font-bold text-center border-b-2  border-black">
-                      Áo sơ mi
-                    </h1>
-                    <div className="">
-                      <div>
-                        <Link>Áo sơ mi tay ngắn</Link>
-                      </div>
-                      <div>
-                        <Link>Áo sơ mi tay dài</Link>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="ml-4 mr-2 ">
-                    <h1 className="text-lg font-bold text-center border-b-2  border-black">
-                      Quần
-                    </h1>
-                    <div className="">
-                      <div>
-                        <Link>Quần jean</Link>
-                      </div>
-                      <div>
-                        <Link>Quần ngắn</Link>
-                      </div>
-                      <div>
-                        <Link>Quần dài</Link>
-                      </div>
-                      <div>
-                        <Link>Quần jogger </Link>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="ml-4 mr-2 ">
-                    <h1 className="text-lg font-bold text-center border-b-2  border-black">
-                      Giày
-                    </h1>
-                    <div className="">
-                      <div>
-                        <Link>Giày sneaker</Link>
-                      </div>
-                      <div>
-                        <Link>Giày thể thao</Link>
-                      </div>
-                      <div>
-                        <Link>Giày cao cổ</Link>
-                      </div>
-                      <div>
-                        <Link>Giày tây</Link>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-1">
-                  <div className="image_banner ml-4 mt-3">
-                    <div>
-                      <img
-                        src="https://dosi-in.com/file/detailed/468/dosiin-dkmv-dkmv-ao-thun-nu-phong-rong-in-hinh-mau-trang-ao-thun-nu-white-surfing-tee-dkmv-46824468245.jpg?w=320&h=320&fit=fill&fm=webp"
-                        alt="lỗi"
-                        style={{
-                          width: "200px",
-                          height: "150px",
-                          objectFit: "cover",
-                          borderRadius: "10px",
-                        }}
-                      />
-                    </div>
-                    <div className="mt-5">
-                      <img
-                        src="https://dosi-in.com/file/detailed/468/dosiin-dkmv-ao-thun-cotton-nu-don-t-kill-my-vibe-mau-trang-vibration-468312468312.jpg?w=670&h=670&fit=fill&fm=webp"
-                        alt="lỗi"
-                        style={{
-                          width: "200px",
-                          height: "150px",
-                          objectFit: "cover",
-                          borderRadius: "10px",
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="mt-3 ml-10">
-                    <img
-                      src="https://dosi-in.com/file/detailed/468/dosiin-dkmv-ao-thun-unisex-form-rong-nu-mau-trang-dontkill-my-vibe-dkmv-always-smile-tee-white-4468344.jpg?w=670&h=670&fit=fill&fm=webp"
-                      alt="lỗi"
-                      style={{
-                        width: "320px",
-                        height: "320px",
-                        objectFit: "cover",
-                        borderRadius: "10px",
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </li>
-            <li className="">
-              <Link to="clothing/female">Nữ</Link>
-            </li>
-            <li>
-              <Link to="/clothing/unisex?Category=Phụ+Kiện&currentPage=1">
-                Phụ kiện
-              </Link>
-            </li>
-            <li className="name_product_app">
-              <Link to="/about">Thương hiệu</Link>
-            </li>
-            <li className="name_product_app">
-              <Link to="/ranking">Xếp hạng</Link>
-            </li>
-            <li className="name_product_app">
-              <Link to="/blog">Blog</Link>
-            </li>
-          </ul>
-        </div>
+        <NavigationMenu />
       </header>
 
       {/* Enhanced Cart Modal */}
@@ -1291,37 +990,49 @@ const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
                 return (
                   <div
                     key={cart._id}
-                    className="flex items-center p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all duration-300"
+                    className="flex flex-col md:flex-row items-start md:items-center p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all duration-300 gap-4"
                   >
-                    <div className="flex-shrink-0">
-                      <img
-                        src={imageUrl}
-                        alt={cart.productId?.name || "Product"}
-                        className="w-20 h-20 object-cover rounded-xl border border-gray-200"
-                      />
-                    </div>
-
-                    <div className="flex-1 ml-4">
-                      <h4 className="font-semibold text-gray-900 mb-1 line-clamp-2">
-                        {cart.productId?.name || "Unknown Product"}
-                      </h4>
-                      <p className="text-sm text-gray-500 mb-2 uppercase">
-                        {cart.color} - {cart.size}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-lg font-bold text-orange-600">
-                          {formatPrice(cart.price)}
-                        </span>
-                        <button
-                          onClick={() => handleRemoveCartProduct(cart._id)}
-                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all duration-300"
-                        >
-                          <MdDeleteForever size={20} />
-                        </button>
+                    {/* Image và thông tin sản phẩm */}
+                    <div className="flex items-start gap-4 w-full md:flex-1">
+                      <div className="flex-shrink-0">
+                        <img
+                          src={imageUrl}
+                          alt={cart.productId?.name || "Product"}
+                          className="w-20 h-20 object-cover rounded-xl border border-gray-200"
+                        />
                       </div>
+
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-gray-900 mb-1 line-clamp-2">
+                          {cart.productId?.name || "Unknown Product"}
+                        </h4>
+                        <p className="text-sm text-gray-500 mb-2 uppercase">
+                          {cart.color} - {cart.size}
+                        </p>
+                        <div className="flex items-center justify-between md:justify-start md:gap-4">
+                          <span className="text-lg font-bold text-orange-600">
+                            {formatPrice(cart.price)}
+                          </span>
+                          <button
+                            onClick={() => handleRemoveCartProduct(cart._id)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all duration-300 md:hidden"
+                          >
+                            <MdDeleteForever size={20} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Delete button cho desktop */}
+                      <button
+                        onClick={() => handleRemoveCartProduct(cart._id)}
+                        className="hidden md:block p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all duration-300 flex-shrink-0"
+                      >
+                        <MdDeleteForever size={20} />
+                      </button>
                     </div>
 
-                    <div className="flex-shrink-0 ml-4">
+                    {/* Quantity controls */}
+                    <div className="flex items-center justify-between w-full md:w-auto md:flex-shrink-0 md:ml-4">
                       <div className="flex items-center bg-white border border-gray-300 rounded-xl overflow-hidden">
                         <button
                           className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 transition-colors duration-300"
@@ -1356,7 +1067,7 @@ const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
                           </span>
                         </button>
                       </div>
-                      <div className="text-center mt-2">
+                      <div className="ml-4">
                         <span className="text-sm font-semibold text-green-600">
                           {formatPrice(cart.totalItemPrice)}
                         </span>
@@ -1383,8 +1094,8 @@ const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
 
         {ListCart?.items?.length > 0 && (
           <div className="border-t border-gray-200 pt-6 mt-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
+              <div className="text-center md:text-left">
                 <p className="text-sm text-gray-500">Tổng cộng</p>
                 <p className="text-2xl font-bold text-green-600">
                   {formatPrice(ListCart.totalPrice)}
@@ -1392,7 +1103,7 @@ const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
               </div>
               <button
                 onClick={handlePay}
-                className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105"
+                className="w-full md:w-auto px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105"
               >
                 Đặt Hàng
               </button>
@@ -1415,8 +1126,8 @@ const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
               <IoNotificationsOutline className="text-white" size={20} />
             </div>
             <div>
-              <h3 className="text-lg font-semibold">Thông báo</h3>
-              <p className="text-sm text-gray-500">
+              <h3 className="text-lg font-semibold sm:text-base">Thông báo</h3>
+              <p className="text-sm text-gray-500 sm:text-xs">
                 {unreadNotifications.length} chưa đọc
               </p>
             </div>
@@ -1428,23 +1139,22 @@ const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
         width={window.innerWidth < 768 ? "90%" : 420}
         loading={loading}
         extra={
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button
               type="primary"
               size="small"
               onClick={handleReadsNocations}
-              className="flex items-center gap-2 bg-gradient-to-r from-blue-400/30 to-indigo-500/30 backdrop-blur-md text-white font-semibold shadow-lg rounded-xl border border-white/30 hover:scale-105 transform transition-all duration-300 px-4 py-2"
+              className="flex items-center gap-2 bg-gradient-to-r from-blue-400/30 to-indigo-500/30 backdrop-blur-md text-white font-semibold shadow-lg rounded-xl border border-white/30 hover:scale-105 transform transition-all duration-300 px-3 py-1 text-sm sm:text-xs sm:px-2 sm:py-1"
             >
-              <FaBookReader className="w-4 h-4" />
+              <FaBookReader className="w-4 h-4 sm:w-3 sm:h-3" />
               Đọc tất cả
             </Button>
-
             <Button
               size="small"
               onClick={handleDeleteNocations}
-              className="flex items-center gap-2 bg-gradient-to-r from-pink-400/30 to-purple-500/30 backdrop-blur-md text-white font-semibold shadow-lg rounded-xl border border-white/30 hover:scale-105 transform transition-all duration-300 px-4 py-2"
+              className="flex items-center gap-2 bg-gradient-to-r from-pink-400/30 to-purple-500/30 backdrop-blur-md text-white font-semibold shadow-lg rounded-xl border border-white/30 hover:scale-105 transform transition-all duration-300 px-3 py-1 text-sm sm:text-xs sm:px-2 sm:py-1"
             >
-              <FaTrashAlt className="w-4 h-4" />
+              <FaTrashAlt className="w-4 h-4 sm:w-3 sm:h-3" />
               Xóa tất cả
             </Button>
           </div>
@@ -1460,15 +1170,15 @@ const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
                     item.read === false
                       ? "bg-blue-50 border border-blue-200"
                       : "bg-gray-50 hover:bg-gray-100"
-                  }`}
+                  } sm:p-3`}
                   onClick={() => handleBtnNocafition(item._id, item.orderId)}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <p className="text-gray-900 leading-relaxed mb-2">
+                      <p className="text-gray-900 leading-relaxed mb-2 sm:text-sm line-clamp-2">
                         {item.message}
                       </p>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-500 sm:text-xs">
                         {formatTimeAgo(item.createdAt)}
                       </span>
                     </div>
@@ -1480,11 +1190,14 @@ const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
               )
             )
           ) : (
-            <div className="flex flex-col items-center justify-center py-16">
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <IoNotificationsOutline size={32} className="text-gray-400" />
+            <div className="flex flex-col items-center justify-center py-16 sm:py-10">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4 sm:w-16 sm:h-16">
+                <IoNotificationsOutline
+                  size={32}
+                  className="text-gray-400 sm:size-24"
+                />
               </div>
-              <p className="text-gray-500 text-center">
+              <p className="text-gray-500 text-center sm:text-sm">
                 Không có thông báo nào
               </p>
             </div>

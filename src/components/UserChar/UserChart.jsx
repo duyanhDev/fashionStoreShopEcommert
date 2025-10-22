@@ -362,16 +362,18 @@ export default function DashboardStats() {
 
   // 1. Tính doanh thu, số user từ customerSegment
   if (Array.isArray(customerSegment)) {
-    customerSegment.forEach((item) => {
-      const month = moment(item.updatedAt).month() + 1;
-      const totalAmount = Number(item.totalAmount) || 0;
-      const userId = item.userId?.toString();
+    customerSegment
+      .filter((order) => order.orderStatus === "Completed")
+      .forEach((item) => {
+        const month = moment(item.updatedAt).month() + 1;
+        const totalAmount = Number(item.totalAmount) || 0;
+        const userId = item.userId?.toString();
 
-      if (monthlyDataChart[month]) {
-        monthlyDataChart[month].sales += totalAmount;
-        if (userId) monthlyDataChart[month].usersSet.add(userId);
-      }
-    });
+        if (monthlyDataChart[month]) {
+          monthlyDataChart[month].sales += totalAmount;
+          if (userId) monthlyDataChart[month].usersSet.add(userId);
+        }
+      });
   }
 
   // 2. Tính chi phí nhập hàng từ products

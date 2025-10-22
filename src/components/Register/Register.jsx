@@ -254,8 +254,6 @@ const RegisterForm = () => {
 
     try {
       const otpResponse = await SendverifyOTP(email);
-      console.log(otpResponse);
-
       if (otpResponse && otpResponse.status === 200) {
         setHiddenOTP(true);
         setIsDisabled(true);
@@ -353,9 +351,6 @@ const RegisterForm = () => {
   const handleSendCode = async () => {
     try {
       const otpResponse = await SendverifyOTP(email);
-
-      console.log(otpResponse);
-
       if (otpResponse && otpResponse.status === 200) {
         setIsDisabled(true);
         setTimer(300);

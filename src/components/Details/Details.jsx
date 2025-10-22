@@ -6,7 +6,7 @@ import "swiper/css/free-mode";
 import "swiper/css/navigation";
 import "swiper/css/thumbs";
 import { FreeMode, Navigation, Thumbs } from "swiper/modules";
-import { Rate, Button, notification } from "antd";
+import { Rate, Button, notification, Image } from "antd";
 import {
   MinusOutlined,
   PlusOutlined,
@@ -571,7 +571,7 @@ const Details = () => {
                   {image.map((item, index) => (
                     <SwiperSlide key={index}>
                       <div className="w-full h-full flex items-center justify-center p-8 bg-gradient-to-br from-white to-gray-50/30">
-                        <img
+                        <Image
                           src={item.url || "/placeholder.svg"}
                           alt={`${name} - ${item.color}`}
                           className="max-w-full max-h-full object-contain transition-all duration-500 group-hover:scale-105"
@@ -794,7 +794,7 @@ const Details = () => {
                       </button>
                     ))}
                 </div>
-                <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex sm:flex-col lg:flex-row gap-4">
                   <Button
                     type="primary"
                     onClick={showDrawer}

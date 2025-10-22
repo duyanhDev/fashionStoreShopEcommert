@@ -12,8 +12,6 @@ const AddCartAPI = async (userId, productId, quantity, size, color, price) => {
 };
 
 const CartListProduct = async (userId) => {
-  console.log(userId);
-
   return await axios.get(`api/v1/cart/${userId}`);
 };
 

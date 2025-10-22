@@ -344,6 +344,7 @@ const SizePredictor = ({ open, onClose, productId, shift }) => {
       closable={{ "aria-label": "Close Button" }}
       onClose={onClose}
       open={open}
+      className="drawer"
     >
       <Tabs
         items={items}

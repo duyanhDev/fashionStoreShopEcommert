@@ -350,6 +350,7 @@ const Profile = () => {
   const [SeletectIdDistrict, SetSeletectIdDistrict] = useState("");
   const [WarmData, setWarmData] = useState([]);
   const [SeletectIdWarm, SetSeletectIdWarm] = useState("");
+  const [error, setError] = useState("");
 
   /// Check time
   useEffect(() => {
@@ -501,6 +502,17 @@ const Profile = () => {
     setward(selected?.name || "");
   };
 
+  const handleChange = (e) => {
+    const value = e.target.value;
+
+    if (value.length > 16) {
+      setError("Tên không được vượt quá 16 ký tự!");
+    } else {
+      setError("");
+    }
+
+    setName(value);
+  };
   const items = [
     {
       key: "1",
@@ -513,9 +525,12 @@ const Profile = () => {
             <Input
               size="large"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={handleChange}
               placeholder="Đặng Trịnh Duy Anh"
+              className={error ? "border-red-500" : ""}
+              maxLength={17}
             />
+            {error && <p className="text-red-500 text-sm">{error}</p>}
           </div>
 
           {/* Date Selection */}
@@ -804,6 +819,8 @@ const Profile = () => {
         selectedImage
       );
       if (res) {
+        console.log(res);
+
         message.success("Profile updated successfully");
         dispatch(updateUser(res.user)); // avatar + info khác sẽ cập nhật ngay
         setOpenResponsive(false);
@@ -944,7 +961,7 @@ const Profile = () => {
 
           {/* Total Spending */}
           <div className="text-center lg:text-right">
-            <p className="responsive-text text-[#00000099] mb-2">
+            <p className="sm:mt-8 responsive-text text-[#00000099] mb-2">
               Tổng chi tiêu
             </p>
             <p className="responsive-title text-[#000000]">
