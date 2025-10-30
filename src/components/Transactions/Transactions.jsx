@@ -297,7 +297,7 @@ const Transactions = () => {
     navigate(`/admin/transactions/${id}`);
   };
 
-  const handleRefund = async (transactionId) => {
+  const handleRefund = async () => {
     try {
       // Simulate API call for refund
       message.success("Đã khởi tạo quy trình hoàn tiền");
@@ -411,12 +411,16 @@ const Transactions = () => {
   ]);
 
   const handlePreviewInvoice = (transaction) => {
+    console.log(transaction);
+
     setSelectedInvoice(transaction);
     setIsModalOpen(true);
   };
 
   // Hàm xử lý in hóa đơn
   const handlePrintInvoice = async (transaction) => {
+    console.log(transaction);
+
     setPrintLoading(true);
     try {
       await generateInvoicePDF(transaction);

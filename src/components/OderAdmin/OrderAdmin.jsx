@@ -34,6 +34,7 @@ import {
   SearchOutlined,
   FilterOutlined,
   DollarCircleOutlined,
+  PrinterOutlined,
 } from "@ant-design/icons";
 import {
   ListOderProductsAll,
@@ -44,11 +45,12 @@ import {
   filterOrdersByStatus,
   UpDateConfirmedAPI,
 } from "../../service/Oder";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import moment from "moment";
 import "./OrderAdmin.css";
 import { useSelector } from "react-redux";
 import { createStyles } from "antd-style";
+import { generateInvoicePDF, InvoiceTemplate } from "../InvoiceTemplate";
 
 const useStyle = createStyles(({ css, token }) => {
   const { antCls } = token;
@@ -88,7 +90,10 @@ const OrderAdmin = () => {
   const [api, contextHolder] = notification.useNotification();
   const { user } = useSelector((state) => state.auth);
   const [filterStatus, setFilterStatus] = useState("all");
-
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [printLoading, setPrintLoading] = useState(false);
+  const invoiceRef = useRef();
   // Enhanced search filters
   const [searchFilters, setSearchFilters] = useState({
     customerName: "",
@@ -160,7 +165,7 @@ const OrderAdmin = () => {
       );
     }
 
-    if (newFilters?.address) {
+    if (newFilters.address) {
       filtered = filtered.filter((item) => {
         const fullAddress = `${item.fullAddress} ${item.ward} ${item.district} ${item.city}`;
         return fullAddress
@@ -290,6 +295,13 @@ const OrderAdmin = () => {
     }));
   };
 
+  const handlePreviewInvoice = (record) => {
+    // Lấy originalItem từ record (chứa data đầy đủ từ API)
+
+    setSelectedInvoice(record.originalItem);
+    setIsModalOpen(true);
+  };
+
   // Table column definitions
   const columns = [
     {
@@ -323,7 +335,7 @@ const OrderAdmin = () => {
     {
       title: "Trạng thái đơn hàng",
       dataIndex: "orderStatus",
-      width: 200,
+      width: 300,
       render: (status) => {
         let color = "";
         let icon = null;
@@ -381,7 +393,24 @@ const OrderAdmin = () => {
       title: "Thao tác",
       dataIndex: "check",
       fixed: "right",
-      width: 250,
+      width: 350,
+    },
+    {
+      title: "In hóa đơn",
+      dataIndex: "orderStatus",
+      render: (orderStatus, record) => {
+        if (orderStatus !== "Đơn hàng đã bị hủy") {
+          return (
+            <Button
+              className="w-1/2 m-auto flex justify-center items-center"
+              onClick={() => handlePreviewInvoice(record)}
+            >
+              In hóa đơn
+            </Button>
+          );
+        }
+      },
+      width: 350,
     },
   ];
 
@@ -1191,6 +1220,36 @@ const OrderAdmin = () => {
               {selectedOrder.createdAt}
             </Descriptions.Item>
           </Descriptions>
+        )}
+      </Modal>
+
+      <Modal
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        footer={null}
+        width={925}
+        style={{ minWidth: "none" }}
+        title="Xem Hóa Đơn"
+      >
+        {selectedInvoice && (
+          <div>
+            <InvoiceTemplate
+              transaction={selectedInvoice}
+              isVisible={true}
+              ref={invoiceRef}
+            />
+
+            <div style={{ marginTop: 20, textAlign: "right" }}>
+              <Button
+                type="primary"
+                onClick={() =>
+                  generateInvoicePDF(invoiceRef.current, selectedInvoice)
+                }
+              >
+                In hóa đơn
+              </Button>
+            </div>
+          </div>
         )}
       </Modal>
     </div>

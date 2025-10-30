@@ -228,8 +228,12 @@ const ClothingMale = () => {
   );
 
   const formatPrice = (price) => {
-    if (price === null || price === undefined || isNaN(price)) return "0đ";
-    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
+    if (!price && price !== 0) return "0đ";
+
+    const numPrice = Number(price);
+    if (isNaN(numPrice)) return "0đ";
+
+    return numPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
   };
 
   const marks = { 0: "0", 500000: "500K", 1000000: "1M" };

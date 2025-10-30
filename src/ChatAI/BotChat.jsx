@@ -5,7 +5,6 @@ import chatbotData from "./../chatbot-data.json";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
-import { set } from "nprogress";
 
 // Function để làm sạch format response
 const cleanResponseFormat = (text) => {
@@ -221,7 +220,7 @@ const BotChatAI = () => {
       keywords.some((keyword) => lowerCaseMessage.includes(keyword));
 
     const keywordGroups = {
-      products: ["list", "danh sách", "hàng hóa", "sản phẩm"],
+      products: ["list", "danh sách", "hàng hóa", "tất cả sản phẩm"],
       highPriceProducts: ["giá cao", "cao cấp", "đắt tiền", "premium"],
       author: [
         "người viết",
@@ -482,7 +481,7 @@ Vui lòng thử lại với một trong những chủ đề trên!`,
           {messages.map((message, index) => (
             <div
               key={message.id}
-              className={`flex items-start space-x-2 sm:space-x-4 group animate-in slide-in-from-bottom-4 duration-500 ${
+              className={`flex items-start mt-8 space-x-2 sm:space-x-4 group animate-in slide-in-from-bottom-4 duration-500 ${
                 message.sender === "user"
                   ? "flex-row-reverse space-x-reverse"
                   : ""

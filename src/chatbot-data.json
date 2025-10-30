@@ -1,7 +1,7 @@
 {
   "initial_message": {
     "id": "welcome",
-    "text": "Chúc bạn ngày mới tốt lành! Mình là trợ lý ảo của Dosiin. Bạn muốn mua quần áo , xem sản phẩm ,CEO của... web hãy nói với mình nhé!",
+    "text": "Chúc bạn ngày mới tốt lành! Mình là trợ lý ảo của DuyAnh Shop. Bạn muốn mua quần áo , xem sản phẩm ,CEO của... web hãy nói với mình nhé!",
     "sender": "bot"
   },
   "quick_suggestions": [
@@ -12,7 +12,7 @@
   ],
   "qa_pairs": [
     {
-      "keywords": ["quần áo", "sản phẩm", "danh mục", "mẫu mã", "đồ"],
+      "keywords": ["quần áo", "danh mục", "mẫu mã", "đồ"],
       "response": {
         "type": "product_list",
         "text": "Dưới đây là danh mục quần áo của chúng tôi:",
@@ -20,7 +20,13 @@
       }
     },
     {
-      "keywords": ["cao cấp", "hàng hiệu", "premium", "luxury"],
+      "keywords": [
+        "sản phẩm cao cấp",
+        "cao cấp",
+        "hàng hiệu",
+        "premium",
+        "luxury"
+      ],
       "response": {
         "type": "premium_products",
         "text": "Đây là những bộ sưu tập thời trang cao cấp của chúng tôi:",

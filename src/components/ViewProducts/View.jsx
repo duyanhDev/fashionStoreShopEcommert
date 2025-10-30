@@ -25,6 +25,7 @@ import "react-quill/dist/quill.snow.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { ListOneProductAPI, UpdateProductAPI } from "../../service/ApiProduct";
 import { ListCategoryAPI } from "../../service/ApiCategory";
+import { listColorAPI } from "../../service/APIColor";
 
 const View = () => {
   const [name, setName] = useState("");
@@ -49,6 +50,7 @@ const View = () => {
   const [currentVariants, setCurrentVariants] = useState([]);
   const [stockUpdateMode, setStockUpdateMode] = useState("all"); // "all" | "specific"
   const [showVariantsTable, setShowVariantsTable] = useState(false);
+  const [colors, setColors] = useState([]);
 
   const Navigate = useNavigate();
   const param = useParams();
@@ -165,6 +167,21 @@ const View = () => {
     CallApiListProduct();
   }, [param.id]);
 
+  const fetchAPIColor = async () => {
+    try {
+      const res = await listColorAPI();
+      if (res && res.data && res.data.EC === 0) {
+        setColors(res.data.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAPIColor();
+  }, []);
+
   const optionsSize = [
     { label: "S", value: "S" },
     { label: "M", value: "M" },
@@ -180,10 +197,9 @@ const View = () => {
     { label: "34", value: "34" },
   ];
 
-  const colorArr = ["đen", "trắng", "xanh", "nâu", "be"];
-  const optionsColor = colorArr.map((color) => ({
-    label: color,
-    value: color,
+  const optionsColor = colors?.map((color) => ({
+    label: color.title,
+    value: color.type,
   }));
 
   const genderArr = ["male", "female", "unisex"];

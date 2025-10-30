@@ -764,6 +764,8 @@ const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
               </button>
             </div>
           </div>
+
+          <NavigationMenu />
         </div>
 
         {/* Mobile Search Bar */}
@@ -949,8 +951,6 @@ const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
             </div>
           </div>
         )}
-
-        <NavigationMenu />
       </header>
 
       {/* Enhanced Cart Modal */}

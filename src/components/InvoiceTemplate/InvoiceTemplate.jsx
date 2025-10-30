@@ -9,6 +9,8 @@ import chuki from "./../../assets/chu-ky-ten-anh.jpg";
 export const InvoiceTemplate = forwardRef(({ transaction }, ref) => {
   if (!transaction) return null;
 
+  console.log(transaction);
+
   const {
     _id,
     orderId,
@@ -146,19 +148,21 @@ export const InvoiceTemplate = forwardRef(({ transaction }, ref) => {
         >
           <div>
             <div style={{ marginBottom: "8px" }}>
-              <strong>Họ tên:</strong> {userId?.name || "N/A"}
+              <strong>Họ tên:</strong> {userId?.name || transaction.username}
             </div>
             <div style={{ marginBottom: "8px" }}>
-              <strong>Email:</strong> {userId?.email || "N/A"}
+              <strong>Email:</strong> {userId?.email || transaction.email}
             </div>
             <div>
-              <strong>Số điện thoại:</strong> {userId?.phone || "N/A"}
+              <strong>Số điện thoại:</strong>{" "}
+              {userId?.phone || transaction.phone}
             </div>
           </div>
           <div>
             <div style={{ marginBottom: "8px" }}>
               <strong>Địa chỉ:</strong>{" "}
-              {orderId?.shippingAddress.fullAddress || "N/A"}
+              {orderId?.shippingAddress.fullAddress ||
+                transaction.shippingAddress.fullAddress}
             </div>
             <div>
               <strong>Phương thức TT:</strong>{" "}
@@ -189,9 +193,15 @@ export const InvoiceTemplate = forwardRef(({ transaction }, ref) => {
             </tr>
           </thead>
           <tbody>
-            {orderId?.items?.map((item, index) => (
+            {(orderId?.items?.length
+              ? orderId.items
+              : transaction?.items || []
+            ).map((item, index) => (
               <tr key={index} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                {/* Cột STT */}
                 <td style={tableCellStyle}>{index + 1}</td>
+
+                {/* Cột tên sản phẩm */}
                 <td style={{ ...tableCellStyle, textAlign: "left" }}>
                   <div style={{ fontWeight: "bold", marginBottom: "4px" }}>
                     {item.name}
@@ -202,12 +212,22 @@ export const InvoiceTemplate = forwardRef(({ transaction }, ref) => {
                     </div>
                   )}
                 </td>
+
+                {/* Cột số lượng */}
                 <td style={tableCellStyle}>{item.quantity || 1}</td>
+
+                {/* Cột đơn giá */}
                 <td style={tableCellStyle}>
                   {formatPrice(
-                    item.productId.discountedPrice || item.productId.price
+                    item.productId?.discountedPrice ||
+                      item.discountedPrice ||
+                      item.productId?.price ||
+                      item.price ||
+                      0
                   )}
                 </td>
+
+                {/* Cột thành tiền */}
                 <td
                   style={{
                     ...tableCellStyle,
@@ -216,27 +236,15 @@ export const InvoiceTemplate = forwardRef(({ transaction }, ref) => {
                   }}
                 >
                   {formatPrice(
-                    (item.productId.discountedPrice ||
-                      item.productId.price ||
+                    ((item.productId?.discountedPrice ??
+                      item.productId?.price ??
+                      item.discountedPrice ??
+                      item.price) ||
                       0) * (item.quantity || 1)
                   )}
                 </td>
               </tr>
-            )) || (
-              <tr>
-                <td
-                  colSpan="5"
-                  style={{
-                    ...tableCellStyle,
-                    textAlign: "center",
-                    fontStyle: "italic",
-                    color: "#666",
-                  }}
-                >
-                  Không có sản phẩm
-                </td>
-              </tr>
-            )}
+            ))}
           </tbody>
         </table>
       </div>

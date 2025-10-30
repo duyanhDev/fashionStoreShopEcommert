@@ -5,11 +5,11 @@ const getListProductsAPI = async () => {
 };
 
 const ListOneProductAPI = async (id) => {
-  return await axios.get(`/api/v1/products/${id}`);
+  return await axios.get(`api/v1/products/${id}`);
 };
 
 const ListSlugProductAPI = async (slug) => {
-  return await axios.get(`/api/v1/products-slug/${slug}`);
+  return await axios.get(`api/v1/products-slug/${slug}`);
 };
 
 const createProductAPI = async (formData) => {
@@ -90,7 +90,7 @@ const UpdateProductAPI = async (
 const DeleteOneProductAPI = async (productId) => {
   const token = localStorage.getItem("token");
 
-  return await axios.delete("/api/v1/delete-product", {
+  return await axios.delete("api/v1/delete-product", {
     params: { productId },
     headers: {
       Authorization: `Bearer ${token}`,

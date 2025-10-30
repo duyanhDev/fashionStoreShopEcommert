@@ -35,6 +35,7 @@ import { createProductAPI } from "../../service/ApiProduct";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { FindAllSupplierAPI } from "../../service/Supplier";
+import { listColorAPI } from "../../service/APIColor";
 
 const { Title, Text } = Typography;
 
@@ -55,6 +56,7 @@ const Create = () => {
   const [supplierName, setSupplierName] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
   const { user } = useSelector((state) => state.auth);
+  const [colors, setColors] = useState([]);
   const navigate = useNavigate();
 
   const [image, setImageFiles] = useState([]);
@@ -227,6 +229,21 @@ const Create = () => {
       }
     } catch (error) {}
   };
+
+  const fetchAPIColor = async () => {
+    try {
+      const res = await listColorAPI();
+      if (res && res.data && res.data.EC === 0) {
+        setColors(res.data.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAPIColor();
+  }, []);
 
   return (
     <div
@@ -533,20 +550,30 @@ const Create = () => {
                       style={{ width: "100%" }}
                     >
                       <div>
-                        <Text
-                          strong
-                          style={{ marginBottom: "8px", display: "block" }}
-                        >
-                          Màu sắc
-                        </Text>
-                        <Input
-                          placeholder="Nhập màu sắc (VD: Đỏ, Xanh, Vàng...)"
-                          value={variant.color}
-                          onChange={(e) =>
-                            handleVariantChange(i, "color", e.target.value)
-                          }
-                          style={{ borderRadius: "6px" }}
-                        />
+                        <div>
+                          <Text
+                            strong
+                            style={{ marginBottom: "8px", display: "block" }}
+                          >
+                            Màu sắc
+                          </Text>
+
+                          <Select
+                            placeholder="Nhập màu sắc (VD: Đỏ, Xanh, Vàng...)"
+                            onChange={(value) =>
+                              handleVariantChange(i, "color", value)
+                            }
+                          >
+                            {colors?.map((item) => (
+                              <Select.Option
+                                key={item._id || item.value}
+                                value={item.type}
+                              >
+                                {item.title}
+                              </Select.Option>
+                            ))}
+                          </Select>
+                        </div>
                       </div>
 
                       <div>
