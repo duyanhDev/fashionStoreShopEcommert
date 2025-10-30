@@ -37,6 +37,7 @@ import { ListOneProductAPI, UpdateProductAPI } from "../../service/ApiProduct";
 import { ListCategoryAPI } from "../../service/ApiCategory";
 import { useSelector } from "react-redux";
 import { FindAllSupplierAPI } from "../../service/Supplier";
+import { listColorAPI } from "../../service/APIColor";
 
 const { Panel } = Collapse;
 
@@ -71,10 +72,7 @@ const UpLoad = () => {
 
   // State mới cho việc quản lý xóa ảnh
   const [showImageManager, setShowImageManager] = useState(false);
-  const [selectedImagesForDelete, setSelectedImagesForDelete] = useState([]);
-  const [deleteConfirmModal, setDeleteConfirmModal] = useState(false);
-  const [imagePreviewModal, setImagePreviewModal] = useState(false);
-  const [previewImage, setPreviewImage] = useState("");
+  const [colors, setColors] = useState([]);
 
   const Navigate = useNavigate();
   const param = useParams();
@@ -466,6 +464,19 @@ const UpLoad = () => {
     CallApiListProduct();
   }, [param.id]);
 
+  const fetchAPIColor = async () => {
+    try {
+      const res = await listColorAPI();
+      if (res && res.data && res.data.EC === 0) {
+        setColors(res.data.data);
+      }
+    } catch (error) {}
+  };
+
+  useEffect(() => {
+    fetchAPIColor();
+  }, []);
+
   const optionsSize = [
     { label: "S", value: "S" },
     { label: "M", value: "M" },
@@ -481,10 +492,9 @@ const UpLoad = () => {
     { label: "34", value: "34" },
   ];
 
-  const colorArr = ["đen", "trắng", "xanh", "nâu", "be"];
-  const optionsColor = colorArr.map((color) => ({
-    label: color,
-    value: color,
+  const optionsColor = colors?.map((color) => ({
+    label: color.title,
+    value: color.type,
   }));
 
   const genderArr = ["male", "female", "unisex"];
