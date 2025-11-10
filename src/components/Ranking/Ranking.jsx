@@ -26,32 +26,32 @@ const Ranking = () => {
       {
         bg: "from-yellow-400 via-yellow-500 to-amber-500",
         text: "text-yellow-100",
-        border: "border-yellow-300/50",
-        glow: "shadow-2xl shadow-yellow-500/40",
+        border: "border-yellow-400/60",
+        glow: "shadow-2xl shadow-yellow-500/50",
         particle: "bg-yellow-300",
       },
       {
-        bg: "from-slate-400 via-slate-500 to-gray-600",
+        bg: "from-slate-300 via-slate-400 to-gray-500",
         text: "text-slate-100",
-        border: "border-slate-300/50",
-        glow: "shadow-2xl shadow-slate-500/40",
+        border: "border-slate-400/60",
+        glow: "shadow-2xl shadow-slate-500/50",
         particle: "bg-slate-300",
       },
       {
-        bg: "from-amber-600 via-orange-600 to-amber-700",
-        text: "text-amber-100",
-        border: "border-amber-300/50",
-        glow: "shadow-2xl shadow-amber-600/40",
-        particle: "bg-amber-400",
+        bg: "from-orange-500 via-orange-600 to-amber-600",
+        text: "text-orange-100",
+        border: "border-orange-400/60",
+        glow: "shadow-2xl shadow-orange-600/50",
+        particle: "bg-orange-400",
       },
     ];
     return (
       styles[index] || {
-        bg: "from-blue-500 via-indigo-500 to-purple-600",
-        text: "text-blue-100",
-        border: "border-blue-300/50",
-        glow: "shadow-xl shadow-blue-500/30",
-        particle: "bg-blue-400",
+        bg: "from-green-500 via-emerald-600 to-green-700",
+        text: "text-green-100",
+        border: "border-green-400/60",
+        glow: "shadow-xl shadow-green-500/40",
+        particle: "bg-green-400",
       }
     );
   };
@@ -60,14 +60,20 @@ const Ranking = () => {
     switch (index) {
       case 0:
         return (
-          <Crown className="w-8 h-8 text-yellow-300 drop-shadow-lg animate-bounce" />
+          <Crown className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-yellow-300 drop-shadow-lg animate-bounce" />
         );
       case 1:
-        return <Trophy className="w-7 h-7 text-slate-300 drop-shadow-lg" />;
+        return (
+          <Trophy className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-slate-300 drop-shadow-lg" />
+        );
       case 2:
-        return <Medal className="w-7 h-7 text-amber-400 drop-shadow-lg" />;
+        return (
+          <Medal className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-orange-400 drop-shadow-lg" />
+        );
       default:
-        return <Award className="w-6 h-6 text-indigo-400 drop-shadow-lg" />;
+        return (
+          <Award className="w-5 h-5 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-green-400 drop-shadow-lg" />
+        );
     }
   };
 
@@ -85,9 +91,9 @@ const Ranking = () => {
 
   const sortedRanking = useMemo(() => {
     return [...users]
-      .slice(0, 5)
       .sort((a, b) => (b.totalPrice || 0) - (a.totalPrice || 0))
-      .filter((item) => item.role === "customer");
+      .filter((item) => item.role === "customer")
+      .slice(0, 5);
   }, [users]);
 
   const FloatingParticles = ({ count = 6, className = "bg-white" }) => (
@@ -109,173 +115,66 @@ const Ranking = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+      <div className="min-h-screen mt-14 bg-gradient-to-br from-black via-green-950 to-gray-900 relative overflow-hidden">
         {/* Animated Background */}
         <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-10 left-5 sm:top-20 sm:left-10 w-48 h-48 sm:w-72 sm:h-72 bg-green-500/10 rounded-full blur-3xl animate-pulse"></div>
           <div
-            className="absolute bottom-20 right-10 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
+            className="absolute bottom-10 right-5 sm:bottom-20 sm:right-10 w-64 h-64 sm:w-96 sm:h-96 bg-emerald-500/10 rounded-full blur-3xl animate-pulse"
             style={{ animationDelay: "1s" }}
           ></div>
           <div
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl animate-pulse"
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 sm:w-64 sm:h-64 bg-green-600/10 rounded-full blur-3xl animate-pulse"
             style={{ animationDelay: "2s" }}
           ></div>
         </div>
 
-        <div className="relative z-10 p-4 sm:p-6 lg:p-8 pt-24">
+        <div className="relative z-10 px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 pt-16 sm:pt-20 lg:pt-24">
           <div className="max-w-7xl mx-auto">
             {/* Header Section */}
-            <div className="text-center mb-12 lg:mb-16">
-              <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full mb-6 shadow-2xl shadow-purple-500/30 pulse-glow">
-                <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 text-white animate-pulse" />
+            <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+              <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-r from-green-600 to-emerald-600 rounded-full mb-4 sm:mb-6 shadow-2xl shadow-green-500/40">
+                <Sparkles className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white animate-pulse" />
               </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black bg-gradient-to-r from-yellow-400 via-purple-500 to-pink-500 bg-clip-text text-transparent mb-4 tracking-tight">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black bg-gradient-to-r from-green-400 via-emerald-500 to-green-600 bg-clip-text text-transparent mb-3 sm:mb-4 tracking-tight px-2">
                 🏆 BẢNG XẾP HẠNG ELITE 🏆
               </h1>
-              <p className="text-gray-300 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed">
+              <p className="text-gray-300 text-sm sm:text-base md:text-lg lg:text-xl max-w-2xl mx-auto leading-relaxed px-4">
                 Những người dẫn đầu trong cuộc đua chi tiêu tháng này
               </p>
-              <div className="flex items-center justify-center gap-4 mt-6">
-                <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full">
-                  <Users className="w-4 h-4 text-blue-400" />
-                  <span className="text-white text-sm">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mt-4 sm:mt-6 px-4">
+                <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full">
+                  <Users className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
+                  <span className="text-white text-xs sm:text-sm">
                     {sortedRanking.length} Thành viên
                   </span>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full">
-                  <TrendingUp className="w-4 h-4 text-green-400" />
-                  <span className="text-white text-sm">Cập nhật realtime</span>
+                <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full">
+                  <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
+                  <span className="text-white text-xs sm:text-sm">
+                    Cập nhật realtime
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Top 3 Podium */}
-            {sortedRanking.length >= 3 && (
-              <div className="mb-16 lg:mb-20">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
-                  {/* Responsive podium order: 2nd, 1st, 3rd */}
-                  {[1, 0, 2].map((position, displayIndex) => {
-                    const user = sortedRanking[position];
-                    const rankStyle = getRankStyles(position);
-                    const heights = ["lg:h-32", "lg:h-48", "lg:h-28"];
-                    const orders = [
-                      "order-2 lg:order-1",
-                      "order-1 lg:order-2",
-                      "order-3 lg:order-3",
-                    ];
-
-                    return (
-                      <div
-                        key={user._id}
-                        className={`${orders[displayIndex]} relative`}
-                      >
-                        <div
-                          className={`
-                          relative ${heights[displayIndex]} h-40 lg:h-auto
-                          bg-gradient-to-br ${rankStyle.bg} 
-                          ${rankStyle.border} border-2 ${rankStyle.glow}
-                          rounded-3xl flex flex-col items-center justify-end 
-                          p-4 lg:p-6 transform hover:scale-105 transition-all duration-500 
-                          cursor-pointer overflow-hidden group shimmer
-                        `}
-                        >
-                          <FloatingParticles
-                            count={8}
-                            className={rankStyle.particle}
-                          />
-
-                          {/* Rank badge */}
-                          <div
-                            className={`
-                            absolute -top-4 left-1/2 transform -translate-x-1/2 
-                            w-10 h-10 lg:w-12 lg:h-12 bg-white rounded-full 
-                            flex items-center justify-center font-black text-lg lg:text-xl 
-                            shadow-2xl border-4 ${rankStyle.border}
-                            ${position === 0 ? "animate-pulse" : ""}
-                          `}
-                          >
-                            #{position + 1}
-                          </div>
-
-                          {/* Crown for first place */}
-                          {position === 0 && (
-                            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
-                              <Crown className="w-8 h-8 lg:w-10 lg:h-10 text-yellow-400 animate-bounce" />
-                            </div>
-                          )}
-
-                          {/* User avatar */}
-                          <div className="relative mb-4 lg:mb-6">
-                            <div className="relative">
-                              <img
-                                src={user.avatar}
-                                alt={user.name}
-                                className={`
-                                  w-16 h-16 lg:w-20 lg:h-20 rounded-full border-4 border-white 
-                                  shadow-2xl object-cover transform transition-transform duration-300 
-                                  group-hover:scale-110
-                                  ${
-                                    position === 0
-                                      ? "ring-4 ring-yellow-400/50"
-                                      : ""
-                                  }
-                                `}
-                              />
-                              <div className="absolute -bottom-1 -right-1 w-5 h-5 lg:w-6 lg:h-6 bg-green-400 border-2 border-white rounded-full animate-pulse"></div>
-                            </div>
-                            <div className="absolute -top-2 -right-2">
-                              {getRankIcon(position)}
-                            </div>
-                          </div>
-
-                          {/* User info */}
-                          <div className="text-center mb-2">
-                            <h3
-                              className={`font-bold ${rankStyle.text} text-sm lg:text-base mb-1 drop-shadow-lg tracking-wide`}
-                            >
-                              {user.name}
-                            </h3>
-                            <p className="text-white/90 text-xs lg:text-sm font-bold drop-shadow">
-                              {formatPrice(user.totalPrice)}
-                            </p>
-                          </div>
-
-                          {/* Special effects for top 3 */}
-                          <div className="absolute top-2 right-2 flex flex-col space-y-1">
-                            {Array.from({ length: 3 - position }).map(
-                              (_, i) => (
-                                <Star
-                                  key={i}
-                                  className="w-3 h-3 lg:w-4 lg:h-4 text-yellow-300 animate-pulse"
-                                  style={{ animationDelay: `${i * 0.2}s` }}
-                                />
-                              )
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
             {/* Detailed Ranking List */}
-            <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-4 sm:p-6 lg:p-8 border border-white/10 shadow-2xl">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-                <h2 className="text-2xl lg:text-3xl font-bold text-white flex items-center gap-3">
-                  <DollarSign className="text-green-400 w-8 h-8" />
-                  Bảng Xếp Hạng Chi Tiết
+            <div className="bg-emerald-50/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-6 lg:p-8 border border-green-200/50 shadow-2xl mx-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-3 sm:gap-4">
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 flex items-center gap-2 sm:gap-3">
+                  <DollarSign className="text-green-600 w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8" />
+                  <span className="line-clamp-1">Bảng Xếp Hạng Chi Tiết</span>
                 </h2>
                 <div className="flex items-center gap-4">
-                  <div className="text-sm text-gray-300 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
+                  <div className="text-xs sm:text-sm text-gray-700 bg-green-100 px-3 sm:px-4 py-2 rounded-full backdrop-blur-sm border border-green-200">
                     {sortedRanking.length} thành viên
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-3 lg:space-y-4">
+              <div className="space-y-3 sm:space-y-3 lg:space-y-4">
                 {sortedRanking.map((user, index) => {
                   const rankStyle = getRankStyles(index);
                   const isTopThree = index < 3;
@@ -284,33 +183,40 @@ const Ranking = () => {
                     <div
                       key={user._id}
                       className={`
-                        relative group flex flex-col sm:flex-row items-start sm:items-center 
-                        p-4 lg:p-6 bg-gradient-to-r from-white/10 to-white/5 
-                        border border-white/20 rounded-2xl backdrop-blur-sm
-                        hover:bg-white/20 transition-all duration-500 
-                        transform hover:-translate-y-1 hover:shadow-2xl
+                        relative group flex flex-col items-start
+                        p-3 sm:p-4 lg:p-6 bg-white/90
+                        border-2 ${
+                          isTopThree ? rankStyle.border : "border-green-200/50"
+                        } 
+                        rounded-xl sm:rounded-2xl backdrop-blur-sm
+                        hover:bg-white transition-all duration-500 
+                        transform hover:-translate-y-1 
                         ${
                           isTopThree
-                            ? rankStyle.glow + " " + rankStyle.border
-                            : "hover:shadow-xl"
+                            ? rankStyle.glow
+                            : "hover:shadow-xl shadow-lg"
                         }
                       `}
                     >
                       {isTopThree && (
-                        <FloatingParticles count={4} className="bg-white/40" />
+                        <FloatingParticles
+                          count={4}
+                          className="bg-green-400/40"
+                        />
                       )}
 
-                      <div className="flex items-center gap-4 sm:gap-6 mb-3 sm:mb-0 w-full sm:w-auto">
+                      {/* Top row: Rank + Icon + Avatar */}
+                      <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 w-full mb-3">
                         {/* Rank number */}
                         <div
                           className={`
-                          flex items-center justify-center w-12 h-12 lg:w-14 lg:h-14 
-                          rounded-xl font-black text-lg lg:text-xl transition-all duration-300 
+                          flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16
+                          rounded-xl font-black text-lg sm:text-xl lg:text-2xl transition-all duration-300 
                           group-hover:scale-110 shrink-0
                           ${
                             isTopThree
                               ? `bg-gradient-to-r ${rankStyle.bg} text-white shadow-lg`
-                              : "bg-white/10 text-gray-300 border border-white/20"
+                              : "bg-green-100 text-green-700 border-2 border-green-300"
                           }
                         `}
                         >
@@ -328,54 +234,54 @@ const Ranking = () => {
                             src={user.avatar}
                             alt={user.name}
                             className={`
-                              w-12 h-12 lg:w-16 lg:h-16 rounded-full border-3 object-cover 
+                              w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full border-3 object-cover 
                               transition-all duration-300 group-hover:scale-105
                               ${
                                 isTopThree
-                                  ? "border-white shadow-xl ring-2 ring-white/30"
-                                  : "border-white/30"
+                                  ? "border-white shadow-xl ring-2 ring-white/50"
+                                  : "border-green-200"
                               }
                             `}
                           />
-                          <div className="absolute -bottom-1 -right-1 w-4 h-4 lg:w-5 lg:h-5 bg-green-400 border-2 border-white rounded-full"></div>
+                          <div className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-green-500 border-2 border-white rounded-full"></div>
                         </div>
+
+                        {/* VIP badge (mobile - right side) */}
+                        {isTopThree && (
+                          <div className="flex items-center gap-1 ml-auto shrink-0">
+                            <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 animate-pulse" />
+                            <span className="text-xs sm:text-sm text-yellow-600 font-bold">
+                              VIP
+                            </span>
+                          </div>
+                        )}
                       </div>
 
-                      {/* User details */}
-                      <div className="flex-grow w-full sm:ml-4 lg:ml-12">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div>
-                            <h3 className="font-bold text-lg lg:text-xl text-white group-hover:text-yellow-300 transition-colors duration-300">
-                              {user.name}
-                            </h3>
-                            <div className="flex items-center gap-2 text-sm text-gray-300">
-                              <span>Tổng chi tiêu:</span>
-                              <span className="font-bold text-green-400 text-base lg:text-lg">
-                                {formatPrice(user.totalPrice)}
-                              </span>
-                            </div>
+                      {/* Bottom row: User info */}
+                      <div className="w-full pl-0 sm:pl-2">
+                        <div className="mb-2">
+                          <h3 className="font-bold text-sm sm:text-base lg:text-lg text-gray-800 group-hover:text-green-600 transition-colors duration-300 mb-1">
+                            {user.name}
+                          </h3>
+                          <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-600">
+                            <span className="shrink-0 font-medium">
+                              Tổng chi tiêu:
+                            </span>
+                            <span className="font-bold text-green-600 text-sm sm:text-base lg:text-lg">
+                              {formatPrice(user.totalPrice)}
+                            </span>
                           </div>
-
-                          {/* Achievement badges */}
-                          {isTopThree && (
-                            <div className="flex items-center gap-1">
-                              <Zap className="w-4 h-4 lg:w-5 lg:h-5 text-yellow-400 animate-pulse" />
-                              <span className="text-xs lg:text-sm text-yellow-300 font-semibold">
-                                VIP
-                              </span>
-                            </div>
-                          )}
                         </div>
 
                         {/* Progress bar */}
-                        <div className="mt-3 w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div className="w-full h-2 sm:h-2.5 bg-green-100 rounded-full overflow-hidden border border-green-200/50">
                           <div
                             className={`
                               h-full transition-all duration-1000 ease-out rounded-full
                               ${
                                 isTopThree
                                   ? `bg-gradient-to-r ${rankStyle.bg}`
-                                  : "bg-gradient-to-r from-blue-400 to-purple-500"
+                                  : "bg-gradient-to-r from-green-400 to-emerald-600"
                               }
                             `}
                             style={{
@@ -400,7 +306,7 @@ const Ranking = () => {
 
             {/* Stats Footer */}
             {sortedRanking.length > 0 && (
-              <div className="mt-12 lg:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="mt-8 sm:mt-12 lg:mt-16 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 px-2">
                 {[
                   {
                     icon: DollarSign,
@@ -417,7 +323,7 @@ const Ranking = () => {
                     icon: Users,
                     title: sortedRanking.length.toString(),
                     subtitle: "Thành viên tham gia",
-                    color: "from-blue-400 to-blue-600",
+                    color: "from-emerald-400 to-emerald-600",
                   },
                   {
                     icon: Trophy,
@@ -429,22 +335,22 @@ const Ranking = () => {
                     icon: TrendingUp,
                     title: "98%",
                     subtitle: "Mức độ tham gia",
-                    color: "from-purple-400 to-purple-600",
+                    color: "from-green-500 to-green-700",
                   },
                 ].map((stat, index) => (
                   <div
                     key={index}
-                    className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center transform hover:scale-105 transition-all duration-300 border border-white/20 hover:bg-white/20"
+                    className="bg-white/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 text-center transform hover:scale-105 transition-all duration-300 border border-white/20 hover:bg-white/20"
                   >
                     <div
-                      className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg`}
+                      className={`w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 bg-gradient-to-r ${stat.color} rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg`}
                     >
-                      <stat.icon className="w-6 h-6 text-white" />
+                      <stat.icon className="w-5 h-5 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
                     </div>
-                    <h3 className="font-bold text-xl lg:text-2xl text-white mb-2 truncate">
+                    <h3 className="font-bold text-base sm:text-lg lg:text-xl xl:text-2xl text-white mb-1 sm:mb-2 truncate px-1">
                       {stat.title}
                     </h3>
-                    <p className="text-gray-300 text-sm lg:text-base">
+                    <p className="text-gray-300 text-xs sm:text-sm lg:text-base line-clamp-2">
                       {stat.subtitle}
                     </p>
                   </div>

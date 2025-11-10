@@ -215,6 +215,28 @@ const getTopSellingProductsByCategoryAPI = async (category, gender) => {
   return await axios.get(`api/v1/top-selling/${category}/${gender}`);
 };
 
+const DeleteVariantImageAPI = async (productId, imageId) => {
+  const token = localStorage.getItem("token");
+  return await axios.delete(
+    `api/v1/products/${productId}/variant/image/${imageId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+};
+
+const exportProductsToExcel = async () => {
+  const token = localStorage.getItem("token");
+
+  return await axios.get("api/v1/products/export-excel", {
+    responseType: "blob",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
 export {
   createProductAPI,
   getListProductsAPI,
@@ -230,4 +252,6 @@ export {
   DeleteRatingProductAPI,
   DeleteOneProductAPI,
   getTopSellingProductsByCategoryAPI,
+  DeleteVariantImageAPI,
+  exportProductsToExcel,
 };

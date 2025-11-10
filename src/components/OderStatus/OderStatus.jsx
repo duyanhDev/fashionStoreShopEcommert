@@ -319,7 +319,7 @@ const OderStatus = () => {
                     {statusConfig.text}
                   </Tag>
                   <p className="text-gray-500 text-sm mt-2">
-                    Mã đơn: #{data._id?.slice(-8)}
+                    Mã đơn: #{data.order_code}
                   </p>
                 </div>
               </div>

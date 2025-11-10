@@ -53,6 +53,7 @@ import SizeManager from "../components/SizeManager/SizeMange";
 import PantsSizeManager from "../components/PantsSizeManager/PantsSizeManager";
 import PrivacyTermsPage from "../components/PrivacyTermsPage/PrivacyTermsPage";
 import ColorAdmin from "../components/ColorAdmin/ColorAdmin";
+import AdminDashboard from "../components/AdminDashboard/AdminDashboard";
 
 export const RouterLayout = [
   {
@@ -295,6 +296,14 @@ export const RouterAdmin = [
         element: (
           <PermissionRoute allowedPermissions={["admin"]}>
             <AccountAdmin />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "du-doan",
+        element: (
+          <PermissionRoute allowedPermissions={["admin"]}>
+            <AdminDashboard />
           </PermissionRoute>
         ),
       },

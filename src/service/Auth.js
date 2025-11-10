@@ -1,4 +1,3 @@
-import { User } from "lucide-react";
 import axios from "./../untils/axios";
 
 const LoginAuth = async (email, password) => {

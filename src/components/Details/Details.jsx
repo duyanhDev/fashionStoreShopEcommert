@@ -287,7 +287,7 @@ const Details = () => {
         priceShift
       );
 
-      if (res && res.data && res.data.cart) {
+      if (res && res.data && res.data?.cart) {
         api.open({
           message: "Đã thêm vào giỏ hàng",
           description: (
@@ -310,10 +310,9 @@ const Details = () => {
               </div>
             </div>
           ),
-          duration: 15,
         });
-        CartListProductsUser();
       }
+      await CartListProductsUser();
     } catch (error) {
       console.error("Error adding product to cart:", error);
       api.open({

@@ -65,6 +65,7 @@ const AdminAccountManagement = () => {
   // Xử lý tạo tài khoản
   const handleCreateAccount = async (values) => {
     setCreateLoading(true);
+    console.log("x", values);
 
     try {
       const res = await RegisterUserAPI_Alternative(
@@ -72,9 +73,10 @@ const AdminAccountManagement = () => {
         values.email,
         values.password,
         values.role,
-        values.permissions.join(" ") || "", // Truyền permissions (mảng rỗng nếu không có)
-        "https://rg.com.vn/McGZB"
+        values.permissions || "customer" // Truyền permissions (mảng rỗng nếu không có)
       );
+      console.log(res);
+
       if (res && res.data && res.data.EC === 0) {
         message.success({
           content: (
@@ -94,15 +96,7 @@ const AdminAccountManagement = () => {
         setSelectedPermissions([]);
       }
     } catch (error) {
-      message.error({
-        content: (
-          <Space>
-            <ExclamationCircleOutlined className="text-red-500" />
-            <span>Có lỗi xảy ra khi tạo tài khoản. Vui lòng thử lại!</span>
-          </Space>
-        ),
-        duration: 4,
-      });
+      console.log(error);
     } finally {
       setCreateLoading(false);
     }
@@ -307,36 +301,6 @@ const AdminAccountManagement = () => {
                     <Input
                       prefix={<MailOutlined className="text-gray-400" />}
                       placeholder="example@company.com"
-                      size="large"
-                      className="!rounded-xl !border-2 !border-gray-200 hover:!border-blue-400 focus:!border-blue-500 !bg-gray-50 focus:!bg-white transition-all duration-200"
-                    />
-                  </Form.Item>
-
-                  <Form.Item
-                    name="username"
-                    label={
-                      <span className="text-gray-700 font-medium">
-                        Tên đăng nhập *
-                      </span>
-                    }
-                    rules={[
-                      {
-                        required: true,
-                        message: "Vui lòng nhập tên đăng nhập!",
-                      },
-                      {
-                        min: 3,
-                        message: "Tên đăng nhập phải có ít nhất 3 ký tự!",
-                      },
-                      {
-                        pattern: /^[a-zA-Z0-9_]+$/,
-                        message: "Chỉ chấp nhận chữ cái, số và dấu gạch dưới!",
-                      },
-                    ]}
-                  >
-                    <Input
-                      prefix={<UserOutlined className="text-gray-400" />}
-                      placeholder="Nhập tên đăng nhập"
                       size="large"
                       className="!rounded-xl !border-2 !border-gray-200 hover:!border-blue-400 focus:!border-blue-500 !bg-gray-50 focus:!bg-white transition-all duration-200"
                     />

@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import {
   Search,
   Calendar,
@@ -15,6 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { getAllBlog, updateViewBlog } from "../../service/Blog";
 import moment from "moment";
 import ReactPaginate from "react-paginate";
+import { useSelector } from "react-redux";
 
 // Custom hook for debounce
 const useDebounce = (value, delay) => {
@@ -43,7 +50,7 @@ const Blog = () => {
   const [searchItem, setSearchItem] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
+  const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(0);
   const ITEMS_PER_PAGE = 6;
@@ -144,20 +151,39 @@ const Blog = () => {
   // Event handlers
   const handleCategoryFilter = useCallback((regex) => {
     setSelectedCategory(regex);
+    handleFilter();
   }, []);
 
   const handleSort = useCallback((type) => {
     setSortType(type);
+    handleFilter();
   }, []);
 
   const handleSearch = useCallback((e) => {
     setSearchItem(e.target.value);
   }, []);
 
+  const listRef = useRef();
+
+  const handleFilter = () => {
+    // ... filter logic
+    if (listRef.current) {
+      const offset = -150; // số px muốn nhích lên trên
+      const y =
+        listRef.current.getBoundingClientRect().top + window.scrollY + offset;
+
+      window.scrollTo({
+        top: y,
+        behavior: "smooth",
+      });
+    }
+  };
   const handlePageClick = useCallback(({ selected }) => {
     setCurrentPage(selected);
-    // Scroll to top khi chuyển trang
-    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    // Scroll đến giữa màn hình
+
+    handleFilter();
   }, []);
 
   const handlePostClick = useCallback(
@@ -377,20 +403,6 @@ const Blog = () => {
               </div>
 
               {/* Newsletter Signup */}
-              <div className="mt-8 p-4 bg-gradient-to-r from-green-600 to-green-500 rounded-lg">
-                <h4 className="font-semibold mb-2">Đăng ký nhận tin</h4>
-                <p className="text-sm text-green-100 mb-3">
-                  Nhận những bài viết mới nhất về thời trang
-                </p>
-                <input
-                  type="email"
-                  placeholder="Email của bạn"
-                  className="w-full px-3 py-2 bg-white text-black rounded mb-3 text-sm outline-none"
-                />
-                <button className="w-full bg-black text-white py-2 rounded font-medium hover:bg-gray-800 transition-colors">
-                  Đăng ký
-                </button>
-              </div>
             </div>
           </div>
 
@@ -408,12 +420,14 @@ const Blog = () => {
                       <h2 className="text-2xl font-bold text-green-400">
                         Bài viết nổi bật
                       </h2>
-                      <Button
-                        className="absolute right-0 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors border-none"
-                        onClick={() => navigate("/create/blog")}
-                      >
-                        Tạo Bài Viết
-                      </Button>
+                      {user?.role === "admin" && (
+                        <Button
+                          className="absolute right-0 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors border-none"
+                          onClick={() => navigate("/create/blog")}
+                        >
+                          Tạo Bài Viết
+                        </Button>
+                      )}
                     </div>
 
                     <div
@@ -471,7 +485,7 @@ const Blog = () => {
 
                 {/* Other Posts */}
                 {otherPosts.length > 0 && (
-                  <div className="mb-8">
+                  <div className="mb-8" ref={listRef}>
                     <div className="flex items-center gap-2 mb-6">
                       <div className="w-2 h-8 bg-green-500 rounded"></div>
                       <h2 className="text-2xl font-bold text-green-400">
@@ -618,29 +632,6 @@ const Blog = () => {
                 )}
               </>
             )}
-          </div>
-        </div>
-      </div>
-
-      {/* Footer CTA */}
-      <div className="bg-gradient-to-r from-green-600 to-green-800 py-16 mt-16">
-        <div className="max-w-4xl mx-auto text-center px-4">
-          <h2 className="text-3xl font-bold mb-4">
-            Không bỏ lỡ xu hướng mới nhất
-          </h2>
-          <p className="text-xl text-green-100 mb-8">
-            Đăng ký để nhận những bài viết chất lượng về thời trang và phong
-            cách sống
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder="Nhập email của bạn"
-              className="flex-1 px-4 py-3 rounded-lg border-0 text-black outline-none"
-            />
-            <button className="bg-black text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors">
-              Đăng ký ngay
-            </button>
           </div>
         </div>
       </div>

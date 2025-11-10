@@ -18,6 +18,7 @@ import {
   Input,
   Select,
   DatePicker,
+  Divider,
 } from "antd";
 import {
   CheckSquareOutlined,
@@ -34,7 +35,13 @@ import {
   SearchOutlined,
   FilterOutlined,
   DollarCircleOutlined,
-  PrinterOutlined,
+  UserOutlined,
+  PhoneOutlined,
+  EnvironmentOutlined,
+  CreditCardOutlined,
+  ClockCircleOutlined,
+  CalendarOutlined,
+  DollarOutlined,
 } from "@ant-design/icons";
 import {
   ListOderProductsAll,
@@ -431,6 +438,7 @@ const OrderAdmin = () => {
         onClick={() => {
           const shippingAddress = item.shippingAddress || {};
           setSelectedOrder({
+            username: item.username,
             name: item.items.map((item) => item.name).join(", "),
             quantity: item.items.map((item) => item.quantity).join(", "),
             size: item.items.map((item) => item.size).join(", "),
@@ -439,6 +447,7 @@ const OrderAdmin = () => {
             fullAddress: shippingAddress.fullAddress
               ? `${shippingAddress.fullAddress}, ${shippingAddress.ward}, ${shippingAddress.district}, ${shippingAddress.city}`
               : "N/A",
+            phone: item.phone,
             paymentMethod: item.paymentMethod || "N/A",
             paymentStatus:
               item.paymentStatus === "Completed"
@@ -884,6 +893,28 @@ const OrderAdmin = () => {
           return total + cleanAmount;
         }, 0)
       : 0;
+  const InfoItem = ({ icon, label, value, highlight }) => (
+    <div className="info-item">
+      <div className="info-label">
+        {icon && <span className="info-icon">{icon}</span>}
+        <span>{label}</span>
+      </div>
+      <div className={`info-value ${highlight ? "highlight" : ""}`}>
+        {value}
+      </div>
+    </div>
+  );
+  const getOrderStatusColor = (status) => {
+    const colorMap = {
+      "Chờ người bán xác nhận": "orange",
+      "Người bán đang chuẩn bị hàng": "blue",
+      "Đã giao cho shipper/đơn vị vận chuyển": "cyan",
+      "Shipper đang giao hàng đến bạn": "purple",
+      "Đã giao hàng thành công": "green",
+      "Đã hủy": "red",
+    };
+    return colorMap[status] || "default";
+  };
 
   return (
     <div className="order-admin-container">
@@ -1140,86 +1171,137 @@ const OrderAdmin = () => {
 
       {/* Order Detail Modal */}
       <Modal
-        title="Chi tiết đơn hàng"
-        visible={visible}
+        title={
+          <div className="modal-header">
+            <ShoppingOutlined className="header-icon" />
+            <span>Chi tiết đơn hàng</span>
+          </div>
+        }
+        open={visible}
         onCancel={() => setVisible(false)}
         footer={[
-          <Button key="close" onClick={() => setVisible(false)}>
+          <Button
+            key="close"
+            type="primary"
+            onClick={() => setVisible(false)}
+            block
+          >
             Đóng
           </Button>,
         ]}
         className="order-detail-modal"
-        width={800}
+        width="90%"
+        style={{ maxWidth: "800px", top: 20 }}
       >
         {selectedOrder && (
-          <Descriptions
-            bordered
-            column={1}
-            className="order-detail-descriptions"
-          >
-            <Descriptions.Item label="Tên sản phẩm">
-              {selectedOrder.name}
-            </Descriptions.Item>
-            <Descriptions.Item label="Số lượng">
-              {selectedOrder.quantity}
-            </Descriptions.Item>
-            <Descriptions.Item label="Size">
-              {selectedOrder.size}
-            </Descriptions.Item>
-            <Descriptions.Item label="Màu sắc">
-              {selectedOrder.color}
-            </Descriptions.Item>
-            <Descriptions.Item label="Giá">
-              {selectedOrder.price}
-            </Descriptions.Item>
-            <Descriptions.Item label="Địa chỉ">
-              {selectedOrder.fullAddress}
-            </Descriptions.Item>
-            <Descriptions.Item label="Phương thức thanh toán">
-              {selectedOrder.paymentMethod}
-            </Descriptions.Item>
-            <Descriptions.Item label="Trạng thái thanh toán">
-              <Tag
-                color={
-                  selectedOrder.paymentStatus === "Đã thanh toán"
-                    ? "green"
-                    : "gold"
-                }
-              >
-                {selectedOrder.paymentStatus}
-              </Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="Trạng thái đơn hàng">
-              <Tag
-                color={
-                  selectedOrder.orderStatus === "Chờ người bán xác nhận"
-                    ? "orange"
-                    : selectedOrder.orderStatus ===
-                      "Người bán đang chuẩn bị hàng"
-                    ? "blue"
-                    : selectedOrder.orderStatus ===
-                      "Đã giao cho shipper/đơn vị vận chuyển"
-                    ? "cyan"
-                    : selectedOrder.orderStatus ===
-                      "Shipper đang giao hàng đến bạn"
-                    ? "purple"
-                    : selectedOrder.orderStatus === "Đã giao hàng thành công"
-                    ? "green"
-                    : "red"
-                }
-              >
-                {selectedOrder.orderStatus}
-              </Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="Tổng tiền">
-              <Text strong style={{ fontSize: "16px", color: "#1890ff" }}>
-                {selectedOrder.totalAmount}
-              </Text>
-            </Descriptions.Item>
-            <Descriptions.Item label="Ngày đặt hàng">
-              {selectedOrder.createdAt}
-            </Descriptions.Item>
-          </Descriptions>
+          <div className="order-content">
+            {/* Customer Info Section */}
+            <div className="section">
+              <h3 className="section-title">
+                <UserOutlined /> Thông tin khách hàng
+              </h3>
+              <div className="section-content">
+                <InfoItem
+                  icon={<UserOutlined />}
+                  label="Tên khách hàng"
+                  value={selectedOrder.username}
+                />
+                <InfoItem
+                  icon={<PhoneOutlined />}
+                  label="Số điện thoại"
+                  value={`0${selectedOrder.phone}`}
+                />
+                <InfoItem
+                  icon={<EnvironmentOutlined />}
+                  label="Địa chỉ"
+                  value={selectedOrder.fullAddress}
+                />
+              </div>
+            </div>
+
+            <Divider />
+
+            {/* Product Info Section */}
+            <div className="section">
+              <h3 className="section-title">
+                <ShoppingOutlined /> Thông tin sản phẩm
+              </h3>
+              <div className="section-content">
+                <div className="product-card">
+                  <div className="product-main">
+                    <div className="product-name">{selectedOrder.name}</div>
+                    <div className="product-details">
+                      <span className="detail-item">
+                        Số lượng: <strong>{selectedOrder.quantity}</strong>
+                      </span>
+                      <span className="detail-item">
+                        Size: <strong>{selectedOrder.size}</strong>
+                      </span>
+                      <span className="detail-item">
+                        Màu: <strong>{selectedOrder.color}</strong>
+                      </span>
+                    </div>
+                  </div>
+                  <div className="product-price">{selectedOrder.price}</div>
+                </div>
+              </div>
+            </div>
+
+            <Divider />
+
+            {/* Payment & Status Section */}
+            <div className="section">
+              <h3 className="section-title">
+                <CreditCardOutlined /> Thanh toán & Trạng thái
+              </h3>
+              <div className="section-content">
+                <InfoItem
+                  icon={<CreditCardOutlined />}
+                  label="Phương thức thanh toán"
+                  value={selectedOrder.paymentMethod}
+                />
+                <InfoItem
+                  icon={<CheckCircleOutlined />}
+                  label="Trạng thái thanh toán"
+                  value={
+                    <Tag
+                      color={
+                        selectedOrder.paymentStatus === "Đã thanh toán"
+                          ? "green"
+                          : "gold"
+                      }
+                    >
+                      {selectedOrder.paymentStatus}
+                    </Tag>
+                  }
+                />
+                <InfoItem
+                  icon={<ClockCircleOutlined />}
+                  label="Trạng thái đơn hàng"
+                  value={
+                    <Tag color={getOrderStatusColor(selectedOrder.orderStatus)}>
+                      {selectedOrder.orderStatus}
+                    </Tag>
+                  }
+                />
+                <InfoItem
+                  icon={<CalendarOutlined />}
+                  label="Ngày đặt hàng"
+                  value={selectedOrder.createdAt}
+                />
+              </div>
+            </div>
+
+            <Divider />
+
+            {/* Total Amount */}
+            <div className="total-section">
+              <div className="total-label">
+                <DollarOutlined /> Tổng tiền
+              </div>
+              <div className="total-amount">{selectedOrder.totalAmount}</div>
+            </div>
+          </div>
         )}
       </Modal>
 

@@ -161,10 +161,10 @@ const Message = ({ open, setOpen, assignedAdmin }) => {
     if (!message) return null;
 
     const isCurrentUser = message.sender?._id === user?._id;
-    const senderName = isCurrentUser ? user?.name : "TrendHunter";
+    const senderName = isCurrentUser ? user?.name : "Admin";
     const senderAvatar = isCurrentUser
       ? message.sender?.avatar || user?.avatar
-      : LogoMess;
+      : "https://bizweb.dktcdn.net/100/109/262/themes/137829/assets/sp1.jpg?1759138490269";
 
     return (
       <div

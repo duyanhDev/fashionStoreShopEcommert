@@ -1297,50 +1297,57 @@ const CartProducts = ({}) => {
 
               <div className="space-y-3 max-h-64 overflow-y-auto">
                 {availableVouchers && availableVouchers.length > 0 ? (
-                  availableVouchers.map((voucher, index) => (
-                    <div
-                      key={index}
-                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                        selectedVouCher === voucher._id
-                          ? "border-orange-400 bg-orange-50"
-                          : "border-gray-200 hover:border-orange-300"
-                      }`}
-                      onClick={() =>
-                        handleVoucherChange(
-                          voucher.discountValue,
-                          voucher._id,
-                          voucher.content,
-                          voucher.discountType
-                        )
-                      }
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-xl flex items-center justify-center">
-                          <GiftOutlined className="text-white text-lg" />
+                  availableVouchers.map((voucher, index) => {
+                    const date = new Date();
+                    const endDate = new Date(voucher.endDate);
+
+                    if (voucher.usageLimit > 0 && date < endDate) {
+                      return (
+                        <div
+                          key={index}
+                          className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                            selectedVouCher === voucher._id
+                              ? "border-orange-400 bg-orange-50"
+                              : "border-gray-200 hover:border-orange-300"
+                          }`}
+                          onClick={() =>
+                            handleVoucherChange(
+                              voucher.discountValue,
+                              voucher._id,
+                              voucher.content,
+                              voucher.discountType
+                            )
+                          }
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-xl flex items-center justify-center">
+                              <GiftOutlined className="text-white text-lg" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-bold text-sm text-gray-800">
+                                {voucher.code}
+                              </div>
+                              <div className="text-xs text-gray-600 mb-1">
+                                {voucher.content}
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="text-gray-500">
+                                  Còn {voucher.usageLimit} lượt
+                                </span>
+                                <span className="text-orange-600 font-medium">
+                                  HSD:{" "}
+                                  {moment(voucher.endDate).format("DD/MM/YYYY")}
+                                </span>
+                              </div>
+                            </div>
+                            {selectedVouCher === voucher._id && (
+                              <CheckCircleOutlined className="text-orange-500 text-lg" />
+                            )}
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <div className="font-bold text-sm text-gray-800">
-                            {voucher.code}
-                          </div>
-                          <div className="text-xs text-gray-600 mb-1">
-                            {voucher.content}
-                          </div>
-                          <div className="flex justify-between text-xs">
-                            <span className="text-gray-500">
-                              Còn {voucher.usageLimit} lượt
-                            </span>
-                            <span className="text-orange-600 font-medium">
-                              HSD:{" "}
-                              {moment(voucher.endDate).format("DD/MM/YYYY")}
-                            </span>
-                          </div>
-                        </div>
-                        {selectedVouCher === voucher._id && (
-                          <CheckCircleOutlined className="text-orange-500 text-lg" />
-                        )}
-                      </div>
-                    </div>
-                  ))
+                      );
+                    }
+                  })
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     <GiftOutlined className="text-4xl mb-3" />

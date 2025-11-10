@@ -167,11 +167,6 @@ const SliderComponent = () => {
       {/* Pagination Bullets - Only show if more than 1 slide */}
 
       {/* Progress indicator (optional) */}
-      <div className="absolute sm:top-28 lg:top-7 left-2 sm:left-4 z-20 bg-black/30 backdrop-blur-sm rounded-full px-2 py-1">
-        <span className="text-white text-xs sm:text-sm font-medium">
-          {currentSlide + 1} / {slides.length}
-        </span>
-      </div>
     </div>
   );
 };

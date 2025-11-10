@@ -10,7 +10,7 @@ const NavigationMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [openCollapse, setOpenCollapse] = useState(null);
   const [dataProduct, setDataProduct] = useState([]);
-
+  const navigate = useNavigate();
   const toggleMenu = () => setIsOpen(!isOpen);
 
   const fetchAPi = async () => {
@@ -113,13 +113,13 @@ const NavigationMenu = () => {
         <ul className="flex gap-8 xl:gap-10 items-center">
           {menuItems.map((item) => (
             <div key={item.id} className="relative group">
-              <a
-                href={item.link}
+              <Link
+                to={item.link}
                 className="flex items-center gap-1 py-3 text-gray-700 hover:text-blue-600 font-medium transition-colors duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-blue-600 hover:after:w-full after:transition-all after:duration-300"
               >
                 {item.label}
                 {item.hasDropdown && <HiChevronDown className="text-sm" />}
-              </a>
+              </Link>
 
               {/* Desktop Dropdown */}
               {item.hasDropdown && (
@@ -142,28 +142,30 @@ const NavigationMenu = () => {
                                 <h3
                                   className="text-base font-bold text-gray-900 mb-3 pb-2 border-b-2 border-blue-500 
                                cursor-pointer hover:text-blue-600 transition-colors"
-                                  onClick={() => {
-                                    window.location.href = `${
+                                >
+                                  <Link
+                                    to={`${
                                       item.link
                                     }?Category=${encodeURIComponent(
                                       category.title
-                                    )}`;
-                                  }}
-                                >
-                                  {category.title}
+                                    )}`}
+                                  >
+                                    {" "}
+                                    {category.title}
+                                  </Link>
                                 </h3>
                                 <ul className="space-y-2">
                                   {Array.isArray(category.items) &&
                                   category.items.length > 0 ? (
                                     category.items.map((subItem, subIdx) => (
                                       <li key={subIdx}>
-                                        <a
-                                          href="#"
+                                        <Link
+                                          to={`clothing/unisex?currentPage=1&care=${subItem}`}
                                           className="text-sm text-gray-600 hover:text-blue-600 hover:translate-x-1 
                                        transition-all duration-200 block"
                                         >
                                           {subItem}
-                                        </a>
+                                        </Link>
                                       </li>
                                     ))
                                   ) : (
@@ -261,14 +263,14 @@ const NavigationMenu = () => {
                               key={idx}
                               className="pb-3 border-b border-gray-200 last:border-0"
                             >
-                              <h4 className="text-sm font-bold text-gray-900 mb-2 px-3 py-2 bg-blue-50 rounded-lg">
+                              <Link className="text-sm font-bold text-gray-900 mb-2 px-3 py-2 bg-blue-50 rounded-lg">
                                 {category.title}
-                              </h4>
+                              </Link>
                               <ul className="space-y-1">
                                 {category.items.map((subItem, subIdx) => (
                                   <li key={subIdx}>
                                     <Link
-                                      to="#"
+                                      to={`clothing/unisex?currentPage=1&care=${subItem}`}
                                       onClick={toggleMenu}
                                       className="text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 block py-2 px-3 rounded-lg transition-all"
                                     >

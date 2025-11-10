@@ -33,7 +33,11 @@ import { useEffect, useState } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { useNavigate, useParams } from "react-router-dom";
-import { ListOneProductAPI, UpdateProductAPI } from "../../service/ApiProduct";
+import {
+  DeleteVariantImageAPI,
+  ListOneProductAPI,
+  UpdateProductAPI,
+} from "../../service/ApiProduct";
 import { ListCategoryAPI } from "../../service/ApiCategory";
 import { useSelector } from "react-redux";
 import { FindAllSupplierAPI } from "../../service/Supplier";
@@ -124,20 +128,13 @@ const UpLoad = () => {
   };
 
   // Xử lý xóa ảnh đơn lẻ
-  const handleDeleteSingleImage = async (color, imageUrl) => {
+  const handleDeleteSingleImage = async (color, imageId) => {
     try {
-      const deleteData = [
-        {
-          color: color,
-          imageUrl: imageUrl,
-        },
-      ];
-
       messageApi.loading({ content: "Đang xóa ảnh...", key: "deleteImage" });
 
-      const response = await DeleteProductImageAPI(param.id, deleteData, null);
+      const response = await DeleteVariantImageAPI(param.id, imageId);
 
-      if (response.success) {
+      if (response.data.EC === 0) {
         messageApi.success({
           content: "Xóa ảnh thành công!",
           key: "deleteImage",
@@ -312,7 +309,7 @@ const UpLoad = () => {
                             title="Xóa ảnh này?"
                             description="Hành động này không thể hoàn tác!"
                             onConfirm={() =>
-                              handleDeleteSingleImage(variant.color, img.url)
+                              handleDeleteSingleImage(variant.color, img._id)
                             }
                             okText="Xóa"
                             cancelText="Hủy"

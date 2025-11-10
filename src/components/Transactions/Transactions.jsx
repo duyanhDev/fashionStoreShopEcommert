@@ -64,6 +64,7 @@ const Transactions = () => {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [printLoading, setPrintLoading] = useState(false);
   const invoiceRef = useRef();
+  const [filterLoading, setFilterLoading] = useState(false);
 
   const pageSize = 10;
   const hasSelected = selectedRowKeys.length > 0;
@@ -326,7 +327,12 @@ const Transactions = () => {
       : 0;
 
   // Filter transactions - sửa lại logic filter
-  const applyFilters = () => {
+  const applyFilters = async () => {
+    // Bật loading
+    setFilterLoading(true);
+
+    // Thêm delay nhẹ để UI mượt hơn (tùy chọn)
+    await new Promise((resolve) => setTimeout(resolve, 300));
     let filtered = [...dataTransactions];
 
     // 1. Lọc theo từ khóa (searchTerm)
@@ -349,40 +355,62 @@ const Transactions = () => {
       });
     }
 
-    // Status filter
+    // 2. Status filter
     if (statusFilter !== "all") {
       filtered = filtered.filter((t) => t.status === statusFilter);
     }
 
-    // Payment method filter
+    // 3. Payment method filter
     if (paymentMethodFilter !== "all") {
       filtered = filtered.filter(
         (t) => t.rawTransaction?.paymentMethod === paymentMethodFilter
       );
     }
 
-    // Date range filter
-    if (dateRange && dateRange.length === 2) {
+    // 4. Date range filter - ✅ SỬA LỖI Ở ĐÂY
+    if (dateRange && dateRange.length === 2 && dateRange[0] && dateRange[1]) {
       const [startDate, endDate] = dateRange;
       filtered = filtered.filter((transaction) => {
+        // Kiểm tra transaction.createdAt có tồn tại không
+        if (!transaction.createdAt) return false;
+
         const transactionDate = dayjs(transaction.createdAt);
+
+        // Kiểm tra transactionDate có hợp lệ không
+        if (!transactionDate.isValid()) return false;
+
+        // So sánh ngày (dùng isAfter/isBefore + isSame thay vì isSameOrAfter)
+        const start = startDate.startOf("day");
+        const end = endDate.endOf("day");
+
         return (
-          transactionDate.isAfter(startDate.startOf("day")) &&
-          transactionDate.isBefore(endDate.endOf("day"))
+          (transactionDate.isAfter(start) || transactionDate.isSame(start)) &&
+          (transactionDate.isBefore(end) || transactionDate.isSame(end))
         );
       });
     }
 
-    // Period filter
+    // 5. Period filter - ✅ SỬA LỖI Ở ĐÂY
     if (periodFilter !== "all") {
       const now = dayjs();
       filtered = filtered.filter((transaction) => {
+        // Kiểm tra transaction.createdAt có tồn tại không
+        if (!transaction.createdAt) return false;
+
         const transactionDate = dayjs(transaction.createdAt);
+
+        // Kiểm tra transactionDate có hợp lệ không
+        if (!transactionDate.isValid()) return false;
+
         switch (periodFilter) {
           case "today":
             return transactionDate.isSame(now, "day");
           case "week":
-            return transactionDate.isAfter(now.subtract(7, "days"));
+            const weekStart = now.subtract(7, "days").startOf("day");
+            return (
+              transactionDate.isAfter(weekStart) ||
+              transactionDate.isSame(weekStart)
+            );
           case "month":
             return transactionDate.isSame(now, "month");
           case "quarter":
@@ -397,6 +425,7 @@ const Transactions = () => {
 
     setFilteredTransactions(filtered);
     setCurrentPage(1);
+    setFilterLoading(false);
   };
 
   useEffect(() => {
@@ -706,7 +735,7 @@ const Transactions = () => {
                 <RangePicker
                   size="large"
                   value={dateRange}
-                  onChange={setDateRange}
+                  onChange={(dates) => setDateRange(dates || [])}
                   format="DD/MM/YYYY"
                   placeholder={["Từ ngày", "Đến ngày"]}
                   style={{ width: 280 }}
@@ -785,7 +814,7 @@ const Transactions = () => {
                   `${range[0]}-${range[1]} trong ${total} giao dịch`,
                 className: "mt-6",
               }}
-              loading={loading}
+              loading={loading || filterLoading}
               rowClassName="hover:bg-blue-50 transition-colors duration-200"
             />
           </Card>
@@ -847,7 +876,7 @@ const Transactions = () => {
               {searchTerm ||
               statusFilter !== "all" ||
               paymentMethodFilter !== "all" ||
-              dateRange.length > 0
+              dateRange?.length > 0
                 ? "Không tìm thấy giao dịch"
                 : "Chưa có giao dịch nào"}
             </h3>

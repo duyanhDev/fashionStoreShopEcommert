@@ -76,6 +76,13 @@ const Order = () => {
           bgColor: "#fff7e6",
           icon: <ClockCircleOutlined />,
         };
+      case "Confirmed":
+        return {
+          text: "Đã Xác nhận",
+          color: "#389e0d",
+          bgColor: "#f6ffed",
+          icon: <CheckCircleOutlined />,
+        };
       case "Delivered":
         return {
           text: "Chờ giao hàng",

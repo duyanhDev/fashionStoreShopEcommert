@@ -99,7 +99,35 @@ const ClothingMale = () => {
   const savedSortSold = queryParams.get("sortSold") || "";
   const urlMinPrice = Number(queryParams.get("minPrice")) || undefined;
   const urlMaxPrice = Number(queryParams.get("maxPrice")) || undefined;
+  // Thêm useEffect này để sync hidden state với URL params
+  useEffect(() => {
+    const hasActiveFilters =
+      savedCategory ||
+      careParams ||
+      sizeParams.length > 0 ||
+      colorParms ||
+      brandParams ||
+      savedSortPrice ||
+      savedSortDate ||
+      savedSortSold ||
+      viewParams ||
+      (urlMinPrice && urlMinPrice !== 0) ||
+      (urlMaxPrice && urlMaxPrice !== 1000000);
 
+    setHidden(hasActiveFilters);
+  }, [
+    savedCategory,
+    careParams,
+    sizeParams,
+    colorParms,
+    brandParams,
+    savedSortPrice,
+    savedSortDate,
+    savedSortSold,
+    viewParams,
+    urlMinPrice,
+    urlMaxPrice,
+  ]);
   // Tối ưu hóa getFetchParams để memo hóa:
   const getFetchParams = useCallback(() => {
     return {
@@ -218,12 +246,13 @@ const ClothingMale = () => {
       const pageNumber = page.selected + 1;
       const newParams = new URLSearchParams(location.search);
       newParams.set("currentPage", pageNumber);
-
+      handleFilter();
       // Sử dụng setTimeout để tránh gọi navigate trong render cycle
       setTimeout(() => {
         navigate(`${location.pathname}?${newParams.toString()}`);
       }, 0);
     },
+
     [location.search, location.pathname, navigate]
   );
 
@@ -546,7 +575,7 @@ const ClothingMale = () => {
       <div className="space-y-4">
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-          <h3 className="text-lg font-semibold text-gray-800">Loại sản phẩm</h3>
+          <h3 className="text-lg font-semibold text-gray-800">Danh mục</h3>
         </div>
         <div className="bg-gray-50 rounded-lg p-4">
           <Radio.Group onChange={onChange} value={valueId} className="w-full">
@@ -677,17 +706,34 @@ const ClothingMale = () => {
           <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
           <h3 className="text-lg font-semibold text-gray-800">Màu sắc</h3>
         </div>
-        <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4">
-          <div className="grid grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+          <div className="flex flex-wrap gap-3">
             {[
-              { value: "be", label: "Be", color: "bg-yellow-400" },
-              { value: "xanh", label: "Xanh", color: "bg-blue-500" },
-              { value: "đen", label: "Đen", color: "bg-black" },
-              { value: "đỏ", label: "Đỏ", color: "bg-red-500" },
+              {
+                value: "be",
+                label: "Be",
+                color: "bg-gradient-to-br from-yellow-300 to-yellow-500",
+              },
+              {
+                value: "xanh",
+                label: "Xanh",
+                color: "bg-gradient-to-br from-blue-400 to-blue-600",
+              },
+              {
+                value: "đen",
+                label: "Đen",
+                color: "bg-gradient-to-br from-gray-700 to-black",
+              },
+              {
+                value: "đỏ",
+                label: "Đỏ",
+                color: "bg-gradient-to-br from-red-400 to-red-600",
+              },
               {
                 value: "trắng",
                 label: "Trắng",
-                color: "bg-white border-2 border-gray-300",
+                color:
+                  "bg-gradient-to-br from-white to-gray-100 border-2 border-slate-300",
               },
             ].map((colorOption) => (
               <label
@@ -698,16 +744,44 @@ const ClothingMale = () => {
                   type="radio"
                   name="color"
                   value={colorOption.value}
+                  checked={color === colorOption.value}
                   onChange={() => handleOnClickColor(colorOption.value)}
-                  className="hidden"
+                  className="sr-only peer"
                 />
-                <div className="relative">
+
+                {/* Color button */}
+                <div className="relative mb-2">
                   <div
-                    className={`w-10 h-10 rounded-full ${colorOption.color} group-hover:scale-110 transition-transform duration-300 shadow-lg border-4 border-white ring-2 ring-gray-200 group-hover:ring-green-300`}
-                  />
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent to-white opacity-20"></div>
+                    className={`w-12 h-12 rounded-xl ${colorOption.color} 
+            shadow-md
+            transform transition-all duration-200
+            group-hover:scale-105 
+            peer-checked:scale-105 peer-checked:ring-3 peer-checked:ring-emerald-400 peer-checked:ring-offset-2`}
+                  >
+                    {/* Shine effect */}
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/30 via-transparent to-transparent"></div>
+
+                    {/* Checkmark */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 peer-checked:opacity-100 transition-opacity duration-200">
+                      <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center shadow-md">
+                        <svg
+                          className="w-4 h-4 text-white"
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="3"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path d="M5 13l4 4L19 7"></path>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <span className="text-xs font-medium text-gray-600 mt-2 group-hover:text-green-600 transition-colors duration-200">
+
+                {/* Label */}
+                <span className="text-xs font-medium text-slate-600 peer-checked:text-emerald-600 peer-checked:font-semibold transition-colors duration-200">
                   {colorOption.label}
                 </span>
               </label>
@@ -959,7 +1033,7 @@ const ClothingMale = () => {
                 {hidden && (
                   <Button
                     onClick={handleFilterProduct}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 border-none rounded-xl h-9 px-3 transition-colors duration-200"
+                    className="bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 text-emerald-700 border border-emerald-200 rounded-xl h-9 px-3 transition-all duration-200"
                   >
                     Xóa tất cả bộ lọc
                   </Button>

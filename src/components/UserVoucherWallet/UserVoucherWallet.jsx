@@ -53,9 +53,13 @@ const UserVoucherWallet = () => {
     // 2. Lọc theo trạng thái
     let matchesFilter = true;
     if (filterStatus === "available") {
+      const now = new Date();
+      const end = new Date(voucher.endDate);
+
       matchesFilter =
         (voucher.userGroup === "all" ||
           voucher.userGroup === user?.userGroup) &&
+        end > now &&
         !voucher.appliedUsers.some((used) => used.user === user._id);
     } else if (filterStatus === "used") {
       matchesFilter = voucher.appliedUsers.some(
@@ -64,7 +68,6 @@ const UserVoucherWallet = () => {
     } else if (filterStatus === "expired") {
       const now = new Date();
       const end = new Date(voucher.endDate);
-      console.log(end);
 
       matchesFilter = now > end;
     } else if (filterStatus !== "all") {
@@ -82,13 +85,16 @@ const UserVoucherWallet = () => {
     const start = new Date();
     const end = new Date(voucher.endDate);
 
-    // Lấy số mili giây chênh lệch
+    // Tính số ngày còn lại
     const diffMs = end - start;
-
-    // Đổi sang ngày
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-    return diffDays > 0 && diffDays < 30;
+    // Kiểm tra voucher còn hạn và chưa được user này dùng
+    const notUsedByUser = !voucher.appliedUsers.some(
+      (used) => used.user === user._id
+    );
+
+    return diffDays > 0 && diffDays < 30 && notUsedByUser;
   });
 
   const copyToClipboard = (code) => {

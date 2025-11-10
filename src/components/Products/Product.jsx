@@ -39,9 +39,11 @@ import {
   BarChartOutlined,
   RiseOutlined,
   FileTextOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
 import {
   DeleteOneProductAPI,
+  exportProductsToExcel,
   getListProductsAPI,
 } from "../../service/ApiProduct";
 import { useEffect, useState } from "react";
@@ -383,6 +385,43 @@ const Products = () => {
       setSelectedRowKeys(allProductKeys);
     }
   };
+
+  const handleExportExcel = async () => {
+    try {
+      message.loading({ content: "Đang xuất file Excel...", key: "export" });
+
+      const response = await exportProductsToExcel(); // axios response
+      const blob = new Blob([response.data], {
+        type: response.headers["content-type"],
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+
+      const fileName = `SanPham_${new Date().toISOString().split("T")[0]}.xlsx`;
+      link.setAttribute("download", fileName);
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      message.success({
+        content: "Xuất file Excel thành công!",
+        key: "export",
+        duration: 2,
+      });
+    } catch (error) {
+      console.error("Error exporting Excel:", error);
+      message.error({
+        content: "Xuất file Excel thất bại!",
+        key: "export",
+        duration: 2,
+      });
+    }
+  };
+
   const token = localStorage.getItem("token");
   const props = {
     name: "execl",
@@ -515,6 +554,14 @@ const Products = () => {
             </div>
             <div className="mt-4 lg:mt-0">
               <Space wrap>
+                <Button
+                  icon={<DownloadOutlined />}
+                  size="large"
+                  onClick={handleExportExcel}
+                  className="bg-gradient-to-r from-purple-500 to-pink-600 border-0 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+                >
+                  Xuất Excel
+                </Button>
                 <Upload {...props}>
                   <Button
                     icon={<UploadOutlined />}
