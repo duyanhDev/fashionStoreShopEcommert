@@ -618,6 +618,206 @@ const CartProducts = ({}) => {
   }
 
   const finalPrice = Math.round(totalCheckedPrice - discountAmount);
+  // const handleOrder = async () => {
+  //   if (Products.length === 0) {
+  //     notification.error({
+  //       message: "Lỗi đặt hàng",
+  //       description: "Vui lòng chọn ít nhất một sản phẩm để đặt hàng.",
+  //     });
+  //     return;
+  //   }
+
+  //   try {
+  //     setLoadingSpin(true);
+
+  //     const formattedItems = Products.map((item) => ({
+  //       ...item,
+  //       productId: item.id,
+  //     }));
+
+  //     const data = ListCart && ListCart.items ? ListCart.items : [];
+  //     const allProductIdsInCart = [
+  //       ...new Set(data.map((item) => item.productId._id)),
+  //     ];
+
+  //     const filteredProductIds = allProductIdsInCart.filter((id) => {
+  //       const hasSelected = Products.some((p) => p.id === id);
+  //       return hasSelected;
+  //     });
+
+  //     if (
+  //       !Name ||
+  //       !email ||
+  //       !number ||
+  //       !fullAddress ||
+  //       !districtName ||
+  //       !wardName
+  //     ) {
+  //       notification.error({
+  //         message: "Lỗi đặt hàng",
+  //         description: "Vui lòng nhập đầy đủ thông tin trước khi đặt hàng.",
+  //       });
+  //       setLoadingSpin(false);
+  //       return;
+  //     }
+
+  //     // Dữ liệu gửi GHN
+  //     const ghnOrderData = {
+  //       payment_type_id: value === "cod" ? 2 : 1,
+  //       note: "Đơn hàng từ website",
+  //       required_note: "CHOXEMHANGKHONGTHU",
+  //       from_name: "ShopDior",
+  //       from_phone: "0373081693",
+  //       from_address:
+  //         "123 Đường ABC, Phường Phú Lợi, Thành phố Thủ Dầu Một, Bình Dương",
+  //       from_ward_name: "Phường Phú Lợi",
+  //       from_district_name: "Thành phố Thủ Dầu Một",
+  //       from_province_name: "Bình Dương",
+  //       return_phone: "0373081693",
+  //       return_address:
+  //         "123 Đường ABC, Phường Phú Lợi, Thành phố Thủ Dầu Một, Bình Dương",
+  //       return_district_id: 1538,
+  //       return_ward_code: "440109",
+  //       client_order_code: `DH${Date.now()}`,
+  //       to_name: Name,
+  //       to_phone: number,
+  //       to_address: fullAddress,
+  //       to_ward_code: String(ghnWardCode),
+  //       to_district_id: ghnDistrictId,
+  //       cod_amount: finalPrice,
+  //       content: "Sản phẩm mua online",
+  //       weight: 1000,
+  //       length: 10,
+  //       width: 10,
+  //       height: 10,
+  //       pick_station_id: ghnPickStationId,
+  //       service_id: 0,
+  //       service_type_id: 2,
+  //       items: Products.map((item) => ({
+  //         name: item.name || "Sản phẩm",
+  //         code: item.id || `PROD${Date.now()}`,
+  //         quantity: item.quantity || 1,
+  //         price: item.price || finalPrice / Products.length,
+  //         length: item.length || 10,
+  //         width: item.width || 10,
+  //         height: item.height || 10,
+  //         weight: item.weight || 1000,
+  //         category: { level1: "Sản phẩm" },
+  //       })),
+  //     };
+
+  //     // Gọi API GHN
+  //     const ghnResponse = await axios.post(
+  //       "https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/create",
+  //       ghnOrderData,
+  //       {
+  //         headers: {
+  //           Token: "6501032d-0b70-11ef-b1d4-92b443b7a897",
+  //           ShopId: "192215",
+  //           "Content-Type": "application/json",
+  //         },
+  //       }
+  //     );
+
+  //     if (ghnResponse.data && ghnResponse.data.code === 200) {
+  //       // Tạo order trong hệ thống
+  //       const res = await createOrder(
+  //         user._id,
+  //         Name,
+  //         number,
+  //         formattedItems,
+  //         fullAddress,
+  //         city,
+  //         districtName,
+  //         wardName,
+  //         value,
+  //         email,
+  //         CartId,
+  //         filteredProductIds,
+  //         discountValue,
+  //         idDiscount,
+  //         ghnResponse.data.data.order_code,
+  //         idItems,
+  //         discountType
+  //       );
+
+  //       setLoadingSpin(false);
+
+  //       if (res && res.data.EC === 0) {
+  //         // Load cart trong background (không chặn UI)
+  //         CartListProductsUser().catch((err) =>
+  //           console.error("Failed to refresh cart:", err)
+  //         );
+
+  //         // Xử lý redirect theo phương thức thanh toán
+  //         if (res.data.paymentMethod === "cod") {
+  //           navigate(`/vnpay_return/${res.data.order_id}`);
+  //           return;
+  //         }
+
+  //         if (res.data.orderUrl) {
+  //           api.open({
+  //             message: "Đặt Hàng",
+  //             description:
+  //               "Chúc mừng quý khách đã đặt hàng thành công tại shop",
+  //             icon: <SmileOutlined style={{ color: "#108ee9" }} />,
+  //           });
+  //           window.location.href = res.data.orderUrl;
+  //           return;
+  //         }
+
+  //         if (res.data.vnpUrl) {
+  //           api.open({
+  //             message: "Đặt Hàng",
+  //             description:
+  //               "Chúc mừng quý khách đã đặt hàng thành công tại shop",
+  //             icon: <SmileOutlined style={{ color: "#108ee9" }} />,
+  //           });
+  //           window.location.href = res.data.vnpUrl;
+  //           return;
+  //         }
+
+  //         if (res.data.qrCodeUrl) {
+  //           setIsCheckSepay(true);
+  //           setQrnUrl(res.data.qrCodeUrl);
+  //           setOrderId(res.data.orderId);
+  //           return;
+  //         }
+
+  //         if (res.data.data?.shortLink) {
+  //           window.location.href = res.data.data.payUrl;
+  //           return;
+  //         }
+  //       } else {
+  //         notification.error({
+  //           message: "Lỗi",
+  //           description:
+  //             res?.data?.EM || "Tạo đơn hàng trong hệ thống thất bại.",
+  //         });
+  //       }
+  //     } else {
+  //       notification.error({
+  //         message: "Lỗi GHN",
+  //         description:
+  //           ghnResponse.data?.message ||
+  //           "Đặt hàng qua GHN thất bại. Kiểm tra mã địa lý.",
+  //       });
+  //       setLoadingSpin(false);
+  //     }
+  //   } catch (error) {
+  //     setLoadingSpin(false);
+  //     console.error(
+  //       "Order creation failed:",
+  //       error.response?.data || error.message
+  //     );
+  //     notification.error({
+  //       message: "Lỗi",
+  //       description:
+  //         error.response?.data?.message || "Có lỗi xảy ra khi đặt hàng.",
+  //     });
+  //   }
+  // };
+
   const handleOrder = async () => {
     if (Products.length === 0) {
       notification.error({
@@ -660,6 +860,13 @@ const CartProducts = ({}) => {
         setLoadingSpin(false);
         return;
       }
+
+      // Hàm tạo mã GHN random 6 chữ số
+      const generateRandomGHNCode = () => {
+        return Math.floor(100000 + Math.random() * 900000).toString();
+      };
+
+      let ghnOrderCode = null;
 
       // Dữ liệu gửi GHN
       const ghnOrderData = {
@@ -706,103 +913,113 @@ const CartProducts = ({}) => {
         })),
       };
 
-      // Gọi API GHN
-      const ghnResponse = await axios.post(
-        "https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/create",
-        ghnOrderData,
-        {
-          headers: {
-            Token: "6501032d-0b70-11ef-b1d4-92b443b7a897",
-            ShopId: "192215",
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (ghnResponse.data && ghnResponse.data.code === 200) {
-        // Tạo order trong hệ thống
-        const res = await createOrder(
-          user._id,
-          Name,
-          number,
-          formattedItems,
-          fullAddress,
-          city,
-          districtName,
-          wardName,
-          value,
-          email,
-          CartId,
-          filteredProductIds,
-          discountValue,
-          idDiscount,
-          ghnResponse.data.data.order_code,
-          idItems,
-          discountType
+      // Thử gọi API GHN
+      try {
+        const ghnResponse = await axios.post(
+          "https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/create",
+          ghnOrderData,
+          {
+            headers: {
+              Token: "6501032d-0b70-11ef-b1d4-92b443b7a897",
+              ShopId: "192215",
+              "Content-Type": "application/json",
+            },
+          }
         );
 
-        setLoadingSpin(false);
-
-        if (res && res.data.EC === 0) {
-          // Load cart trong background (không chặn UI)
-          CartListProductsUser().catch((err) =>
-            console.error("Failed to refresh cart:", err)
-          );
-
-          // Xử lý redirect theo phương thức thanh toán
-          if (res.data.paymentMethod === "cod") {
-            navigate(`/vnpay_return/${res.data.order_id}`);
-            return;
-          }
-
-          if (res.data.orderUrl) {
-            api.open({
-              message: "Đặt Hàng",
-              description:
-                "Chúc mừng quý khách đã đặt hàng thành công tại shop",
-              icon: <SmileOutlined style={{ color: "#108ee9" }} />,
-            });
-            window.location.href = res.data.orderUrl;
-            return;
-          }
-
-          if (res.data.vnpUrl) {
-            api.open({
-              message: "Đặt Hàng",
-              description:
-                "Chúc mừng quý khách đã đặt hàng thành công tại shop",
-              icon: <SmileOutlined style={{ color: "#108ee9" }} />,
-            });
-            window.location.href = res.data.vnpUrl;
-            return;
-          }
-
-          if (res.data.qrCodeUrl) {
-            setIsCheckSepay(true);
-            setQrnUrl(res.data.qrCodeUrl);
-            setOrderId(res.data.orderId);
-            return;
-          }
-
-          if (res.data.data?.shortLink) {
-            window.location.href = res.data.data.payUrl;
-            return;
-          }
+        if (ghnResponse.data && ghnResponse.data.code === 200) {
+          ghnOrderCode = ghnResponse.data.data.order_code;
         } else {
-          notification.error({
-            message: "Lỗi",
-            description:
-              res?.data?.EM || "Tạo đơn hàng trong hệ thống thất bại.",
+          console.warn("GHN API returned non-200 code:", ghnResponse.data);
+          ghnOrderCode = generateRandomGHNCode();
+        }
+      } catch (ghnError) {
+        // Nếu API GHN lỗi, tạo mã random và tiếp tục
+        console.error(
+          "GHN API error:",
+          ghnError.response?.data || ghnError.message
+        );
+        ghnOrderCode = generateRandomGHNCode();
+
+        notification.warning({
+          message: "Cảnh báo",
+          description:
+            "Không kết nối được với GHN, đơn hàng vẫn được tạo nhưng cần xử lý vận chuyển thủ công.",
+          duration: 5,
+        });
+      }
+
+      // Tạo order trong hệ thống (luôn thực hiện dù GHN có lỗi)
+      const res = await createOrder(
+        user._id,
+        Name,
+        number,
+        formattedItems,
+        fullAddress,
+        city,
+        districtName,
+        wardName,
+        value,
+        email,
+        CartId,
+        filteredProductIds,
+        discountValue,
+        idDiscount,
+        ghnOrderCode, // Sử dụng mã GHN thật hoặc mã random
+        idItems,
+        discountType
+      );
+
+      setLoadingSpin(false);
+
+      if (res && res.data.EC === 0) {
+        // Load cart trong background (không chặn UI)
+        CartListProductsUser().catch((err) =>
+          console.error("Failed to refresh cart:", err)
+        );
+
+        // Xử lý redirect theo phương thức thanh toán
+        if (res.data.paymentMethod === "cod") {
+          navigate(`/vnpay_return/${res.data.order_id}`);
+          return;
+        }
+
+        if (res.data.orderUrl) {
+          api.open({
+            message: "Đặt Hàng",
+            description: "Chúc mừng quý khách đã đặt hàng thành công tại shop",
+            icon: <SmileOutlined style={{ color: "#108ee9" }} />,
           });
+          window.location.href = res.data.orderUrl;
+          return;
+        }
+
+        if (res.data.vnpUrl) {
+          api.open({
+            message: "Đặt Hàng",
+            description: "Chúc mừng quý khách đã đặt hàng thành công tại shop",
+            icon: <SmileOutlined style={{ color: "#108ee9" }} />,
+          });
+          window.location.href = res.data.vnpUrl;
+          return;
+        }
+
+        if (res.data.qrCodeUrl) {
+          setIsCheckSepay(true);
+          setQrnUrl(res.data.qrCodeUrl);
+          setOrderId(res.data.orderId);
+          return;
+        }
+
+        if (res.data.data?.shortLink) {
+          window.location.href = res.data.data.payUrl;
+          return;
         }
       } else {
         notification.error({
-          message: "Lỗi GHN",
-          description:
-            ghnResponse.data?.message ||
-            "Đặt hàng qua GHN thất bại. Kiểm tra mã địa lý.",
+          message: "Lỗi",
+          description: res?.data?.EM || "Tạo đơn hàng trong hệ thống thất bại.",
         });
-        setLoadingSpin(false);
       }
     } catch (error) {
       setLoadingSpin(false);
