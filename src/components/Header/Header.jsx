@@ -431,7 +431,6 @@ const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
     navigate(`search?q=${keyword}`);
     dispatch(SearchAction(data, totalPage));
     setSearchVisible(false);
-    setKeywordSearch("");
   };
 
   const unreadNotifications = (DataNotifications || []).filter(

@@ -29,7 +29,7 @@ const FashionBrandPartners = () => {
     },
     {
       name: "Levents",
-      logo: "https://old-freec2-production.s3.amazonaws.com/carrierwave/image_files/image_upload/393192/leventsnewlogo.png",
+      logo: "https://static.ybox.vn/2024/12/5/1733467286417-dfff.png",
     },
     {
       name: "Balenciaga",
@@ -152,7 +152,7 @@ const FashionBrandPartners = () => {
 
         {/* Desktop Masonry Grid */}
         <div className="hidden lg:block">
-          <div className="grid grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {brands.map((brand, index) => (
               <div
                 key={index}
@@ -163,32 +163,26 @@ const FashionBrandPartners = () => {
                 }`}
                 style={{
                   animationDelay: `${index * 150}ms`,
-                  height:
-                    index % 3 === 0
-                      ? "140px"
-                      : index % 2 === 0
-                      ? "120px"
-                      : "130px",
                 }}
               >
-                {/* Luxury card design */}
-                <div className="relative h-full bg-white/80 backdrop-blur-md rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-white/60 overflow-hidden">
+                {/* Luxury card design - FIXED HEIGHT */}
+                <div className="relative h-32 sm:h-36 bg-white/80 backdrop-blur-md rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-white/60 overflow-hidden">
                   {/* Gradient background on hover */}
                   <div className="absolute inset-0 bg-gradient-to-br from-green-50/50 to-emerald-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
                   {/* Brand logo container */}
-                  <div className="relative flex items-center justify-center h-full p-6">
+                  <div className="relative flex items-center justify-center h-full p-4 sm:p-6">
                     <img
                       src={brand.logo}
                       alt={brand.name}
-                      className="max-h-12 max-w-full object-contain transition-all duration-500 filter grayscale-0 group-hover:scale-110"
+                      className="max-h-12 sm:max-h-14 max-w-full object-contain transition-all duration-500 filter grayscale-0 group-hover:scale-110"
                       loading="lazy"
                     />
                   </div>
 
                   {/* Hover overlay with brand name */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl flex items-end justify-center">
-                    <div className="text-white font-medium text-sm mb-4 px-3 py-1 bg-black/30 rounded-full backdrop-blur-sm">
+                    <div className="text-white font-medium text-xs sm:text-sm mb-3 sm:mb-4 px-3 py-1 bg-black/30 rounded-full backdrop-blur-sm">
                       {brand.name}
                     </div>
                   </div>
@@ -226,7 +220,7 @@ const FashionBrandPartners = () => {
                                 <img
                                   src={brand.logo}
                                   alt={brand.name}
-                                  className="max-h-10 max-w-full object-contain transition-all duration-300 group-hover:scale-110"
+                                  className="m-h-10 max-w-full object-contain transition-all duration-300 group-hover:scale-110"
                                   loading="lazy"
                                 />
                               </div>

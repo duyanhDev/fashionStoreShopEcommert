@@ -249,7 +249,6 @@ const Home = () => {
   const handleIncreaseView = async (slug) => {
     try {
       const res = await updateViewBlog(slug);
-      console.log(res);
 
       if (res && res.data && res.data.EC === 0) {
         navigate(`/blog/${slug}`);

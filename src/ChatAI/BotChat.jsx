@@ -5,6 +5,7 @@ import chatbotData from "./../chatbot-data.json";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
+import { ExternalLink } from "lucide-react";
 
 // Function để làm sạch format response
 const cleanResponseFormat = (text) => {
@@ -25,7 +26,7 @@ const cleanResponseFormat = (text) => {
 
 const BotChatAI = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
+  const [isTyping, setIsTyping] = useState(true);
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -343,14 +344,14 @@ Một lập trình viên đầy nhiệt huyết với tầm nhìn đổi mới c
 - Không bảo hành: va đập, ngấm nước, tự sửa chữa
 
 ### **Quy trình bảo hành**
-1. **Liên hệ**: Gọi hotline **1800-xxxx**
+1. **Liên hệ**: Gọi hotline **1900-633-988 **
 2. **Gửi sản phẩm**: Đến trung tâm hoặc gửi bưu điện
 3. **Kiểm tra**: Nhận phiếu tiếp nhận
 4. **Nhận hàng**: Sau khi sửa chữa hoàn tất
 
 ### **Trung tâm bảo hành**
-**Địa chỉ**: 123 Đường ABC, Quận XYZ, TP.HCM  
-**Hotline**: 1800-xxxx  
+**Địa chỉ**: 178 Huỳnh Văn Lũy, P. Phú Lợi, TP. Thủ Dầu Một, Bình Dương  
+**Hotline**: 1900-633-988  
 **Giờ làm việc**: 8:00 - 17:30 (T2-T7)
 
 ---
@@ -361,6 +362,8 @@ Một lập trình viên đầy nhiệt huyết với tầm nhìn đổi mới c
         } else {
           try {
             const res = await PostChatBotAI(messageToSend.trim());
+            console.log(res);
+
             if (res.data?.response) {
               const cleanedResponse = cleanResponseFormat(res.data.response);
 
@@ -369,6 +372,7 @@ Một lập trình viên đầy nhiệt huyết với tầm nhìn đổi mới c
                 text: cleanedResponse,
                 sender: "bot",
                 timestamp: new Date(),
+                products: res.data.products || [],
               };
             }
           } catch (apiError) {
@@ -399,6 +403,48 @@ Vui lòng thử lại với một trong những chủ đề trên!`,
       }
     }, 1200);
   };
+
+  const ProductCard = ({ product }) => (
+    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+      <div className="aspect-square bg-gray-100 relative">
+        {product.image ? (
+          <img
+            src={product.image?.url}
+            alt={product.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-400">
+            No Image
+          </div>
+        )}
+      </div>
+      <div className="p-3">
+        <h4 className="font-medium text-sm mb-2 line-clamp-2">
+          {product.name}
+        </h4>
+        <div className="flex items-center gap-2 mb-3">
+          {product.price !== product.discountedPrice && (
+            <span className="text-xs text-gray-400 line-through">
+              {product.price?.toLocaleString("vi-VN")}đ
+            </span>
+          )}
+          <span className="text-sm font-bold text-blue-600">
+            {product.discountedPrice?.toLocaleString("vi-VN")}đ
+          </span>
+        </div>
+        <a
+          href={product.detailUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 w-full bg-blue-600 text-white text-sm py-2 rounded-md hover:bg-blue-700 transition-colors"
+        >
+          <span>Xem chi tiết</span>
+          <ExternalLink size={14} />
+        </a>
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
@@ -458,7 +504,14 @@ Vui lòng thử lại với một trong những chủ đề trên!`,
                       : "bg-white text-slate-800 rounded-3xl rounded-bl-md shadow-md border border-slate-100"
                   } px-5 py-4 sm:px-6 sm:py-5 transition-all duration-200 hover:shadow-xl`}
                 >
-                  {message.sender === "bot" ? (
+                  {/* Render text content */}
+                  {message.sender === "user" ? (
+                    // User message: plain text
+                    <p className="text-white font-medium leading-relaxed text-sm sm:text-base">
+                      {message.text}
+                    </p>
+                  ) : (
+                    // Bot message: markdown
                     <div className="prose prose-sm sm:prose-base max-w-none prose-headings:text-slate-900 prose-headings:font-bold prose-h2:text-lg prose-h2:mb-4 prose-h2:pb-3 prose-h2:border-b prose-h2:border-slate-200 prose-h3:text-base prose-h3:mt-5 prose-h3:mb-3 prose-h4:text-sm prose-h4:mt-4 prose-h4:mb-2 prose-p:text-slate-700 prose-p:leading-relaxed prose-strong:text-slate-900 prose-strong:font-semibold prose-ul:my-3 prose-li:my-1 prose-li:text-slate-700 prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-blockquote:border-l-blue-500 prose-blockquote:bg-blue-50 prose-hr:border-slate-200 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline">
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
@@ -467,12 +520,9 @@ Vui lòng thử lại với một trong những chủ đề trên!`,
                         {message.text}
                       </ReactMarkdown>
                     </div>
-                  ) : (
-                    <p className="text-white font-medium leading-relaxed text-sm sm:text-base">
-                      {message.text}
-                    </p>
                   )}
 
+                  {/* Timestamp và actions */}
                   <div
                     className={`flex items-center justify-between mt-4 pt-3 border-t ${
                       message.sender === "user"
@@ -495,6 +545,21 @@ Vui lòng thử lại với một trong những chủ đề trên!`,
                     )}
                   </div>
                 </div>
+                {/* Render products BÊN NGOÀI message bubble */}
+                {message.sender === "bot" &&
+                  message.products &&
+                  message.products.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-sm font-semibold text-slate-700 mb-3">
+                        🛍️ Sản phẩm gợi ý:
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {message.products.map((product) => (
+                          <ProductCard key={product._id} product={product} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
               </div>
             </div>
           ))}
@@ -545,7 +610,7 @@ Vui lòng thử lại với một trong những chủ đề trên!`,
               value={inputMessage}
               onChange={(e) => {
                 setInputMessage(e.target.value);
-                setIsTyping(true);
+                setIsTyping(false);
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {

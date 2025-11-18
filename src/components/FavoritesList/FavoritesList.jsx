@@ -4,12 +4,12 @@ import { getWishlistAPI, RemoveToWishListAPI } from "../../service/WishList";
 import { useSelector } from "react-redux";
 import { addMultipleToCart } from "../../service/Cart";
 import ProductCart from "../ProductCart/ProductCart";
+import { useOutletContext } from "react-router-dom";
 
 const FavoritesList = () => {
   const [favorites, setFavorites] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [filter, setFilter] = useState("all");
-  const [showFilters, setShowFilters] = useState(false);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState({});
 
@@ -23,6 +23,7 @@ const FavoritesList = () => {
   const [costPrice, setCostPrice] = useState(0);
   const [productname, setProductname] = useState("");
   const [discount, setDiscount] = useState(0);
+  const { CartListProductsUser } = useOutletContext();
 
   const removeFromFavorites = async (wishlistItemId, productId) => {
     setActionLoading((prev) => ({ ...prev, [productId]: true }));
@@ -91,8 +92,9 @@ const FavoritesList = () => {
     try {
       const res = await addMultipleToCart(user._id, inStockItems);
 
-      if (res) {
+      if (res && res.data) {
         alert(`Đã thêm ${inStockItems.length} sản phẩm vào giỏ hàng!`);
+        CartListProductsUser();
       }
     } catch (error) {
       console.error(error);

@@ -30,11 +30,9 @@ import {
   Tabs,
 } from "antd";
 import moment from "moment";
-import { updateUser } from "../../redux/actions/Auth";
-import {
-  validatePassword,
-  validateConfirmPassword,
-} from "../../testsCase/RegisterForm.test";
+import { logout, updateUser } from "../../redux/actions/Auth";
+import { useNavigate } from "react-router-dom";
+
 const { Option } = Select;
 
 const PersonalInfoForm = ({ id }) => {
@@ -352,6 +350,7 @@ const Profile = () => {
   const [SeletectIdWarm, SetSeletectIdWarm] = useState("");
   const [error, setError] = useState("");
 
+  const navigate = useNavigate();
   /// Check time
   useEffect(() => {
     if (inputDate.isValid()) {
@@ -441,34 +440,66 @@ const Profile = () => {
   };
 
   const FetchDataProvince = async () => {
-    const url = "https://esgoo.net/api-tinhthanh/1/0.htm";
-
-    const res = await axios.get(url);
-
-    if (res && res.data && res.data.data) {
-      const data = res.data.data;
-      SetProvineData(data);
+    let api =
+      "https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/province";
+    let res = await axios.get(api, {
+      headers: { Token: "6501032d-0b70-11ef-b1d4-92b443b7a897" },
+    });
+    if (res.data && res.data.data) {
+      const dataProvines = res.data.data.map((data) => ({
+        id: data.ProvinceID,
+        name: data.ProvinceName,
+      }));
+      SetProvineData(dataProvines);
     }
   };
 
   const FeachDataDistrict = async () => {
-    const url = `https://esgoo.net/api-tinhthanh/2/${SeletectIdProvine}.htm`;
-
-    const res = await axios.get(url);
-
-    if (res && res.data && res.data.data) {
-      const data = res.data.data;
-      SetDistrictData(data);
+    if (!SeletectIdProvine) {
+      SetDistrictData([]);
+      setWarmData([]);
+      return;
+    }
+    try {
+      let url = `https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/district?province_id=${SeletectIdProvine}`;
+      let res = await axios.get(url, {
+        headers: { Token: "6501032d-0b70-11ef-b1d4-92b443b7a897" },
+      });
+      if (res.data && res.data.data) {
+        const data = res.data.data.map((item) => ({
+          id: item.DistrictID,
+          name: item.DistrictName,
+        }));
+        SetDistrictData(data);
+        setWarmData([]); // Reset ward list khi load district mới
+      }
+    } catch (error) {
+      console.error("Error fetching districts:", error);
+      SetDistrictData([]);
+      setWarmData([]);
     }
   };
 
   const FeachDataWarn = async () => {
-    const url = `https://esgoo.net/api-tinhthanh/3/${SeletectIdDistrict}.htm`;
-    const res = await axios.get(url);
-
-    if (res && res.data && res.data.data) {
-      const data = res.data.data;
-      setWarmData(data);
+    if (!SeletectIdDistrict) {
+      setWarmData([]);
+      return;
+    }
+    try {
+      let url = `https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/ward?district_id=${SeletectIdDistrict}`;
+      let res = await axios.get(url, {
+        headers: { Token: "6501032d-0b70-11ef-b1d4-92b443b7a897" },
+      });
+      if (res.data && res.data.data) {
+        const data = res.data.data.map((item) => ({
+          id: item.WardCode,
+          name: item.WardName,
+        }));
+        setWarmData(data);
+      }
+    } catch (error) {
+      console.error("Error fetching wards:", error);
+      setWarmData([]);
     }
   };
 
@@ -830,6 +861,19 @@ const Profile = () => {
     }
   };
 
+  const handleLogOut = async () => {
+    localStorage.removeItem("token");
+    dispatch(logout());
+    navigate("/login");
+  };
+
+  const handleNavigate = (href) => {
+    if (href === "/login") {
+      handleLogOut();
+    } else {
+      navigate(href);
+    }
+  };
   return (
     <div className="main_profile fade-in">
       {/* User Info Header */}
@@ -976,17 +1020,21 @@ const Profile = () => {
         {/* Navigation Menu */}
         <div className="account_list_btn">
           {[
-            { img: img5, text: "Thông tin tài khoản" },
-            { img: img4, text: "Lịch Sử đơn hàng" },
-            { img: img1, text: "Lịch sử mua sắm" },
-            { img: img2, text: "Đánh giá phản hồi" },
-            { img: img6, text: "Yêu thích" },
-            { img: img3, text: "Đăng xuất" },
+            {
+              img: img5,
+              text: "Thông tin tài khoản",
+              href: `/profile/${user?.name}`,
+            },
+            { img: img4, text: "Lịch Sử đơn hàng", href: "/order" },
+            { img: img1, text: "Sản phẩm yêu thích", href: "/wishlist" },
+            { img: img2, text: "Voucher", href: "/voucher-wallet" },
+            { img: img3, text: "Đăng xuất", href: "/login" },
           ].map((item, index) => (
             <p
               key={index}
               className="fade-in"
               style={{ animationDelay: `${index * 0.1}s` }}
+              onClick={() => handleNavigate(item.href)}
             >
               <img src={item.img || "/placeholder.svg"} alt={item.text} />
               <span>{item.text}</span>

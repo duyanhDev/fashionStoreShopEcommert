@@ -90,34 +90,66 @@ const EditCustom = () => {
   };
 
   const FetchDataProvince = async () => {
-    let url = "https://esgoo.net/api-tinhthanh/1/0.htm";
-
-    let res = await axios.get(url);
-
-    if (res && res.data && res.data.data) {
-      let data = res.data.data;
-      SetProvineData(data);
+    let api =
+      "https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/province";
+    let res = await axios.get(api, {
+      headers: { Token: "6501032d-0b70-11ef-b1d4-92b443b7a897" },
+    });
+    if (res.data && res.data.data) {
+      const dataProvines = res.data.data.map((data) => ({
+        id: data.ProvinceID,
+        name: data.ProvinceName,
+      }));
+      SetProvineData(dataProvines);
     }
   };
 
   const FetchDataDistrict = async () => {
-    let url = `https://esgoo.net/api-tinhthanh/2/${SeletectIdProvine}.htm`;
-
-    let res = await axios.get(url);
-
-    if (res && res.data && res.data.data) {
-      let data = res.data.data;
-      SetDistrictData(data);
+    if (!SeletectIdProvine) {
+      SetDistrictData([]);
+      setWarmData([]);
+      return;
+    }
+    try {
+      let url = `https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/district?province_id=${SeletectIdProvine}`;
+      let res = await axios.get(url, {
+        headers: { Token: "6501032d-0b70-11ef-b1d4-92b443b7a897" },
+      });
+      if (res.data && res.data.data) {
+        const data = res.data.data.map((item) => ({
+          id: item.DistrictID,
+          name: item.DistrictName,
+        }));
+        SetDistrictData(data);
+        setWarmData([]); // Reset ward list khi load district mới
+      }
+    } catch (error) {
+      console.error("Error fetching districts:", error);
+      SetDistrictData([]);
+      setWarmData([]);
     }
   };
 
   const FetchDataWarn = async () => {
-    let url = `https://esgoo.net/api-tinhthanh/3/${SeletectIdDistrict}.htm`;
-    let res = await axios.get(url);
-
-    if (res && res.data && res.data.data) {
-      let data = res.data.data;
-      setWarmData(data);
+    if (!SeletectIdDistrict) {
+      setWarmData([]);
+      return;
+    }
+    try {
+      let url = `https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/ward?district_id=${SeletectIdDistrict}`;
+      let res = await axios.get(url, {
+        headers: { Token: "6501032d-0b70-11ef-b1d4-92b443b7a897" },
+      });
+      if (res.data && res.data.data) {
+        const data = res.data.data.map((item) => ({
+          id: item.WardCode,
+          name: item.WardName,
+        }));
+        setWarmData(data);
+      }
+    } catch (error) {
+      console.error("Error fetching wards:", error);
+      setWarmData([]);
     }
   };
 

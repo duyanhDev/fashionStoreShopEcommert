@@ -36,6 +36,7 @@ const Search = ({
   const onClose = () => {
     setOpen(false);
     setVisibleCount(4); // Reset về 4 khi đóng
+    setData([]);
   };
 
   // Function để load thêm sản phẩm
@@ -46,6 +47,8 @@ const Search = ({
   const formatPrice = (price) => {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
   };
+
+  console.log(keywordSearch);
 
   // Sử dụng debounce cho keywordSearch
   const debouncedKeywordSearch = useDebounce(keywordSearch, 500);

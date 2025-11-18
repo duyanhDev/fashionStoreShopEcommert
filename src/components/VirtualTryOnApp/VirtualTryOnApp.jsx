@@ -19,7 +19,7 @@ const VirtualTryOnApp = ({
 }) => {
   // Hardcode API key - thay thế bằng API key thực của bạn
   const API_KEY =
-    "0266f60071b642af895f37bbfd161efcc59781ba0b8ac63f89a5b532901097a8";
+    "3388151933d8433e95c3c1c5efbf89a59e240b362e5a4bf72aac2240f04f645c";
 
   // State management
   const [modelImage, setModelImage] = useState(null);
@@ -216,7 +216,7 @@ const VirtualTryOnApp = ({
       title={
         <div className="text-center">
           <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-            Fitroom Virtual Try-On
+            Thử Đồ Ảo Với FitRoom
           </span>
         </div>
       }
@@ -242,8 +242,6 @@ const VirtualTryOnApp = ({
                 {[
                   { value: "upper", label: "Áo", icon: "👕" },
                   { value: "lower", label: "Quần", icon: "👖" },
-                  { value: "full_set", label: "Toàn thân", icon: "👗" },
-                  { value: "combo", label: "Combo", icon: "👔" },
                 ].map((type, index) => (
                   <button
                     key={type.index + 1}

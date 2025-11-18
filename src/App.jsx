@@ -195,8 +195,14 @@ function App() {
   const menuItems = useMemo(() => {
     const baseItems = [
       {
-        icon: <Bot className="w-5 h-5" />,
-        label: "AI Assistant",
+        icon: (
+          <img
+            src="https://console.easyaichat.app/storage/bots/wwwthegioididongcom-rtx/icon-chat-yo5mwy.png"
+            alt="AI Icon"
+            className=" object-cover"
+          />
+        ),
+        label: "Trợ lý AI",
         onClick: handleAIClick,
         color:
           "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700",
