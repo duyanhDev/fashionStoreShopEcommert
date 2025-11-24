@@ -1,15 +1,75 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  
   <url>
     <loc>https://fashion-store-shop-ecommert.vercel.app/</loc>
+    <lastmod>2025-11-24</lastmod>
+    <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
+  
   <url>
-    <loc>https://fashion-store-shop-ecommert.vercel.app/products</loc>
+    <loc>https://fashion-store-shop-ecommert.vercel.app/clothing/female</loc>
+    <lastmod>2025-11-23</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
+  
   <url>
-    <loc>https://fashion-store-shop-ecommert.vercel.app/blog</loc>
+    <loc>https://fashion-store-shop-ecommert.vercel.app/clothing/male</loc>
+    <lastmod>2025-11-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://fashion-store-shop-ecommert.vercel.app/clothing/unisex</loc>
+    <lastmod>2025-11-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://fashion-store-shop-ecommert.vercel.app/product/sao-bra-yoga-cross-coolflex-light-support-nu-k9pou</loc>
+    <lastmod>2025-11-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://fashion-store-shop-ecommert.vercel.app/product/leventsr-music-room-semi-oversized-tee-nam-amsz1</loc>
+    <lastmod>2025-11-20</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
+  
+  <url>
+    <loc>https://fashion-store-shop-ecommert.vercel.app/product/ao-levents-slickster-t-shirtblack-nam-97e0p.html</loc>
+    <lastmod>2025-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://fashion-store-shop-ecommert.vercel.app/blog</loc>
+    <lastmod>2025-11-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://fashion-store-shop-ecommert.vercel.app/about</loc>
+    <lastmod>2025-11-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://fashion-store-shop-ecommert.vercel.app/contact</loc>
+    <lastmod>2025-11-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
 </urlset>
