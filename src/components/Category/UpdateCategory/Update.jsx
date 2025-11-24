@@ -48,13 +48,14 @@ const Update = ({ isModalOpen, setIsModel, isCategory, FetchApiCategory }) => {
     if (user.role !== "admin") {
       api.error({
         message: "Notification",
-        description: "Bạn không có cập nhật danh mục sản phẩm này",
+        description: "Bạn không có quyền cập nhật danh mục sản phẩm này",
         placement: "topRight",
       });
       return;
     }
     try {
       const res = await UpdateOneCatogryAPI(isCategory, name, description);
+
       if (res && res.data.EC === 0) {
         api.success({
           message: "Notification",

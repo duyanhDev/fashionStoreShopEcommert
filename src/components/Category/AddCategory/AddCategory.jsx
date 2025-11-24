@@ -21,7 +21,8 @@ const AddCategory = ({
     }
     try {
       const res = await AddCategoryAPI(name, description);
-      if (res) {
+
+      if (res && res.data && res.data.EC === 0) {
         const key = "updatable";
 
         // Display loading message and success notification
@@ -47,7 +48,7 @@ const AddCategory = ({
       }
     } catch (error) {
       console.error("Error adding category:", error);
-      messageApi.error("Failed to add category.");
+      messageApi.warning("Category đã tồn tại");
     }
   };
 

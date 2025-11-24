@@ -161,9 +161,14 @@ const PaymentSuccessPage = () => {
         </div>
       </div>
     );
+  const addDays = (date, days) => {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+  };
 
   return (
-    <div className="min-h-screen mt-20 bg-gradient-to-br from-green-50 to-emerald-50 py-8">
+    <div className="min-h-screen mt-24 bg-gradient-to-br from-green-50 to-emerald-50 py-8 ">
       <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
         {/* Header Success */}
         <div className="text-center mb-8">
@@ -268,7 +273,7 @@ const PaymentSuccessPage = () => {
                   Thông Tin Giao Hàng
                 </h3>
               </div>
-              {trackingError && <ErrorMessage message={trackingError} />}
+              {/* {trackingError && <ErrorMessage message={trackingError} />} */}
               <div className="space-y-4">
                 <div className="flex items-center text-sm">
                   <Calendar className="h-4 w-4 text-gray-400 mr-2" />
@@ -279,8 +284,10 @@ const PaymentSuccessPage = () => {
                         ? formatDate(
                             leadtimeOrder.leadtime_order.from_estimate_date
                           )
-                        : trackingError
-                        ? "Không có thông tin"
+                        : orderData?.createdAt
+                        ? `${formatDate(
+                            addDays(orderData.createdAt, 2)
+                          )} - ${formatDate(addDays(orderData.createdAt, 3))}`
                         : "Đang tải..."}
                     </p>
                   </div>
@@ -326,7 +333,7 @@ const PaymentSuccessPage = () => {
                 </div>
                 <div className="flex items-center text-sm">
                   <Phone className="h-4 w-4 text-gray-400 mr-2" />
-                  <span>{orderData.phone}</span>
+                  <span>0{orderData.phone}</span>
                 </div>
                 <div className="flex items-center text-sm">
                   <Mail className="h-4 w-4 text-gray-400 mr-2" />

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   GiftFilled,
   MessageOutlined,
@@ -11,14 +11,14 @@ import {
   SettingOutlined,
 } from "@ant-design/icons";
 import { IoNotificationsOutline } from "react-icons/io5";
-import { Avatar, Badge, Button, Drawer } from "antd";
+import { Avatar, Badge, Button, Drawer, Dropdown } from "antd";
 import { FiUsers, FiShoppingBag } from "react-icons/fi";
 import { FaSquarePollVertical } from "react-icons/fa6";
 import { AiTwotoneAppstore } from "react-icons/ai";
 import { RiAdminLine } from "react-icons/ri";
 import { FcFeedback } from "react-icons/fc";
 import { MdDashboard, MdCategory, MdInventory } from "react-icons/md";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   AllReadNotifications,
   DeleteAllNotificationsAPI,
@@ -40,115 +40,140 @@ import { RiCustomerService2Line } from "react-icons/ri";
 import { AiOutlineShop } from "react-icons/ai";
 import { TbRuler2 } from "react-icons/tb";
 import { PiPantsFill } from "react-icons/pi";
+import { logout } from "../../redux/actions/Auth";
 
+// Định nghĩa tất cả menu items với permissions
 const menuItems = [
   {
     icon: <MdDashboard className="text-xl" />,
     label: "Tổng quan",
     to: "",
     color: "text-blue-500",
+    allowedRoles: ["admin"],
   },
   {
     icon: <MdAttachMoney className="text-xl" />,
     label: "Quản lí doanh thu",
     to: "/admin/revenue",
     color: "text-green-600",
+    allowedRoles: ["admin"],
   },
   {
     icon: <FiUsers className="text-xl" />,
     label: "Khách hàng",
     to: "/admin/usercustom",
     color: "text-blue-600",
+    allowedRoles: ["admin"],
   },
   {
     icon: <RiAdminLine className="text-xl" />,
     label: "Quản trị viên",
     to: "/admin/account",
     color: "text-purple-500",
+    allowedRoles: ["admin"],
   },
   {
     icon: <RiCustomerService2Line className="text-xl" />,
     label: "Hỗ trợ tài khoản",
     to: "/admin/adminAccountManagement",
     color: "text-indigo-500",
+    allowedRoles: ["admin"],
   },
   {
     icon: <MdInventory className="text-xl" />,
     label: "Quản lí sản phẩm",
     to: "/admin/products",
     color: "text-orange-500",
+    allowedRoles: ["admin"],
   },
   {
     icon: <MdCategory className="text-xl" />,
     label: "Quản lí danh mục",
     to: "category",
     color: "text-pink-500",
+    allowedRoles: ["admin"],
   },
   {
     icon: <MdAssessment className="text-xl" />,
     label: "Quản lí báo cáo",
-    to: "/reports",
+    to: "du-doan",
     color: "text-red-500",
+    allowedRoles: ["admin"],
   },
   {
     icon: <FiShoppingBag className="text-xl" />,
     label: "Quản lí Đơn hàng",
     to: "order",
     color: "text-teal-500",
+    allowedRoles: ["admin"],
+    allowedPermissions: ["order_approval"],
   },
   {
     icon: <AiOutlineShop className="text-xl" />,
     label: "Quản lí nhà cung cấp",
     to: "/admin/manage-store",
     color: "text-cyan-500",
+    allowedRoles: ["admin"],
   },
   {
     icon: <FiMessageCircle className="text-xl" />,
     label: "Hỗ trợ",
     to: "/admin/support-chat",
     color: "text-blue-400",
+    allowedRoles: ["admin"],
+    allowedPermissions: ["customer_support"],
   },
   {
     icon: <MdCardGiftcard className="text-xl" />,
     label: "Quản lí khuyến mãi",
     to: "/admin/voucher",
     color: "text-yellow-500",
+    allowedRoles: ["admin"],
+    allowedPermissions: ["customer_support"],
   },
   {
     icon: <FiImage className="text-xl" />,
     label: "Quản lý Banner",
     to: "/admin/banner",
     color: "text-purple-400",
+    allowedRoles: ["admin"],
+    allowedPermissions: ["customer_support"],
   },
   {
     icon: <MdRateReview className="text-xl" />,
     label: "Quản lí Đánh giá",
     to: "/admin/review",
     color: "text-amber-500",
+    allowedRoles: ["admin"],
+    allowedPermissions: ["customer_support"],
   },
   {
     icon: <MdHistory className="text-xl" />,
     label: "Quản lí nhật kí",
     to: "/admin/changle-log",
     color: "text-slate-500",
+    allowedRoles: ["admin"],
   },
   {
     icon: <MdArticle className="text-xl" />,
     label: "Quản lí bài viết",
     to: "/admin/quan-li-blog",
     color: "text-emerald-500",
+    allowedRoles: ["admin"],
   },
   {
     icon: <TbRuler2 className="text-xl" />,
     label: "Quản lí bảng size áo",
     to: "/admin/quan-li-bang-size-ao",
     color: "text-rose-500",
+    allowedRoles: ["admin"],
   },
   {
     icon: <PiPantsFill className="text-xl" />,
     label: "Quản lí bảng size quần",
     to: "/admin/quan-li-bang-size-quan",
     color: "text-violet-500",
+    allowedRoles: ["admin"],
   },
 ];
 
@@ -162,13 +187,44 @@ const Admin = () => {
   const [showHiden, setShowHiden] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  // Hàm kiểm tra quyền truy cập menu
+  const hasAccess = (menuItem) => {
+    // Admin có quyền truy cập tất cả
+    if (user?.role === "admin") {
+      return true;
+    }
+
+    // Staff kiểm tra permissions
+    if (user?.role === "staff") {
+      // Nếu menu item có allowedPermissions, kiểm tra xem user có permission đó không
+      if (
+        menuItem.allowedPermissions &&
+        menuItem.allowedPermissions.length > 0
+      ) {
+        return menuItem.allowedPermissions.includes(user?.permissions);
+      }
+      // Nếu không có allowedPermissions nhưng có allowedRoles
+      if (menuItem.allowedRoles && !menuItem.allowedPermissions) {
+        return false; // Staff không được truy cập các menu chỉ dành cho admin
+      }
+    }
+
+    return false;
+  };
+
+  // Lọc menu items dựa trên quyền
+  const filteredMenuItems = menuItems.filter(hasAccess);
+
   const toggleSidebar = () => {
     setIsSidebarOpen((prev) => !prev);
   };
 
   const unreadNotifications = (DataNotifications || []).filter(
     (item) =>
-      item.read === false && item.isCheck === false && item.isAdmin === true
+      item.read === false && item.isCheck === true && item.isAdmin === true
   );
 
   // Đóng sidebar khi click ra ngoài (mobile only)
@@ -195,6 +251,7 @@ const Admin = () => {
       location.pathname === itemTo || location.pathname === `/admin/${itemTo}`
     );
   };
+
   const FetchDataNocatifionsAPI = async () => {
     try {
       let res = await FetcDataNocatifions(user._id);
@@ -205,6 +262,7 @@ const Admin = () => {
       console.error("Error fetching notifications:", error);
     }
   };
+
   useEffect(() => {
     if (user?._id) {
       FetchDataNocatifionsAPI();
@@ -261,6 +319,7 @@ const Admin = () => {
       console.error("Error updating notification:", error);
     }
   };
+
   const handleShowNocations = () => {
     setShowHiden(true);
     setLoading(true);
@@ -292,6 +351,35 @@ const Admin = () => {
       return date.toLocaleDateString("vi-VN");
     }
   }
+
+  const handleLogOut = async () => {
+    localStorage.removeItem("token");
+    dispatch(logout());
+    navigate("/login");
+  };
+
+  const items = [
+    {
+      key: "1",
+      label: (
+        <Button className="w-full text-left bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg px-4 py-2 transition-colors duration-200 border-none focus:ring-2 focus:ring-blue-300 focus:outline-none">
+          Profile
+        </Button>
+      ),
+    },
+    {
+      key: "2",
+      label: (
+        <Button
+          className="w-full text-left bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg px-4 py-2 transition-colors duration-200 border-none focus:ring-2 focus:ring-red-300 focus:outline-none"
+          onClick={handleLogOut}
+        >
+          Đăng Xuất
+        </Button>
+      ),
+    },
+  ];
+
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Overlay cho mobile */}
@@ -317,7 +405,7 @@ const Admin = () => {
                 <MdDashboard className="text-2xl text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">DOIIN</h1>
+                <h1 className="text-2xl font-bold">DUY ANH SHOP</h1>
                 <p className="text-blue-100 text-sm">Admin Dashboard</p>
               </div>
             </Link>
@@ -333,10 +421,10 @@ const Admin = () => {
         </div>
 
         {/* Menu Items */}
-        <div className="overflow-y-auto h-full pb-20 ">
+        <div className="overflow-y-auto h-full pb-20">
           <nav className="p-4">
             <ul className="space-y-2">
-              {menuItems.map((item, index) => {
+              {filteredMenuItems.map((item, index) => {
                 const isActive = isActiveRoute(item.to);
                 return (
                   <li key={item.label}>
@@ -366,9 +454,6 @@ const Admin = () => {
             </ul>
           </nav>
         </div>
-
-        {/* Bottom Gradient */}
-        {/* <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white via-white/90 to-transparent pointer-events-none" /> */}
       </aside>
 
       {/* Main Content */}
@@ -390,7 +475,7 @@ const Admin = () => {
             {/* Right Side */}
             <div className="flex items-center gap-4">
               {/* Notifications */}
-              <Badge count={5} size="small">
+              <Badge count={unreadNotifications?.length} size="small">
                 <button className="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
                   <BellOutlined
                     className="text-gray-600 text-lg"
@@ -405,15 +490,26 @@ const Admin = () => {
               <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
                 <div className="hidden sm:block text-right">
                   <p className="text-sm font-medium text-gray-700">
-                    Admin User
+                    {user?.name}
                   </p>
-                  <p className="text-xs text-gray-500">Quản trị viên</p>
+                  <p className="text-xs text-gray-500">
+                    {user?.role === "admin"
+                      ? "Quản trị viên"
+                      : user?.permissions === "order_approval"
+                      ? "Nhân viên đơn hàng"
+                      : user?.permissions === "customer_support"
+                      ? "Nhân viên hỗ trợ"
+                      : "Nhân viên"}
+                  </p>
                 </div>
-                <Avatar
-                  size={40}
-                  icon={<UserOutlined />}
-                  className="border-2 border-blue-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                />
+
+                <Dropdown menu={{ items }} placement="bottom">
+                  <Avatar
+                    size={40}
+                    icon={<UserOutlined />}
+                    className="border-2 border-blue-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  />
+                </Dropdown>
               </div>
             </div>
           </div>

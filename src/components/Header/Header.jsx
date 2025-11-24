@@ -25,7 +25,6 @@ import ClipLoader from "react-spinners/ClipLoader";
 import {
   AllReadNotifications,
   DeleteAllNotificationsAPI,
-  FetcDataNocatifions,
   UpdateDataNocatifions,
 } from "../../service/ApiNocatifions";
 import Search from "../SearchProducts/Search";
@@ -46,7 +45,14 @@ import { RiAdminLine } from "react-icons/ri";
 import Logo from "./../../assets/Image/Home/logo.png";
 import NavigationMenu from "../NavigationMenu/NavigationMenu";
 
-const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
+const Header = ({
+  user,
+  ListCart,
+  CartListProductsUser,
+  setListCard,
+  DataNotifications,
+  FetchDataNocatifionsAPI,
+}) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -59,7 +65,6 @@ const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
   const [showSearch, setShowSearch] = useState();
   const [loadingSpin, setLoadingSpin] = useState(false);
   const [loadingCart, setLoadingCart] = useState(true);
-  const [DataNotifications, setDataNotifications] = useState([]);
   const [keywordSearch, setKeywordSearch] = useState("");
   const [totalPage, setTotalPage] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -268,23 +273,6 @@ const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
     }, 1000);
   };
 
-  const FetchDataNocatifionsAPI = async () => {
-    try {
-      let res = await FetcDataNocatifions(user._id);
-      if (res && res.data && res.data.EC === 0) {
-        setDataNotifications(res.data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-    }
-  };
-
-  useEffect(() => {
-    if (user?._id) {
-      FetchDataNocatifionsAPI();
-    }
-  }, [user]);
-
   const handleReadsNocations = async () => {
     setShowHiden(true);
     setLoading(true);
@@ -419,6 +407,8 @@ const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
   const btnHandleChangeSearch = async () => {
     setOpenSearch(false);
     const keyword = keywordSearch.trim();
+
+    console.log(keyword);
 
     if (!keyword) {
       message.error("Vui lòng nhập từ khóa tìm kiếm!");
@@ -647,45 +637,50 @@ const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
             {/* Desktop Right Section */}
             <div className="hidden md:flex items-center space-x-4">
               {/* Notifications */}
-              <div className="relative">
-                <button
-                  onClick={handleShowNocations}
-                  className="w-12 h-12 bg-gray-50 hover:bg-gray-100 rounded-xl flex items-center justify-center transition-all duration-300 hover:shadow-lg group"
-                >
-                  <IoNotificationsOutline
-                    size={22}
-                    className="text-gray-700 group-hover:text-blue-600 transition-colors duration-300"
-                  />
-                  {unreadNotifications.length > 0 && (
-                    <Badge
-                      count={
-                        unreadNotifications.filter((item) => !item.read).length
-                      }
-                      className="absolute -top-1 -right-1"
-                      size="small"
+              {user && (
+                <div className="relative">
+                  <button
+                    onClick={handleShowNocations}
+                    className="w-12 h-12 bg-gray-50 hover:bg-gray-100 rounded-xl flex items-center justify-center transition-all duration-300 hover:shadow-lg group"
+                  >
+                    <IoNotificationsOutline
+                      size={22}
+                      className="text-gray-700 group-hover:text-blue-600 transition-colors duration-300"
                     />
-                  )}
-                </button>
-              </div>
+                    {unreadNotifications.length > 0 && (
+                      <Badge
+                        count={
+                          unreadNotifications.filter((item) => !item.read)
+                            .length
+                        }
+                        className="absolute -top-1 -right-1"
+                        size="small"
+                      />
+                    )}
+                  </button>
+                </div>
+              )}
 
               {/* Cart */}
               <div className="relative">
-                <button
-                  onClick={showLoading}
-                  className="w-12 h-12 bg-gray-50 hover:bg-gray-100 rounded-xl flex items-center justify-center transition-all duration-300 hover:shadow-lg group"
-                >
-                  <IoCartOutline
-                    size={22}
-                    className="text-gray-700 group-hover:text-blue-600 transition-colors duration-300"
-                  />
-                  {ListCart?.items?.length > 0 && (
-                    <Badge
-                      count={ListCart.items.length}
-                      className="absolute -top-1 -right-1"
-                      size="small"
+                {user && (
+                  <button
+                    onClick={showLoading}
+                    className="w-12 h-12 bg-gray-50 hover:bg-gray-100 rounded-xl flex items-center justify-center transition-all duration-300 hover:shadow-lg group"
+                  >
+                    <IoCartOutline
+                      size={22}
+                      className="text-gray-700 group-hover:text-blue-600 transition-colors duration-300"
                     />
-                  )}
-                </button>
+                    {ListCart?.items?.length > 0 && (
+                      <Badge
+                        count={ListCart.items.length}
+                        className="absolute -top-1 -right-1"
+                        size="small"
+                      />
+                    )}
+                  </button>
+                )}
               </div>
 
               {/* User Menu */}
@@ -736,19 +731,21 @@ const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
               </button>
 
               <div className="relative">
-                <button
-                  onClick={showLoading}
-                  className="w-10 h-10 bg-gray-50 hover:bg-gray-100 rounded-xl flex items-center justify-center transition-all duration-300"
-                >
-                  <IoCartOutline size={20} className="text-gray-700" />
-                  {ListCart?.items?.length > 0 && (
-                    <Badge
-                      count={ListCart.items.length}
-                      className="absolute -top-1 -right-1"
-                      size="small"
-                    />
-                  )}
-                </button>
+                {user && (
+                  <button
+                    onClick={showLoading}
+                    className="w-10 h-10 bg-gray-50 hover:bg-gray-100 rounded-xl flex items-center justify-center transition-all duration-300"
+                  >
+                    <IoCartOutline size={20} className="text-gray-700" />
+                    {ListCart?.items?.length > 0 && (
+                      <Badge
+                        count={ListCart.items.length}
+                        className="absolute -top-1 -right-1"
+                        size="small"
+                      />
+                    )}
+                  </button>
+                )}
               </div>
 
               <button
@@ -838,31 +835,36 @@ const Header = ({ user, ListCart, CartListProductsUser, setListCard }) => {
               )}
 
               <div className="space-y-2">
-                <button
-                  className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors duration-300"
-                  onClick={() => {
-                    handleShowNocations();
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                      <IoNotificationsOutline
-                        size={16}
-                        className="text-white"
-                      />
+                {user && (
+                  <button
+                    className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors duration-300"
+                    onClick={() => {
+                      handleShowNocations();
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                        <IoNotificationsOutline
+                          size={16}
+                          className="text-white"
+                        />
+                      </div>
+                      <span className="text-gray-900 font-medium">
+                        Thông báo
+                      </span>
                     </div>
-                    <span className="text-gray-900 font-medium">Thông báo</span>
-                  </div>
-                  {unreadNotifications.length > 0 && (
-                    <Badge
-                      count={
-                        unreadNotifications.filter((item) => !item.read).length
-                      }
-                      size="small"
-                    />
-                  )}
-                </button>
+                    {unreadNotifications.length > 0 && (
+                      <Badge
+                        count={
+                          unreadNotifications.filter((item) => !item.read)
+                            .length
+                        }
+                        size="small"
+                      />
+                    )}
+                  </button>
+                )}
 
                 {user && (
                   <>

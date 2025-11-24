@@ -20,6 +20,7 @@ import Message from "./components/Messages/Message";
 import { getMessagesList, UpdateIsReadAPI } from "./service/Message";
 import { getListProductsAPI } from "./service/ApiProduct";
 import { getRandomAdminAPI } from "./service/Auth";
+import { FetcDataNocatifions } from "./service/ApiNocatifions";
 
 // Memoize các components con để tránh re-render
 const MemoizedHeader = memo(Header);
@@ -38,6 +39,7 @@ function App() {
   const [assignedAdmin, setAssignedAdmin] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
+  const [DataNotifications, setDataNotifications] = useState([]);
 
   // Memoize các giá trị computed
   const hideFooter = useMemo(
@@ -165,6 +167,23 @@ function App() {
     }
   };
 
+  const FetchDataNocatifionsAPI = async () => {
+    try {
+      let res = await FetcDataNocatifions(user._id);
+      if (res && res.data && res.data.EC === 0) {
+        setDataNotifications(res.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (user?._id) {
+      FetchDataNocatifionsAPI();
+    }
+  }, [user?._id]);
+
   // Gọi fetch 1 lần khi component mount
   useEffect(() => {
     fetchAPIGetAdminRandom();
@@ -283,8 +302,15 @@ function App() {
       CartListProductsUser,
       ListCart,
       user,
+      FetchDataNocatifionsAPI,
     }),
-    [ListProducts, CartListProductsUser, ListCart, user]
+    [
+      ListProducts,
+      CartListProductsUser,
+      ListCart,
+      user,
+      FetchDataNocatifionsAPI,
+    ]
   );
 
   // Memoize video chat component
@@ -297,6 +323,8 @@ function App() {
           ListCart={ListCart}
           setListCard={setListCard}
           CartListProductsUser={CartListProductsUser}
+          DataNotifications={DataNotifications}
+          FetchDataNocatifionsAPI={FetchDataNocatifionsAPI}
         />
       </div>
 

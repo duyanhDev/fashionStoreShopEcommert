@@ -46,7 +46,8 @@ import { UpdateCartQuantity } from "../../service/Cart.js";
 const { Title, Text } = Typography;
 
 const CartProducts = ({}) => {
-  const { ListCart, user, CartListProductsUser } = useOutletContext();
+  const { ListCart, user, CartListProductsUser, FetchDataNocatifionsAPI } =
+    useOutletContext();
 
   const [loadingSpin, setLoadingSpin] = useState(false);
   const [api, contextHolder] = notification.useNotification();
@@ -977,7 +978,9 @@ const CartProducts = ({}) => {
         CartListProductsUser().catch((err) =>
           console.error("Failed to refresh cart:", err)
         );
-
+        FetchDataNocatifionsAPI().catch((err) =>
+          console.error("Failed to refresh notifications:", err)
+        );
         // Xử lý redirect theo phương thức thanh toán
         if (res.data.paymentMethod === "cod") {
           navigate(`/vnpay_return/${res.data.order_id}`);
