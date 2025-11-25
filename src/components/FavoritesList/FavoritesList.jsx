@@ -141,17 +141,17 @@ const FavoritesList = () => {
       {/* Header Section */}
       <div className="relative overflow-hidden bg-black">
         <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900 to-green-900 opacity-95"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="relative max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-12 md:py-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            <div className="flex justify-center items-center mb-6">
-              <div className="bg-green-500 p-4 rounded-full shadow-lg">
+            <div className="flex justify-center items-center mb-4 md:mb-6">
+              <div className="bg-green-500 p-3 md:p-4 rounded-full shadow-lg">
                 <svg
-                  className="w-12 h-12 text-white"
+                  className="w-10 h-10 md:w-12 md:h-12 text-white"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
@@ -159,22 +159,22 @@ const FavoritesList = () => {
                 </svg>
               </div>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 md:mb-4">
               Danh sách yêu thích
             </h1>
-            <p className="text-xl text-gray-300 mb-8">
+            <p className="text-lg md:text-xl text-gray-300 mb-6 md:mb-8">
               {favorites.length} sản phẩm đang chờ bạn
             </p>
 
             {/* Filter Section */}
-            <div className="flex flex-wrap justify-center gap-3">
+            <div className="flex flex-wrap justify-center gap-2 md:gap-3">
               {categories.map((category) => (
                 <motion.button
                   key={category}
                   onClick={() => setFilter(category)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${
+                  className={`px-4 py-2 md:px-6 md:py-3 rounded-lg text-xs md:text-sm font-medium transition-all duration-300 ${
                     filter === category
                       ? "bg-green-500 text-white shadow-lg"
                       : "bg-white/10 text-white hover:bg-green-500/20 backdrop-blur-sm border border-white/20"
@@ -189,16 +189,16 @@ const FavoritesList = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="lg:max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8 md:py-12">
         {error && (
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-8"
+            className="bg-red-50 border-l-4 border-red-500 text-red-700 p-3 md:p-4 rounded-lg mb-6 md:mb-8"
           >
             <div className="flex items-center">
               <svg
-                className="w-5 h-5 mr-2"
+                className="w-4 h-4 md:w-5 md:h-5 mr-2"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -216,18 +216,18 @@ const FavoritesList = () => {
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <div className="relative">
-              <div className="w-16 h-16 border-4 border-gray-200 border-t-green-500 rounded-full animate-spin"></div>
+              <div className="w-12 h-12 md:w-16 md:h-16 border-4 border-gray-200 border-t-green-500 rounded-full animate-spin"></div>
             </div>
           </div>
         ) : favorites.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl shadow-lg border border-gray-200"
+            className="flex flex-col items-center justify-center py-16 md:py-20 bg-white rounded-2xl shadow-lg border border-gray-200"
           >
-            <div className="bg-gray-100 p-8 rounded-full mb-6">
+            <div className="bg-gray-100 p-6 md:p-8 rounded-full mb-4 md:mb-6">
               <svg
-                className="w-16 h-16 text-gray-400"
+                className="w-12 h-12 md:w-16 md:h-16 text-gray-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -240,20 +240,20 @@ const FavoritesList = () => {
                 />
               </svg>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+            <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
               Danh sách yêu thích trống
             </h3>
-            <p className="text-gray-500 mb-8 text-center max-w-md">
+            <p className="text-sm md:text-base text-gray-500 mb-6 md:mb-8 text-center max-w-md">
               Hãy khám phá và thêm những sản phẩm yêu thích của bạn vào đây!
             </p>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="bg-green-500 hover:bg-green-600 text-white px-8 py-4 rounded-lg font-medium shadow-lg transition-all duration-300"
+              className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 md:px-8 md:py-4 rounded-lg font-medium shadow-lg transition-all duration-300"
               onClick={() => (window.location.href = "/products")}
             >
               <svg
-                className="w-5 h-5 inline mr-2"
+                className="w-4 h-4 md:w-5 md:h-5 inline mr-2"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -274,13 +274,13 @@ const FavoritesList = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-200"
+              className="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-6 md:mb-8 border border-gray-200"
             >
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="bg-green-100 p-3 rounded-lg">
+              <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="flex items-center gap-3 md:gap-4">
+                  <div className="bg-green-100 p-2 md:p-3 rounded-lg">
                     <svg
-                      className="w-6 h-6 text-green-600"
+                      className="w-5 h-5 md:w-6 md:h-6 text-green-600"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -294,8 +294,10 @@ const FavoritesList = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Đang hiển thị</p>
-                    <p className="font-semibold text-gray-900">
+                    <p className="text-xs md:text-sm text-gray-500">
+                      Đang hiển thị
+                    </p>
+                    <p className="font-semibold text-gray-900 text-sm md:text-base">
                       {filterLabels[filter] || filter} • {filteredItems.length}{" "}
                       sản phẩm
                     </p>
@@ -312,7 +314,7 @@ const FavoritesList = () => {
                   }
                   whileHover={{ scale: actionLoading.all ? 1 : 1.05 }}
                   whileTap={{ scale: actionLoading.all ? 1 : 0.95 }}
-                  className={`bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium shadow-lg transition-all duration-300 flex items-center gap-2 ${
+                  className={`bg-green-500 hover:bg-green-600 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-medium shadow-lg transition-all duration-300 flex items-center gap-2 ${
                     actionLoading.all ||
                     filteredItems.filter(
                       (item) => getTotalStock(item.product) > 0
@@ -323,13 +325,13 @@ const FavoritesList = () => {
                 >
                   {actionLoading.all ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-3 h-3 md:w-4 md:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       Đang xử lý...
                     </>
                   ) : (
                     <>
                       <svg
-                        className="w-4 h-4"
+                        className="w-3 h-3 md:w-4 md:h-4"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -349,7 +351,7 @@ const FavoritesList = () => {
             </motion.div>
 
             {/* Products Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
               <AnimatePresence>
                 {filteredItems.map((item, index) => {
                   const product = item.product || {};
@@ -378,13 +380,13 @@ const FavoritesList = () => {
                         <img
                           src={imageUrl}
                           alt={product.name || "Sản phẩm"}
-                          className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110"
+                          className="w-full h-48 md:h-64 object-cover transition-transform duration-700 group-hover:scale-110"
                         />
 
                         {/* Badges */}
-                        <div className="absolute top-4 left-4 flex flex-col gap-2">
+                        <div className="absolute top-3 left-3 md:top-4 md:left-4 flex flex-col gap-1 md:gap-2">
                           {hasDiscount && (
-                            <div className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                            <div className="bg-green-500 text-white px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold shadow-lg">
                               -
                               {Math.round(
                                 ((price - discountedPrice) / price) * 100
@@ -393,17 +395,17 @@ const FavoritesList = () => {
                             </div>
                           )}
                           {!isInStock && (
-                            <div className="bg-black text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                            <div className="bg-black text-white px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold shadow-lg">
                               Hết hàng
                             </div>
                           )}
                         </div>
 
                         {/* Heart Icon */}
-                        <div className="absolute top-4 right-4">
-                          <div className="bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-lg">
+                        <div className="absolute top-3 right-3 md:top-4 md:right-4">
+                          <div className="bg-white/90 backdrop-blur-sm p-1.5 md:p-2 rounded-full shadow-lg">
                             <svg
-                              className="w-5 h-5 text-green-500"
+                              className="w-4 h-4 md:w-5 md:h-5 text-green-500"
                               fill="currentColor"
                               viewBox="0 0 24 24"
                             >
@@ -417,25 +419,25 @@ const FavoritesList = () => {
                       </div>
 
                       {/* Product Info */}
-                      <div className="p-6">
-                        <div className="mb-4">
-                          <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2 group-hover:text-green-600 transition-colors">
+                      <div className="p-4 md:p-6">
+                        <div className="mb-3 md:mb-4">
+                          <h3 className="font-bold text-base md:text-lg text-gray-900 mb-1 md:mb-2 line-clamp-2 group-hover:text-green-600 transition-colors">
                             {product.name || "Không có tên"}
                           </h3>
 
-                          <div className="flex items-center gap-2 mb-3">
-                            <span className="text-sm text-gray-500">
+                          <div className="flex items-center gap-1 md:gap-2 mb-2 md:mb-3">
+                            <span className="text-xs md:text-sm text-gray-500">
                               {filterLabels[product.category] ||
                                 product.category ||
                                 "Không xác định"}
                             </span>
                             <div
-                              className={`w-2 h-2 rounded-full ${
+                              className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full ${
                                 isInStock ? "bg-green-500" : "bg-red-500"
                               }`}
                             ></div>
                             <span
-                              className={`text-xs font-medium ${
+                              className={`text-[10px] md:text-xs font-medium ${
                                 isInStock ? "text-green-600" : "text-red-600"
                               }`}
                             >
@@ -444,18 +446,18 @@ const FavoritesList = () => {
                           </div>
 
                           {/* Price */}
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 md:gap-2">
                             {hasDiscount ? (
                               <>
-                                <span className="text-2xl font-bold text-green-600">
+                                <span className="text-xl md:text-2xl font-bold text-green-600">
                                   {formatPrice(discountedPrice)}
                                 </span>
-                                <span className="text-sm text-gray-400 line-through">
+                                <span className="text-xs md:text-sm text-gray-400 line-through">
                                   {formatPrice(price)}
                                 </span>
                               </>
                             ) : (
-                              <span className="text-2xl font-bold text-gray-900">
+                              <span className="text-xl md:text-2xl font-bold text-gray-900">
                                 {formatPrice(price)}
                               </span>
                             )}
@@ -463,7 +465,7 @@ const FavoritesList = () => {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex gap-3">
+                        <div className="flex gap-2 md:gap-3">
                           <motion.button
                             onClick={() =>
                               removeFromFavorites(item._id, product._id)
@@ -475,18 +477,18 @@ const FavoritesList = () => {
                             whileTap={{
                               scale: actionLoading[product._id] ? 1 : 0.95,
                             }}
-                            className={`flex-1 bg-gray-100 hover:bg-black hover:text-white text-gray-700 py-3 px-4 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 ${
+                            className={`flex-1 bg-gray-100 hover:bg-black hover:text-white text-gray-700 py-2 px-3 md:py-3 md:px-4 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-1 md:gap-2 ${
                               actionLoading[product._id]
                                 ? "opacity-50 cursor-not-allowed"
                                 : ""
                             }`}
                           >
                             {actionLoading[product._id] ? (
-                              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                              <div className="w-3 h-3 md:w-4 md:h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
                             ) : (
                               <>
                                 <svg
-                                  className="w-4 h-4"
+                                  className="w-3 h-3 md:w-4 md:h-4"
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
@@ -527,18 +529,18 @@ const FavoritesList = () => {
                                   ? 1
                                   : 0.95,
                             }}
-                            className={`flex-1 bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 ${
+                            className={`flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-3 md:py-3 md:px-4 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-1 md:gap-2 ${
                               !isInStock || actionLoading[product._id]
                                 ? "opacity-50 cursor-not-allowed"
                                 : "hover:shadow-lg"
                             }`}
                           >
                             {actionLoading[product._id] ? (
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              <div className="w-3 h-3 md:w-4 md:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                             ) : (
                               <>
                                 <svg
-                                  className="w-4 h-4"
+                                  className="w-3 h-3 md:w-4 md:h-4"
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"

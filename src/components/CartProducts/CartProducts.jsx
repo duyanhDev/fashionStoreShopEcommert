@@ -973,6 +973,8 @@ const CartProducts = ({}) => {
 
       setLoadingSpin(false);
 
+      console.log(res.data);
+
       if (res && res.data.EC === 0) {
         // Load cart trong background (không chặn UI)
         CartListProductsUser().catch((err) =>

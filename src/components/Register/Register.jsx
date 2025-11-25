@@ -47,14 +47,39 @@ const RegisterForm = () => {
   // Validation functions - wrapped with useCallback
   const createEmailRequirements = useCallback((email) => {
     const originalResult = validateEmail(email);
+
+    // Regex kiểm tra email có đuôi domain hợp lệ (ít nhất 2 ký tự sau dấu chấm cuối)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+
+    // Tách phần domain để kiểm tra
+    const parts = email.split("@");
+    const hasDomain = parts.length === 2;
+    const domainParts = hasDomain ? parts[1].split(".") : [];
+    const hasValidTLD =
+      domainParts.length >= 2 &&
+      domainParts[domainParts.length - 1].length >= 2;
+
     const requirements = [
       { text: "Không được để trống", check: email.trim().length > 0 },
       {
-        text: "Phải là email hợp lệ (@domain.com)",
-        check: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
+        text: "Phải có định dạng email (@domain)",
+        check: hasDomain && parts[0].length > 0,
+      },
+      {
+        text: "Phải có đuôi hợp lệ (.com, .vn, ...)",
+        check: emailRegex.test(email) && hasValidTLD,
       },
     ];
-    return { ...originalResult, requirements };
+
+    // Cập nhật isValid dựa trên tất cả requirements
+    const isValid = requirements.every((req) => req.check);
+
+    return {
+      ...originalResult,
+      requirements,
+      isValid, // Override isValid từ originalResult
+      errors: isValid ? [] : ["Email không hợp lệ"],
+    };
   }, []);
 
   const createUsernameRequirements = useCallback((username) => {

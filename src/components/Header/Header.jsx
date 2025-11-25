@@ -70,6 +70,7 @@ const Header = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchVisible, setSearchVisible] = useState(false);
   const [inputValue, setInputValue] = useState({}); // Local state for input values
+  const [lastData, setLastData] = useState([]); // giữ data cũ
 
   const [api, contextHolder] = notification.useNotification();
   const handleLogOut = async () => {
@@ -348,9 +349,22 @@ const Header = ({
     }
   };
 
+  const handleClearSearch = () => {
+    setKeywordSearch("");
+    setData([]);
+    setLastData([]);
+    setTotalPage(0);
+    setShowSearch(true);
+  };
+
   const handleSearchProducts = () => {
     setOpenSearch(true);
-    setShowSearch(true);
+    // Nếu đã có data, giữ lại và hiển thị
+    if (data.length > 0) {
+      setShowSearch(false); // Hiển thị sản phẩm đã tìm
+    } else {
+      setShowSearch(true); // Hiển thị empty state
+    }
   };
 
   const handleChangeInput = (e) => {
@@ -373,6 +387,7 @@ const Header = ({
       const res = await searchProductsByNameAPI(keyword, page);
       if (res && res.data && res.data.EC === 0) {
         setData(res.data.data);
+        setLastData(res.data.data); // luôn lưu lại data mới nhất
         setTotalPage(res.data.totalPages);
         setShowSearch(false);
       } else {
@@ -405,19 +420,18 @@ const Header = ({
   }, [keywordSearch, debouncedFetchSearch]);
 
   const btnHandleChangeSearch = async () => {
-    setOpenSearch(false);
     const keyword = keywordSearch.trim();
-
-    console.log(keyword);
 
     if (!keyword) {
       message.error("Vui lòng nhập từ khóa tìm kiếm!");
       return;
     }
 
-    // Gọi API trực tiếp khi bấm nút
+    // Gọi API search
     await FetchSearhProductsAPI(keyword);
 
+    // Đóng modal search và navigate
+    setOpenSearch(false);
     navigate(`search?q=${keyword}`);
     dispatch(SearchAction(data, totalPage));
     setSearchVisible(false);
@@ -611,6 +625,17 @@ const Header = ({
                       }
                     }}
                   />
+
+                  {/* Nút Clear - chỉ hiện khi có text */}
+                  {keywordSearch && (
+                    <button
+                      onClick={handleClearSearch}
+                      className="absolute right-12 text-gray-400 hover:text-gray-600 transition-colors"
+                      title="Xóa"
+                    >
+                      <IoCloseOutline size={20} />
+                    </button>
+                  )}
                   <button
                     onClick={btnHandleChangeSearch}
                     className="absolute right-2 w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-white hover:shadow-lg transition-all duration-300 hover:scale-105"
@@ -630,6 +655,7 @@ const Header = ({
                   onSearch={(keyword) => {
                     FetchSearhProductsAPI(keyword);
                   }}
+                  lastData={lastData}
                 />
               </div>
             </div>
@@ -781,6 +807,16 @@ const Header = ({
                   }
                 }}
               />
+              {/* Nút Clear - chỉ hiện khi có text */}
+              {keywordSearch && (
+                <button
+                  onClick={handleClearSearch}
+                  className="absolute right-12 text-gray-400 hover:text-gray-600 transition-colors"
+                  title="Xóa"
+                >
+                  <IoCloseOutline size={20} />
+                </button>
+              )}
               <button
                 onClick={btnHandleChangeSearch}
                 className="absolute right-2 top-2 w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-white"

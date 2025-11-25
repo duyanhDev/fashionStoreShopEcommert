@@ -460,7 +460,7 @@ Vui lòng thử lại với một trong những chủ đề trên!`,
               </div>
               <div>
                 <h1 className="text-base sm:text-lg font-bold text-slate-800">
-                  AI Assistant Pro
+                  Trợ Lí Ảo AI
                 </h1>
                 <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-600">
                   <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
