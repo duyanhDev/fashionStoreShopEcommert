@@ -19,7 +19,7 @@ const VirtualTryOnApp = ({
 }) => {
   // Hardcode API key - thay thế bằng API key thực của bạn
   const API_KEY =
-    "3388151933d8433e95c3c1c5efbf89a59e240b362e5a4bf72aac2240f04f645c";
+    "7158a04660794e1b96bf04ba96ade1d76da162b17fe933d0b34b0f30ac0fe50a";
 
   // State management
   const [modelImage, setModelImage] = useState(null);
