@@ -88,6 +88,7 @@ const CartProducts = ({}) => {
 
   const [inputValue, setInputValue] = useState({});
   const navigate = useNavigate();
+  const [timeLeft, setTimeLeft] = useState(1 * 60); // 5 phút = 300 giây
 
   const formatPrice = (price) => {
     const numericPrice =
@@ -1088,6 +1089,29 @@ const CartProducts = ({}) => {
       ? ListCart.items
       : [];
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          setIsCheckSepay(false);
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // format mm:ss
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60)
+      .toString()
+      .padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
   return (
     <div className="min-h-screen bg-gray-50 mt-20">
       {/* Header */}
@@ -1690,6 +1714,10 @@ const CartProducts = ({}) => {
         centered
         className="qr-modal"
       >
+        {" "}
+        <p style={{ marginTop: "10px", fontSize: "18px", color: "green" }}>
+          Thời gian còn lại: <strong>{formatTime(timeLeft)}</strong>
+        </p>
         <div className="text-center py-4">
           <img src={qrnUrl} alt="QR Code" className="w-64 h-64 mx-auto mb-4" />
           <div className="text-gray-600">

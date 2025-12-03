@@ -16,7 +16,7 @@ const BlogPostPage = () => {
     try {
       const res = await getDetaillBlog(slug);
 
-      if (res) {
+      if (res && res.data && res.data.EC === 0) {
         SetblogPost(res.data.data);
       }
     } catch (error) {
@@ -280,7 +280,7 @@ const BlogPostPage = () => {
               <img
                 src={blogPost.featuredImage}
                 alt={blogPost.title}
-                className="w-full h-full object-cover"
+                className="w-full min-h-96 object-cover"
               />
               <div className="absolute top-4 left-4">
                 <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">

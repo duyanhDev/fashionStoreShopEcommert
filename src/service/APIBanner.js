@@ -79,10 +79,17 @@ const DeleteBannerAPI = async (id) => {
   return axios.delete(`api/v1/delete-banner/${id}`);
 };
 
+const CheckIsActiveBannerAPI = async (id, isActive) => {
+  return axios.put(`api/v1/update-banner-isActive/${id}`, {
+    isActive,
+  });
+};
+
 export {
   getListBannerAPI,
   getFindByIdBannerAPI,
   CreateBannerAPI,
   UpdateBannerAPI,
   DeleteBannerAPI,
+  CheckIsActiveBannerAPI,
 };

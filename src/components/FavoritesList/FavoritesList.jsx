@@ -4,7 +4,7 @@ import { getWishlistAPI, RemoveToWishListAPI } from "../../service/WishList";
 import { useSelector } from "react-redux";
 import { addMultipleToCart } from "../../service/Cart";
 import ProductCart from "../ProductCart/ProductCart";
-import { useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 
 const FavoritesList = () => {
   const [favorites, setFavorites] = useState([]);
@@ -12,6 +12,8 @@ const FavoritesList = () => {
   const [filter, setFilter] = useState("all");
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState({});
+
+  const navigate = useNavigate();
 
   const { user } = useSelector((state) => state.auth);
 
@@ -250,7 +252,7 @@ const FavoritesList = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 md:px-8 md:py-4 rounded-lg font-medium shadow-lg transition-all duration-300"
-              onClick={() => (window.location.href = "/products")}
+              onClick={() => (window.location.href = "/")}
             >
               <svg
                 className="w-4 h-4 md:w-5 md:h-5 inline mr-2"
@@ -367,6 +369,7 @@ const FavoritesList = () => {
                   return (
                     <motion.div
                       key={item._id}
+                      onClick={() => navigate(`/product/${product.slug}`)}
                       layout
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}

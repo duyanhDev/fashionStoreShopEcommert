@@ -1194,7 +1194,7 @@ const Details = () => {
                                 />
                                 <div className="flex items-center gap-2">
                                   <p className="font-bold text-gray-900">
-                                    Phản hồi từ Dosiin
+                                    Phản hồi từ Duy Anh Shop
                                   </p>
                                   <span className="text-xs text-gray-500">
                                     {formatDate(reply.createdAt)}

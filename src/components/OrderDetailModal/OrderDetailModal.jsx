@@ -11,6 +11,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { OrderStatusOneProduct } from "../../service/Oder";
+import axios from "axios";
 
 // Component Map thật với dữ liệu từ DB
 const DeliveryMap = ({ orderData }) => {
@@ -108,7 +109,7 @@ const DeliveryMap = ({ orderData }) => {
             const data = await response.json();
             if (data.features && data.features.length > 0) {
               const coords = data.features[0].geometry.coordinates;
-
+              console.log("✅ Photon geocoded:", coords);
               return {
                 lat: coords[1],
                 lng: coords[0],
@@ -146,6 +147,7 @@ const DeliveryMap = ({ orderData }) => {
 
       // Cache valid trong 30 ngày
       if (ageInHours < 720) {
+        console.log("📦 Using cached coordinates:", data.coords);
         return data.coords;
       }
     }
@@ -231,6 +233,7 @@ const DeliveryMap = ({ orderData }) => {
 
     for (const [city, coords] of Object.entries(VIETNAM_CITY_COORDS)) {
       if (address.includes(city)) {
+        console.log(`🗺️ Using fallback coords for ${city}:`, coords);
         return coords;
       }
     }
@@ -254,9 +257,12 @@ const DeliveryMap = ({ orderData }) => {
       shippingAddress?.lng;
 
     const fullAddress = buildFullAddress(shippingAddress);
+    console.log("📍 Full address:", fullAddress);
 
     // Nếu chưa có tọa độ, thử các phương án
     if (!destinationLat || !destinationLng) {
+      console.log("⚠️ No coordinates in DB, trying alternatives...");
+
       // 1. Kiểm tra cache
       let coords = getCachedCoordinates(fullAddress);
 
@@ -275,6 +281,7 @@ const DeliveryMap = ({ orderData }) => {
 
       // 4. Default fallback (trung tâm VN)
       if (!coords) {
+        console.log("⚠️ Using default Vietnam center coordinates");
         coords = { lat: 16.0544, lng: 108.2022 };
       }
 
@@ -652,6 +659,8 @@ const DeliveryMap = ({ orderData }) => {
 
       mapInstanceRef.current = map;
 
+      console.log("✅ Map initialized successfully");
+
       updateMapRoute();
     } catch (error) {
       console.error("❌ Map initialization error:", error);
@@ -682,6 +691,8 @@ const DeliveryMap = ({ orderData }) => {
         setIsLoading(false);
         return;
       }
+
+      console.log("✅ Valid coordinates:", { warehouse, destination });
 
       // Clear old layers
       [
@@ -745,6 +756,7 @@ const DeliveryMap = ({ orderData }) => {
             }
             distance = route.summary?.distance || 0;
             duration = route.summary?.duration || 0;
+            console.log("✅ Got route from API:", routeCoords.length, "points");
           }
         }
       } catch (error) {
@@ -753,6 +765,7 @@ const DeliveryMap = ({ orderData }) => {
 
       // Fallback to simulated route
       if (routeCoords.length === 0) {
+        console.log("🔄 Using simulated route");
         routeCoords = createSimulatedRoute(warehouse, destination, 80);
         distance = calculateDistance(
           warehouse.lat,
@@ -836,6 +849,7 @@ const DeliveryMap = ({ orderData }) => {
       }
 
       setIsLoading(false);
+      console.log("✅ Map route updated successfully");
 
       // Bắt đầu animation xe
       setTimeout(() => {
@@ -925,8 +939,18 @@ const OrderDetailModal = ({ visible, onClose, id }) => {
   const [OrderData, setOrderData] = useState([]);
   const [trackingSteps, setTrackingSteps] = useState([]);
   const [copiedTrackingCode, setCopiedTrackingCode] = useState(false);
+  const [trackingError, setTrackingError] = useState(null);
+  const [leadtimeOrder, setLeadtimeOrder] = useState(null);
 
-  // GIỮ NGUYÊN HÀM API CỦA BẠN
+  const formatDate = (dateString) =>
+    new Date(dateString).toLocaleDateString("vi-VN");
+
+  const addDays = (date, days) => {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+  };
+
   const handlelAPIDetailOrder = async () => {
     try {
       const res = await OrderStatusOneProduct(id);
@@ -954,35 +978,69 @@ const OrderDetailModal = ({ visible, onClose, id }) => {
     ];
     const currentIndex = statusOrder.indexOf(OrderData?.orderStatus);
 
+    const formatDateTimeCustom = (dateString) => {
+      if (!dateString) return "N/A";
+      const date = new Date(dateString);
+
+      const time = date.toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+
+      const dateStr = date.toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+
+      return `${time} - ${dateStr}`;
+    };
     const steps = [
       {
         title: "Đơn hàng đang chờ xác nhận",
         description: "Chờ người bán xác nhận đơn hàng",
-        time: "14:30 - 07/08/2025",
+        time: leadtimeOrder?.pickup_time
+          ? formatDateTimeCustom(leadtimeOrder?.pickup_time)
+          : formatDateTimeCustom(OrderData.createdAt),
         icon: Clock,
       },
       {
         title: "Người bán đã xác nhận",
         description: "Người bán chuẩn bị hàng",
-        time: "15:00 - 07/08/2025",
+        time: leadtimeOrder?.pickup_time
+          ? formatDateTimeCustom(leadtimeOrder?.pickup_time)
+          : formatDateTimeCustom(OrderData.createdAt),
         icon: CheckCircle,
       },
       {
         title: "Đã giao cho đơn vị vận chuyển",
         description: "Đơn hàng đã được giao cho GHN Express",
-        time: "16:45 - 07/08/2025",
+        time: leadtimeOrder?.pickup_time
+          ? formatDateTimeCustom(
+              leadtimeOrder?.leadtime_order.from_estimate_date
+            )
+          : formatDateTimeCustom(OrderData.createdAt),
         icon: Package,
       },
       {
         title: "Đang vận chuyển",
         description: "Đơn hàng đang trên đường giao đến bạn",
-        time: "08:20 - 08/08/2025",
+        time: leadtimeOrder?.pickup_time
+          ? formatDateTimeCustom(leadtimeOrder?.leadtime_order.to_estimate_date)
+          : formatDateTimeCustom(OrderData.createdAt),
         icon: Truck,
       },
       {
         title: "Giao hàng thành công",
         description: "Đơn hàng đã được giao thành công",
-        time: "Dự kiến 10:00 - 09/08/2025",
+        time: `Dự kiến ${
+          leadtimeOrder?.pickup_time
+            ? formatDateTimeCustom(
+                leadtimeOrder?.leadtime_order.to_estimate_date
+              )
+            : formatDateTimeCustom(OrderData.createdAt)
+        }`,
         icon: MapPin,
       },
     ];
@@ -994,6 +1052,38 @@ const OrderDetailModal = ({ visible, onClose, id }) => {
     });
 
     setTrackingSteps(updatedSteps);
+  }, [OrderData]);
+
+  useEffect(() => {
+    const fetchDetailOrder = async () => {
+      if (!OrderData?.order_code) return;
+
+      try {
+        setTrackingError(null);
+        const res = await axios.post(
+          "https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/detail",
+          { order_code: OrderData.order_code },
+          {
+            headers: {
+              Token: "6501032d-0b70-11ef-b1d4-92b443b7a897",
+              "Content-Type": "application/json",
+              ShopId: 192215,
+            },
+          }
+        );
+        if (res?.data) {
+          setLeadtimeOrder(res.data.data);
+        }
+      } catch (err) {
+        console.error(
+          "Tracking fetch error:",
+          err.response?.data || err.message
+        );
+        setTrackingError("Không thể tải thông tin vận chuyển.");
+      }
+    };
+
+    fetchDetailOrder();
   }, [OrderData]);
 
   const formatPrice = (price) => {
@@ -1253,7 +1343,19 @@ const OrderDetailModal = ({ visible, onClose, id }) => {
                         Thời gian giao dự kiến:
                       </span>
                       <span className="font-semibold text-green-600">
-                        2-3 ngày
+                        {leadtimeOrder?.leadtime_order?.from_estimate_date
+                          ? `${formatDate(
+                              leadtimeOrder.leadtime_order.from_estimate_date
+                            )} - ${formatDate(
+                              leadtimeOrder.leadtime_order.to_estimate_date
+                            )}`
+                          : OrderData?.createdAt
+                          ? `${formatDate(
+                              addDays(OrderData?.createdAt, 2)
+                            )} - ${formatDate(
+                              addDays(OrderData?.createdAt, 3)
+                            )}`
+                          : "Đang tải..."}
                       </span>
                     </div>
 

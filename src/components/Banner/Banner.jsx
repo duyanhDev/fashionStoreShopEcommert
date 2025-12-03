@@ -37,7 +37,12 @@ import { useEffect, useState } from "react";
 import moment from "moment";
 import { createStyles } from "antd-style";
 import { useNavigate } from "react-router-dom";
-import { DeleteBannerAPI, getListBannerAPI } from "../../service/APIBanner";
+import {
+  CheckIsActiveBannerAPI,
+  DeleteBannerAPI,
+  getListBannerAPI,
+} from "../../service/APIBanner";
+import axios from "axios";
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -188,10 +193,16 @@ const Banner = () => {
   const handleStatusToggle = async (banner, checked) => {
     try {
       // Replace with actual API call to update status
-      api.success({
-        message: "Thành công",
-        description: `Đã ${checked ? "kích hoạt" : "tắt"} banner`,
-      });
+
+      const res = await CheckIsActiveBannerAPI(banner._id, checked);
+
+      if (res && res.data && res.data.success === true) {
+        api.success({
+          message: "Thành công",
+          description: `Đã ${checked ? "kích hoạt" : "tắt"} banner`,
+        });
+      }
+
       fetchApiBanner();
     } catch (error) {
       api.error({

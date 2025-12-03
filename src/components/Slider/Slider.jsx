@@ -28,7 +28,8 @@ const SliderComponent = () => {
         setIsLoading(true);
         const res = await getListBannerAPI();
         if (res?.data?.EC === 0) {
-          setSlides(res.data.data);
+          const data = res?.data?.data.filter((item) => item.isActive);
+          setSlides(data);
         }
       } catch (err) {
         console.error("API Error:", err);
@@ -38,11 +39,13 @@ const SliderComponent = () => {
             _id: "demo-1",
             imageUrl: "https://picsum.photos/1200/400?random=1",
             title: "Demo Banner 1",
+            isActive: true,
           },
           {
             _id: "demo-2",
             imageUrl: "https://picsum.photos/1200/400?random=2",
             title: "Demo Banner 2",
+            isActive: true,
           },
         ]);
       } finally {
@@ -111,7 +114,7 @@ const SliderComponent = () => {
       }}
     >
       {/* Slides */}
-      {slides.map((slide, index) => (
+      {slides?.map((slide, index) => (
         <div
           key={slide._id}
           className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${

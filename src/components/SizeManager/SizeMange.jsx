@@ -312,12 +312,12 @@ const SizeManager = () => {
   };
 
   const checkProductSizeStatus = async (productList) => {
-    const sizeStatus = {};
-
-    for (const product of productList) {
+    // Gọi API song song thay vì tuần tự để nhanh hơn
+    const promises = productList.map(async (product) => {
       try {
         const res = await getIdGuideSize(product._id);
-        sizeStatus[product._id] = {
+        return {
+          id: product._id,
           hasSize:
             res &&
             res.data &&
@@ -335,9 +335,22 @@ const SizeManager = () => {
               : 0,
         };
       } catch (error) {
-        sizeStatus[product._id] = { hasSize: false, sizeCount: 0 };
+        return {
+          id: product._id,
+          hasSize: false,
+          sizeCount: 0,
+        };
       }
-    }
+    });
+
+    const results = await Promise.all(promises);
+    const sizeStatus = {};
+    results.forEach((result) => {
+      sizeStatus[result.id] = {
+        hasSize: result.hasSize,
+        sizeCount: result.sizeCount,
+      };
+    });
 
     setProductSizeStatus(sizeStatus);
   };

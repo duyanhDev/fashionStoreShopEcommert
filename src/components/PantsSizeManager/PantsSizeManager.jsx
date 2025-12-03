@@ -281,7 +281,7 @@ const PantsSizeManager = () => {
         });
         setProducts(data);
 
-        // Check size status for each product
+        // Check size status for each product in parallel
         checkProductSizeStatus(data);
       }
     } catch (error) {
@@ -290,32 +290,46 @@ const PantsSizeManager = () => {
   };
 
   const checkProductSizeStatus = async (productList) => {
-    const sizeStatus = {};
-
-    for (const product of productList) {
+    // Fetch all size data in parallel instead of sequentially
+    const sizeStatusPromises = productList.map(async (product) => {
       try {
         const res = await getIdGuidePantsSize(product._id);
-        sizeStatus[product._id] = {
-          hasSize:
-            res &&
-            res.data &&
-            res.data.EC === 0 &&
-            res.data.data &&
-            res.data.data.sizes &&
-            res.data.data.sizes.length > 0,
-          sizeCount:
-            res &&
-            res.data &&
-            res.data.EC === 0 &&
-            res.data.data &&
-            res.data.data.sizes
-              ? res.data.data.sizes.length
-              : 0,
+        return {
+          id: product._id,
+          status: {
+            hasSize:
+              res &&
+              res.data &&
+              res.data.EC === 0 &&
+              res.data.data &&
+              res.data.data.sizes &&
+              res.data.data.sizes.length > 0,
+            sizeCount:
+              res &&
+              res.data &&
+              res.data.EC === 0 &&
+              res.data.data &&
+              res.data.data.sizes
+                ? res.data.data.sizes.length
+                : 0,
+          },
         };
       } catch (error) {
-        sizeStatus[product._id] = { hasSize: false, sizeCount: 0 };
+        return {
+          id: product._id,
+          status: { hasSize: false, sizeCount: 0 },
+        };
       }
-    }
+    });
+
+    // Wait for all requests to complete
+    const results = await Promise.all(sizeStatusPromises);
+
+    // Convert array to object
+    const sizeStatus = {};
+    results.forEach(({ id, status }) => {
+      sizeStatus[id] = status;
+    });
 
     setProductSizeStatus(sizeStatus);
   };

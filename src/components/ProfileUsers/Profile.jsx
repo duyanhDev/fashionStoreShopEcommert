@@ -142,7 +142,6 @@ const PersonalInfoForm = ({ id }) => {
         return;
       }
 
-      // Gọi API
       const res = await ChanglePasswordAPI(id, currentPassword, newPassWord);
 
       if (res && res.data.success === true) {
@@ -349,6 +348,7 @@ const Profile = () => {
   const [WarmData, setWarmData] = useState([]);
   const [SeletectIdWarm, SetSeletectIdWarm] = useState("");
   const [error, setError] = useState("");
+  const [api, contextHolder] = notification.useNotification();
 
   const navigate = useNavigate();
   /// Check time
@@ -834,6 +834,25 @@ const Profile = () => {
 
   const handleUpdateProfileUser = async () => {
     try {
+      if (phone.length < 10) {
+        api["warning"]({
+          message: "Vui lòng kiểm tra lại số điện thoại!",
+          description: "Số điện thoại phải đủ 10 chữ số!",
+          placement: "topRight",
+        });
+        return;
+      }
+
+      if (
+        selectedDate < moment("01-01-1900", "DD-MM-YYYY") ||
+        selectedDate > moment()
+      ) {
+        api["warning"]({
+          message: "Vui lòng kiểm tra lại ngày sinh!",
+          description: "Ngày sinh không hợp lệ!",
+        });
+        return;
+      }
       const res = await update_profileUser(
         id,
         name,
@@ -849,10 +868,13 @@ const Profile = () => {
         user.permissions,
         selectedImage
       );
-      if (res) {
-        console.log(res);
 
-        message.success("Profile updated successfully");
+      if (res && res.message === "Cập nhật thành công") {
+        api["success"]({
+          message: "Cập nhật thông tin thành công",
+          description: "Bạn đã cập nhật thông tin cá nhân thành công",
+          placement: "topRight",
+        });
         dispatch(updateUser(res.user)); // avatar + info khác sẽ cập nhật ngay
         setOpenResponsive(false);
       }
@@ -876,6 +898,7 @@ const Profile = () => {
   };
   return (
     <div className="main_profile fade-in">
+      {contextHolder}
       {/* User Info Header */}
       <div className="info-name">
         <div className="flex flex-col lg:flex-row justify-between gap-4">
