@@ -244,18 +244,6 @@ const OderStatus = () => {
                 <span className="text-white font-semibold">Đơn mua</span>
               </div>
 
-              <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-50 transition-all cursor-pointer group">
-                <Badge count={5} size="small">
-                  <BellOutlined
-                    className="text-emerald-600 group-hover:scale-110 transition-transform"
-                    style={{ fontSize: 20 }}
-                  />
-                </Badge>
-                <span className="text-gray-700 font-medium ml-2">
-                  Thông Báo
-                </span>
-              </div>
-
               <div
                 className="flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-50 transition-all cursor-pointer group"
                 onClick={() => Navigate("/voucher-wallet")}

@@ -1376,6 +1376,24 @@ const OrderDetailModal = ({ visible, onClose, id }) => {
                         {OrderData?.phone ? `0${OrderData.phone}` : "N/A"}
                       </span>
                     </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600 font-medium">
+                        Phương thức thanh toán:
+                      </span>
+                      <span className="font-semibold text-blue-600">
+                        {OrderData?.paymentMethod}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600 font-medium">
+                        Thanh toán:
+                      </span>
+                      <span className="font-semibold text-blue-600">
+                        {OrderData?.paymentStatus === "Completed"
+                          ? "Đã thanh toán"
+                          : "Chưa thanh toán"}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="border-t border-gray-200 pt-4">
