@@ -189,6 +189,7 @@ const BotChatAI = () => {
             stock: product.stock,
             slug: product.slug,
             id: product.id || product._id,
+            view: product.view,
           }));
 
           botResponse = {

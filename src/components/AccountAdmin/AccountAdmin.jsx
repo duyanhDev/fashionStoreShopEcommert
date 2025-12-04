@@ -309,7 +309,7 @@ const AccountAdmin = () => {
   };
 
   const handleAdd = (record) => {
-    // Logic xem chi tiết
+    navigate(`/admin/usercustom/${record.id}`);
   };
 
   const dataUserCustom = Array.isArray(data)

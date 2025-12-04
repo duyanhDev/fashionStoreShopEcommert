@@ -150,8 +150,9 @@ const Voucher = () => {
     setSelectedVoucher(null);
   };
 
-  const handleViewNavigate = (id) => {
-    navigate(`/admin/voucher/${id}`);
+  const handleViewNavigate = (voucher) => {
+    setSelectedVoucher(voucher);
+    setUpdateModalVisible(true);
   };
 
   const onSelectChange = (newSelectedRowKeys) => {
@@ -361,7 +362,7 @@ const Voucher = () => {
             <Button
               type="text"
               icon={<EyeOutlined />}
-              onClick={() => handleViewNavigate(record.key)}
+              onClick={() => handleViewNavigate(record.originalData)}
               className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
             />
           </Tooltip>
