@@ -88,7 +88,7 @@ const CartProducts = ({}) => {
 
   const [inputValue, setInputValue] = useState({});
   const navigate = useNavigate();
-  const [timeLeft, setTimeLeft] = useState(1 * 60); // 5 phút = 300 giây
+  const [timeLeft, setTimeLeft] = useState(5 * 60); // 5 phút = 300 giây
 
   const formatPrice = (price) => {
     const numericPrice =
