@@ -426,7 +426,8 @@ const Products = () => {
   const props = {
     name: "execl",
     accept: ".xlsx,.xls",
-    action: "http://localhost:9000/api/v1/products/excel",
+    action:
+      "https://fashionstoreshopecommertbe.onrender.com/api/v1/products/excel",
     headers: {
       Authorization: `Bearer ${token}`,
     },
